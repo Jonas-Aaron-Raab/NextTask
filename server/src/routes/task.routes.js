@@ -26,14 +26,14 @@ router.post('/', auth, async (req, res) => {
   try {
     const { title, description, status, priority, projectId, assigneeId } = req.body;
     const lastTask = await req.prisma.task.findFirst({
-      where: { projectId, status: status || 'TODO' },
+      where: { projectId, status: status || 'TODAY' },
       orderBy: { order: 'desc' },
     });
     const task = await req.prisma.task.create({
       data: {
         title,
         description,
-        status: status || 'TODO',
+        status: status || 'TODAY',
         priority: priority || 'MEDIUM',
         projectId,
         assigneeId: assigneeId || null,

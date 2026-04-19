@@ -15,9 +15,9 @@ enum Priority {
 }
 
 enum TaskStatus {
-  TODO
-  IN_PROGRESS
-  REVIEW
+  TODAY
+  THIS_WEEK
+  LATER
   DONE
 }
 
@@ -47,7 +47,7 @@ model Task {
   id          String      @id @default(cuid())
   title       String
   description String?
-  status      TaskStatus  @default(TODO)
+  status      TaskStatus  @default(TODAY)
   priority    Priority    @default(MEDIUM)
   order       Int         @default(0)
   projectId   String
