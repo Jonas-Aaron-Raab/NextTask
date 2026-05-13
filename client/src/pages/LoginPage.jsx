@@ -11,8 +11,14 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!email.trim() || !password.trim()) {
+      setError('Bitte E-Mail und Passwort eingeben');
+      return;
+    }
+
     try {
-      const { data } = await api.post('/auth/login', { email, password });
+      const { data } = await api.post('/auth/login', { email: email.trim(), password });
       login(data.token, data.user);
       navigate('/');
     } catch (err) {
@@ -24,8 +30,8 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="w-full max-w-md rounded-2xl bg-white p-8 shadow">
         <h1 className="mb-6 text-2xl font-bold">NextTask Login</h1>
         {error && <p className="mb-4 text-red-500">{error}</p>}
-        <input className="mb-3 w-full rounded border p-3" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input className="mb-3 w-full rounded border p-3" placeholder="Passwort" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <input className="mb-3 w-full rounded border p-3" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input className="mb-3 w-full rounded border p-3" placeholder="Passwort" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         <button className="w-full rounded bg-blue-600 p-3 font-semibold text-white">Einloggen</button>
         <p className="mt-4 text-sm">Noch keinen Account? <Link to="/register" className="text-blue-600">Registrieren</Link></p>
       </form>

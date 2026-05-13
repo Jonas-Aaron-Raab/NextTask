@@ -450,6 +450,7 @@ export default function DashboardPage() {
   const { projectId: routeProjectId } = useParams();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const isGuestMode = user?.isGuest;
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(routeProjectId || '');
@@ -831,7 +832,7 @@ export default function DashboardPage() {
               className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[#241d45] px-4 text-sm font-semibold text-white transition hover:bg-[#18122f]"
             >
               <LogoutIcon />
-              Logout
+              {isGuestMode ? 'Gastmodus' : 'Logout'}
             </button>
           </div>
         </div>

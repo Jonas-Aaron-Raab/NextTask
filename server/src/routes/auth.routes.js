@@ -2,19 +2,32 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
+
+function isBlank(value) {
+  return typeof value !== 'string' || value.trim().length === 0;
+}
+
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
     const prisma = req.prisma;
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (isBlank(name) || isBlank(email) || isBlank(password)) {
+      return res.status(400).json({ message: 'Name, E-Mail und Passwort sind erforderlich' });
+    }
+
+    const existing = await prisma.user.findUnique({ where: { email: trimmedEmail } });
     if (existing) {
       return res.status(400).json({ message: 'E-Mail existiert bereits' });
     }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: {
-        name,
-        email,
+        name: trimmedName,
+        email: trimmedEmail,
         password: hashedPassword,
       },
     });
@@ -35,7 +48,13 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const prisma = req.prisma;
-    const user = await prisma.user.findUnique({ where: { email } });
+    const trimmedEmail = email.trim();
+
+    if (isBlank(email) || isBlank(password)) {
+      return res.status(400).json({ message: 'E-Mail und Passwort sind erforderlich' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: trimmedEmail } });
     if (!user) {
       return res.status(400).json({ message: 'Benutzer nicht gefunden' });
     }
