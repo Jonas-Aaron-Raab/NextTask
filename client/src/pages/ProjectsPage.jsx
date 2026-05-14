@@ -19,6 +19,7 @@ import {
   MoreHorizontal,
   Plus,
   ShieldCheck,
+  Trash2,
   X,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
@@ -289,6 +290,7 @@ const emptyTaskForm = {
   priority: 'mittel',
   dueDate: 'Heute',
   assigneeId: 'lisa',
+  description: '',
 };
 
 function PriorityBadge({ priority }) {
@@ -312,7 +314,7 @@ function Avatar({ assignee }) {
   );
 }
 
-function TaskCard({ task }) {
+function TaskCard({ task, onOpen }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
   });
@@ -321,6 +323,7 @@ function TaskCard({ task }) {
     <button
       ref={setNodeRef}
       type="button"
+      onClick={() => onOpen(task)}
       style={{ transform: CSS.Translate.toString(transform) }}
       className={`group w-full rounded-xl border border-slate-200 bg-white p-3 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)] ${
         isDragging ? 'z-20 opacity-70 shadow-[0_20px_40px_rgba(15,23,42,0.16)]' : ''
@@ -346,7 +349,7 @@ function TaskCard({ task }) {
   );
 }
 
-function KanbanColumn({ column, tasks, onAddTask }) {
+function KanbanColumn({ column, tasks, onAddTask, onOpenTask }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
   return (
@@ -372,7 +375,7 @@ function KanbanColumn({ column, tasks, onAddTask }) {
 
       <div className="mt-3 flex flex-1 flex-col gap-3">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard key={task.id} task={task} onOpen={onOpenTask} />
         ))}
       </div>
 
@@ -479,6 +482,17 @@ function TaskCreateModal({ form, onChange, onClose, onSubmit }) {
             />
           </label>
 
+          <label className="block text-sm font-bold text-slate-700">
+            Beschreibung
+            <textarea
+              value={form.description}
+              onChange={(event) => onChange('description', event.target.value)}
+              rows={3}
+              placeholder="Kurze Beschreibung"
+              className="mt-2 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+            />
+          </label>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm font-bold text-slate-700">
               Status
@@ -551,6 +565,148 @@ function TaskCreateModal({ form, onChange, onClose, onSubmit }) {
   );
 }
 
+function TaskDetailDrawer({
+  task,
+  form,
+  onChange,
+  onClose,
+  onSave,
+  onDelete,
+  onComplete,
+}) {
+  if (!task) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/30 backdrop-blur-sm">
+      <aside className="h-full w-full max-w-xl overflow-y-auto border-l border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white/95 px-6 py-5 backdrop-blur">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6d5df6]">Aufgabendetails</p>
+            <h2 className="mt-1 text-xl font-extrabold text-slate-950">{task.title}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Drawer schliessen"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <form onSubmit={onSave} className="space-y-5 px-6 py-6">
+          <label className="block text-sm font-bold text-slate-700">
+            Titel
+            <input
+              value={form.title}
+              onChange={(event) => onChange('title', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+            />
+          </label>
+
+          <label className="block text-sm font-bold text-slate-700">
+            Beschreibung
+            <textarea
+              value={form.description}
+              onChange={(event) => onChange('description', event.target.value)}
+              rows={5}
+              placeholder="Noch keine Beschreibung vorhanden."
+              className="mt-2 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+            />
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm font-bold text-slate-700">
+              Status
+              <select
+                value={form.status}
+                onChange={(event) => onChange('status', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+              >
+                {kanbanColumns.map((column) => (
+                  <option key={column.id} value={column.id}>
+                    {column.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Prioritaet
+              <select
+                value={form.priority}
+                onChange={(event) => onChange('priority', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+              >
+                <option value="hoch">Hoch</option>
+                <option value="mittel">Mittel</option>
+                <option value="niedrig">Niedrig</option>
+              </select>
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Faelligkeitsdatum
+              <input
+                value={form.dueDate}
+                onChange={(event) => onChange('dueDate', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+              />
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Zust. Person
+              <select
+                value={form.assigneeId}
+                onChange={(event) => onChange('assigneeId', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+              >
+                {teamMembers.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <h3 className="text-sm font-bold text-slate-900">Kommentare</h3>
+            <p className="mt-2 text-sm font-medium text-slate-500">Noch keine Kommentare vorhanden.</p>
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <h3 className="text-sm font-bold text-slate-900">Aktivitaetsverlauf</h3>
+            <p className="mt-2 text-sm font-medium text-slate-500">Diese Aufgabe wurde im Web-Relaunch Board angelegt.</p>
+          </section>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onDelete}
+              className="inline-flex h-11 items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 text-sm font-bold text-red-600 transition hover:bg-red-100"
+            >
+              <Trash2 className="h-4 w-4" />
+              Loeschen
+            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onComplete}
+                className="h-11 rounded-xl border border-green-100 bg-green-50 px-4 text-sm font-bold text-green-600 transition hover:bg-green-100"
+              >
+                Abschliessen
+              </button>
+              <button type="submit" className="h-11 rounded-xl bg-[#6d5df6] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(109,93,246,0.22)]">
+                Speichern
+              </button>
+            </div>
+          </div>
+        </form>
+      </aside>
+    </div>
+  );
+}
+
 function getColumnTitle(columnId) {
   return kanbanColumns.find((column) => column.id === columnId)?.title || 'Board';
 }
@@ -561,6 +717,8 @@ export default function ProjectsPage() {
   const [searchValue, setSearchValue] = useState('');
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [taskForm, setTaskForm] = useState(emptyTaskForm);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [detailForm, setDetailForm] = useState(emptyTaskForm);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -646,6 +804,106 @@ export default function ProjectsPage() {
     setTaskForm(emptyTaskForm);
   };
 
+  const openTaskDetail = (task) => {
+    const assignee = teamMembers.find((member) => member.initials === task.assignee.initials) || teamMembers[0];
+    setSelectedTaskId(task.id);
+    setDetailForm({
+      title: task.title,
+      status: task.status,
+      priority: task.priority,
+      dueDate: task.dueDate,
+      assigneeId: assignee.id,
+      description: task.description || '',
+    });
+  };
+
+  const handleDetailFormChange = (field, value) => {
+    setDetailForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleTaskSave = (event) => {
+    event.preventDefault();
+    if (!selectedTaskId || !detailForm.title.trim()) return;
+
+    const assignee = teamMembers.find((member) => member.id === detailForm.assigneeId) || teamMembers[0];
+    const originalTask = tasks.find((task) => task.id === selectedTaskId);
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === selectedTaskId
+          ? {
+              ...task,
+              title: detailForm.title.trim(),
+              description: detailForm.description.trim(),
+              status: detailForm.status,
+              priority: detailForm.priority,
+              dueDate: detailForm.dueDate.trim() || 'Heute',
+              assignee,
+              completed: detailForm.status === 'erledigt',
+            }
+          : task,
+      ),
+    );
+    setActivityItems((currentItems) => [
+      {
+        id: `activity-${Date.now()}`,
+        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
+        text: `Du hast die Aufgabe "${detailForm.title.trim()}" aktualisiert.`,
+        time: 'gerade eben',
+        dot: originalTask?.priority !== detailForm.priority ? 'bg-amber-500' : 'bg-violet-500',
+      },
+      ...currentItems,
+    ]);
+    setSelectedTaskId(null);
+  };
+
+  const handleTaskDelete = () => {
+    const deletedTask = tasks.find((task) => task.id === selectedTaskId);
+    if (!deletedTask) return;
+
+    setTasks((currentTasks) => currentTasks.filter((task) => task.id !== selectedTaskId));
+    setActivityItems((currentItems) => [
+      {
+        id: `activity-${Date.now()}`,
+        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
+        text: `Du hast die Aufgabe "${deletedTask.title}" geloescht.`,
+        time: 'gerade eben',
+        dot: 'bg-red-500',
+      },
+      ...currentItems,
+    ]);
+    setSelectedTaskId(null);
+  };
+
+  const handleTaskComplete = () => {
+    const completedTask = tasks.find((task) => task.id === selectedTaskId);
+    if (!completedTask) return;
+
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === selectedTaskId
+          ? {
+              ...task,
+              status: 'erledigt',
+              completed: true,
+            }
+          : task,
+      ),
+    );
+    setActivityItems((currentItems) => [
+      {
+        id: `activity-${Date.now()}`,
+        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
+        text: `Du hast die Aufgabe "${completedTask.title}" abgeschlossen.`,
+        time: 'gerade eben',
+        dot: 'bg-green-500',
+      },
+      ...currentItems,
+    ]);
+    setSelectedTaskId(null);
+  };
+
+  const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
+
   return (
     <AppShell
       activeItem="Projekte"
@@ -715,6 +973,7 @@ export default function ProjectsPage() {
                       column={column}
                       tasks={visibleTasks.filter((task) => task.status === column.id)}
                       onAddTask={openTaskCreateForm}
+                      onOpenTask={openTaskDetail}
                     />
                   ))}
                 </div>
@@ -780,6 +1039,15 @@ export default function ProjectsPage() {
           onSubmit={handleTaskCreate}
         />
       ) : null}
+      <TaskDetailDrawer
+        task={selectedTask}
+        form={detailForm}
+        onChange={handleDetailFormChange}
+        onClose={() => setSelectedTaskId(null)}
+        onSave={handleTaskSave}
+        onDelete={handleTaskDelete}
+        onComplete={handleTaskComplete}
+      />
     </AppShell>
   );
 }
