@@ -552,7 +552,10 @@ function TaskCreateModal({ form, onChange, onClose, onSubmit }) {
 function TaskDetailDrawer({
   task,
   form,
+  commentDraft,
   onChange,
+  onCommentChange,
+  onCommentSubmit,
   onClose,
   onSave,
   onDelete,
@@ -655,7 +658,36 @@ function TaskDetailDrawer({
 
           <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <h3 className="text-sm font-bold text-slate-900">Kommentare</h3>
-            <p className="mt-2 text-sm font-medium text-slate-500">Noch keine Kommentare vorhanden.</p>
+            <div className="mt-3 space-y-3">
+              {task.comments?.length ? (
+                task.comments.map((comment) => (
+                  <div key={comment.id} className="rounded-xl bg-white p-3 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-bold text-slate-800">{comment.author}</span>
+                      <span className="text-xs font-semibold text-slate-400">{comment.time}</span>
+                    </div>
+                    <p className="mt-1 text-sm font-medium leading-5 text-slate-600">{comment.text}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm font-medium text-slate-500">Noch keine Kommentare vorhanden.</p>
+              )}
+            </div>
+            <div className="mt-4 flex gap-2">
+              <input
+                value={commentDraft}
+                onChange={(event) => onCommentChange(event.target.value)}
+                placeholder="Kommentar schreiben"
+                className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+              />
+              <button
+                type="button"
+                onClick={onCommentSubmit}
+                className="h-10 rounded-xl bg-slate-900 px-3 text-sm font-bold text-white transition hover:bg-slate-800"
+              >
+                Senden
+              </button>
+            </div>
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -703,6 +735,7 @@ export default function ProjectsPage() {
   const [taskForm, setTaskForm] = useState(emptyTaskForm);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [detailForm, setDetailForm] = useState(emptyTaskForm);
+  const [commentDraft, setCommentDraft] = useState('');
   const [openStatMenu, setOpenStatMenu] = useState(null);
   const [hiddenStats, setHiddenStats] = useState([]);
   const sensors = useSensors(
@@ -821,6 +854,7 @@ export default function ProjectsPage() {
       assigneeId: assignee.id,
       description: task.description || '',
     });
+    setCommentDraft('');
   };
 
   const handleDetailFormChange = (field, value) => {
@@ -906,6 +940,42 @@ export default function ProjectsPage() {
       ...currentItems,
     ]);
     setSelectedTaskId(null);
+  };
+
+  const handleCommentCreate = () => {
+    if (!selectedTaskId || !commentDraft.trim()) return;
+
+    const selectedTask = tasks.find((task) => task.id === selectedTaskId);
+    if (!selectedTask) return;
+
+    const newComment = {
+      id: `comment-${Date.now()}`,
+      author: 'Du',
+      text: commentDraft.trim(),
+      time: 'gerade eben',
+    };
+
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === selectedTaskId
+          ? {
+              ...task,
+              comments: [...(task.comments || []), newComment],
+            }
+          : task,
+      ),
+    );
+    setActivityItems((currentItems) => [
+      {
+        id: `activity-${Date.now()}`,
+        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
+        text: `Du hast einen Kommentar zur Aufgabe "${selectedTask.title}" hinzugefuegt.`,
+        time: 'gerade eben',
+        dot: 'bg-violet-500',
+      },
+      ...currentItems,
+    ]);
+    setCommentDraft('');
   };
 
   const handleStatAction = (statTitle, action) => {
@@ -1098,7 +1168,10 @@ export default function ProjectsPage() {
       <TaskDetailDrawer
         task={selectedTask}
         form={detailForm}
+        commentDraft={commentDraft}
         onChange={handleDetailFormChange}
+        onCommentChange={setCommentDraft}
+        onCommentSubmit={handleCommentCreate}
         onClose={() => setSelectedTaskId(null)}
         onSave={handleTaskSave}
         onDelete={handleTaskDelete}
