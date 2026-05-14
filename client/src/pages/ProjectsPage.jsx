@@ -260,10 +260,22 @@ const emptyTaskForm = {
   title: '',
   status: 'heute',
   priority: 'mittel',
-  dueDate: 'Heute',
+  dueDate: '',
   assigneeId: 'lisa',
   description: '',
 };
+
+function formatDateInputLabel(value) {
+  if (!value) return 'Heute';
+
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return value;
+
+  return new Intl.DateTimeFormat('de-DE', {
+    day: '2-digit',
+    month: 'long',
+  }).format(new Date(year, month - 1, day));
+}
 
 function getDueOrder(dueDate) {
   if (!dueDate) return 999;
@@ -561,11 +573,15 @@ function TaskCreateModal({ form, onChange, onClose, onSubmit }) {
 
             <label className="block text-sm font-bold text-slate-700">
               Fälligkeit
-              <input
-                value={form.dueDate}
-                onChange={(event) => onChange('dueDate', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-              />
+              <span className="relative mt-2 block">
+                <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="date"
+                  value={form.dueDate}
+                  onChange={(event) => onChange('dueDate', event.target.value)}
+                  className="h-11 w-full rounded-xl border border-slate-200 px-3 pl-10 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                />
+              </span>
             </label>
 
             <label className="block text-sm font-bold text-slate-700">
@@ -898,7 +914,7 @@ export default function ProjectsPage() {
       title: taskForm.title.trim(),
       status: taskForm.status,
       priority: taskForm.priority,
-      dueDate: taskForm.dueDate.trim() || 'Heute',
+      dueDate: formatDateInputLabel(taskForm.dueDate.trim()),
       assignee,
       completed: taskForm.status === 'erledigt',
     };
