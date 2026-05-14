@@ -703,6 +703,8 @@ export default function ProjectsPage() {
   const [taskForm, setTaskForm] = useState(emptyTaskForm);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [detailForm, setDetailForm] = useState(emptyTaskForm);
+  const [openStatMenu, setOpenStatMenu] = useState(null);
+  const [hiddenStats, setHiddenStats] = useState([]);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -733,7 +735,7 @@ export default function ProjectsPage() {
     }
 
     return { ...stat, value: tasks.filter((task) => task.completed).length };
-  });
+  }).filter((stat) => !hiddenStats.includes(stat.title));
 
   const handleDragEnd = ({ active, over }) => {
     if (!over) return;
@@ -906,6 +908,29 @@ export default function ProjectsPage() {
     setSelectedTaskId(null);
   };
 
+  const handleStatAction = (statTitle, action) => {
+    setOpenStatMenu(null);
+
+    if (action === 'hide') {
+      setHiddenStats((current) => [...current, statTitle]);
+      return;
+    }
+
+    setActivityItems((currentItems) => [
+      {
+        id: `activity-${Date.now()}`,
+        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
+        text:
+          action === 'export'
+            ? `Du hast einen Bericht fuer "${statTitle}" exportiert.`
+            : `Du hast Details fuer "${statTitle}" geoeffnet.`,
+        time: 'gerade eben',
+        dot: 'bg-violet-500',
+      },
+      ...currentItems,
+    ]);
+  };
+
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
 
   return (
@@ -921,7 +946,7 @@ export default function ProjectsPage() {
             {projectStats.map((stat) => (
               <article
                 key={stat.title}
-                className="min-h-[104px] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_34px_rgba(15,23,42,0.06)]"
+                className="relative min-h-[104px] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_34px_rgba(15,23,42,0.06)]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <span className={`inline-flex h-11 w-11 items-center justify-center rounded-full ${stat.iconTone}`}>
@@ -929,11 +954,37 @@ export default function ProjectsPage() {
                   </span>
                   <button
                     type="button"
+                    onClick={() => setOpenStatMenu((current) => (current === stat.title ? null : stat.title))}
                     className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
                     aria-label={`${stat.title} Optionen`}
                   >
                     <MoreHorizontal className="h-5 w-5" />
                   </button>
+                  {openStatMenu === stat.title ? (
+                    <div className="absolute right-4 top-12 z-20 w-44 rounded-xl border border-slate-200 bg-white p-1.5 text-sm shadow-[0_18px_45px_rgba(15,23,42,0.14)]">
+                      <button
+                        type="button"
+                        onClick={() => handleStatAction(stat.title, 'details')}
+                        className="w-full rounded-lg px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        Details anzeigen
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleStatAction(stat.title, 'export')}
+                        className="w-full rounded-lg px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        Bericht exportieren
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleStatAction(stat.title, 'hide')}
+                        className="w-full rounded-lg px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        Karte ausblenden
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="mt-3 flex items-end justify-between gap-3">
                   <div>
