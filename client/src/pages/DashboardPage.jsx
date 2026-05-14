@@ -450,8 +450,7 @@ function TaskModal({
 export default function DashboardPage() {
   const { projectId: routeProjectId } = useParams();
   const navigate = useNavigate();
-  const { logout, user } = useAuth();
-  const isGuestMode = user?.isGuest;
+  const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(routeProjectId || '');
@@ -765,20 +764,6 @@ export default function DashboardPage() {
     }
   };
 
-  const handleShareBoard = async () => {
-    if (!activeProjectId || !navigator?.clipboard) return;
-
-    const shareUrl = `${window.location.origin}/projects/${activeProjectId}`;
-    await navigator.clipboard.writeText(shareUrl);
-  };
-
-  const handleBoardTabClick = (tab) => {
-    if (tab === 'Projekte') {
-      navigate('/projects');
-    }
-  };
-
-  const projectCountCopy = `${projects.length} ${projects.length === 1 ? 'Projekt aktiv' : 'Projekte aktiv'}`;
   const visibleTaskCount = tasks.length;
 
   return (
