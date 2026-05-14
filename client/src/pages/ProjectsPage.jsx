@@ -793,7 +793,7 @@ function TaskDetailDrawer({
           </button>
         </div>
 
-        <form onSubmit={onSave} className="space-y-5 px-6 py-6">
+        <div className="space-y-5 px-6 py-6">
           <label className="block text-sm font-bold text-slate-700">
             Titel
             <input
@@ -1006,12 +1006,16 @@ function TaskDetailDrawer({
               >
                 Abschließen
               </button>
-              <button type="submit" className="h-11 rounded-xl bg-[#6d5df6] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(109,93,246,0.22)]">
+              <button
+                type="button"
+                onClick={onSave}
+                className="h-11 rounded-xl bg-[#6d5df6] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(109,93,246,0.22)]"
+              >
                 Speichern
               </button>
             </div>
           </div>
-        </form>
+        </div>
       </aside>
     </div>
   );
@@ -1217,8 +1221,7 @@ export default function ProjectsPage() {
     setDetailForm((current) => ({ ...current, [field]: value }));
   };
 
-  const handleTaskSave = (event) => {
-    event.preventDefault();
+  const handleTaskSave = () => {
     if (!selectedTaskId || !detailForm.title.trim()) return;
 
     const assignee = teamMembers.find((member) => member.id === detailForm.assigneeId) || teamMembers[0];
