@@ -19,6 +19,7 @@ import {
   MoreHorizontal,
   Plus,
   ShieldCheck,
+  X,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 
@@ -275,6 +276,21 @@ const projectSummary = {
   totalTasks: 65,
 };
 
+const teamMembers = [
+  { id: 'markus', name: 'Markus Klein', initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
+  { id: 'lisa', name: 'Lisa Wagner', initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
+  { id: 'anna', name: 'Anna Becker', initials: 'AB', gradient: 'from-pink-200 to-violet-200' },
+  { id: 'tom', name: 'Tom Becker', initials: 'TB', gradient: 'from-slate-200 to-blue-200' },
+];
+
+const emptyTaskForm = {
+  title: '',
+  status: 'heute',
+  priority: 'mittel',
+  dueDate: 'Heute',
+  assigneeId: 'lisa',
+};
+
 function PriorityBadge({ priority }) {
   const label = priority.charAt(0).toUpperCase() + priority.slice(1);
 
@@ -330,7 +346,7 @@ function TaskCard({ task }) {
   );
 }
 
-function KanbanColumn({ column, tasks }) {
+function KanbanColumn({ column, tasks, onAddTask }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
   return (
@@ -346,6 +362,7 @@ function KanbanColumn({ column, tasks }) {
         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">{tasks.length}</span>
         <button
           type="button"
+          onClick={() => onAddTask(column.id)}
           className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-[#6d5df6]"
           aria-label={`${column.title} Aufgabe hinzufuegen`}
         >
@@ -359,7 +376,11 @@ function KanbanColumn({ column, tasks }) {
         ))}
       </div>
 
-      <button type="button" className="mt-3 flex items-center gap-1.5 rounded-xl px-2 py-2 text-sm font-bold text-slate-400 transition hover:bg-slate-50 hover:text-[#6d5df6]">
+      <button
+        type="button"
+        onClick={() => onAddTask(column.id)}
+        className="mt-3 flex items-center gap-1.5 rounded-xl px-2 py-2 text-sm font-bold text-slate-400 transition hover:bg-slate-50 hover:text-[#6d5df6]"
+      >
         <Plus className="h-4 w-4" />
         Aufgabe hinzufuegen
       </button>
@@ -425,6 +446,111 @@ function ProjectStatusCard({ progress, openTasks }) {
   );
 }
 
+function TaskCreateModal({ form, onChange, onClose, onSubmit }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-8 backdrop-blur-sm">
+      <form
+        onSubmit={onSubmit}
+        className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_28px_80px_rgba(15,23,42,0.22)]"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6d5df6]">Neue Aufgabe</p>
+            <h2 className="mt-1 text-xl font-extrabold text-slate-950">Aufgabe erstellen</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Dialog schliessen"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          <label className="block text-sm font-bold text-slate-700">
+            Titel
+            <input
+              value={form.title}
+              onChange={(event) => onChange('title', event.target.value)}
+              placeholder="Aufgabentitel"
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+            />
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm font-bold text-slate-700">
+              Status
+              <select
+                value={form.status}
+                onChange={(event) => onChange('status', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+              >
+                {kanbanColumns.map((column) => (
+                  <option key={column.id} value={column.id}>
+                    {column.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Prioritaet
+              <select
+                value={form.priority}
+                onChange={(event) => onChange('priority', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+              >
+                <option value="hoch">Hoch</option>
+                <option value="mittel">Mittel</option>
+                <option value="niedrig">Niedrig</option>
+              </select>
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Faelligkeit
+              <input
+                value={form.dueDate}
+                onChange={(event) => onChange('dueDate', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+              />
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Zust. Person
+              <select
+                value={form.assigneeId}
+                onChange={(event) => onChange('assigneeId', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+              >
+                {teamMembers.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-11 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+          >
+            Abbrechen
+          </button>
+          <button type="submit" className="h-11 rounded-xl bg-[#6d5df6] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(109,93,246,0.22)]">
+            Aufgabe erstellen
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function getColumnTitle(columnId) {
   return kanbanColumns.find((column) => column.id === columnId)?.title || 'Board';
 }
@@ -433,6 +559,8 @@ export default function ProjectsPage() {
   const [tasks, setTasks] = useState(initialTasks);
   const [activityItems, setActivityItems] = useState(initialActivities);
   const [searchValue, setSearchValue] = useState('');
+  const [taskFormOpen, setTaskFormOpen] = useState(false);
+  const [taskForm, setTaskForm] = useState(emptyTaskForm);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -477,6 +605,45 @@ export default function ProjectsPage() {
       },
       ...currentItems,
     ]);
+  };
+
+  const openTaskCreateForm = (status = 'heute') => {
+    setTaskForm({ ...emptyTaskForm, status });
+    setTaskFormOpen(true);
+  };
+
+  const handleTaskFormChange = (field, value) => {
+    setTaskForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleTaskCreate = (event) => {
+    event.preventDefault();
+    if (!taskForm.title.trim()) return;
+
+    const assignee = teamMembers.find((member) => member.id === taskForm.assigneeId) || teamMembers[0];
+    const newTask = {
+      id: `task-${Date.now()}`,
+      title: taskForm.title.trim(),
+      status: taskForm.status,
+      priority: taskForm.priority,
+      dueDate: taskForm.dueDate.trim() || 'Heute',
+      assignee,
+      completed: taskForm.status === 'erledigt',
+    };
+
+    setTasks((currentTasks) => [...currentTasks, newTask]);
+    setActivityItems((currentItems) => [
+      {
+        id: `activity-${Date.now()}`,
+        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
+        text: `Du hast die Aufgabe "${newTask.title}" erstellt.`,
+        time: 'gerade eben',
+        dot: 'bg-violet-500',
+      },
+      ...currentItems,
+    ]);
+    setTaskFormOpen(false);
+    setTaskForm(emptyTaskForm);
   };
 
   return (
@@ -547,6 +714,7 @@ export default function ProjectsPage() {
                       key={column.id}
                       column={column}
                       tasks={visibleTasks.filter((task) => task.status === column.id)}
+                      onAddTask={openTaskCreateForm}
                     />
                   ))}
                 </div>
@@ -604,6 +772,14 @@ export default function ProjectsPage() {
           <ProjectStatusCard progress={projectProgress} openTasks={openTasks} />
         </aside>
       </div>
+      {taskFormOpen ? (
+        <TaskCreateModal
+          form={taskForm}
+          onChange={handleTaskFormChange}
+          onClose={() => setTaskFormOpen(false)}
+          onSubmit={handleTaskCreate}
+        />
+      ) : null}
     </AppShell>
   );
 }
