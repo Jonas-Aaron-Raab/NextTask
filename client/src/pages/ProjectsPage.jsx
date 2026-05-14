@@ -24,10 +24,9 @@ import {
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 
-const projectStats = [
+const statCards = [
   {
     title: 'Offene Aufgaben',
-    value: '24',
     trend: '4 seit gestern',
     icon: CalendarCheck,
     iconTone: 'bg-violet-100 text-[#6d5df6]',
@@ -35,7 +34,6 @@ const projectStats = [
   },
   {
     title: 'In QA',
-    value: '7',
     trend: '1 seit gestern',
     icon: ShieldCheck,
     iconTone: 'bg-blue-100 text-blue-600',
@@ -43,7 +41,6 @@ const projectStats = [
   },
   {
     title: 'Ueberfaellig',
-    value: '3',
     trend: '2 seit gestern',
     icon: Clock,
     iconTone: 'bg-red-100 text-red-500',
@@ -51,7 +48,6 @@ const projectStats = [
   },
   {
     title: 'Erledigt diese Woche',
-    value: '18',
     trend: '6 seit letzter Woche',
     icon: CheckCircle2,
     iconTone: 'bg-green-100 text-green-600',
@@ -95,6 +91,7 @@ const initialTasks = [
     priority: 'hoch',
     dueDate: 'Heute',
     assignee: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
+    overdue: true,
   },
   {
     id: 'task-2',
@@ -103,6 +100,7 @@ const initialTasks = [
     priority: 'mittel',
     dueDate: 'Heute',
     assignee: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
+    overdue: true,
   },
   {
     id: 'task-3',
@@ -151,6 +149,7 @@ const initialTasks = [
     priority: 'hoch',
     dueDate: '22. Mai',
     assignee: { initials: 'AB', gradient: 'from-pink-200 to-violet-200' },
+    overdue: true,
   },
   {
     id: 'task-9',
@@ -728,6 +727,21 @@ export default function ProjectsPage() {
   const visibleTasks = normalizedSearch
     ? tasks.filter((task) => task.title.toLowerCase().includes(normalizedSearch))
     : tasks;
+  const projectStats = statCards.map((stat) => {
+    if (stat.title === 'Offene Aufgaben') {
+      return { ...stat, value: tasks.filter((task) => !task.completed).length };
+    }
+
+    if (stat.title === 'In QA') {
+      return { ...stat, value: tasks.filter((task) => task.status === 'qa').length };
+    }
+
+    if (stat.title === 'Ueberfaellig') {
+      return { ...stat, value: tasks.filter((task) => task.overdue && !task.completed).length };
+    }
+
+    return { ...stat, value: tasks.filter((task) => task.completed).length };
+  });
   const projectProgress = Math.round((projectSummary.completedTasks / projectSummary.totalTasks) * 100);
   const openTasks = projectSummary.totalTasks - projectSummary.completedTasks;
 
