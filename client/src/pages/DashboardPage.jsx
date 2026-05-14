@@ -11,6 +11,7 @@ import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
+import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 
 const STATUS_COLUMNS = [
@@ -781,69 +782,13 @@ export default function DashboardPage() {
   const visibleTaskCount = tasks.length;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(157,112,242,0.65),_rgba(99,79,219,0.92)_38%,_rgba(193,92,195,0.85)_100%)] text-white">
-      <header className="border-b border-white/10 bg-[#4d38a5]/85 backdrop-blur-md">
-        <div className="flex flex-wrap items-center gap-3 px-5 py-3 lg:px-7">
-          <div className="flex items-center gap-3 rounded-2xl bg-white/8 px-4 py-3 text-white">
-            <DashboardIcon />
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/60">Workspace</p>
-              <p className="text-xl font-semibold">NextTask</p>
-            </div>
-          </div>
-
-          <div className="relative min-w-[240px] flex-1">
-            <input
-              value={searchValue}
-              onChange={(event) => setSearchValue(event.target.value)}
-              placeholder="Suchen"
-              className="h-14 w-full rounded-2xl border border-white/10 bg-white/14 pl-12 pr-4 text-base font-medium text-white outline-none transition placeholder:text-white/65 focus:border-white/30 focus:bg-white/20"
-            />
-            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/70">
-              <SearchIcon />
-            </span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setProjectFormOpen((current) => !current)}
-            className="h-14 rounded-2xl bg-white/14 px-5 text-base font-semibold text-white transition hover:bg-white/20"
-          >
-            Erstellen
-          </button>
-
-          <div className="ml-auto flex items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-2xl bg-[#7d4ee6] px-4 py-3 text-sm font-semibold shadow-[0_10px_20px_rgba(78,40,170,0.26)]">
-              <ClockIcon />
-              {projectCountCopy}
-            </span>
-            <button
-              type="button"
-              onClick={handleShareBoard}
-              disabled={!activeProjectId}
-              className="inline-flex h-12 items-center gap-2 rounded-2xl bg-white px-4 text-sm font-semibold text-[#223457] transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <ShareIcon />
-              Teilen
-            </button>
-            <button
-              type="button"
-              className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/12 text-white transition hover:bg-white/20"
-            >
-              <BellIcon />
-            </button>
-            <button
-              type="button"
-              onClick={logout}
-              className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[#241d45] px-4 text-sm font-semibold text-white transition hover:bg-[#18122f]"
-            >
-              <LogoutIcon />
-              {isGuestMode ? 'Gastmodus' : 'Logout'}
-            </button>
-          </div>
-        </div>
-      </header>
-
+    <AppShell
+      activeItem="Dashboard"
+      breadcrumb={['Workspace', selectedProject?.name || 'Web-Relaunch', 'Dashboard']}
+      searchValue={searchValue}
+      onSearch={setSearchValue}
+    >
+      <div className="min-h-full bg-[radial-gradient(circle_at_top,_rgba(157,112,242,0.65),_rgba(99,79,219,0.92)_38%,_rgba(193,92,195,0.85)_100%)] text-white">
       <div className="border-b border-white/10 bg-[#6a4aa4]/55 px-5 py-4 backdrop-blur-sm lg:px-7">
         <div className="flex flex-wrap items-center gap-4">
           <div className="min-w-[240px] flex-1">
@@ -1103,23 +1048,6 @@ export default function DashboardPage() {
         </section>
       </main>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-4 flex justify-center px-4">
-        <div className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-[24px] border border-slate-200/40 bg-white px-3 py-2 text-slate-900 shadow-[0_18px_40px_rgba(31,21,92,0.22)]">
-          {BOARD_TABS.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => handleBoardTabClick(tab)}
-              className={`rounded-2xl px-4 py-2.5 text-sm font-semibold transition ${
-                tab === 'Board' ? 'bg-[#e8f0ff] text-[#2b66ff]' : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <TaskModal
         task={selectedTask}
         form={taskForm}
@@ -1131,6 +1059,7 @@ export default function DashboardPage() {
         onCommentChange={setCommentDraft}
         onCommentCreate={handleCreateComment}
       />
-    </div>
+      </div>
+    </AppShell>
   );
 }
