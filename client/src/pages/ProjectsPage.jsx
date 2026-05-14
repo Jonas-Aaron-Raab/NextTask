@@ -40,7 +40,7 @@ const statCards = [
     trendTone: 'text-slate-500',
   },
   {
-    title: 'Ueberfaellig',
+    title: 'Überfällig',
     trend: '2 seit gestern',
     icon: Clock,
     iconTone: 'bg-red-100 text-red-500',
@@ -73,7 +73,7 @@ const kanbanColumns = [
   },
   {
     id: 'spaeter',
-    title: 'Spaeter',
+    title: 'Später',
     dot: 'bg-violet-500',
   },
   {
@@ -153,7 +153,7 @@ const initialTasks = [
   },
   {
     id: 'task-9',
-    title: 'Browser-Kompatibilitaet pruefen',
+    title: 'Browser-Kompatibilität prüfen',
     status: 'qa',
     priority: 'mittel',
     dueDate: '23. Mai',
@@ -243,7 +243,7 @@ const initialActivities = [
   {
     id: 'activity-4',
     user: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
-    text: 'Lisa Wagner hat einen Kommentar zur Aufgabe "Navigation verbessern (Responsive)" hinzugefuegt.',
+    text: 'Lisa Wagner hat einen Kommentar zur Aufgabe "Navigation verbessern (Responsive)" hinzugefügt.',
     time: 'vor 1 Tag',
     dot: 'bg-violet-500',
   },
@@ -351,7 +351,7 @@ function KanbanColumn({ column, tasks, onAddTask, onOpenTask }) {
           type="button"
           onClick={() => onAddTask(column.id)}
           className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-[#6d5df6]"
-          aria-label={`${column.title} Aufgabe hinzufuegen`}
+          aria-label={`${column.title} Aufgabe hinzufügen`}
         >
           <Plus className="h-4 w-4" />
         </button>
@@ -369,7 +369,7 @@ function KanbanColumn({ column, tasks, onAddTask, onOpenTask }) {
         className="mt-3 flex items-center gap-1.5 rounded-xl px-2 py-2 text-sm font-bold text-slate-400 transition hover:bg-slate-50 hover:text-[#6d5df6]"
       >
         <Plus className="h-4 w-4" />
-        Aufgabe hinzufuegen
+        Aufgabe hinzufügen
       </button>
     </section>
   );
@@ -403,7 +403,7 @@ function ListModal({ title, items, type, onClose, onOpenTask }) {
             type="button"
             onClick={onClose}
             className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Liste schliessen"
+            aria-label="Liste schließen"
           >
             <X className="h-5 w-5" />
           </button>
@@ -502,7 +502,7 @@ function TaskCreateModal({ form, onChange, onClose, onSubmit }) {
             type="button"
             onClick={onClose}
             className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Dialog schliessen"
+            aria-label="Dialog schließen"
           >
             <X className="h-5 w-5" />
           </button>
@@ -547,7 +547,7 @@ function TaskCreateModal({ form, onChange, onClose, onSubmit }) {
             </label>
 
             <label className="block text-sm font-bold text-slate-700">
-              Prioritaet
+              Priorität
               <select
                 value={form.priority}
                 onChange={(event) => onChange('priority', event.target.value)}
@@ -560,7 +560,7 @@ function TaskCreateModal({ form, onChange, onClose, onSubmit }) {
             </label>
 
             <label className="block text-sm font-bold text-slate-700">
-              Faelligkeit
+              Fälligkeit
               <input
                 value={form.dueDate}
                 onChange={(event) => onChange('dueDate', event.target.value)}
@@ -628,7 +628,7 @@ function TaskDetailDrawer({
             type="button"
             onClick={onClose}
             className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Drawer schliessen"
+            aria-label="Drawer schließen"
           >
             <X className="h-5 w-5" />
           </button>
@@ -672,7 +672,7 @@ function TaskDetailDrawer({
             </label>
 
             <label className="block text-sm font-bold text-slate-700">
-              Prioritaet
+              Priorität
               <select
                 value={form.priority}
                 onChange={(event) => onChange('priority', event.target.value)}
@@ -685,7 +685,7 @@ function TaskDetailDrawer({
             </label>
 
             <label className="block text-sm font-bold text-slate-700">
-              Faelligkeitsdatum
+              Fälligkeitsdatum
               <input
                 value={form.dueDate}
                 onChange={(event) => onChange('dueDate', event.target.value)}
@@ -744,7 +744,7 @@ function TaskDetailDrawer({
           </section>
 
           <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <h3 className="text-sm font-bold text-slate-900">Aktivitaetsverlauf</h3>
+            <h3 className="text-sm font-bold text-slate-900">Aktivitätsverlauf</h3>
             <p className="mt-2 text-sm font-medium text-slate-500">Diese Aufgabe wurde im Web-Relaunch Board angelegt.</p>
           </section>
 
@@ -755,7 +755,7 @@ function TaskDetailDrawer({
               className="inline-flex h-11 items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 text-sm font-bold text-red-600 transition hover:bg-red-100"
             >
               <Trash2 className="h-4 w-4" />
-              Loeschen
+              Löschen
             </button>
             <div className="flex gap-3">
               <button
@@ -763,7 +763,7 @@ function TaskDetailDrawer({
                 onClick={onComplete}
                 className="h-11 rounded-xl border border-green-100 bg-green-50 px-4 text-sm font-bold text-green-600 transition hover:bg-green-100"
               >
-                Abschliessen
+                Abschließen
               </button>
               <button type="submit" className="h-11 rounded-xl bg-[#6d5df6] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(109,93,246,0.22)]">
                 Speichern
@@ -820,7 +820,7 @@ export default function ProjectsPage() {
       return { ...stat, value: tasks.filter((task) => task.status === 'qa').length };
     }
 
-    if (stat.title === 'Ueberfaellig') {
+    if (stat.title === 'Überfällig') {
       return { ...stat, value: tasks.filter((task) => task.overdue && !task.completed).length };
     }
 
@@ -980,7 +980,7 @@ export default function ProjectsPage() {
       {
         id: `activity-${Date.now()}`,
         user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text: `Du hast die Aufgabe "${deletedTask.title}" geloescht.`,
+        text: `Du hast die Aufgabe "${deletedTask.title}" gelöscht.`,
         time: 'gerade eben',
         dot: 'bg-red-500',
       },
@@ -1044,7 +1044,7 @@ export default function ProjectsPage() {
       {
         id: `activity-${Date.now()}`,
         user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text: `Du hast einen Kommentar zur Aufgabe "${selectedTask.title}" hinzugefuegt.`,
+        text: `Du hast einen Kommentar zur Aufgabe "${selectedTask.title}" hinzugefügt.`,
         time: 'gerade eben',
         dot: 'bg-violet-500',
       },
@@ -1067,8 +1067,8 @@ export default function ProjectsPage() {
         user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
         text:
           action === 'export'
-            ? `Du hast einen Bericht fuer "${statTitle}" exportiert.`
-            : `Du hast Details fuer "${statTitle}" geoeffnet.`,
+            ? `Du hast einen Bericht für "${statTitle}" exportiert.`
+            : `Du hast Details für "${statTitle}" geöffnet.`,
         time: 'gerade eben',
         dot: 'bg-violet-500',
       },
@@ -1150,7 +1150,7 @@ export default function ProjectsPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-bold text-slate-900">Web-Relaunch Board</p>
-                <p className="mt-1 text-sm text-slate-500">Projektaufgaben nach Status, Prioritaet und Faelligkeit.</p>
+                <p className="mt-1 text-sm text-slate-500">Projektaufgaben nach Status, Priorität und Fälligkeit.</p>
               </div>
               <div className="flex gap-2">
                 <button type="button" className="rounded-lg bg-[#6047e8] px-3 py-2 text-sm font-semibold text-white">
@@ -1190,7 +1190,7 @@ export default function ProjectsPage() {
         </section>
 
         <aside className="space-y-5">
-          <InfoCard title="Aktivitaeten" onAction={() => setListModal('activities')}>
+          <InfoCard title="Aktivitäten" onAction={() => setListModal('activities')}>
             <div className="mt-4 space-y-4">
               {activityItems.map((activity) => (
                 <div key={activity.id} className="flex items-start gap-3">
@@ -1205,7 +1205,7 @@ export default function ProjectsPage() {
             </div>
           </InfoCard>
 
-          <InfoCard title="Naechste Deadlines" onAction={() => setListModal('deadlines')}>
+          <InfoCard title="Nächste Deadlines" onAction={() => setListModal('deadlines')}>
             <div className="mt-4 space-y-3">
               {deadlineTasks.map((task) => (
                 <button
@@ -1254,7 +1254,7 @@ export default function ProjectsPage() {
         onComplete={handleTaskComplete}
       />
       <ListModal
-        title={listModal === 'activities' ? 'Alle Aktivitaeten' : 'Alle Deadlines'}
+        title={listModal === 'activities' ? 'Alle Aktivitäten' : 'Alle Deadlines'}
         type={listModal}
         items={listModal === 'activities' ? activityItems : allDeadlineTasks}
         onClose={() => setListModal(null)}
