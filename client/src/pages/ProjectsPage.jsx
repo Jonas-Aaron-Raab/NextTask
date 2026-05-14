@@ -429,7 +429,7 @@ function TaskCard({ task, onOpen }) {
   );
 }
 
-function KanbanColumn({ column, tasks, onAddTask, onOpenTask, onRenameColumn }) {
+function KanbanColumn({ column, tasks, onAddTask, onOpenTask, onRenameColumn, onDeleteColumn }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
   const [isEditing, setIsEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(column.title);
@@ -482,6 +482,15 @@ function KanbanColumn({ column, tasks, onAddTask, onOpenTask, onRenameColumn }) 
         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">{tasks.length}</span>
         <button
           type="button"
+          onClick={() => onDeleteColumn(column)}
+          className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+          aria-label={`${column.title} löschen`}
+          title="Kategorie löschen"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
           onClick={() => onAddTask(column.id)}
           className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-[#6d5df6]"
           aria-label={`${column.title} Aufgabe hinzufügen`}
@@ -522,6 +531,46 @@ function AddColumnCard({ onAddColumn }) {
       <p className="mt-3 text-sm font-bold text-slate-800">Kategorie hinzufügen</p>
       <p className="mt-1 text-xs font-semibold text-slate-400">Neue Spalte für dein Board</p>
     </section>
+  );
+}
+
+function DeleteColumnDialog({ column, taskCount, onCancel, onConfirm }) {
+  if (!column) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-8 backdrop-blur-sm">
+      <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
+        <div className="flex items-start gap-3">
+          <span className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-red-50 text-red-500">
+            <Trash2 className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="text-lg font-extrabold text-slate-950">Kategorie löschen?</h2>
+            <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
+              In „{column.title}“ {taskCount === 1 ? 'liegt noch eine Aufgabe' : `liegen noch ${taskCount} Aufgaben`}.
+              Wenn du die Kategorie löschst, werden diese Aufgaben ebenfalls entfernt.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-10 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+          >
+            Abbrechen
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="h-10 rounded-xl bg-red-500 px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(239,68,68,0.22)] transition hover:bg-red-600"
+          >
+            Kategorie löschen
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -1038,6 +1087,7 @@ export default function ProjectsPage() {
   const [openStatMenu, setOpenStatMenu] = useState(null);
   const [hiddenStats, setHiddenStats] = useState([]);
   const [listModal, setListModal] = useState(null);
+  const [pendingColumnDelete, setPendingColumnDelete] = useState(null);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -1148,6 +1198,42 @@ export default function ProjectsPage() {
       },
       ...currentItems,
     ]);
+  };
+
+  const deleteColumn = (column) => {
+    const removedTaskCount = tasks.filter((task) => task.status === column.id).length;
+
+    setColumns((currentColumns) => currentColumns.filter((candidate) => candidate.id !== column.id));
+    setTasks((currentTasks) => currentTasks.filter((task) => task.status !== column.id));
+    setActivityItems((currentItems) => [
+      {
+        id: `activity-${Date.now()}`,
+        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
+        text:
+          removedTaskCount > 0
+            ? `Du hast die Kategorie "${column.title}" mit ${removedTaskCount} Aufgaben gelöscht.`
+            : `Du hast die Kategorie "${column.title}" gelöscht.`,
+        time: 'gerade eben',
+        dot: 'bg-red-500',
+      },
+      ...currentItems,
+    ]);
+  };
+
+  const handleColumnDeleteRequest = (column) => {
+    const taskCount = tasks.filter((task) => task.status === column.id).length;
+    if (taskCount > 0) {
+      setPendingColumnDelete(column);
+      return;
+    }
+
+    deleteColumn(column);
+  };
+
+  const handleColumnDeleteConfirm = () => {
+    if (!pendingColumnDelete) return;
+    deleteColumn(pendingColumnDelete);
+    setPendingColumnDelete(null);
   };
 
   const handleCreateAction = (action) => {
@@ -1558,6 +1644,7 @@ export default function ProjectsPage() {
                       onAddTask={openTaskCreateForm}
                       onOpenTask={openTaskDetail}
                       onRenameColumn={handleColumnRename}
+                      onDeleteColumn={handleColumnDeleteRequest}
                     />
                   ))}
                   <AddColumnCard onAddColumn={handleColumnCreate} />
@@ -1649,6 +1736,12 @@ export default function ProjectsPage() {
         items={listModal === 'activities' ? activityItems : allDeadlineTasks}
         onClose={() => setListModal(null)}
         onOpenTask={openTaskDetail}
+      />
+      <DeleteColumnDialog
+        column={pendingColumnDelete}
+        taskCount={pendingColumnDelete ? tasks.filter((task) => task.status === pendingColumnDelete.id).length : 0}
+        onCancel={() => setPendingColumnDelete(null)}
+        onConfirm={handleColumnDeleteConfirm}
       />
     </AppShell>
   );
