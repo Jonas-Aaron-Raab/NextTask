@@ -866,6 +866,24 @@ export default function ProjectsPage() {
     setTaskFormOpen(true);
   };
 
+  const handleCreateAction = (action) => {
+    if (action === 'Neue Aufgabe') {
+      openTaskCreateForm('heute');
+      return;
+    }
+
+    setActivityItems((currentItems) => [
+      {
+        id: `activity-${Date.now()}`,
+        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
+        text: `Du hast "${action}" vorbereitet.`,
+        time: 'gerade eben',
+        dot: 'bg-violet-500',
+      },
+      ...currentItems,
+    ]);
+  };
+
   const handleTaskFormChange = (field, value) => {
     setTaskForm((current) => ({ ...current, [field]: value }));
   };
@@ -1066,6 +1084,7 @@ export default function ProjectsPage() {
       breadcrumb={['Workspace', 'Web-Relaunch', 'Projekte']}
       searchValue={searchValue}
       onSearch={setSearchValue}
+      onCreateAction={handleCreateAction}
     >
       <div className="grid gap-5 px-5 py-5 xl:grid-cols-[1fr_275px] xl:px-7">
         <section className="space-y-5">

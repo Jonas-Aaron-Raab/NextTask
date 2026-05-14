@@ -50,6 +50,7 @@ export default function AppShell({
   activeItem = 'Dashboard',
   breadcrumb = ['Workspace', 'Web-Relaunch', 'Dashboard'],
   children,
+  onCreateAction,
   onSearch,
   searchValue = '',
 }) {
@@ -85,6 +86,11 @@ export default function AppShell({
 
   const handleNavigation = (item) => {
     navigate(item.path);
+  };
+
+  const handleCreateAction = (item) => {
+    setCreateOpen(false);
+    onCreateAction?.(item);
   };
 
   return (
@@ -215,7 +221,12 @@ export default function AppShell({
                 {createOpen ? (
                   <MenuCard>
                     {createMenuItems.map((item) => (
-                      <button key={item} type="button" className="w-full rounded-xl px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50">
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => handleCreateAction(item)}
+                        className="w-full rounded-xl px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50"
+                      >
                         {item}
                       </button>
                     ))}
