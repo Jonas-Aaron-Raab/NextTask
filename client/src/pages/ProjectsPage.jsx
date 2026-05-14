@@ -1,5 +1,15 @@
 import { useState } from 'react';
 import {
+  DndContext,
+  PointerSensor,
+  closestCorners,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
+import {
   ArrowUpRight,
   CalendarCheck,
   CalendarDays,
@@ -207,7 +217,7 @@ const priorityStyles = {
   niedrig: 'border-emerald-100 bg-emerald-50 text-emerald-600',
 };
 
-const activities = [
+const initialActivities = [
   {
     id: 'activity-1',
     user: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
@@ -287,10 +297,20 @@ function Avatar({ assignee }) {
 }
 
 function TaskCard({ task }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: task.id,
+  });
+
   return (
     <button
+      ref={setNodeRef}
       type="button"
-      className="group w-full rounded-xl border border-slate-200 bg-white p-3 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]"
+      style={{ transform: CSS.Translate.toString(transform) }}
+      className={`group w-full rounded-xl border border-slate-200 bg-white p-3 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)] ${
+        isDragging ? 'z-20 opacity-70 shadow-[0_20px_40px_rgba(15,23,42,0.16)]' : ''
+      }`}
+      {...attributes}
+      {...listeners}
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-sm font-bold leading-5 text-slate-900">{task.title}</h3>
@@ -311,8 +331,15 @@ function TaskCard({ task }) {
 }
 
 function KanbanColumn({ column, tasks }) {
+  const { setNodeRef, isOver } = useDroppable({ id: column.id });
+
   return (
-    <section className="flex min-h-[540px] w-[236px] flex-none flex-col rounded-2xl border border-slate-200 bg-white/75 p-3 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
+    <section
+      ref={setNodeRef}
+      className={`flex min-h-[540px] w-[236px] flex-none flex-col rounded-2xl border border-slate-200 bg-white/75 p-3 shadow-[0_12px_30px_rgba(15,23,42,0.04)] transition ${
+        isOver ? 'border-[#6d5df6] bg-violet-50/70 ring-4 ring-[#6d5df6]/10' : ''
+      }`}
+    >
       <div className="flex items-center gap-2">
         <span className={`h-2.5 w-2.5 rounded-full ${column.dot}`} />
         <h2 className="min-w-0 flex-1 text-sm font-bold text-slate-900">{column.title}</h2>
@@ -398,15 +425,59 @@ function ProjectStatusCard({ progress, openTasks }) {
   );
 }
 
+function getColumnTitle(columnId) {
+  return kanbanColumns.find((column) => column.id === columnId)?.title || 'Board';
+}
+
 export default function ProjectsPage() {
-  const [tasks] = useState(initialTasks);
+  const [tasks, setTasks] = useState(initialTasks);
+  const [activityItems, setActivityItems] = useState(initialActivities);
   const [searchValue, setSearchValue] = useState('');
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+  );
   const normalizedSearch = searchValue.trim().toLowerCase();
   const visibleTasks = normalizedSearch
     ? tasks.filter((task) => task.title.toLowerCase().includes(normalizedSearch))
     : tasks;
   const projectProgress = Math.round((projectSummary.completedTasks / projectSummary.totalTasks) * 100);
   const openTasks = projectSummary.totalTasks - projectSummary.completedTasks;
+
+  const handleDragEnd = ({ active, over }) => {
+    if (!over) return;
+
+    const targetStatus = over.id;
+    const targetColumn = kanbanColumns.some((column) => column.id === targetStatus);
+    if (!targetColumn) return;
+
+    const movedTask = tasks.find((task) => task.id === active.id);
+    if (!movedTask || movedTask.status === targetStatus) return;
+
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === active.id
+          ? {
+              ...task,
+              status: targetStatus,
+              completed: targetStatus === 'erledigt',
+            }
+          : task,
+      ),
+    );
+
+    setActivityItems((currentItems) => [
+      {
+        id: `activity-${Date.now()}`,
+        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
+        text: `Du hast die Aufgabe "${movedTask.title}" nach ${getColumnTitle(targetStatus)} verschoben.`,
+        time: 'gerade eben',
+        dot: targetStatus === 'erledigt' ? 'bg-green-500' : 'bg-violet-500',
+      },
+      ...currentItems,
+    ]);
+  };
 
   return (
     <AppShell
@@ -468,30 +539,32 @@ export default function ProjectsPage() {
               </div>
             </div>
 
-            <div className="mt-5 overflow-x-auto pb-2">
-              <div className="flex min-w-max gap-3">
-                {kanbanColumns.map((column) => (
-                  <KanbanColumn
-                    key={column.id}
-                    column={column}
-                    tasks={visibleTasks.filter((task) => task.status === column.id)}
-                  />
-                ))}
-              </div>
-              {normalizedSearch && !visibleTasks.length ? (
-                <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
-                  <p className="text-sm font-bold text-slate-700">Keine Aufgaben gefunden</p>
-                  <p className="mt-1 text-sm text-slate-500">Passe deine Suche an, um weitere Karten zu sehen.</p>
+            <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+              <div className="mt-5 overflow-x-auto pb-2">
+                <div className="flex min-w-max gap-3">
+                  {kanbanColumns.map((column) => (
+                    <KanbanColumn
+                      key={column.id}
+                      column={column}
+                      tasks={visibleTasks.filter((task) => task.status === column.id)}
+                    />
+                  ))}
                 </div>
-              ) : null}
-            </div>
+                {normalizedSearch && !visibleTasks.length ? (
+                  <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
+                    <p className="text-sm font-bold text-slate-700">Keine Aufgaben gefunden</p>
+                    <p className="mt-1 text-sm text-slate-500">Passe deine Suche an, um weitere Karten zu sehen.</p>
+                  </div>
+                ) : null}
+              </div>
+            </DndContext>
           </section>
         </section>
 
         <aside className="space-y-5">
           <InfoCard title="Aktivitaeten">
             <div className="mt-4 space-y-4">
-              {activities.map((activity) => (
+              {activityItems.map((activity) => (
                 <div key={activity.id} className="flex items-start gap-3">
                   <Avatar assignee={activity.user} />
                   <div className="min-w-0 flex-1">
