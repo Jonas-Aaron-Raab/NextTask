@@ -400,11 +400,21 @@ function ProjectStatusCard({ progress, openTasks }) {
 
 export default function ProjectsPage() {
   const [tasks] = useState(initialTasks);
+  const [searchValue, setSearchValue] = useState('');
+  const normalizedSearch = searchValue.trim().toLowerCase();
+  const visibleTasks = normalizedSearch
+    ? tasks.filter((task) => task.title.toLowerCase().includes(normalizedSearch))
+    : tasks;
   const projectProgress = Math.round((projectSummary.completedTasks / projectSummary.totalTasks) * 100);
   const openTasks = projectSummary.totalTasks - projectSummary.completedTasks;
 
   return (
-    <AppShell activeItem="Projekte" breadcrumb={['Workspace', 'Web-Relaunch', 'Projekte']}>
+    <AppShell
+      activeItem="Projekte"
+      breadcrumb={['Workspace', 'Web-Relaunch', 'Projekte']}
+      searchValue={searchValue}
+      onSearch={setSearchValue}
+    >
       <div className="grid gap-5 px-5 py-5 xl:grid-cols-[1fr_275px] xl:px-7">
         <section className="space-y-5">
           <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
@@ -464,10 +474,16 @@ export default function ProjectsPage() {
                   <KanbanColumn
                     key={column.id}
                     column={column}
-                    tasks={tasks.filter((task) => task.status === column.id)}
+                    tasks={visibleTasks.filter((task) => task.status === column.id)}
                   />
                 ))}
               </div>
+              {normalizedSearch && !visibleTasks.length ? (
+                <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
+                  <p className="text-sm font-bold text-slate-700">Keine Aufgaben gefunden</p>
+                  <p className="mt-1 text-sm text-slate-500">Passe deine Suche an, um weitere Karten zu sehen.</p>
+                </div>
+              ) : null}
             </div>
           </section>
         </section>
