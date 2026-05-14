@@ -375,19 +375,72 @@ function KanbanColumn({ column, tasks, onAddTask, onOpenTask }) {
   );
 }
 
-function InfoCard({ title, actionLabel = 'Alle anzeigen', children }) {
+function InfoCard({ title, actionLabel = 'Alle anzeigen', onAction, children }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(39,48,93,0.07)]">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-bold text-slate-900">{title}</h2>
         {actionLabel ? (
-          <button type="button" className="text-xs font-bold text-[#6047e8]">
+          <button type="button" onClick={onAction} className="text-xs font-bold text-[#6047e8]">
             {actionLabel}
           </button>
         ) : null}
       </div>
       {children}
     </section>
+  );
+}
+
+function ListModal({ title, items, type, onClose, onOpenTask }) {
+  if (!type) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-8 backdrop-blur-sm">
+      <section className="max-h-full w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <h2 className="text-lg font-extrabold text-slate-950">{title}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Liste schliessen"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="max-h-[70vh] space-y-3 overflow-y-auto p-5">
+          {items.map((item) =>
+            type === 'activities' ? (
+              <div key={item.id} className="flex items-start gap-3 rounded-2xl bg-slate-50 p-3">
+                <Avatar assignee={item.user} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium leading-5 text-slate-700">{item.text}</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-400">{item.time}</p>
+                </div>
+                <span className={`mt-1.5 h-2 w-2 flex-none rounded-full ${item.dot}`} />
+              </div>
+            ) : (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenTask(item);
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl bg-slate-50 p-3 text-left transition hover:bg-violet-50"
+              >
+                <Avatar assignee={item.assignee} />
+                <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">{item.title}</span>
+                <span className={item.overdue || item.dueDate === 'Heute' ? 'rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-500' : 'text-xs font-bold text-slate-400'}>
+                  {item.dueDate}
+                </span>
+              </button>
+            ),
+          )}
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -738,6 +791,7 @@ export default function ProjectsPage() {
   const [commentDraft, setCommentDraft] = useState('');
   const [openStatMenu, setOpenStatMenu] = useState(null);
   const [hiddenStats, setHiddenStats] = useState([]);
+  const [listModal, setListModal] = useState(null);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
@@ -754,6 +808,9 @@ export default function ProjectsPage() {
     .filter((task) => !task.completed)
     .sort((left, right) => getDueOrder(left.dueDate) - getDueOrder(right.dueDate))
     .slice(0, 3);
+  const allDeadlineTasks = tasks
+    .filter((task) => !task.completed)
+    .sort((left, right) => getDueOrder(left.dueDate) - getDueOrder(right.dueDate));
   const projectStats = statCards.map((stat) => {
     if (stat.title === 'Offene Aufgaben') {
       return { ...stat, value: tasks.filter((task) => !task.completed).length };
@@ -1114,7 +1171,7 @@ export default function ProjectsPage() {
         </section>
 
         <aside className="space-y-5">
-          <InfoCard title="Aktivitaeten">
+          <InfoCard title="Aktivitaeten" onAction={() => setListModal('activities')}>
             <div className="mt-4 space-y-4">
               {activityItems.map((activity) => (
                 <div key={activity.id} className="flex items-start gap-3">
@@ -1129,7 +1186,7 @@ export default function ProjectsPage() {
             </div>
           </InfoCard>
 
-          <InfoCard title="Naechste Deadlines">
+          <InfoCard title="Naechste Deadlines" onAction={() => setListModal('deadlines')}>
             <div className="mt-4 space-y-3">
               {deadlineTasks.map((task) => (
                 <button
@@ -1176,6 +1233,13 @@ export default function ProjectsPage() {
         onSave={handleTaskSave}
         onDelete={handleTaskDelete}
         onComplete={handleTaskComplete}
+      />
+      <ListModal
+        title={listModal === 'activities' ? 'Alle Aktivitaeten' : 'Alle Deadlines'}
+        type={listModal}
+        items={listModal === 'activities' ? activityItems : allDeadlineTasks}
+        onClose={() => setListModal(null)}
+        onOpenTask={openTaskDetail}
       />
     </AppShell>
   );
