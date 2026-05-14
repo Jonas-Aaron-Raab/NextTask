@@ -20,6 +20,7 @@ import {
   Plus,
   ShieldCheck,
   Trash2,
+  ListChecks,
   X,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
@@ -93,6 +94,17 @@ const initialTasks = [
     dueDateValue: '2026-05-14',
     assignee: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
     overdue: true,
+    checklists: [
+      {
+        id: 'checklist-hero',
+        title: 'Hero Umsetzung',
+        items: [
+          { id: 'item-hero-1', text: 'Headline finalisieren', completed: true },
+          { id: 'item-hero-2', text: 'CTA Button stylen', completed: true },
+          { id: 'item-hero-3', text: 'Mobile Layout prüfen', completed: false },
+        ],
+      },
+    ],
   },
   {
     id: 'task-2',
@@ -103,6 +115,16 @@ const initialTasks = [
     dueDateValue: '2026-05-14',
     assignee: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
     overdue: true,
+    checklists: [
+      {
+        id: 'checklist-nav',
+        title: 'Responsive Navigation',
+        items: [
+          { id: 'item-nav-1', text: 'Mobile Breakpoints prüfen', completed: true },
+          { id: 'item-nav-2', text: 'Dropdown Verhalten testen', completed: false },
+        ],
+      },
+    ],
   },
   {
     id: 'task-3',
@@ -301,6 +323,18 @@ function getTaskDueDateLabel(task) {
   return task.dueDate;
 }
 
+function getChecklistProgress(task) {
+  const items = (task.checklists || []).flatMap((checklist) => checklist.items || []);
+  if (!items.length) return null;
+
+  const completedItems = items.filter((item) => item.completed).length;
+  return {
+    completedItems,
+    totalItems: items.length,
+    percentage: Math.round((completedItems / items.length) * 100),
+  };
+}
+
 function getDueOrder(dueDate) {
   if (!dueDate) return 999;
   const normalizedDate = dueDate.toLowerCase();
@@ -346,6 +380,7 @@ function TaskCard({ task, onOpen }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
   });
+  const checklistProgress = getChecklistProgress(task);
 
   return (
     <button
@@ -373,6 +408,23 @@ function TaskCard({ task, onOpen }) {
       <div className="mt-3 flex items-center justify-end">
         <Avatar assignee={task.assignee} />
       </div>
+      {checklistProgress ? (
+        <div className="mt-3 rounded-xl bg-slate-50 p-2">
+          <div className="flex items-center justify-between gap-3 text-xs font-bold text-slate-500">
+            <span className="inline-flex items-center gap-1.5">
+              <ListChecks className="h-3.5 w-3.5" />
+              Checkliste
+            </span>
+            <span>{checklistProgress.percentage}%</span>
+          </div>
+          <div className="mt-2 h-2 rounded-full bg-slate-200">
+            <div className="h-full rounded-full bg-[#6d5df6]" style={{ width: `${checklistProgress.percentage}%` }} />
+          </div>
+          <p className="mt-1 text-[11px] font-semibold text-slate-400">
+            {checklistProgress.completedItems}/{checklistProgress.totalItems} erledigt
+          </p>
+        </div>
+      ) : null}
     </button>
   );
 }
@@ -712,6 +764,10 @@ function TaskDetailDrawer({
   onChange,
   onCommentChange,
   onCommentSubmit,
+  onChecklistCreate,
+  onChecklistRename,
+  onChecklistItemCreate,
+  onChecklistItemToggle,
   onClose,
   onSave,
   onDelete,
@@ -815,6 +871,84 @@ function TaskDetailDrawer({
               </select>
             </label>
           </div>
+
+          <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-bold text-slate-900">Checklisten</h3>
+              <button
+                type="button"
+                onClick={onChecklistCreate}
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white px-2.5 text-xs font-bold text-[#6d5df6] shadow-[0_8px_20px_rgba(15,23,42,0.05)] transition hover:bg-violet-50"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Checkliste
+              </button>
+            </div>
+
+            <div className="mt-3 space-y-4">
+              {task.checklists?.length ? (
+                task.checklists.map((checklist) => {
+                  const totalItems = checklist.items?.length || 0;
+                  const completedItems = checklist.items?.filter((item) => item.completed).length || 0;
+                  const percentage = totalItems ? Math.round((completedItems / totalItems) * 100) : 0;
+
+                  return (
+                    <div key={checklist.id} className="rounded-2xl bg-white p-3 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
+                      <input
+                        value={checklist.title}
+                        onChange={(event) => onChecklistRename(checklist.id, event.target.value)}
+                        className="h-9 w-full rounded-lg border border-transparent px-2 text-sm font-bold text-slate-900 outline-none transition hover:border-slate-200 focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                        aria-label="Checklistenname"
+                      />
+                      <div className="mt-2 flex items-center gap-3">
+                        <div className="h-2 flex-1 rounded-full bg-slate-200">
+                          <div className="h-full rounded-full bg-[#6d5df6]" style={{ width: `${percentage}%` }} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-500">{percentage}%</span>
+                      </div>
+
+                      <div className="mt-3 space-y-2">
+                        {checklist.items?.map((item) => (
+                          <label key={item.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                            <input
+                              type="checkbox"
+                              checked={item.completed}
+                              onChange={() => onChecklistItemToggle(checklist.id, item.id)}
+                              className="h-4 w-4 rounded border-slate-300 accent-[#6d5df6]"
+                            />
+                            <span className={item.completed ? 'text-slate-400 line-through' : ''}>{item.text}</span>
+                          </label>
+                        ))}
+                      </div>
+
+                      <form
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          const formData = new FormData(event.currentTarget);
+                          const text = String(formData.get('item') || '').trim();
+                          if (!text) return;
+                          onChecklistItemCreate(checklist.id, text);
+                          event.currentTarget.reset();
+                        }}
+                        className="mt-3 flex gap-2"
+                      >
+                        <input
+                          name="item"
+                          placeholder="Punkt hinzufügen"
+                          className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                        />
+                        <button type="submit" className="h-9 rounded-lg bg-slate-900 px-3 text-xs font-bold text-white transition hover:bg-slate-800">
+                          Hinzufügen
+                        </button>
+                      </form>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-sm font-medium text-slate-500">Noch keine Checkliste vorhanden.</p>
+              )}
+            </div>
+          </section>
 
           <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <h3 className="text-sm font-bold text-slate-900">Kommentare</h3>
@@ -1201,6 +1335,103 @@ export default function ProjectsPage() {
     setCommentDraft('');
   };
 
+  const handleChecklistCreate = () => {
+    if (!selectedTaskId) return;
+
+    const selectedTask = tasks.find((task) => task.id === selectedTaskId);
+    if (!selectedTask) return;
+
+    const checklist = {
+      id: `checklist-${Date.now()}`,
+      title: `Checkliste ${(selectedTask.checklists?.length || 0) + 1}`,
+      items: [],
+    };
+
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === selectedTaskId
+          ? {
+              ...task,
+              checklists: [...(task.checklists || []), checklist],
+            }
+          : task,
+      ),
+    );
+    setActivityItems((currentItems) => [
+      {
+        id: `activity-${Date.now()}`,
+        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
+        text: `Du hast eine Checkliste zur Aufgabe "${selectedTask.title}" hinzugefügt.`,
+        time: 'gerade eben',
+        dot: 'bg-violet-500',
+      },
+      ...currentItems,
+    ]);
+  };
+
+  const handleChecklistRename = (checklistId, title) => {
+    if (!selectedTaskId) return;
+
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === selectedTaskId
+          ? {
+              ...task,
+              checklists: (task.checklists || []).map((checklist) =>
+                checklist.id === checklistId ? { ...checklist, title } : checklist,
+              ),
+            }
+          : task,
+      ),
+    );
+  };
+
+  const handleChecklistItemCreate = (checklistId, text) => {
+    if (!selectedTaskId) return;
+
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === selectedTaskId
+          ? {
+              ...task,
+              checklists: (task.checklists || []).map((checklist) =>
+                checklist.id === checklistId
+                  ? {
+                      ...checklist,
+                      items: [...(checklist.items || []), { id: `item-${Date.now()}`, text, completed: false }],
+                    }
+                  : checklist,
+              ),
+            }
+          : task,
+      ),
+    );
+  };
+
+  const handleChecklistItemToggle = (checklistId, itemId) => {
+    if (!selectedTaskId) return;
+
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === selectedTaskId
+          ? {
+              ...task,
+              checklists: (task.checklists || []).map((checklist) =>
+                checklist.id === checklistId
+                  ? {
+                      ...checklist,
+                      items: (checklist.items || []).map((item) =>
+                        item.id === itemId ? { ...item, completed: !item.completed } : item,
+                      ),
+                    }
+                  : checklist,
+              ),
+            }
+          : task,
+      ),
+    );
+  };
+
   const handleStatAction = (statTitle, action) => {
     setOpenStatMenu(null);
 
@@ -1400,6 +1631,10 @@ export default function ProjectsPage() {
         onChange={handleDetailFormChange}
         onCommentChange={setCommentDraft}
         onCommentSubmit={handleCommentCreate}
+        onChecklistCreate={handleChecklistCreate}
+        onChecklistRename={handleChecklistRename}
+        onChecklistItemCreate={handleChecklistItemCreate}
+        onChecklistItemToggle={handleChecklistItemToggle}
         onClose={() => setSelectedTaskId(null)}
         onSave={handleTaskSave}
         onDelete={handleTaskDelete}
