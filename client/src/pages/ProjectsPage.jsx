@@ -207,6 +207,64 @@ const priorityStyles = {
   niedrig: 'border-emerald-100 bg-emerald-50 text-emerald-600',
 };
 
+const activities = [
+  {
+    id: 'activity-1',
+    user: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
+    text: 'Markus Klein hat die Aufgabe "Checkout Flow testen" in QA verschoben.',
+    time: 'vor 2 Stunden',
+    dot: 'bg-blue-500',
+  },
+  {
+    id: 'activity-2',
+    user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
+    text: 'Du hast die Aufgabe "SEO Meta-Tags aktualisieren" zugewiesen.',
+    time: 'vor 3 Stunden',
+    dot: 'bg-violet-500',
+  },
+  {
+    id: 'activity-3',
+    user: { initials: 'AB', gradient: 'from-pink-200 to-violet-200' },
+    text: 'Anna Becker hat die Aufgabe "Design System aktualisiert" abgeschlossen.',
+    time: 'vor 5 Stunden',
+    dot: 'bg-green-500',
+  },
+  {
+    id: 'activity-4',
+    user: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
+    text: 'Lisa Wagner hat einen Kommentar zur Aufgabe "Navigation verbessern (Responsive)" hinzugefuegt.',
+    time: 'vor 1 Tag',
+    dot: 'bg-violet-500',
+  },
+];
+
+const deadlineTasks = [
+  {
+    id: 'deadline-1',
+    title: 'Checkout Flow testen',
+    dueDate: 'Heute',
+    assignee: { initials: 'AB', gradient: 'from-pink-200 to-violet-200' },
+    urgent: true,
+  },
+  {
+    id: 'deadline-2',
+    title: 'Leistungsoptimierung Bilder',
+    dueDate: '23. Mai',
+    assignee: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
+  },
+  {
+    id: 'deadline-3',
+    title: 'Case Study Seite erstellen',
+    dueDate: '24. Mai',
+    assignee: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
+  },
+];
+
+const projectSummary = {
+  completedTasks: 47,
+  totalTasks: 65,
+};
+
 function PriorityBadge({ priority }) {
   const label = priority.charAt(0).toUpperCase() + priority.slice(1);
 
@@ -282,8 +340,68 @@ function KanbanColumn({ column, tasks }) {
   );
 }
 
+function InfoCard({ title, actionLabel = 'Alle anzeigen', children }) {
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(39,48,93,0.07)]">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-bold text-slate-900">{title}</h2>
+        {actionLabel ? (
+          <button type="button" className="text-xs font-bold text-[#6047e8]">
+            {actionLabel}
+          </button>
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function ProjectStatusCard({ progress, openTasks }) {
+  const radius = 37;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  return (
+    <InfoCard title="Projektstatus" actionLabel="">
+      <div className="mt-5 flex items-center gap-4">
+        <div className="relative h-[96px] w-[96px] flex-none">
+          <svg className="h-full w-full -rotate-90" viewBox="0 0 96 96" aria-hidden="true">
+            <circle cx="48" cy="48" r={radius} fill="none" stroke="#ede9fe" strokeWidth="10" />
+            <circle
+              cx="48"
+              cy="48"
+              r={radius}
+              fill="none"
+              stroke="#6d5df6"
+              strokeLinecap="round"
+              strokeWidth="10"
+              strokeDasharray={circumference}
+              strokeDashoffset={strokeDashoffset}
+            />
+          </svg>
+          <span className="absolute inset-0 flex items-center justify-center text-xl font-extrabold text-slate-950">
+            {progress}%
+          </span>
+        </div>
+
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-slate-900">Projektfortschritt</p>
+          <p className="mt-1 text-sm font-semibold text-slate-500">{progress}% abgeschlossen</p>
+        </div>
+      </div>
+
+      <div className="mt-5 h-2.5 rounded-full bg-violet-100">
+        <div className="h-full rounded-full bg-[#6d5df6]" style={{ width: `${progress}%` }} />
+      </div>
+      <p className="mt-3 text-sm font-semibold text-slate-500">Noch {openTasks} Aufgaben offen</p>
+    </InfoCard>
+  );
+}
+
 export default function ProjectsPage() {
   const [tasks] = useState(initialTasks);
+  const projectProgress = Math.round((projectSummary.completedTasks / projectSummary.totalTasks) * 100);
+  const openTasks = projectSummary.totalTasks - projectSummary.completedTasks;
 
   return (
     <AppShell activeItem="Projekte" breadcrumb={['Workspace', 'Web-Relaunch', 'Projekte']}>
@@ -355,37 +473,46 @@ export default function ProjectsPage() {
         </section>
 
         <aside className="space-y-5">
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(39,48,93,0.07)]">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-slate-900">Aktivitaeten</h2>
-              <button type="button" className="text-xs font-bold text-[#6047e8]">
-                Alle anzeigen
-              </button>
+          <InfoCard title="Aktivitaeten">
+            <div className="mt-4 space-y-4">
+              {activities.map((activity) => (
+                <div key={activity.id} className="flex items-start gap-3">
+                  <Avatar assignee={activity.user} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium leading-5 text-slate-700">{activity.text}</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-400">{activity.time}</p>
+                  </div>
+                  <span className={`mt-1.5 h-2 w-2 flex-none rounded-full ${activity.dot}`} />
+                </div>
+              ))}
             </div>
-            <div className="mt-4 space-y-4 text-sm">
-              <p className="rounded-xl bg-slate-50 p-3 text-slate-600">Max Mustermann hat ein Projekt aktualisiert.</p>
-              <p className="rounded-xl bg-slate-50 p-3 text-slate-600">Lisa Mueller hat einen Kommentar hinzugefuegt.</p>
-              <p className="rounded-xl bg-slate-50 p-3 text-slate-600">QA Review wurde vorbereitet.</p>
-            </div>
-          </section>
+          </InfoCard>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(39,48,93,0.07)]">
-            <h2 className="text-sm font-bold text-slate-900">Naechste Deadlines</h2>
-            <div className="mt-4 space-y-3 text-sm font-medium text-slate-600">
-              <div className="flex items-center justify-between">
-                <span>API Fehlerbehandlung</span>
-                <span className="text-rose-500">Heute</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Produkt-Tour</span>
-                <span>22. Mai</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Performance Audit</span>
-                <span>23. Mai</span>
-              </div>
+          <InfoCard title="Naechste Deadlines">
+            <div className="mt-4 space-y-3">
+              {deadlineTasks.map((task) => (
+                <button
+                  key={task.id}
+                  type="button"
+                  className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-slate-50"
+                >
+                  <Avatar assignee={task.assignee} />
+                  <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">{task.title}</span>
+                  <span
+                    className={
+                      task.urgent
+                        ? 'rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-500'
+                        : 'text-xs font-bold text-slate-400'
+                    }
+                  >
+                    {task.dueDate}
+                  </span>
+                </button>
+              ))}
             </div>
-          </section>
+          </InfoCard>
+
+          <ProjectStatusCard progress={projectProgress} openTasks={openTasks} />
         </aside>
       </div>
     </AppShell>
