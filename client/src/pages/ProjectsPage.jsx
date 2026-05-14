@@ -55,7 +55,7 @@ const statCards = [
   },
 ];
 
-const kanbanColumns = [
+const initialKanbanColumns = [
   {
     id: 'heute',
     title: 'Heute',
@@ -316,6 +316,11 @@ function getDueOrder(dueDate) {
   return 800 + day;
 }
 
+function getNextColumnTone(index) {
+  const tones = ['bg-amber-400', 'bg-emerald-500', 'bg-blue-500', 'bg-violet-500', 'bg-green-500', 'bg-rose-500', 'bg-cyan-500'];
+  return tones[index % tones.length];
+}
+
 function PriorityBadge({ priority }) {
   const label = priority.charAt(0).toUpperCase() + priority.slice(1);
 
@@ -372,8 +377,20 @@ function TaskCard({ task, onOpen }) {
   );
 }
 
-function KanbanColumn({ column, tasks, onAddTask, onOpenTask }) {
+function KanbanColumn({ column, tasks, onAddTask, onOpenTask, onRenameColumn }) {
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(column.title);
+
+  const saveTitle = () => {
+    const nextTitle = draftTitle.trim();
+    if (nextTitle && nextTitle !== column.title) {
+      onRenameColumn(column.id, nextTitle);
+    } else {
+      setDraftTitle(column.title);
+    }
+    setIsEditing(false);
+  };
 
   return (
     <section
@@ -384,7 +401,32 @@ function KanbanColumn({ column, tasks, onAddTask, onOpenTask }) {
     >
       <div className="flex items-center gap-2">
         <span className={`h-2.5 w-2.5 rounded-full ${column.dot}`} />
-        <h2 className="min-w-0 flex-1 text-sm font-bold text-slate-900">{column.title}</h2>
+        {isEditing ? (
+          <input
+            value={draftTitle}
+            onChange={(event) => setDraftTitle(event.target.value)}
+            onBlur={saveTitle}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') saveTitle();
+              if (event.key === 'Escape') {
+                setDraftTitle(column.title);
+                setIsEditing(false);
+              }
+            }}
+            autoFocus
+            className="h-7 min-w-0 flex-1 rounded-lg border border-violet-200 bg-white px-2 text-sm font-bold text-slate-900 outline-none ring-4 ring-violet-100"
+          />
+        ) : (
+          <button
+            type="button"
+            onDoubleClick={() => setIsEditing(true)}
+            onClick={() => setIsEditing(true)}
+            className="min-w-0 flex-1 truncate rounded-lg px-1 py-1 text-left text-sm font-bold text-slate-900 transition hover:bg-slate-50"
+            title="Kategorie umbenennen"
+          >
+            {column.title}
+          </button>
+        )}
         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">{tasks.length}</span>
         <button
           type="button"
@@ -410,6 +452,23 @@ function KanbanColumn({ column, tasks, onAddTask, onOpenTask }) {
         <Plus className="h-4 w-4" />
         Aufgabe hinzufügen
       </button>
+    </section>
+  );
+}
+
+function AddColumnCard({ onAddColumn }) {
+  return (
+    <section className="flex min-h-[540px] w-[236px] flex-none flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/50 p-4 text-center shadow-[0_12px_30px_rgba(15,23,42,0.03)]">
+      <button
+        type="button"
+        onClick={onAddColumn}
+        className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#6d5df6] text-white shadow-[0_14px_28px_rgba(109,93,246,0.25)] transition hover:bg-[#5b4df0]"
+        aria-label="Kategorie hinzufügen"
+      >
+        <Plus className="h-5 w-5" />
+      </button>
+      <p className="mt-3 text-sm font-bold text-slate-800">Kategorie hinzufügen</p>
+      <p className="mt-1 text-xs font-semibold text-slate-400">Neue Spalte für dein Board</p>
     </section>
   );
 }
@@ -525,7 +584,7 @@ function ProjectStatusCard({ progress, openTasks }) {
   );
 }
 
-function TaskCreateModal({ form, onChange, onClose, onSubmit }) {
+function TaskCreateModal({ form, columns, onChange, onClose, onSubmit }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-8 backdrop-blur-sm">
       <form
@@ -577,7 +636,7 @@ function TaskCreateModal({ form, onChange, onClose, onSubmit }) {
                 onChange={(event) => onChange('status', event.target.value)}
                 className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
               >
-                {kanbanColumns.map((column) => (
+                {columns.map((column) => (
                   <option key={column.id} value={column.id}>
                     {column.title}
                   </option>
@@ -648,6 +707,7 @@ function TaskCreateModal({ form, onChange, onClose, onSubmit }) {
 function TaskDetailDrawer({
   task,
   form,
+  columns,
   commentDraft,
   onChange,
   onCommentChange,
@@ -706,7 +766,7 @@ function TaskDetailDrawer({
                 onChange={(event) => onChange('status', event.target.value)}
                 className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
               >
-                {kanbanColumns.map((column) => (
+                {columns.map((column) => (
                   <option key={column.id} value={column.id}>
                     {column.title}
                   </option>
@@ -823,12 +883,13 @@ function TaskDetailDrawer({
   );
 }
 
-function getColumnTitle(columnId) {
-  return kanbanColumns.find((column) => column.id === columnId)?.title || 'Board';
+function getColumnTitle(columns, columnId) {
+  return columns.find((column) => column.id === columnId)?.title || 'Board';
 }
 
 export default function ProjectsPage() {
   const [tasks, setTasks] = useState(initialTasks);
+  const [columns, setColumns] = useState(initialKanbanColumns);
   const [activityItems, setActivityItems] = useState(initialActivities);
   const [searchValue, setSearchValue] = useState('');
   const [taskFormOpen, setTaskFormOpen] = useState(false);
@@ -878,7 +939,7 @@ export default function ProjectsPage() {
     if (!over) return;
 
     const targetStatus = over.id;
-    const targetColumn = kanbanColumns.some((column) => column.id === targetStatus);
+    const targetColumn = columns.some((column) => column.id === targetStatus);
     if (!targetColumn) return;
 
     const movedTask = tasks.find((task) => task.id === active.id);
@@ -900,7 +961,7 @@ export default function ProjectsPage() {
       {
         id: `activity-${Date.now()}`,
         user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text: `Du hast die Aufgabe "${movedTask.title}" nach ${getColumnTitle(targetStatus)} verschoben.`,
+        text: `Du hast die Aufgabe "${movedTask.title}" nach ${getColumnTitle(columns, targetStatus)} verschoben.`,
         time: 'gerade eben',
         dot: targetStatus === 'erledigt' ? 'bg-green-500' : 'bg-violet-500',
       },
@@ -911,6 +972,44 @@ export default function ProjectsPage() {
   const openTaskCreateForm = (status = 'heute') => {
     setTaskForm({ ...emptyTaskForm, status });
     setTaskFormOpen(true);
+  };
+
+  const handleColumnRename = (columnId, title) => {
+    const previousTitle = getColumnTitle(columns, columnId);
+    setColumns((currentColumns) =>
+      currentColumns.map((column) => (column.id === columnId ? { ...column, title } : column)),
+    );
+    setActivityItems((currentItems) => [
+      {
+        id: `activity-${Date.now()}`,
+        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
+        text: `Du hast die Kategorie "${previousTitle}" in "${title}" umbenannt.`,
+        time: 'gerade eben',
+        dot: 'bg-violet-500',
+      },
+      ...currentItems,
+    ]);
+  };
+
+  const handleColumnCreate = () => {
+    const title = `Neue Kategorie ${columns.length + 1}`;
+    const newColumn = {
+      id: `kategorie-${Date.now()}`,
+      title,
+      dot: getNextColumnTone(columns.length),
+    };
+
+    setColumns((currentColumns) => [...currentColumns, newColumn]);
+    setActivityItems((currentItems) => [
+      {
+        id: `activity-${Date.now()}`,
+        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
+        text: `Du hast die Kategorie "${title}" erstellt.`,
+        time: 'gerade eben',
+        dot: 'bg-green-500',
+      },
+      ...currentItems,
+    ]);
   };
 
   const handleCreateAction = (action) => {
@@ -1217,15 +1316,17 @@ export default function ProjectsPage() {
             <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
               <div className="mt-5 overflow-x-auto pb-2">
                 <div className="flex min-w-max gap-3">
-                  {kanbanColumns.map((column) => (
+                  {columns.map((column) => (
                     <KanbanColumn
                       key={column.id}
                       column={column}
                       tasks={visibleTasks.filter((task) => task.status === column.id)}
                       onAddTask={openTaskCreateForm}
                       onOpenTask={openTaskDetail}
+                      onRenameColumn={handleColumnRename}
                     />
                   ))}
+                  <AddColumnCard onAddColumn={handleColumnCreate} />
                 </div>
                 {normalizedSearch && !visibleTasks.length ? (
                   <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
@@ -1285,6 +1386,7 @@ export default function ProjectsPage() {
       {taskFormOpen ? (
         <TaskCreateModal
           form={taskForm}
+          columns={columns}
           onChange={handleTaskFormChange}
           onClose={() => setTaskFormOpen(false)}
           onSubmit={handleTaskCreate}
@@ -1293,6 +1395,7 @@ export default function ProjectsPage() {
       <TaskDetailDrawer
         task={selectedTask}
         form={detailForm}
+        columns={columns}
         commentDraft={commentDraft}
         onChange={handleDetailFormChange}
         onCommentChange={setCommentDraft}
