@@ -90,6 +90,7 @@ const initialTasks = [
     status: 'heute',
     priority: 'hoch',
     dueDate: 'Heute',
+    dueDateValue: '2026-05-14',
     assignee: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
     overdue: true,
   },
@@ -99,6 +100,7 @@ const initialTasks = [
     status: 'heute',
     priority: 'mittel',
     dueDate: 'Heute',
+    dueDateValue: '2026-05-14',
     assignee: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
     overdue: true,
   },
@@ -108,6 +110,7 @@ const initialTasks = [
     status: 'heute',
     priority: 'niedrig',
     dueDate: 'Heute',
+    dueDateValue: '2026-05-14',
     assignee: { initials: 'TB', gradient: 'from-slate-200 to-blue-200' },
   },
   {
@@ -116,6 +119,7 @@ const initialTasks = [
     status: 'diese-woche',
     priority: 'mittel',
     dueDate: '23. Mai',
+    dueDateValue: '2026-05-23',
     assignee: { initials: 'AB', gradient: 'from-pink-200 to-violet-200' },
   },
   {
@@ -124,6 +128,7 @@ const initialTasks = [
     status: 'diese-woche',
     priority: 'hoch',
     dueDate: '24. Mai',
+    dueDateValue: '2026-05-24',
     assignee: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
   },
   {
@@ -132,6 +137,7 @@ const initialTasks = [
     status: 'diese-woche',
     priority: 'niedrig',
     dueDate: '24. Mai',
+    dueDateValue: '2026-05-24',
     assignee: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
   },
   {
@@ -140,6 +146,7 @@ const initialTasks = [
     status: 'diese-woche',
     priority: 'mittel',
     dueDate: '25. Mai',
+    dueDateValue: '2026-05-25',
     assignee: { initials: 'TB', gradient: 'from-slate-200 to-blue-200' },
   },
   {
@@ -148,6 +155,7 @@ const initialTasks = [
     status: 'qa',
     priority: 'hoch',
     dueDate: '22. Mai',
+    dueDateValue: '2026-05-22',
     assignee: { initials: 'AB', gradient: 'from-pink-200 to-violet-200' },
     overdue: true,
   },
@@ -157,6 +165,7 @@ const initialTasks = [
     status: 'qa',
     priority: 'mittel',
     dueDate: '23. Mai',
+    dueDateValue: '2026-05-23',
     assignee: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
   },
   {
@@ -165,6 +174,7 @@ const initialTasks = [
     status: 'spaeter',
     priority: 'niedrig',
     dueDate: '31. Mai',
+    dueDateValue: '2026-05-31',
     assignee: { initials: 'TB', gradient: 'from-slate-200 to-blue-200' },
   },
   {
@@ -173,6 +183,7 @@ const initialTasks = [
     status: 'spaeter',
     priority: 'mittel',
     dueDate: '02. Juni',
+    dueDateValue: '2026-06-02',
     assignee: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
   },
   {
@@ -181,6 +192,7 @@ const initialTasks = [
     status: 'spaeter',
     priority: 'niedrig',
     dueDate: '07. Juni',
+    dueDateValue: '2026-06-07',
     assignee: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
   },
   {
@@ -189,6 +201,7 @@ const initialTasks = [
     status: 'erledigt',
     priority: 'niedrig',
     dueDate: '15. Mai',
+    dueDateValue: '2026-05-15',
     assignee: { initials: 'AB', gradient: 'from-pink-200 to-violet-200' },
     completed: true,
   },
@@ -198,6 +211,7 @@ const initialTasks = [
     status: 'erledigt',
     priority: 'mittel',
     dueDate: '16. Mai',
+    dueDateValue: '2026-05-16',
     assignee: { initials: 'TB', gradient: 'from-slate-200 to-blue-200' },
     completed: true,
   },
@@ -207,6 +221,7 @@ const initialTasks = [
     status: 'erledigt',
     priority: 'hoch',
     dueDate: '17. Mai',
+    dueDateValue: '2026-05-17',
     assignee: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
     completed: true,
   },
@@ -274,13 +289,25 @@ function formatDateInputLabel(value) {
   return new Intl.DateTimeFormat('de-DE', {
     day: '2-digit',
     month: 'long',
+    year: 'numeric',
   }).format(new Date(year, month - 1, day));
+}
+
+function getTaskDueDateLabel(task) {
+  if (task.dueDateValue) {
+    return formatDateInputLabel(task.dueDateValue);
+  }
+
+  return task.dueDate;
 }
 
 function getDueOrder(dueDate) {
   if (!dueDate) return 999;
   const normalizedDate = dueDate.toLowerCase();
   if (normalizedDate.includes('heute')) return 0;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedDate)) {
+    return new Date(`${normalizedDate}T00:00:00`).getTime();
+  }
 
   const day = Number.parseInt(normalizedDate, 10);
   if (Number.isNaN(day)) return 900;
@@ -335,7 +362,7 @@ function TaskCard({ task, onOpen }) {
         <PriorityBadge priority={task.priority} />
         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500">
           <CalendarDays className="h-3.5 w-3.5" />
-          {task.dueDate}
+          {getTaskDueDateLabel(task)}
         </span>
       </div>
       <div className="mt-3 flex items-center justify-end">
@@ -445,7 +472,7 @@ function ListModal({ title, items, type, onClose, onOpenTask }) {
                 <Avatar assignee={item.assignee} />
                 <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">{item.title}</span>
                 <span className={item.overdue || item.dueDate === 'Heute' ? 'rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-500' : 'text-xs font-bold text-slate-400'}>
-                  {item.dueDate}
+                  {getTaskDueDateLabel(item)}
                 </span>
               </button>
             ),
@@ -702,11 +729,15 @@ function TaskDetailDrawer({
 
             <label className="block text-sm font-bold text-slate-700">
               Fälligkeitsdatum
-              <input
-                value={form.dueDate}
-                onChange={(event) => onChange('dueDate', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-              />
+              <span className="relative mt-2 block">
+                <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="date"
+                  value={form.dueDate}
+                  onChange={(event) => onChange('dueDate', event.target.value)}
+                  className="h-11 w-full rounded-xl border border-slate-200 px-3 pl-10 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                />
+              </span>
             </label>
 
             <label className="block text-sm font-bold text-slate-700">
@@ -822,11 +853,11 @@ export default function ProjectsPage() {
   const projectProgress = tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0;
   const deadlineTasks = tasks
     .filter((task) => !task.completed)
-    .sort((left, right) => getDueOrder(left.dueDate) - getDueOrder(right.dueDate))
+    .sort((left, right) => getDueOrder(left.dueDateValue || left.dueDate) - getDueOrder(right.dueDateValue || right.dueDate))
     .slice(0, 3);
   const allDeadlineTasks = tasks
     .filter((task) => !task.completed)
-    .sort((left, right) => getDueOrder(left.dueDate) - getDueOrder(right.dueDate));
+    .sort((left, right) => getDueOrder(left.dueDateValue || left.dueDate) - getDueOrder(right.dueDateValue || right.dueDate));
   const projectStats = statCards.map((stat) => {
     if (stat.title === 'Offene Aufgaben') {
       return { ...stat, value: tasks.filter((task) => !task.completed).length };
@@ -915,6 +946,7 @@ export default function ProjectsPage() {
       status: taskForm.status,
       priority: taskForm.priority,
       dueDate: formatDateInputLabel(taskForm.dueDate.trim()),
+      dueDateValue: taskForm.dueDate.trim(),
       assignee,
       completed: taskForm.status === 'erledigt',
     };
@@ -941,7 +973,7 @@ export default function ProjectsPage() {
       title: task.title,
       status: task.status,
       priority: task.priority,
-      dueDate: task.dueDate,
+      dueDate: task.dueDateValue || '',
       assigneeId: assignee.id,
       description: task.description || '',
     });
@@ -967,7 +999,8 @@ export default function ProjectsPage() {
               description: detailForm.description.trim(),
               status: detailForm.status,
               priority: detailForm.priority,
-              dueDate: detailForm.dueDate.trim() || 'Heute',
+              dueDate: formatDateInputLabel(detailForm.dueDate.trim()),
+              dueDateValue: detailForm.dueDate.trim(),
               assignee,
               completed: detailForm.status === 'erledigt',
             }
@@ -1239,7 +1272,7 @@ export default function ProjectsPage() {
                         : 'text-xs font-bold text-slate-400'
                     }
                   >
-                    {task.dueDate}
+                    {getTaskDueDateLabel(task)}
                   </span>
                 </button>
               ))}
