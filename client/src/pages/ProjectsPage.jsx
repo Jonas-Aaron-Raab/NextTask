@@ -1,9 +1,39 @@
+import { ArrowUpRight, CalendarCheck, CheckCircle2, Clock, MoreHorizontal, ShieldCheck } from 'lucide-react';
 import AppShell from '../components/AppShell';
 
 const projectStats = [
-  { label: 'Aktive Projekte', value: '12', detail: '4 mit hoher Prioritaet' },
-  { label: 'Offene Aufgaben', value: '48', detail: '8 faellig diese Woche' },
-  { label: 'Team-Auslastung', value: '81%', detail: '+6% vs. letzte Woche' },
+  {
+    title: 'Offene Aufgaben',
+    value: '24',
+    trend: '4 seit gestern',
+    icon: CalendarCheck,
+    iconTone: 'bg-violet-100 text-[#6d5df6]',
+    trendTone: 'text-slate-500',
+  },
+  {
+    title: 'In QA',
+    value: '7',
+    trend: '1 seit gestern',
+    icon: ShieldCheck,
+    iconTone: 'bg-blue-100 text-blue-600',
+    trendTone: 'text-slate-500',
+  },
+  {
+    title: 'Ueberfaellig',
+    value: '3',
+    trend: '2 seit gestern',
+    icon: Clock,
+    iconTone: 'bg-red-100 text-red-500',
+    trendTone: 'text-red-500',
+  },
+  {
+    title: 'Erledigt diese Woche',
+    value: '18',
+    trend: '6 seit letzter Woche',
+    icon: CheckCircle2,
+    iconTone: 'bg-green-100 text-green-600',
+    trendTone: 'text-green-600',
+  },
 ];
 
 const projectCards = [
@@ -42,12 +72,34 @@ export default function ProjectsPage() {
     <AppShell activeItem="Projekte" breadcrumb={['Workspace', 'Web-Relaunch', 'Projekte']}>
       <div className="grid gap-5 px-5 py-5 xl:grid-cols-[1fr_275px] xl:px-7">
         <section className="space-y-5">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
             {projectStats.map((stat) => (
-              <article key={stat.label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_28px_rgba(39,48,93,0.06)]">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6047e8]">{stat.label}</p>
-                <p className="mt-3 text-3xl font-bold text-slate-900">{stat.value}</p>
-                <p className="mt-1 text-sm font-medium text-slate-500">{stat.detail}</p>
+              <article
+                key={stat.title}
+                className="min-h-[104px] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_34px_rgba(15,23,42,0.06)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className={`inline-flex h-11 w-11 items-center justify-center rounded-full ${stat.iconTone}`}>
+                    <stat.icon className="h-5 w-5" />
+                  </span>
+                  <button
+                    type="button"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
+                    aria-label={`${stat.title} Optionen`}
+                  >
+                    <MoreHorizontal className="h-5 w-5" />
+                  </button>
+                </div>
+                <div className="mt-3 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-500">{stat.title}</p>
+                    <p className="mt-1 text-[28px] font-bold leading-none text-slate-950">{stat.value}</p>
+                  </div>
+                  <p className={`flex items-center gap-1 pb-1 text-xs font-bold ${stat.trendTone}`}>
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                    {stat.trend}
+                  </p>
+                </div>
               </article>
             ))}
           </div>
