@@ -249,33 +249,6 @@ const initialActivities = [
   },
 ];
 
-const deadlineTasks = [
-  {
-    id: 'deadline-1',
-    title: 'Checkout Flow testen',
-    dueDate: 'Heute',
-    assignee: { initials: 'AB', gradient: 'from-pink-200 to-violet-200' },
-    urgent: true,
-  },
-  {
-    id: 'deadline-2',
-    title: 'Leistungsoptimierung Bilder',
-    dueDate: '23. Mai',
-    assignee: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
-  },
-  {
-    id: 'deadline-3',
-    title: 'Case Study Seite erstellen',
-    dueDate: '24. Mai',
-    assignee: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
-  },
-];
-
-const projectSummary = {
-  completedTasks: 47,
-  totalTasks: 65,
-};
-
 const teamMembers = [
   { id: 'markus', name: 'Markus Klein', initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
   { id: 'lisa', name: 'Lisa Wagner', initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
@@ -291,6 +264,18 @@ const emptyTaskForm = {
   assigneeId: 'lisa',
   description: '',
 };
+
+function getDueOrder(dueDate) {
+  if (!dueDate) return 999;
+  const normalizedDate = dueDate.toLowerCase();
+  if (normalizedDate.includes('heute')) return 0;
+
+  const day = Number.parseInt(normalizedDate, 10);
+  if (Number.isNaN(day)) return 900;
+  if (normalizedDate.includes('mai')) return 100 + day;
+  if (normalizedDate.includes('juni')) return 200 + day;
+  return 800 + day;
+}
 
 function PriorityBadge({ priority }) {
   const label = priority.charAt(0).toUpperCase() + priority.slice(1);
@@ -727,6 +712,13 @@ export default function ProjectsPage() {
   const visibleTasks = normalizedSearch
     ? tasks.filter((task) => task.title.toLowerCase().includes(normalizedSearch))
     : tasks;
+  const completedTasks = tasks.filter((task) => task.completed).length;
+  const openTasks = tasks.length - completedTasks;
+  const projectProgress = tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0;
+  const deadlineTasks = tasks
+    .filter((task) => !task.completed)
+    .sort((left, right) => getDueOrder(left.dueDate) - getDueOrder(right.dueDate))
+    .slice(0, 3);
   const projectStats = statCards.map((stat) => {
     if (stat.title === 'Offene Aufgaben') {
       return { ...stat, value: tasks.filter((task) => !task.completed).length };
@@ -742,8 +734,6 @@ export default function ProjectsPage() {
 
     return { ...stat, value: tasks.filter((task) => task.completed).length };
   });
-  const projectProgress = Math.round((projectSummary.completedTasks / projectSummary.totalTasks) * 100);
-  const openTasks = projectSummary.totalTasks - projectSummary.completedTasks;
 
   const handleDragEnd = ({ active, over }) => {
     if (!over) return;
@@ -1024,13 +1014,14 @@ export default function ProjectsPage() {
                 <button
                   key={task.id}
                   type="button"
+                  onClick={() => openTaskDetail(task)}
                   className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-slate-50"
                 >
                   <Avatar assignee={task.assignee} />
                   <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">{task.title}</span>
                   <span
                     className={
-                      task.urgent
+                      task.overdue || task.dueDate === 'Heute'
                         ? 'rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-500'
                         : 'text-xs font-bold text-slate-400'
                     }
