@@ -771,6 +771,12 @@ export default function DashboardPage() {
     await navigator.clipboard.writeText(shareUrl);
   };
 
+  const handleBoardTabClick = (tab) => {
+    if (tab === 'Projekte') {
+      navigate('/projects');
+    }
+  };
+
   const projectCountCopy = `${projects.length} ${projects.length === 1 ? 'Projekt aktiv' : 'Projekte aktiv'}`;
   const visibleTaskCount = tasks.length;
 
@@ -1103,6 +1109,7 @@ export default function DashboardPage() {
             <button
               key={tab}
               type="button"
+              onClick={() => handleBoardTabClick(tab)}
               className={`rounded-2xl px-4 py-2.5 text-sm font-semibold transition ${
                 tab === 'Board' ? 'bg-[#e8f0ff] text-[#2b66ff]' : 'text-slate-700 hover:bg-slate-100'
               }`}
