@@ -23,7 +23,7 @@ import {
 const navigationItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
   { label: 'Projekte', path: '/projects', icon: Folder },
-  { label: 'Meine Aufgaben', path: '/', icon: CheckSquare },
+  { label: 'Meine Aufgaben', path: '/my-tasks', icon: CheckSquare },
   { label: 'QA', path: '/', icon: ShieldCheck },
   { label: 'Kalender', path: '/', icon: Calendar },
   { label: 'Reports', path: '/', icon: BarChart3 },
