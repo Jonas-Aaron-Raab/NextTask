@@ -4,6 +4,7 @@ import {
   CalendarDays,
   CheckCircle2,
   CircleAlert,
+  Clock3,
   FileText,
   Flag,
   History,
@@ -50,6 +51,7 @@ const initialTasks = [
     description:
       'Die Hero-Zone fuer die Startseite muss final textlich und visuell freigegeben werden. CTA-Label, Unterzeile und die mobile Version sind noch nicht abschliessend abgestimmt.',
     assignee: 'Lisa Wagner',
+    assignedBy: { name: 'Markus Klein', initials: 'MK', tone: 'from-blue-200 to-indigo-300' },
     tags: ['Frontend', 'Freigabe', 'UX'],
     linkedPeople: ['Markus Klein', 'Anna Becker'],
     attachments: [
@@ -90,6 +92,7 @@ const initialTasks = [
     description:
       'Navigation auf kleineren iPhone-Breakpoints pruefen, Overflow-Verhalten analysieren und dokumentieren. Kritisch ist das Schliessen des Menues nach Link-Klick.',
     assignee: 'Lisa Wagner',
+    assignedBy: { name: 'Tom Becker', initials: 'TB', tone: 'from-slate-200 to-blue-200' },
     tags: ['Responsive', 'QA'],
     linkedPeople: ['Tom Becker'],
     attachments: [{ id: 'a-3', name: 'iPhone_Testfaelle.xlsx', type: 'Excel', source: 'DMS', owner: 'Tom Becker' }],
@@ -117,6 +120,7 @@ const initialTasks = [
     description:
       'Fuer die Kundenpraesentation muessen KPI-Folien, Referenzen und Risikohinweise in einer klaren Storyline strukturiert werden.',
     assignee: 'Lisa Wagner',
+    assignedBy: { name: 'Sarah Nguyen', initials: 'SN', tone: 'from-emerald-200 to-teal-300' },
     tags: ['Sales', 'Stakeholder'],
     linkedPeople: ['Sarah Nguyen', 'Anna Becker'],
     attachments: [{ id: 'a-4', name: 'Praesentation_KPIs.xlsx', type: 'Excel', source: 'SharePoint', owner: 'Sarah Nguyen' }],
@@ -144,6 +148,7 @@ const initialTasks = [
     description:
       'Design Tokens fuer Kartenfarben harmonisieren und fuer Prioritaets-Badges vereinheitlichen.',
     assignee: 'Lisa Wagner',
+    assignedBy: { name: 'Anna Becker', initials: 'AB', tone: 'from-pink-200 to-violet-200' },
     tags: ['Design System'],
     linkedPeople: ['Markus Klein'],
     attachments: [],
@@ -171,6 +176,7 @@ const initialTasks = [
     description:
       'Testlauf dokumentieren, Fehlerszenarien zusammenfassen und das Paket an QA uebergeben. Alle Testbelege muessen nachvollziehbar verknuepft sein.',
     assignee: 'Lisa Wagner',
+    assignedBy: { name: 'Tom Becker', initials: 'TB', tone: 'from-slate-200 to-blue-200' },
     tags: ['QA', 'Abnahme', 'Kontrollnachweis'],
     linkedPeople: ['Tom Becker', 'Anna Becker'],
     attachments: [
@@ -211,6 +217,7 @@ const initialTasks = [
     description:
       'Preview-Bilder in allen Formaten vorbereiten und den finalen Satz an Marketing zur Freigabe uebergeben.',
     assignee: 'Lisa Wagner',
+    assignedBy: { name: 'Sarah Nguyen', initials: 'SN', tone: 'from-emerald-200 to-teal-300' },
     tags: ['Content', 'Freigabe'],
     linkedPeople: ['Sarah Nguyen'],
     attachments: [],
@@ -238,6 +245,7 @@ const initialTasks = [
     description:
       'Pricing-Texte koennen erst finalisiert werden, wenn die Preisfreigaben aus dem Vertrieb vorliegen. Bis dahin muessen Placeholder markiert bleiben.',
     assignee: 'Lisa Wagner',
+    assignedBy: { name: 'Anna Becker', initials: 'AB', tone: 'from-pink-200 to-violet-200' },
     tags: ['Blocker', 'Vertrieb'],
     linkedPeople: ['Anna Becker', 'Sarah Nguyen'],
     attachments: [{ id: 'a-7', name: 'Preisfreigabe_Offen.docx', type: 'Word', source: 'DMS', owner: 'Anna Becker' }],
@@ -272,6 +280,7 @@ const initialTasks = [
     description:
       'Deutsche Onboarding-Mailserie sprachlich ueberarbeitet und an das CRM-Team fuer den Versand uebergeben.',
     assignee: 'Lisa Wagner',
+    assignedBy: { name: 'Markus Klein', initials: 'MK', tone: 'from-blue-200 to-indigo-300' },
     tags: ['CRM', 'Done'],
     linkedPeople: ['Tom Becker'],
     attachments: [{ id: 'a-8', name: 'Onboarding_Copy_Final.docx', type: 'Word', source: 'OneDrive', owner: 'Lisa Wagner' }],
@@ -310,6 +319,56 @@ const statusLabels = {
 
 const attachmentSourceOptions = ['SharePoint', 'OneDrive', 'DMS', 'Audit-Ablage'];
 const attachmentTypeOptions = ['Excel', 'Word', 'PDF', 'Link'];
+const performancePresets = {
+  day: {
+    label: 'Tag',
+    progress: 68,
+    caption: 'Heute abgeschlossen',
+    summary: '3 von 5 offenen Tickets bewegt',
+    metrics: [
+      { type: 'done', value: '3' },
+      { type: 'progress', value: '5' },
+      { type: 'open', value: '1' },
+    ],
+    bars: [42, 58, 61, 68, 64, 70, 68],
+  },
+  week: {
+    label: 'Woche',
+    progress: 74,
+    caption: 'Diese Woche',
+    summary: '11 Tickets im Soll bearbeitet',
+    metrics: [
+      { type: 'done', value: '11' },
+      { type: 'progress', value: '4' },
+      { type: 'open', value: '2' },
+    ],
+    bars: [38, 46, 51, 63, 71, 74, 74],
+  },
+  month: {
+    label: 'Monat',
+    progress: 79,
+    caption: 'Monatstrend',
+    summary: 'Leistung stabil ueber Teamziel',
+    metrics: [
+      { type: 'done', value: '37' },
+      { type: 'progress', value: '9' },
+      { type: 'open', value: '6' },
+    ],
+    bars: [22, 34, 43, 56, 64, 71, 79],
+  },
+  year: {
+    label: 'Jahr',
+    progress: 81,
+    caption: 'Jahreswert',
+    summary: 'Audit-faehige Tickets sauber dokumentiert',
+    metrics: [
+      { type: 'done', value: '412' },
+      { type: 'progress', value: '88' },
+      { type: 'open', value: '24' },
+    ],
+    bars: [20, 29, 40, 52, 63, 72, 81],
+  },
+};
 
 function formatDateLabel(value) {
   if (!value) return '';
@@ -318,6 +377,21 @@ function formatDateLabel(value) {
     month: 'long',
     year: 'numeric',
   }).format(new Date(`${value}T00:00:00`));
+}
+
+function getInitials(name) {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function parseChecklistStats(checklist) {
+  const match = checklist.match(/(\d+)\/(\d+)/);
+  if (!match) return { completed: '0', total: '0' };
+  return { completed: match[1], total: match[2] };
 }
 
 function PriorityBadge({ priority }) {
@@ -349,7 +423,22 @@ function StatCard({ title, value, subtitle, icon: Icon, iconTone }) {
   );
 }
 
+function AssignerAvatar({ person }) {
+  const tone = person?.tone || 'from-slate-200 to-slate-300';
+
+  return (
+    <span
+      className={`inline-flex h-8 w-8 flex-none items-center justify-center rounded-full bg-gradient-to-br ${tone} text-[10px] font-extrabold text-slate-700 ring-2 ring-white`}
+      title={person?.name}
+    >
+      {person?.initials || getInitials(person?.name || 'NA')}
+    </span>
+  );
+}
+
 function TaskCard({ task, onOpen }) {
+  const checklistStats = parseChecklistStats(task.checklist);
+
   return (
     <button
       type="button"
@@ -372,21 +461,31 @@ function TaskCard({ task, onOpen }) {
         </span>
       </div>
 
-      <div className="mt-2 rounded-xl bg-slate-50 p-2">
-        <div className="flex items-center justify-between gap-2 text-[11px] font-bold text-slate-500">
-          <span className="inline-flex items-center gap-1.5">
-            <ListChecks className="h-3 w-3" />
-            Fortschritt
-          </span>
-          <span>{task.progress}%</span>
-        </div>
-        <div className="mt-1.5 h-1.5 rounded-full bg-slate-200">
-          <div className="h-full rounded-full bg-[#6d5df6]" style={{ width: `${task.progress}%` }} />
-        </div>
-        <p className="mt-1 text-[10px] font-semibold text-slate-400">{task.checklist}</p>
-      </div>
-
       <p className="mt-2 line-clamp-2 text-[11px] font-medium leading-4 text-slate-500">{task.note}</p>
+
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
+        <div className="flex items-center gap-2">
+          <AssignerAvatar person={task.assignedBy} />
+          <div className="min-w-0 pt-1">
+            <p className="truncate text-[11px] font-semibold text-slate-600">{task.assignedBy.name}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 text-[11px] font-bold text-slate-500">
+          <span className="inline-flex items-center gap-1">
+            <MessageSquareMore className="h-3.5 w-3.5" />
+            {task.comments.length}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <ListChecks className="h-3.5 w-3.5" />
+            {checklistStats.completed}/{checklistStats.total}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Paperclip className="h-3.5 w-3.5" />
+            {task.attachments.length}
+          </span>
+        </div>
+      </div>
     </button>
   );
 }
@@ -415,6 +514,99 @@ function SideCard({ title, children }) {
       <h2 className="text-[13px] font-bold text-slate-900">{title}</h2>
       {children}
     </section>
+  );
+}
+
+function PerformanceCard({ period, onPeriodChange }) {
+  const data = performancePresets[period];
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (data.progress / 100) * circumference;
+  const statusIcons = {
+    done: CheckCircle2,
+    progress: Clock3,
+    open: X,
+  };
+  const statusTones = {
+    done: 'bg-emerald-50 text-emerald-600',
+    progress: 'bg-amber-50 text-amber-600',
+    open: 'bg-rose-50 text-rose-600',
+  };
+
+  return (
+    <SideCard title="Leistungsueberblick">
+      <div className="mt-3 flex flex-wrap gap-2">
+        {Object.entries(performancePresets).map(([key, preset]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onPeriodChange(key)}
+            className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition ${
+              period === key ? 'bg-[#6d5df6] text-white shadow-[0_10px_18px_rgba(109,93,246,0.25)]' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+            }`}
+          >
+            {preset.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 rounded-2xl bg-slate-50 p-4">
+        <div className="flex flex-col items-center text-center">
+          <div className="relative h-[108px] w-[108px] flex-none">
+            <svg className="h-full w-full -rotate-90" viewBox="0 0 108 108" aria-hidden="true">
+              <circle cx="54" cy="54" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="10" />
+              <circle
+                cx="54"
+                cy="54"
+                r={radius}
+                fill="none"
+                stroke="#6d5df6"
+                strokeLinecap="round"
+                strokeWidth="10"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-[28px] font-extrabold leading-none text-slate-950">{data.progress}%</span>
+              <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{data.caption}</span>
+            </div>
+          </div>
+
+          <p className="mt-3 text-sm font-bold text-slate-900">{data.summary}</p>
+
+          <div className="mt-4 grid w-full grid-cols-3 gap-2">
+            {data.metrics.map((metric) => {
+              const Icon = statusIcons[metric.type];
+              return (
+                <div key={`${period}-${metric.type}`} className="rounded-xl bg-white px-2 py-3 text-center shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                  <p className="text-[15px] font-extrabold leading-none text-slate-900">{metric.value}</p>
+                  <span className={`mx-auto mt-2 inline-flex h-8 w-8 items-center justify-center rounded-full ${statusTones[metric.type]}`}>
+                    <Icon className="h-4 w-4" />
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <div className="flex items-end gap-1.5 rounded-2xl bg-slate-50 p-3">
+          {data.bars.map((value, index) => (
+            <div key={`${period}-${index}`} className="flex flex-1 flex-col items-center gap-1">
+              <div className="flex h-14 w-full items-end">
+                <div
+                  className={`w-full rounded-full ${index === data.bars.length - 1 ? 'bg-[#6d5df6]' : 'bg-[#c7c1ff]'}`}
+                  style={{ height: `${Math.max(value, 18)}%` }}
+                />
+              </div>
+              <span className="text-[9px] font-bold text-slate-400">{index + 1}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </SideCard>
   );
 }
 
@@ -474,6 +666,8 @@ function TaskDetailDrawer({
                 <span>{task.assignee}</span>
                 <span className="text-slate-300">•</span>
                 <span>{statusLabels[task.status]}</span>
+                <span className="text-slate-300">•</span>
+                <span>{task.assignedBy.name}</span>
               </div>
             </div>
             <button
@@ -875,6 +1069,7 @@ export default function MyTasksPage() {
   const [personDraft, setPersonDraft] = useState(teamMembers[0]);
   const [attachmentSource, setAttachmentSource] = useState('SharePoint');
   const [attachmentType, setAttachmentType] = useState('Excel');
+  const [performancePeriod, setPerformancePeriod] = useState('week');
 
   const normalizedSearch = searchValue.trim().toLowerCase();
   const visibleTasks = useMemo(
@@ -921,7 +1116,6 @@ export default function MyTasksPage() {
   ];
 
   const focusTasks = tasks.filter((task) => task.status === 'today' || task.status === 'blocked').slice(0, 4);
-  const nextReviewTask = tasks.find((task) => task.status === 'review');
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
 
   const openTask = (task) => {
@@ -1145,19 +1339,7 @@ export default function MyTasksPage() {
             </div>
           </SideCard>
 
-          <SideCard title="Naechster Schritt">
-            <div className="mt-3 rounded-2xl bg-violet-50 p-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#6047e8]">Empfohlen</p>
-              <p className="mt-2 text-[13px] font-bold leading-5 text-slate-900">
-                {nextReviewTask ? nextReviewTask.title : 'Alle Reviews sind aktuell erledigt.'}
-              </p>
-              <p className="mt-2 text-[12px] font-medium leading-5 text-slate-600">
-                {nextReviewTask
-                  ? 'Diese Aufgabe ist fast fertig und wartet nur noch auf den letzten Review-Schritt.'
-                  : 'Du hast aktuell keinen offenen Review-Blocker.'}
-              </p>
-            </div>
-          </SideCard>
+          <PerformanceCard period={performancePeriod} onPeriodChange={setPerformancePeriod} />
 
           <SideCard title="Letzte Aktivitaet">
             <div className="mt-3 space-y-2">
