@@ -303,6 +303,24 @@ const activityFeed = [
   'Die Onboarding-Mail-Serie wurde von dir abgeschlossen.',
 ];
 
+const mentionFeed = [
+  {
+    title: 'Kommentar-Mention aus QA',
+    meta: 'Checkout-Testlauf dokumentieren und an QA geben',
+    note: '@Lisa Wagner bitte die Kreditkarten-Fehlerbilder vor dem Sign-off nachreichen.',
+  },
+  {
+    title: 'Freigabehinweis Vertrieb',
+    meta: 'Texte fuer Pricing-Seite abstimmen',
+    note: 'Preisfreigabe steht noch aus. Ticket bleibt bis zur Vertriebsrueckmeldung sensitiv.',
+  },
+  {
+    title: 'Kontrollnachweis offen',
+    meta: 'Hero-Text und CTA fuer Startseite finalisieren',
+    note: 'Word-Freigabe und Screenshot-Nachweis muessen vor Abschluss im Ticket haengen.',
+  },
+];
+
 const priorityStyles = {
   hoch: 'border-red-100 bg-red-50 text-red-600',
   mittel: 'border-amber-100 bg-amber-50 text-amber-600',
@@ -535,13 +553,13 @@ function PerformanceCard({ period, onPeriodChange }) {
 
   return (
     <SideCard title="Leistungsueberblick">
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 grid grid-cols-4 gap-2">
         {Object.entries(performancePresets).map(([key, preset]) => (
           <button
             key={key}
             type="button"
             onClick={() => onPeriodChange(key)}
-            className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition ${
+            className={`rounded-full px-2 py-1.5 text-[11px] font-bold transition ${
               period === key ? 'bg-[#6d5df6] text-white shadow-[0_10px_18px_rgba(109,93,246,0.25)]' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
             }`}
           >
@@ -569,7 +587,6 @@ function PerformanceCard({ period, onPeriodChange }) {
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-[28px] font-extrabold leading-none text-slate-950">{data.progress}%</span>
-              <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{data.caption}</span>
             </div>
           </div>
 
@@ -1115,7 +1132,6 @@ export default function MyTasksPage() {
     },
   ];
 
-  const focusTasks = tasks.filter((task) => task.status === 'today' || task.status === 'blocked').slice(0, 4);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
 
   const openTask = (task) => {
@@ -1322,19 +1338,14 @@ export default function MyTasksPage() {
         </section>
 
         <aside className="space-y-4">
-          <SideCard title="Fokus heute">
+          <SideCard title="Mentions und Pruefhinweise">
             <div className="mt-3 space-y-2">
-              {focusTasks.map((task) => (
-                <button
-                  key={task.id}
-                  type="button"
-                  onClick={() => openTask(task)}
-                  className="w-full rounded-xl bg-slate-50 p-2.5 text-left transition hover:bg-violet-50"
-                >
-                  <p className="text-[12px] font-bold leading-4 text-slate-800">{task.title}</p>
-                  <p className="mt-0.5 text-[10px] font-semibold text-slate-400">{task.project}</p>
-                  <p className="mt-1.5 line-clamp-2 text-[11px] font-medium leading-4 text-slate-500">{task.note}</p>
-                </button>
+              {mentionFeed.map((item) => (
+                <div key={item.title} className="rounded-xl bg-slate-50 p-2.5">
+                  <p className="text-[12px] font-bold leading-4 text-slate-800">{item.title}</p>
+                  <p className="mt-0.5 text-[10px] font-semibold text-slate-400">{item.meta}</p>
+                  <p className="mt-1.5 line-clamp-3 text-[11px] font-medium leading-4 text-slate-500">{item.note}</p>
+                </div>
               ))}
             </div>
           </SideCard>
