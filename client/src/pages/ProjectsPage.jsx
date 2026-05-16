@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Building2,
@@ -59,6 +59,16 @@ const initialDepartments = [
     description: 'Kontrollpunkte, Freigaben und regulatorische Abstimmungen.',
     accent: 'border-[#f5dfc7] bg-[#fff8ef]',
     badgeTone: 'bg-[#fff4e7] text-[#c26a34]',
+  },
+  {
+    id: 'dept-service',
+    name: 'Kundenservice',
+    lead: 'Nina Hoffmann',
+    members: ['Nina Hoffmann', 'Tom Becker', 'Elisabeth Bezverkha'],
+    memberCount: 7,
+    description: 'Serviceprozesse, Rueckfragen, Eskalationen und Kundenkommunikation.',
+    accent: 'border-[#d7e8df] bg-[#f3fbf6]',
+    badgeTone: 'bg-[#edf9f1] text-[#3b7f57]',
   },
 ];
 
@@ -122,6 +132,26 @@ const initialProjects = [
     status: 'In Arbeit',
     dueDate: '08. Juli 2026',
     summary: 'Uebersicht fuer Freigaben, Evidenz und Kontroll-IDs pro Fachbereich.',
+  },
+  {
+    id: 'proj-7',
+    departmentId: 'dept-service',
+    name: 'Service Anfrage-Cockpit',
+    owner: 'Nina Hoffmann',
+    visibility: 'Abteilung',
+    status: 'In Arbeit',
+    dueDate: '19. Juli 2026',
+    summary: 'Zentrale Sicht auf Rueckfragen, Antwortzeiten und Eskalationspfade.',
+  },
+  {
+    id: 'proj-8',
+    departmentId: 'dept-service',
+    name: 'Kundenfeedback Auswertung',
+    owner: 'Elisabeth Bezverkha',
+    visibility: 'Persoenlich',
+    status: 'Konzept',
+    dueDate: '02. August 2026',
+    summary: 'Struktur fuer Feedback-Cluster, Massnahmen und wiederkehrende Themen.',
   },
 ];
 
@@ -298,6 +328,45 @@ const initialBacklogTasks = [
     tags: ['Compliance', 'Kontrolle'],
     description: 'Pflichtfelder, Nachweise und Vier-Augen-Pruefung fuer Abteilungsfreigaben strukturieren.',
   },
+  {
+    id: 'bg-501',
+    sourceTaskId: 'my-task-3',
+    projectId: 'proj-7',
+    title: 'Antwortvorlagen fuer Kartenrueckfragen pruefen',
+    status: 'progress',
+    priority: 'mittel',
+    assignee: 'Nina Hoffmann',
+    dueDate: '11. Juli 2026',
+    points: 5,
+    tags: ['Service', 'Vorlagen'],
+    description: 'Bestehende Antwortvorlagen fuer Kartenrueckfragen auf Verstaendlichkeit und Freigabestand pruefen.',
+  },
+  {
+    id: 'bg-502',
+    sourceTaskId: 'my-task-8',
+    projectId: 'proj-7',
+    title: 'Eskalationsregeln fuer dringende Anliegen sammeln',
+    status: 'todo',
+    priority: 'hoch',
+    assignee: '',
+    dueDate: '15. Juli 2026',
+    points: 3,
+    tags: ['Eskalation', 'Offen'],
+    description: 'Fuer dringende Servicefaelle fehlen noch eindeutige Eskalationsregeln und eine verantwortliche Person.',
+  },
+  {
+    id: 'bg-503',
+    sourceTaskId: 'my-task-6',
+    projectId: 'proj-8',
+    title: 'Feedback-Cluster fuer App-Bewertungen definieren',
+    status: 'review',
+    priority: 'niedrig',
+    assignee: 'Elisabeth Bezverkha',
+    dueDate: '24. Juli 2026',
+    points: 2,
+    tags: ['Feedback'],
+    description: 'App-Bewertungen nach wiederkehrenden Themen clustern und fuer die Auswertung vorbereiten.',
+  },
 ];
 
 function getSourceTaskKey(task) {
@@ -305,8 +374,27 @@ function getSourceTaskKey(task) {
   return task.controlId || sourceTask?.compliance?.controlId || task.sourceTaskId || task.id;
 }
 
+function getTaskCreatorInitials(task) {
+  const sourceTask = sourceTasks.find((candidate) => candidate.id === task.sourceTaskId);
+  return sourceTask?.assignedBy?.initials || 'NT';
+}
+
+function getTaskCreatorName(task) {
+  const sourceTask = sourceTasks.find((candidate) => candidate.id === task.sourceTaskId);
+  return sourceTask?.assignedBy?.name || 'NextTask';
+}
+
 function getAssigneeLabel(assignee) {
   return assignee?.trim() || 'Ohne Verantwortlichen';
+}
+
+function getFilterLabel(filterValue) {
+  if (filterValue === 'unassigned') return 'Ohne Verantwortlichen';
+  if (filterValue.startsWith('person:')) return filterValue.replace('person:', '');
+  if (filterValue.startsWith('creator:')) return `Ersteller ${filterValue.replace('creator:', '')}`;
+  if (filterValue.startsWith('status:')) return backlogStatusMeta[filterValue.replace('status:', '')]?.label || filterValue;
+  if (filterValue.startsWith('priority:')) return `Prio ${filterValue.replace('priority:', '')}`;
+  return filterValue;
 }
 
 const emptyDepartmentForm = {
@@ -557,11 +645,13 @@ function ProjectCard({ project }) {
 function BacklogTaskRow({ task, project, isActive, onOpen }) {
   const status = backlogStatusMeta[task.status] || backlogStatusMeta.todo;
   const taskKey = getSourceTaskKey(task);
+  const creatorInitials = getTaskCreatorInitials(task);
+  const creatorName = getTaskCreatorName(task);
   return (
     <button
       type="button"
       onClick={() => onOpen(task.id)}
-      className={`grid w-full grid-cols-[minmax(120px,0.8fr)_minmax(240px,2.5fr)_minmax(120px,0.9fr)_minmax(90px,0.6fr)_minmax(150px,1fr)_44px] items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm transition hover:bg-[#fff8f9] ${
+      className={`grid w-full grid-cols-[minmax(120px,0.8fr)_minmax(240px,2.3fr)_minmax(74px,0.45fr)_minmax(120px,0.85fr)_minmax(90px,0.55fr)_minmax(150px,1fr)_44px] items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm transition hover:bg-[#fff8f9] ${
         isActive ? 'bg-[#fff1f3]' : 'bg-white'
       }`}
     >
@@ -569,6 +659,12 @@ function BacklogTaskRow({ task, project, isActive, onOpen }) {
       <span className="min-w-0">
         <span className="block truncate font-bold text-slate-900">{task.title}</span>
         <span className="mt-0.5 block truncate text-xs font-semibold text-slate-400">{project?.name || 'Projekt'}</span>
+      </span>
+      <span
+        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#f0edff] text-[11px] font-extrabold text-[#6d5df6]"
+        title={`Erstellt von ${creatorName}`}
+      >
+        {creatorInitials}
       </span>
       <span className={`inline-flex w-max items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${status.tone}`}>
         <span className={`h-2 w-2 rounded-full ${status.dot}`} />
@@ -608,9 +704,10 @@ function BacklogProjectGroup({ project, tasks, selectedTaskId, onOpenTask }) {
         </div>
       </div>
 
-      <div className="hidden grid-cols-[minmax(120px,0.8fr)_minmax(240px,2.5fr)_minmax(120px,0.9fr)_minmax(90px,0.6fr)_minmax(150px,1fr)_44px] gap-3 px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400 md:grid">
+      <div className="hidden grid-cols-[minmax(120px,0.8fr)_minmax(240px,2.3fr)_minmax(74px,0.45fr)_minmax(120px,0.85fr)_minmax(90px,0.55fr)_minmax(150px,1fr)_44px] gap-3 px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400 md:grid">
         <span>Key</span>
         <span>Aufgabe</span>
+        <span>Erstellt</span>
         <span>Status</span>
         <span>Prio</span>
         <span>Verantwortlich</span>
@@ -645,6 +742,8 @@ function BacklogDetailPanel({ task, project }) {
 
   const status = backlogStatusMeta[task.status] || backlogStatusMeta.todo;
   const taskKey = getSourceTaskKey(task);
+  const creatorInitials = getTaskCreatorInitials(task);
+  const creatorName = getTaskCreatorName(task);
 
   return (
     <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_36px_rgba(15,23,42,0.07)]">
@@ -696,6 +795,16 @@ function BacklogDetailPanel({ task, project }) {
             {getAssigneeLabel(task.assignee)}
           </p>
         </div>
+
+        <div className="rounded-xl bg-slate-50 px-3 py-2">
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Erstellt von</p>
+          <p className="mt-1 flex items-center gap-2 font-bold text-slate-900">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#f0edff] text-[10px] font-extrabold text-[#6d5df6]">
+              {creatorInitials}
+            </span>
+            {creatorName}
+          </p>
+        </div>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">
@@ -711,6 +820,7 @@ function BacklogDetailPanel({ task, project }) {
 }
 
 export default function ProjectsPage() {
+  const filterMenuRef = useRef(null);
   const [departments, setDepartments] = useState(initialDepartments);
   const [projects, setProjects] = useState(initialProjects);
   const [backlogTasks] = useState(initialBacklogTasks);
@@ -718,7 +828,8 @@ export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState('backlog');
   const [selectedBacklogTaskId, setSelectedBacklogTaskId] = useState(initialBacklogTasks[0]?.id || null);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [backlogFilter, setBacklogFilter] = useState('all');
+  const [activeBacklogFilters, setActiveBacklogFilters] = useState([]);
+  const [draftBacklogFilters, setDraftBacklogFilters] = useState([]);
   const [searchValue, setSearchValue] = useState('');
   const [createMode, setCreateMode] = useState(null);
   const [departmentForm, setDepartmentForm] = useState(emptyDepartmentForm);
@@ -764,12 +875,31 @@ export default function ProjectsPage() {
 
   const visibleProjectIds = useMemo(() => new Set(visibleProjects.map((project) => project.id)), [visibleProjects]);
 
+  const departmentCreators = useMemo(() => {
+    const creatorMap = new Map();
+    backlogTasks.forEach((task) => {
+      if (!visibleProjectIds.has(task.projectId)) return;
+      const initials = getTaskCreatorInitials(task);
+      creatorMap.set(initials, getTaskCreatorName(task));
+    });
+    return Array.from(creatorMap, ([initials, name]) => ({ initials, name }));
+  }, [backlogTasks, visibleProjectIds]);
+
   const visibleBacklogTasks = useMemo(
     () =>
       backlogTasks.filter((task) => {
         if (!visibleProjectIds.has(task.projectId)) return false;
-        if (backlogFilter === 'unassigned' && task.assignee.trim()) return false;
-        if (backlogFilter.startsWith('person:') && task.assignee !== backlogFilter.replace('person:', '')) return false;
+        if (activeBacklogFilters.length) {
+          const matchesFilter = activeBacklogFilters.some((filterValue) => {
+            if (filterValue === 'unassigned') return !task.assignee.trim();
+            if (filterValue.startsWith('person:')) return task.assignee === filterValue.replace('person:', '');
+            if (filterValue.startsWith('creator:')) return getTaskCreatorInitials(task) === filterValue.replace('creator:', '');
+            if (filterValue.startsWith('status:')) return task.status === filterValue.replace('status:', '');
+            if (filterValue.startsWith('priority:')) return task.priority === filterValue.replace('priority:', '');
+            return true;
+          });
+          if (!matchesFilter) return false;
+        }
         if (!normalizedSearch) return true;
         const project = projects.find((candidate) => candidate.id === task.projectId);
         return (
@@ -780,7 +910,7 @@ export default function ProjectsPage() {
           project?.name.toLowerCase().includes(normalizedSearch)
         );
       }),
-    [backlogFilter, backlogTasks, normalizedSearch, projects, visibleProjectIds],
+    [activeBacklogFilters, backlogTasks, normalizedSearch, projects, visibleProjectIds],
   );
 
   const selectedBacklogTask =
@@ -793,7 +923,8 @@ export default function ProjectsPage() {
     setSelectedDepartmentId(departmentId);
     setViewMode('backlog');
     setFilterOpen(false);
-    setBacklogFilter('all');
+    setActiveBacklogFilters([]);
+    setDraftBacklogFilters([]);
     const departmentProjectIds = projects.filter((project) => project.departmentId === departmentId).map((project) => project.id);
     const firstTask = backlogTasks.find((task) => departmentProjectIds.includes(task.projectId));
     setSelectedBacklogTaskId(firstTask?.id || null);
@@ -865,12 +996,44 @@ export default function ProjectsPage() {
     setSelectedBacklogTaskId(taskId);
   };
 
-  const filterLabel =
-    backlogFilter === 'unassigned'
-      ? 'ohne Verantwortlichen'
-      : backlogFilter.startsWith('person:')
-        ? `fuer ${backlogFilter.replace('person:', '')}`
-        : '';
+  const handleFilterMenuOpen = () => {
+    setDraftBacklogFilters(activeBacklogFilters);
+    setFilterOpen((current) => !current);
+  };
+
+  const toggleDraftFilter = (filterValue) => {
+    setDraftBacklogFilters((current) =>
+      current.includes(filterValue) ? current.filter((value) => value !== filterValue) : [...current, filterValue],
+    );
+  };
+
+  const removeActiveFilter = (filterValue) => {
+    setActiveBacklogFilters((current) => current.filter((value) => value !== filterValue));
+    setDraftBacklogFilters((current) => current.filter((value) => value !== filterValue));
+  };
+
+  const handleFilterSave = () => {
+    setActiveBacklogFilters(draftBacklogFilters);
+    setFilterOpen(false);
+  };
+
+  const handleFilterDiscard = () => {
+    setDraftBacklogFilters(activeBacklogFilters);
+    setFilterOpen(false);
+  };
+
+  useEffect(() => {
+    if (!filterOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (filterMenuRef.current?.contains(event.target)) return;
+      setDraftBacklogFilters(activeBacklogFilters);
+      setFilterOpen(false);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [activeBacklogFilters, filterOpen]);
 
   return (
     <AppShell
@@ -883,20 +1046,23 @@ export default function ProjectsPage() {
       onSearch={setSearchValue}
     >
       <div className="space-y-6 px-4 py-4 xl:px-6">
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {visibleDepartments.map((department) => (
-            <DepartmentCard
-              key={department.id}
-              department={department}
-              projectCount={projects.filter((project) => project.departmentId === department.id).length}
-              backlogCount={backlogTasks.filter((task) => {
-                const project = projects.find((candidate) => candidate.id === task.projectId);
-                return project?.departmentId === department.id;
-              }).length}
-              isActive={selectedDepartment?.id === department.id}
-              onOpen={handleDepartmentOpen}
-            />
-          ))}
+        <section className="overflow-x-auto rounded-3xl border border-slate-200 bg-white/70 p-3 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+          <div className="flex min-w-max gap-4 pb-1">
+            {visibleDepartments.map((department) => (
+              <div key={department.id} className="w-[300px] flex-none xl:w-[320px]">
+              <DepartmentCard
+                department={department}
+                projectCount={projects.filter((project) => project.departmentId === department.id).length}
+                backlogCount={backlogTasks.filter((task) => {
+                  const project = projects.find((candidate) => candidate.id === task.projectId);
+                  return project?.departmentId === department.id;
+                }).length}
+                isActive={selectedDepartment?.id === department.id}
+                onOpen={handleDepartmentOpen}
+              />
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="rounded-3xl border border-[#e6b8c0] bg-white p-5 shadow-[0_16px_40px_rgba(136,54,66,0.08)]">
@@ -962,16 +1128,25 @@ export default function ProjectsPage() {
             <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm font-bold text-slate-500">
-                    {visibleBacklogTasks.length} Aufgaben im Backlog
-                    {filterLabel ? ` ${filterLabel}` : ''}
-                  </p>
-                  <div className="relative">
+                  <p className="text-sm font-bold text-slate-500">{visibleBacklogTasks.length} Aufgaben im Backlog</p>
+                  <div ref={filterMenuRef} className="relative flex flex-wrap items-center justify-end gap-2">
+                    {activeBacklogFilters.map((filterValue) => (
+                      <button
+                        key={filterValue}
+                        type="button"
+                        onClick={() => removeActiveFilter(filterValue)}
+                        className="group inline-flex h-9 items-center gap-2 rounded-full border border-[#f0d7db] bg-[#fff7f8] px-3 text-xs font-bold text-[#a23d4d] transition hover:border-[#d89aa5] hover:bg-[#fff1f3]"
+                        title={`${getFilterLabel(filterValue)} entfernen`}
+                      >
+                        <span>{getFilterLabel(filterValue)}</span>
+                        <X className="hidden h-3.5 w-3.5 group-hover:block" />
+                      </button>
+                    ))}
                     <button
                       type="button"
-                      onClick={() => setFilterOpen((current) => !current)}
+                      onClick={handleFilterMenuOpen}
                       className={`inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition ${
-                        backlogFilter === 'unassigned'
+                        activeBacklogFilters.length
                           ? 'border-[#d89aa5] bg-[#fff1f3] text-[#a23d4d]'
                           : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                       }`}
@@ -983,43 +1158,119 @@ export default function ProjectsPage() {
 
                     {filterOpen ? (
                       <div className="absolute right-0 top-full z-20 mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 text-sm shadow-[0_18px_45px_rgba(15,23,42,0.14)]">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBacklogFilter((current) => (current === 'unassigned' ? 'all' : 'unassigned'));
-                            setFilterOpen(false);
-                          }}
-                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left font-bold transition ${
-                            backlogFilter === 'unassigned' ? 'bg-[#fff1f3] text-[#a23d4d]' : 'text-slate-700 hover:bg-slate-50'
-                          }`}
-                        >
-                          Ohne Verantwortlichen
-                          {backlogFilter === 'unassigned' ? <CheckCircle2 className="h-4 w-4" /> : null}
-                        </button>
+                        <div className="max-h-72 overflow-y-auto pr-1">
+                          <button
+                            type="button"
+                            onClick={() => toggleDraftFilter('unassigned')}
+                            className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left font-bold transition ${
+                              draftBacklogFilters.includes('unassigned') ? 'bg-[#fff1f3] text-[#a23d4d]' : 'text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            Ohne Verantwortlichen
+                            {draftBacklogFilters.includes('unassigned') ? <CheckCircle2 className="h-4 w-4" /> : null}
+                          </button>
                         {departmentMembers.length ? (
                           <>
                             <div className="my-1 border-t border-slate-100" />
-                            {departmentMembers.map((member) => {
-                              const value = `person:${member}`;
-                              return (
-                                <button
-                                  key={member}
-                                  type="button"
-                                  onClick={() => {
-                                    setBacklogFilter((current) => (current === value ? 'all' : value));
-                                    setFilterOpen(false);
-                                  }}
-                                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left font-bold transition ${
-                                    backlogFilter === value ? 'bg-[#fff1f3] text-[#a23d4d]' : 'text-slate-700 hover:bg-slate-50'
-                                  }`}
-                                >
-                                  {member}
-                                  {backlogFilter === value ? <CheckCircle2 className="h-4 w-4" /> : null}
-                                </button>
-                              );
+                              <p className="px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Personen</p>
+                              {departmentMembers.map((member) => {
+                                const value = `person:${member}`;
+                                return (
+                                  <button
+                                    key={member}
+                                    type="button"
+                                    onClick={() => toggleDraftFilter(value)}
+                                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left font-bold transition ${
+                                      draftBacklogFilters.includes(value) ? 'bg-[#fff1f3] text-[#a23d4d]' : 'text-slate-700 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    {member}
+                                    {draftBacklogFilters.includes(value) ? <CheckCircle2 className="h-4 w-4" /> : null}
+                                  </button>
+                                );
                             })}
                           </>
                         ) : null}
+                          {departmentCreators.length ? (
+                            <>
+                              <div className="my-1 border-t border-slate-100" />
+                              <p className="px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Ersteller</p>
+                              {departmentCreators.map((creator) => {
+                                const value = `creator:${creator.initials}`;
+                                return (
+                                  <button
+                                    key={value}
+                                    type="button"
+                                    onClick={() => toggleDraftFilter(value)}
+                                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left font-bold transition ${
+                                      draftBacklogFilters.includes(value) ? 'bg-[#fff1f3] text-[#a23d4d]' : 'text-slate-700 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    <span className="flex min-w-0 items-center gap-2">
+                                      <span className="inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-[#f0edff] text-[10px] font-extrabold text-[#6d5df6]">
+                                        {creator.initials}
+                                      </span>
+                                      <span className="truncate">{creator.name}</span>
+                                    </span>
+                                    {draftBacklogFilters.includes(value) ? <CheckCircle2 className="h-4 w-4 flex-none" /> : null}
+                                  </button>
+                                );
+                              })}
+                            </>
+                          ) : null}
+                          <div className="my-1 border-t border-slate-100" />
+                          <p className="px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Status</p>
+                          {Object.entries(backlogStatusMeta).map(([statusValue, meta]) => {
+                            const value = `status:${statusValue}`;
+                            return (
+                              <button
+                                key={value}
+                                type="button"
+                                onClick={() => toggleDraftFilter(value)}
+                                className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left font-bold transition ${
+                                  draftBacklogFilters.includes(value) ? 'bg-[#fff1f3] text-[#a23d4d]' : 'text-slate-700 hover:bg-slate-50'
+                                }`}
+                              >
+                                {meta.label}
+                                {draftBacklogFilters.includes(value) ? <CheckCircle2 className="h-4 w-4" /> : null}
+                              </button>
+                            );
+                          })}
+                          <div className="my-1 border-t border-slate-100" />
+                          <p className="px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Prioritaet</p>
+                          {Object.keys(priorityMeta).map((priorityValue) => {
+                            const value = `priority:${priorityValue}`;
+                            return (
+                              <button
+                                key={value}
+                                type="button"
+                                onClick={() => toggleDraftFilter(value)}
+                                className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left font-bold transition ${
+                                  draftBacklogFilters.includes(value) ? 'bg-[#fff1f3] text-[#a23d4d]' : 'text-slate-700 hover:bg-slate-50'
+                                }`}
+                              >
+                                Prio {priorityValue}
+                                {draftBacklogFilters.includes(value) ? <CheckCircle2 className="h-4 w-4" /> : null}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-100 pt-2">
+                          <button
+                            type="button"
+                            onClick={handleFilterDiscard}
+                            className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+                          >
+                            Verwerfen
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleFilterSave}
+                            className="h-10 rounded-xl bg-[#c95767] px-3 text-sm font-bold text-white shadow-[0_10px_20px_rgba(201,87,103,0.18)] transition hover:bg-[#b84758]"
+                          >
+                            Speichern
+                          </button>
+                        </div>
                       </div>
                     ) : null}
                   </div>
