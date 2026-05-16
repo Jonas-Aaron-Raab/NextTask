@@ -107,6 +107,41 @@ const initialTasks = [
     auditTrail: ['16. Mai 2026: Testfallpaket fuer Mobile QA angelegt.'],
   },
   {
+    id: 'my-task-9',
+    title: 'Sparkassen-Landingpage Teaser fuer Startseite abstimmen',
+    status: 'today',
+    project: 'Sparkasse Kampagne',
+    priority: 'hoch',
+    dueDate: '16. Mai 2026',
+    dueDateValue: '2026-05-16',
+    progress: 40,
+    checklist: '2/5 erledigt',
+    note: 'Textbausteine und Compliance-Hinweis muessen heute noch final abgestimmt werden.',
+    description:
+      'Der Startseiten-Teaser fuer die Sparkassen-Kampagne braucht finale Copy, Freigabevermerk und einen abgestimmten CTA fuer die Fachbereichsabnahme.',
+    assignee: 'Lisa Wagner',
+    assignedBy: { name: 'Anna Becker', initials: 'AB', tone: 'from-rose-200 to-orange-200' },
+    tags: ['Sparkasse', 'Freigabe', 'Copy'],
+    linkedPeople: ['Anna Becker', 'Markus Klein'],
+    attachments: [{ id: 'a-9', name: 'Teaser_Freigabe_v2.docx', type: 'Word', source: 'SharePoint', owner: 'Anna Becker' }],
+    comments: [
+      {
+        id: 'c-4',
+        author: 'Anna Becker',
+        time: 'heute, 10:18',
+        text: 'Bitte den Hinweistext zur Produktabbildung noch in die finale Version aufnehmen.',
+      },
+    ],
+    compliance: {
+      classification: 'Intern',
+      risk: 'Mittel',
+      controlId: 'CTRL-SPK-301',
+      approval: 'Fachbereich und Compliance pruefen den finalen Teaser',
+      evidence: 'Copy-Freigabe und finaler Screenshot am Ticket sichern',
+    },
+    auditTrail: ['16. Mai 2026: Sparkassen-Teaser als dringende Tagesaufgabe zugewiesen.'],
+  },
+  {
     id: 'my-task-3',
     title: 'Projektseite fuer neue Kundenpraesentation strukturieren',
     status: 'in-progress',
@@ -457,7 +492,7 @@ function TaskCard({ task, onOpen }) {
     <button
       type="button"
       onClick={() => onOpen(task)}
-      className="rounded-xl border border-slate-200 bg-white p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]"
+      className="rounded-xl border border-slate-200 bg-white p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-rose-200 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -477,15 +512,15 @@ function TaskCard({ task, onOpen }) {
 
       <p className="mt-2 line-clamp-2 text-[11px] font-medium leading-4 text-slate-500">{task.note}</p>
 
-      <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-2">
-        <div className="flex items-center gap-2">
+      <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 pt-2">
+        <div className="flex min-w-0 items-center gap-2">
           <AssignerAvatar person={task.assignedBy} />
           <div className="min-w-0 pt-1">
             <p className="truncate text-[11px] font-semibold text-slate-600">{task.assignedBy.name}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-[11px] font-bold text-slate-500">
+        <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-[10px] font-bold text-slate-500">
           <span className="inline-flex items-center gap-1">
             <MessageSquareMore className="h-3.5 w-3.5" />
             {task.comments.length}
@@ -557,23 +592,23 @@ function PopupShell({ title, subtitle, onClose, children, maxWidth = 'max-w-3xl'
 
 function SummaryStrip({ stats, controlCount, performanceValue, onOpenStat, onOpenControls, onOpenPerformance }) {
   return (
-    <div className="grid gap-3 xl:grid-cols-[minmax(0,2.4fr)_minmax(220px,0.8fr)_minmax(220px,0.8fr)]">
-      <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_12px_32px_rgba(39,48,93,0.07)]">
+    <div className="grid gap-3 xl:grid-cols-[minmax(0,2.3fr)_minmax(190px,0.75fr)_minmax(190px,0.75fr)]">
+      <section className="rounded-2xl border border-[#f0d7db] bg-white p-2.5 shadow-[0_12px_32px_rgba(136,54,66,0.08)]">
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
           {stats.map((stat) => (
             <button
               key={stat.id}
               type="button"
               onClick={() => onOpenStat(stat)}
-              className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-left transition hover:border-violet-200 hover:bg-violet-50"
+              className={`rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(136,54,66,0.12)] ${stat.cardTone}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${stat.iconTone}`}>
                   <stat.icon className="h-4 w-4" />
                 </span>
-                <ArrowUpRight className="h-3.5 w-3.5 text-slate-400" />
+                <ArrowUpRight className="h-3.5 w-3.5 text-[#b66773]" />
               </div>
-              <p className="mt-2 text-[11px] font-semibold text-slate-500">{stat.title}</p>
+              <p className="mt-2 text-[11px] font-semibold text-[#8b5860]">{stat.title}</p>
               <p className="mt-1 text-[22px] font-extrabold leading-none text-slate-950">{stat.value}</p>
             </button>
           ))}
@@ -583,21 +618,21 @@ function SummaryStrip({ stats, controlCount, performanceValue, onOpenStat, onOpe
       <button
         type="button"
         onClick={onOpenControls}
-        className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-[0_12px_32px_rgba(39,48,93,0.07)] transition hover:border-violet-200 hover:bg-violet-50"
+        className="rounded-2xl border border-[#e6b8c0] bg-white p-4 text-left shadow-[0_12px_32px_rgba(136,54,66,0.07)] transition hover:-translate-y-0.5 hover:border-[#d89aa5] hover:shadow-[0_16px_34px_rgba(136,54,66,0.12)]"
       >
         <p className="text-[13px] font-bold text-slate-900">Freigaben und Kontrollen</p>
-        <p className="mt-2 text-[24px] font-extrabold leading-none text-slate-950">{controlCount}</p>
-        <p className="mt-1 text-[11px] font-semibold text-slate-500">offene Kontrollpunkte</p>
+        <p className="mt-2 text-[28px] font-extrabold leading-none text-slate-950">{controlCount}</p>
+        <p className="mt-1 text-[11px] font-semibold text-[#8b5860]">offene Kontrollpunkte</p>
       </button>
 
       <button
         type="button"
         onClick={onOpenPerformance}
-        className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-[0_12px_32px_rgba(39,48,93,0.07)] transition hover:border-violet-200 hover:bg-violet-50"
+        className="rounded-2xl border border-[#e6b8c0] bg-white p-4 text-left shadow-[0_12px_32px_rgba(136,54,66,0.07)] transition hover:-translate-y-0.5 hover:border-[#d89aa5] hover:shadow-[0_16px_34px_rgba(136,54,66,0.12)]"
       >
         <p className="text-[13px] font-bold text-slate-900">Leistungsueberblick</p>
-        <p className="mt-2 text-[24px] font-extrabold leading-none text-slate-950">{performanceValue}%</p>
-        <p className="mt-1 text-[11px] font-semibold text-slate-500">heutiger Fortschritt</p>
+        <p className="mt-2 text-[30px] font-extrabold leading-none text-slate-950">{performanceValue}%</p>
+        <p className="mt-1 text-[11px] font-semibold text-[#8b5860]">heutiger Fortschritt</p>
       </button>
     </div>
   );
@@ -615,7 +650,7 @@ function TaskCollectionPopup({ title, subtitle, tasks, onClose, onOpenTask }) {
               onClose();
               onOpenTask(task);
             }}
-            className="flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-violet-200 hover:bg-violet-50"
+            className="flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-rose-200 hover:bg-rose-50"
           >
             <AssignerAvatar person={task.assignedBy} />
             <div className="min-w-0 flex-1">
@@ -690,7 +725,7 @@ function PerformanceCard({ period, onPeriodChange }) {
             type="button"
             onClick={() => onPeriodChange(key)}
             className={`rounded-full px-2 py-1.5 text-[11px] font-bold transition ${
-              period === key ? 'bg-[#6d5df6] text-white shadow-[0_10px_18px_rgba(109,93,246,0.25)]' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              period === key ? 'bg-[#c95767] text-white shadow-[0_10px_18px_rgba(201,87,103,0.26)]' : 'bg-[#f7ecee] text-[#8b5860] hover:bg-[#f3dfe3]'
             }`}
           >
             {preset.label}
@@ -698,7 +733,7 @@ function PerformanceCard({ period, onPeriodChange }) {
         ))}
       </div>
 
-      <div className="mt-3 rounded-2xl bg-slate-50 p-3">
+      <div className="mt-3 rounded-2xl bg-[#fff6f7] p-3">
         <div className="flex items-center gap-3">
           <div className="relative h-[88px] w-[88px] flex-none">
             <svg className="h-full w-full -rotate-90" viewBox="0 0 88 88" aria-hidden="true">
@@ -708,7 +743,7 @@ function PerformanceCard({ period, onPeriodChange }) {
                 cy="44"
                 r={radius}
                 fill="none"
-                stroke="#6d5df6"
+                stroke="#c95767"
                 strokeLinecap="round"
                 strokeWidth="8"
                 strokeDasharray={circumference}
@@ -716,7 +751,7 @@ function PerformanceCard({ period, onPeriodChange }) {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-[24px] font-extrabold leading-none text-slate-950">{data.progress}%</span>
+              <span className="text-[24px] font-extrabold leading-none text-[#8f2231]">{data.progress}%</span>
             </div>
           </div>
 
@@ -726,7 +761,7 @@ function PerformanceCard({ period, onPeriodChange }) {
             {data.metrics.map((metric) => {
               const Icon = statusIcons[metric.type];
               return (
-                <div key={`${period}-${metric.type}`} className="rounded-xl bg-white px-2 py-2 text-center shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                <div key={`${period}-${metric.type}`} className="rounded-xl bg-white px-2 py-2 text-center shadow-[0_8px_18px_rgba(136,54,66,0.06)]">
                   <p className="text-[14px] font-extrabold leading-none text-slate-900">{metric.value}</p>
                   <span className={`mx-auto mt-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full ${statusTones[metric.type]}`}>
                     <Icon className="h-3.5 w-3.5" />
@@ -740,12 +775,12 @@ function PerformanceCard({ period, onPeriodChange }) {
       </div>
 
       <div className="mt-3">
-        <div className="flex items-end gap-1.5 rounded-2xl bg-slate-50 p-2.5">
+        <div className="flex items-end gap-1.5 rounded-2xl bg-[#fff6f7] p-2.5">
           {data.bars.map((value, index) => (
             <div key={`${period}-${index}`} className="flex flex-1 flex-col items-center gap-1">
               <div className="flex h-10 w-full items-end">
                 <div
-                  className={`w-full rounded-full ${index === data.bars.length - 1 ? 'bg-[#6d5df6]' : 'bg-[#c7c1ff]'}`}
+                  className={`w-full rounded-full ${index === data.bars.length - 1 ? 'bg-[#c95767]' : 'bg-[#efc3ca]'}`}
                   style={{ height: `${Math.max(value, 18)}%` }}
                 />
               </div>
@@ -763,7 +798,7 @@ function DetailBlock({ title, icon: Icon, children, action }) {
     <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-center justify-between gap-3">
         <h3 className="inline-flex items-center gap-2 text-sm font-bold text-slate-900">
-          <Icon className="h-4 w-4 text-[#6d5df6]" />
+          <Icon className="h-4 w-4 text-[#c95767]" />
           {title}
         </h3>
         {action}
@@ -806,7 +841,7 @@ function TaskDetailDrawer({
         <div className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-6 py-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6d5df6]">Ticket Details</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#c95767]">Ticket Details</p>
               <h2 className="mt-1 text-xl font-extrabold text-slate-950">{task.title}</h2>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
                 <span>{task.project}</span>
@@ -836,7 +871,7 @@ function TaskDetailDrawer({
               <input
                 value={form.title}
                 onChange={(event) => onFormChange('title', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
               />
             </label>
 
@@ -845,7 +880,7 @@ function TaskDetailDrawer({
               <input
                 value={form.project}
                 onChange={(event) => onFormChange('project', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
               />
             </label>
 
@@ -854,7 +889,7 @@ function TaskDetailDrawer({
               <select
                 value={form.status}
                 onChange={(event) => onFormChange('status', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
               >
                 {columns.map((column) => (
                   <option key={column.id} value={column.id}>
@@ -869,7 +904,7 @@ function TaskDetailDrawer({
               <select
                 value={form.priority}
                 onChange={(event) => onFormChange('priority', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
               >
                 <option value="hoch">Hoch</option>
                 <option value="mittel">Mittel</option>
@@ -883,7 +918,7 @@ function TaskDetailDrawer({
                 type="date"
                 value={form.dueDateValue}
                 onChange={(event) => onFormChange('dueDateValue', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
               />
             </label>
 
@@ -892,7 +927,7 @@ function TaskDetailDrawer({
               <select
                 value={form.assignee}
                 onChange={(event) => onFormChange('assignee', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
               >
                 {teamMembers.map((member) => (
                   <option key={member} value={member}>
@@ -909,7 +944,7 @@ function TaskDetailDrawer({
               value={form.description}
               onChange={(event) => onFormChange('description', event.target.value)}
               rows={4}
-              className="mt-2 w-full resize-none rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+              className="mt-2 w-full resize-none rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
             />
           </label>
 
@@ -921,7 +956,7 @@ function TaskDetailDrawer({
                     key={tag}
                     type="button"
                     onClick={() => onTagRemove(tag)}
-                    className="rounded-full border border-violet-100 bg-violet-50 px-3 py-1 text-xs font-bold text-[#6047e8]"
+                    className="rounded-full border border-rose-100 bg-rose-50 px-3 py-1 text-xs font-bold text-[#b64454]"
                   >
                     {tag} ×
                   </button>
@@ -932,7 +967,7 @@ function TaskDetailDrawer({
                   value={tagDraft}
                   onChange={(event) => onTagDraftChange(event.target.value)}
                   placeholder="Neues Tag"
-                  className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                  className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
                 />
                 <button
                   type="button"
@@ -961,7 +996,7 @@ function TaskDetailDrawer({
                 <select
                   value={personDraft}
                   onChange={(event) => onPersonDraftChange(event.target.value)}
-                  className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                  className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
                 >
                   {teamMembers.map((member) => (
                     <option key={member} value={member}>
@@ -1018,7 +1053,7 @@ function TaskDetailDrawer({
               <select
                 value={attachmentType}
                 onChange={(event) => onAttachmentTypeChange(event.target.value)}
-                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
               >
                 {attachmentTypeOptions.map((option) => (
                   <option key={option} value={option}>
@@ -1030,7 +1065,7 @@ function TaskDetailDrawer({
               <select
                 value={attachmentSource}
                 onChange={(event) => onAttachmentSourceChange(event.target.value)}
-                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
               >
                 {attachmentSourceOptions.map((option) => (
                   <option key={option} value={option}>
@@ -1039,7 +1074,7 @@ function TaskDetailDrawer({
                 ))}
               </select>
 
-              <label className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-[#6d5df6] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(109,93,246,0.22)]">
+              <label className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)]">
                 Datei verknuepfen
                 <input
                   type="file"
@@ -1080,7 +1115,7 @@ function TaskDetailDrawer({
                     key={member}
                     type="button"
                     onClick={() => onInsertMention(member)}
-                    className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-600 transition hover:border-violet-200 hover:text-[#6047e8]"
+                    className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-600 transition hover:border-rose-200 hover:text-[#b64454]"
                   >
                     @{member}
                   </button>
@@ -1091,7 +1126,7 @@ function TaskDetailDrawer({
                   value={commentDraft}
                   onChange={(event) => onCommentChange(event.target.value)}
                   placeholder="Kommentar oder Rueckfrage eingeben"
-                  className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                  className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
                 />
                 <button
                   type="button"
@@ -1110,7 +1145,7 @@ function TaskDetailDrawer({
                   <select
                     value={form.classification}
                     onChange={(event) => onFormChange('classification', event.target.value)}
-                    className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                    className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
                   >
                     <option value="Intern">Intern</option>
                     <option value="Vertraulich">Vertraulich</option>
@@ -1123,7 +1158,7 @@ function TaskDetailDrawer({
                   <select
                     value={form.risk}
                     onChange={(event) => onFormChange('risk', event.target.value)}
-                    className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                    className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
                   >
                     <option value="Niedrig">Niedrig</option>
                     <option value="Mittel">Mittel</option>
@@ -1136,7 +1171,7 @@ function TaskDetailDrawer({
                   <input
                     value={form.controlId}
                     onChange={(event) => onFormChange('controlId', event.target.value)}
-                    className="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                    className="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
                   />
                 </label>
 
@@ -1145,7 +1180,7 @@ function TaskDetailDrawer({
                   <input
                     value={form.approval}
                     onChange={(event) => onFormChange('approval', event.target.value)}
-                    className="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                    className="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
                   />
                 </label>
 
@@ -1155,7 +1190,7 @@ function TaskDetailDrawer({
                     value={form.evidence}
                     onChange={(event) => onFormChange('evidence', event.target.value)}
                     rows={3}
-                    className="mt-2 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+                    className="mt-2 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
                   />
                 </label>
 
@@ -1196,7 +1231,7 @@ function TaskDetailDrawer({
             <button
               type="button"
               onClick={onSave}
-              className="h-11 rounded-xl bg-[#6d5df6] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(109,93,246,0.22)]"
+              className="h-11 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)]"
             >
               Details speichern
             </button>
@@ -1240,7 +1275,8 @@ export default function MyTasksPage() {
       value: tasks.filter((task) => task.status !== 'done').length,
       subtitle: 'aktuell aktiv',
       icon: ListChecks,
-      iconTone: 'bg-violet-100 text-[#6d5df6]',
+      iconTone: 'bg-white/85 text-[#2f7d68]',
+      cardTone: 'border-[#d5eee7] bg-[#eefbf6]',
       items: tasks.filter((task) => task.status !== 'done'),
     },
     {
@@ -1249,7 +1285,8 @@ export default function MyTasksPage() {
       value: tasks.filter((task) => task.status === 'today').length,
       subtitle: 'sofort pruefen',
       icon: CalendarDays,
-      iconTone: 'bg-amber-100 text-amber-600',
+      iconTone: 'bg-white/85 text-[#c26a34]',
+      cardTone: 'border-[#f5dfc7] bg-[#fff7ee]',
       items: tasks.filter((task) => task.status === 'today'),
     },
     {
@@ -1258,7 +1295,8 @@ export default function MyTasksPage() {
       value: tasks.filter((task) => task.status === 'review').length,
       subtitle: 'Feedback offen',
       icon: ShieldCheck,
-      iconTone: 'bg-blue-100 text-blue-600',
+      iconTone: 'bg-white/85 text-[#4875c8]',
+      cardTone: 'border-[#d8e6fb] bg-[#f2f7ff]',
       items: tasks.filter((task) => task.status === 'review'),
     },
     {
@@ -1267,7 +1305,8 @@ export default function MyTasksPage() {
       value: tasks.filter((task) => task.status === 'blocked').length,
       subtitle: 'muss geloest werden',
       icon: CircleAlert,
-      iconTone: 'bg-rose-100 text-rose-600',
+      iconTone: 'bg-white/85 text-[#c24452]',
+      cardTone: 'border-[#f3d7de] bg-[#fff1f4]',
       items: tasks.filter((task) => task.status === 'blocked'),
     },
   ];
@@ -1433,7 +1472,8 @@ export default function MyTasksPage() {
   return (
     <AppShell
       activeItem="Meine Aufgaben"
-      breadcrumb={['Workspace', 'Persoenlich', 'Meine Aufgaben']}
+      hideBreadcrumb
+      searchPlacement="actions"
       searchValue={searchValue}
       onSearch={setSearchValue}
     >
@@ -1447,15 +1487,12 @@ export default function MyTasksPage() {
           onOpenPerformance={() => setActivePopup({ type: 'performance' })}
         />
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_16px_40px_rgba(39,48,93,0.08)]">
+        <section className="rounded-2xl border border-[#e6b8c0] bg-white p-3.5 shadow-[0_16px_40px_rgba(136,54,66,0.08)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-[13px] font-bold text-slate-900">Meine Aufgaben Uebersicht</p>
-              <p className="mt-1 text-xs text-slate-500">
-                Alle dir zugewiesenen Aufgaben auf einen Blick, inklusive Stand, Deadline und offenen Baustellen.
-              </p>
+              <p className="text-[13px] font-bold text-slate-900">Uebersicht</p>
             </div>
-            <div className="rounded-full bg-violet-50 px-3 py-1.5 text-[11px] font-bold text-[#6047e8]">
+            <div className="rounded-full bg-[#fff0f2] px-3 py-1.5 text-[11px] font-bold text-[#b64454]">
               {visibleTasks.length} Aufgaben sichtbar
             </div>
           </div>

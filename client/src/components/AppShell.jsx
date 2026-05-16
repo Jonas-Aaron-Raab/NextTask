@@ -53,6 +53,8 @@ export default function AppShell({
   onCreateAction,
   onSearch,
   searchValue = '',
+  hideBreadcrumb = false,
+  searchPlacement = 'center',
 }) {
   const navigate = useNavigate();
   const searchInputRef = useRef(null);
@@ -102,13 +104,13 @@ export default function AppShell({
           }`}
         >
           <div className="flex h-[72px] items-center gap-3 px-5">
-            <span className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#5b5fef] text-white shadow-[0_10px_24px_rgba(109,93,246,0.28)]">
+            <span className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-[#d66b79] to-[#b84758] text-white shadow-[0_10px_24px_rgba(184,71,88,0.22)]">
               <CheckSquare className="h-5 w-5" />
             </span>
             {!sidebarCollapsed ? (
               <span className="text-xl font-extrabold tracking-tight">
                 <span className="text-slate-950">Next</span>
-                <span className="text-[#6d5df6]">Task</span>
+                <span className="text-[#b84758]">Task</span>
               </span>
             ) : null}
           </div>
@@ -123,12 +125,12 @@ export default function AppShell({
                   onClick={() => handleNavigation(item)}
                   className={`flex h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold transition ${
                     item.active
-                      ? 'bg-[#f0edff] text-[#6d5df6]'
+                      ? 'bg-[#fff1f3] text-[#b84758]'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   } ${sidebarCollapsed ? 'justify-center' : ''}`}
                   title={sidebarCollapsed ? item.label : undefined}
                 >
-                  <Icon className={`h-5 w-5 flex-none ${item.active ? 'text-[#6d5df6]' : 'text-slate-400'}`} />
+                  <Icon className={`h-5 w-5 flex-none ${item.active ? 'text-[#b84758]' : 'text-slate-400'}`} />
                   {!sidebarCollapsed ? <span>{item.label}</span> : null}
                 </button>
               );
@@ -184,35 +186,54 @@ export default function AppShell({
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex h-auto min-h-[72px] flex-wrap items-center gap-4 border-b border-[#e5e7eb] bg-white px-4 py-3 lg:px-6">
-            <div className="flex min-w-[220px] flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
-              {breadcrumb.map((crumb, index) => (
-                <span key={crumb} className="inline-flex items-center gap-2">
-                  <span className={index === breadcrumb.length - 1 ? 'text-slate-950' : ''}>{crumb}</span>
-                  {index < breadcrumb.length - 1 ? <ChevronRight className="h-4 w-4 text-slate-300" /> : null}
+            {!hideBreadcrumb ? (
+              <div className="flex min-w-[220px] flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
+                {breadcrumb.map((crumb, index) => (
+                  <span key={crumb} className="inline-flex items-center gap-2">
+                    <span className={index === breadcrumb.length - 1 ? 'text-slate-950' : ''}>{crumb}</span>
+                    {index < breadcrumb.length - 1 ? <ChevronRight className="h-4 w-4 text-slate-300" /> : null}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            {searchPlacement === 'center' ? (
+              <div className="relative mx-auto w-full max-w-[420px]">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <input
+                  ref={searchInputRef}
+                  value={searchValue}
+                  onChange={(event) => onSearch?.(event.target.value)}
+                  placeholder="Suche nach Aufgaben, Projekten, Personen ..."
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-[#f8fafc] pl-12 pr-16 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/12"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-400">
+                  Ctrl K
                 </span>
-              ))}
-            </div>
+              </div>
+            ) : null}
 
-            <div className="relative mx-auto w-full max-w-[420px]">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input
-                ref={searchInputRef}
-                value={searchValue}
-                onChange={(event) => onSearch?.(event.target.value)}
-                placeholder="Suche nach Aufgaben, Projekten, Personen ..."
-                className="h-11 w-full rounded-xl border border-slate-200 bg-[#f8fafc] pl-12 pr-16 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/12"
-              />
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-400">
-                Ctrl K
-              </span>
-            </div>
-
-            <div className="ml-auto flex items-center gap-3">
+            <div className={`ml-auto flex items-center gap-3 ${searchPlacement === 'actions' ? 'w-full justify-end' : ''}`}>
+              {searchPlacement === 'actions' ? (
+                <div className="relative w-full min-w-[420px] max-w-[760px]">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <input
+                    ref={searchInputRef}
+                    value={searchValue}
+                    onChange={(event) => onSearch?.(event.target.value)}
+                    placeholder="Suche nach Aufgaben, Projekten, Personen ..."
+                    className="h-11 w-full rounded-xl border border-slate-200 bg-[#f8fafc] pl-12 pr-16 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/12"
+                  />
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-400">
+                    Ctrl K
+                  </span>
+                </div>
+              ) : null}
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setCreateOpen((current) => !current)}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-[#7c3aed] to-[#5b5fef] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(109,93,246,0.24)]"
+                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#e3b4bc] bg-[#fff7f8] px-4 text-sm font-bold text-[#a23d4d] shadow-[0_10px_22px_rgba(162,61,77,0.10)] transition hover:border-[#d89aa5] hover:bg-[#fff1f3]"
                 >
                   <Plus className="h-4 w-4" />
                   Erstellen
