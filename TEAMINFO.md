@@ -15,7 +15,7 @@ NextTask ist eine webbasierte Projekt- und Aufgabenverwaltung fuer Studierende u
 | Jonas Raab | Wirtschaftsinformatik B.Sc. | Projektleiter | GitHub: `Jonas-Aaron-Raab` |
 | Elisabeth Bezverkha | Wirtschaftsinformatik B.Sc. | Entwickler | GitHub: `ebzvk22` |
 | Sesina Habtemichael | Wirtschaftsinformatik B.Sc. | Software Architect | GitHub: `Sesinaa` |
-| Fatma Lpkin | Wirtschaftsinformatik B.Sc. | Spec/Requirements Lead | GitHub: `fatmaipk` |
+| Fatma Ipkin | Wirtschaftsinformatik B.Sc. | Spec/Requirements Lead | GitHub: `fatmaipk` |
 | Ewa Posnjak | Wirtschaftsinformatik B.Sc. | QA/Test Lead | GitHub: `ewaposnjak` |
 | Marlon Ullrich | Wirtschaftsinformatik B.Sc. | DevOps/Build Lead | GitHub: `MarlonMND` |
 

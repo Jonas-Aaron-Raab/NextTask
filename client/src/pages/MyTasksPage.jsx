@@ -65,7 +65,7 @@ const teamProfiles = {
   },
 };
 
-const initialTasks = [
+export const initialTasks = [
   {
     id: 'my-task-1',
     title: 'Hero-Text und CTA fuer Startseite finalisieren',
