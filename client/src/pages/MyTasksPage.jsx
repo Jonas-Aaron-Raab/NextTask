@@ -37,6 +37,34 @@ const teamMembers = [
   'Sarah Nguyen',
 ];
 
+const teamProfiles = {
+  'Lisa Wagner': {
+    email: 'lisa.wagner@sparkasse-nexttask.de',
+    role: 'Produktmanagerin',
+    department: 'Digitales Banking',
+  },
+  'Markus Klein': {
+    email: 'markus.klein@sparkasse-nexttask.de',
+    role: 'Lead UX Manager',
+    department: 'Digitale Vertriebskanaele',
+  },
+  'Anna Becker': {
+    email: 'anna.becker@sparkasse-nexttask.de',
+    role: 'Fachkoordinatorin',
+    department: 'Produkt und Compliance',
+  },
+  'Tom Becker': {
+    email: 'tom.becker@sparkasse-nexttask.de',
+    role: 'QA Manager',
+    department: 'Qualitaetssicherung',
+  },
+  'Sarah Nguyen': {
+    email: 'sarah.nguyen@sparkasse-nexttask.de',
+    role: 'Campaign Managerin',
+    department: 'Marketing und Content',
+  },
+};
+
 const initialTasks = [
   {
     id: 'my-task-1',
@@ -488,11 +516,20 @@ function AssignerAvatar({ person }) {
 
 function TaskCard({ task, onOpen }) {
   const checklistStats = parseChecklistStats(task.checklist);
+  const [showAssignerProfile, setShowAssignerProfile] = useState(false);
+  const assignerProfile = teamProfiles[task.assignedBy.name];
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onOpen(task)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpen(task);
+        }
+      }}
       className="rounded-xl border border-slate-200 bg-white p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-rose-200 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]"
     >
       <div className="flex items-start justify-between gap-3">
@@ -513,12 +550,31 @@ function TaskCard({ task, onOpen }) {
 
       <p className="mt-2 line-clamp-2 text-[11px] font-medium leading-4 text-slate-500">{task.note}</p>
 
-      <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 pt-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <AssignerAvatar person={task.assignedBy} />
-          <div className="min-w-0 pt-1">
-            <p className="truncate text-[11px] font-semibold text-slate-600">{task.assignedBy.name}</p>
-          </div>
+      <div className="mt-3 grid grid-cols-[auto_1fr] items-center gap-2 border-t border-slate-100 pt-2">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setShowAssignerProfile((current) => !current);
+            }}
+            className="rounded-full"
+            aria-label={`Infos zu ${task.assignedBy.name} anzeigen`}
+          >
+            <AssignerAvatar person={task.assignedBy} />
+          </button>
+          {showAssignerProfile ? (
+            <div
+              className="absolute bottom-full left-0 z-20 mb-2 w-56 rounded-2xl border border-[#ebc8cf] bg-white p-3 shadow-[0_16px_36px_rgba(15,23,42,0.14)]"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#b84758]">Zugewiesen von</p>
+              <p className="mt-2 text-sm font-bold text-slate-900">{task.assignedBy.name}</p>
+              <p className="mt-1 text-xs font-semibold text-slate-500">{assignerProfile?.role || 'Teammitglied'}</p>
+              <p className="mt-2 text-xs font-medium text-slate-600">{assignerProfile?.email || 'keine E-Mail hinterlegt'}</p>
+              <p className="mt-1 text-xs font-medium text-slate-500">{assignerProfile?.department || 'keine Abteilung hinterlegt'}</p>
+            </div>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-[10px] font-bold text-slate-500">
@@ -536,7 +592,7 @@ function TaskCard({ task, onOpen }) {
           </span>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
