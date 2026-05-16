@@ -298,16 +298,19 @@ const initialTasks = [
 
 const controlFeed = [
   {
+    taskId: 'my-task-5',
     title: 'Vier-Augen-Freigabe offen',
     meta: 'CTRL-PAY-771 • Shop Optimierung',
     note: 'Vor Abschluss fehlt noch die QA- und Product-Owner-Freigabe fuer den Checkout-Testlauf.',
   },
   {
+    taskId: 'my-task-7',
     title: 'Preisfreigabe ausstehend',
     meta: 'CTRL-PRC-551 • Website Relaunch',
     note: 'Die Pricing-Seite bleibt blockiert, bis Vertrieb und Fachbereich die finale Preisdatei freigeben.',
   },
   {
+    taskId: 'my-task-1',
     title: 'Evidenznachweis nachreichen',
     meta: 'CTRL-WEB-204 • Website Relaunch',
     note: 'Word-Freigabe und Screenshot-Nachweis muessen revisionssicher am Ticket verknuepft werden.',
@@ -503,7 +506,7 @@ function TaskCard({ task, onOpen }) {
 
 function BoardColumn({ column, tasks, onOpenTask }) {
   return (
-    <section className="flex w-[214px] flex-none flex-col rounded-2xl border border-slate-200 bg-white/75 p-2.5 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
+    <section className="flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white/75 p-2.5 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
       <div className="flex items-center gap-2">
         <span className={`h-2.5 w-2.5 rounded-full ${column.dot}`} />
         <h2 className="min-w-0 flex-1 truncate text-[13px] font-bold text-slate-900">{column.title}</h2>
@@ -528,6 +531,140 @@ function SideCard({ title, children }) {
   );
 }
 
+function PopupShell({ title, subtitle, onClose, children, maxWidth = 'max-w-3xl' }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-8 backdrop-blur-sm">
+      <section className={`max-h-[85vh] w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.22)] ${maxWidth}`}>
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 className="text-lg font-extrabold text-slate-950">{title}</h2>
+            {subtitle ? <p className="mt-1 text-sm font-medium text-slate-500">{subtitle}</p> : null}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Popup schliessen"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="max-h-[calc(85vh-88px)] overflow-y-auto p-5">{children}</div>
+      </section>
+    </div>
+  );
+}
+
+function SummaryStrip({ stats, controlCount, performanceValue, onOpenStat, onOpenControls, onOpenPerformance }) {
+  return (
+    <div className="grid gap-3 xl:grid-cols-[minmax(0,2.4fr)_minmax(220px,0.8fr)_minmax(220px,0.8fr)]">
+      <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_12px_32px_rgba(39,48,93,0.07)]">
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+          {stats.map((stat) => (
+            <button
+              key={stat.id}
+              type="button"
+              onClick={() => onOpenStat(stat)}
+              className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-left transition hover:border-violet-200 hover:bg-violet-50"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${stat.iconTone}`}>
+                  <stat.icon className="h-4 w-4" />
+                </span>
+                <ArrowUpRight className="h-3.5 w-3.5 text-slate-400" />
+              </div>
+              <p className="mt-2 text-[11px] font-semibold text-slate-500">{stat.title}</p>
+              <p className="mt-1 text-[22px] font-extrabold leading-none text-slate-950">{stat.value}</p>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <button
+        type="button"
+        onClick={onOpenControls}
+        className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-[0_12px_32px_rgba(39,48,93,0.07)] transition hover:border-violet-200 hover:bg-violet-50"
+      >
+        <p className="text-[13px] font-bold text-slate-900">Freigaben und Kontrollen</p>
+        <p className="mt-2 text-[24px] font-extrabold leading-none text-slate-950">{controlCount}</p>
+        <p className="mt-1 text-[11px] font-semibold text-slate-500">offene Kontrollpunkte</p>
+      </button>
+
+      <button
+        type="button"
+        onClick={onOpenPerformance}
+        className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-[0_12px_32px_rgba(39,48,93,0.07)] transition hover:border-violet-200 hover:bg-violet-50"
+      >
+        <p className="text-[13px] font-bold text-slate-900">Leistungsueberblick</p>
+        <p className="mt-2 text-[24px] font-extrabold leading-none text-slate-950">{performanceValue}%</p>
+        <p className="mt-1 text-[11px] font-semibold text-slate-500">heutiger Fortschritt</p>
+      </button>
+    </div>
+  );
+}
+
+function TaskCollectionPopup({ title, subtitle, tasks, onClose, onOpenTask }) {
+  return (
+    <PopupShell title={title} subtitle={subtitle} onClose={onClose} maxWidth="max-w-2xl">
+      <div className="space-y-3">
+        {tasks.map((task) => (
+          <button
+            key={task.id}
+            type="button"
+            onClick={() => {
+              onClose();
+              onOpenTask(task);
+            }}
+            className="flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-violet-200 hover:bg-violet-50"
+          >
+            <AssignerAvatar person={task.assignedBy} />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-slate-900">{task.title}</p>
+              <p className="mt-1 text-xs font-semibold text-slate-400">{task.project}</p>
+              <p className="mt-2 text-xs font-medium leading-5 text-slate-500">{task.note}</p>
+            </div>
+            <div className="text-right">
+              <PriorityBadge priority={task.priority} />
+              <p className="mt-2 text-xs font-bold text-slate-500">{task.dueDate}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+    </PopupShell>
+  );
+}
+
+function ControlsPopup({ items, tasks, onClose, onOpenTask }) {
+  return (
+    <PopupShell title="Freigaben und Kontrollen" subtitle="Offene Sign-offs, Blocker und Kontrollnachweise" onClose={onClose}>
+      <div className="space-y-3">
+        {items.map((item) => {
+          const linkedTask = tasks.find((task) => task.id === item.taskId);
+          return (
+            <div key={item.title} className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-sm font-bold text-slate-900">{item.title}</p>
+              <p className="mt-1 text-xs font-semibold text-slate-400">{item.meta}</p>
+              <p className="mt-2 text-sm font-medium leading-6 text-slate-600">{item.note}</p>
+              {linkedTask ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenTask(linkedTask);
+                  }}
+                  className="mt-3 rounded-xl bg-slate-900 px-3 py-2 text-sm font-bold text-white transition hover:bg-slate-800"
+                >
+                  Ticket oeffnen
+                </button>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </PopupShell>
+  );
+}
+
 function PerformanceCard({ period, onPeriodChange }) {
   const data = performancePresets[period];
   const radius = 34;
@@ -545,7 +682,7 @@ function PerformanceCard({ period, onPeriodChange }) {
   };
 
   return (
-    <SideCard title="Leistungsueberblick">
+    <div>
       <div className="mt-3 grid grid-cols-4 gap-2">
         {Object.entries(performancePresets).map(([key, preset]) => (
           <button
@@ -617,7 +754,7 @@ function PerformanceCard({ period, onPeriodChange }) {
           ))}
         </div>
       </div>
-    </SideCard>
+    </div>
   );
 }
 
@@ -1074,13 +1211,14 @@ export default function MyTasksPage() {
   const [tasks, setTasks] = useState(initialTasks);
   const [searchValue, setSearchValue] = useState('');
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [activePopup, setActivePopup] = useState(null);
   const [detailForm, setDetailForm] = useState(null);
   const [commentDraft, setCommentDraft] = useState('');
   const [tagDraft, setTagDraft] = useState('');
   const [personDraft, setPersonDraft] = useState(teamMembers[0]);
   const [attachmentSource, setAttachmentSource] = useState('SharePoint');
   const [attachmentType, setAttachmentType] = useState('Excel');
-  const [performancePeriod, setPerformancePeriod] = useState('week');
+  const [performancePeriod, setPerformancePeriod] = useState('day');
 
   const normalizedSearch = searchValue.trim().toLowerCase();
   const visibleTasks = useMemo(
@@ -1095,40 +1233,50 @@ export default function MyTasksPage() {
     [normalizedSearch, tasks],
   );
 
-  const stats = [
+  const statGroups = [
     {
+      id: 'open',
       title: 'Meine offenen Aufgaben',
       value: tasks.filter((task) => task.status !== 'done').length,
       subtitle: 'aktuell aktiv',
       icon: ListChecks,
       iconTone: 'bg-violet-100 text-[#6d5df6]',
+      items: tasks.filter((task) => task.status !== 'done'),
     },
     {
+      id: 'today',
       title: 'Heute faellig',
       value: tasks.filter((task) => task.status === 'today').length,
       subtitle: 'sofort pruefen',
       icon: CalendarDays,
       iconTone: 'bg-amber-100 text-amber-600',
+      items: tasks.filter((task) => task.status === 'today'),
     },
     {
+      id: 'review',
       title: 'Warten auf Review',
       value: tasks.filter((task) => task.status === 'review').length,
       subtitle: 'Feedback offen',
       icon: ShieldCheck,
       iconTone: 'bg-blue-100 text-blue-600',
+      items: tasks.filter((task) => task.status === 'review'),
     },
     {
+      id: 'blocked',
       title: 'Blockiert',
       value: tasks.filter((task) => task.status === 'blocked').length,
       subtitle: 'muss geloest werden',
       icon: CircleAlert,
       iconTone: 'bg-rose-100 text-rose-600',
+      items: tasks.filter((task) => task.status === 'blocked'),
     },
   ];
 
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
+  const activeStat = activePopup?.type === 'stat' ? statGroups.find((stat) => stat.id === activePopup.statId) : null;
 
   const openTask = (task) => {
+    setActivePopup(null);
     setSelectedTaskId(task.id);
     setDetailForm({
       title: task.title,
@@ -1289,65 +1437,70 @@ export default function MyTasksPage() {
       searchValue={searchValue}
       onSearch={setSearchValue}
     >
-      <div className="grid gap-4 px-4 py-4 xl:grid-cols-[minmax(0,1fr)_270px] xl:px-6">
-        <section className="space-y-4">
-          <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
-            {stats.map((stat) => (
-              <StatCard key={stat.title} {...stat} />
-            ))}
+      <div className="space-y-4 px-4 py-4 xl:px-6">
+        <SummaryStrip
+          stats={statGroups}
+          controlCount={controlFeed.length}
+          performanceValue={performancePresets.day.progress}
+          onOpenStat={(stat) => setActivePopup({ type: 'stat', statId: stat.id })}
+          onOpenControls={() => setActivePopup({ type: 'controls' })}
+          onOpenPerformance={() => setActivePopup({ type: 'performance' })}
+        />
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_16px_40px_rgba(39,48,93,0.08)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[13px] font-bold text-slate-900">Meine Aufgaben Uebersicht</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Alle dir zugewiesenen Aufgaben auf einen Blick, inklusive Stand, Deadline und offenen Baustellen.
+              </p>
+            </div>
+            <div className="rounded-full bg-violet-50 px-3 py-1.5 text-[11px] font-bold text-[#6047e8]">
+              {visibleTasks.length} Aufgaben sichtbar
+            </div>
           </div>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-[0_16px_40px_rgba(39,48,93,0.08)]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-[13px] font-bold text-slate-900">Meine Aufgaben Uebersicht</p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Alle dir zugewiesenen Aufgaben auf einen Blick, inklusive Stand, Deadline und offenen Baustellen.
-                </p>
-              </div>
-              <div className="rounded-full bg-violet-50 px-3 py-1.5 text-[11px] font-bold text-[#6047e8]">
-                {visibleTasks.length} Aufgaben sichtbar
-              </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            {columns.map((column) => (
+              <BoardColumn
+                key={column.id}
+                column={column}
+                tasks={visibleTasks.filter((task) => task.status === column.id)}
+                onOpenTask={openTask}
+              />
+            ))}
+          </div>
+          {normalizedSearch && !visibleTasks.length ? (
+            <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
+              <p className="text-sm font-bold text-slate-700">Keine Aufgaben gefunden</p>
+              <p className="mt-1 text-sm text-slate-500">Passe deine Suche an, um andere zugewiesene Aufgaben zu sehen.</p>
             </div>
-
-            <div className="mt-4 overflow-x-auto pb-1">
-              <div className="flex min-w-max items-start gap-2.5">
-                {columns.map((column) => (
-                  <BoardColumn
-                    key={column.id}
-                    column={column}
-                    tasks={visibleTasks.filter((task) => task.status === column.id)}
-                    onOpenTask={openTask}
-                  />
-                ))}
-              </div>
-              {normalizedSearch && !visibleTasks.length ? (
-                <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
-                  <p className="text-sm font-bold text-slate-700">Keine Aufgaben gefunden</p>
-                  <p className="mt-1 text-sm text-slate-500">Passe deine Suche an, um andere zugewiesene Aufgaben zu sehen.</p>
-                </div>
-              ) : null}
-            </div>
-          </section>
+          ) : null}
         </section>
-
-        <aside className="space-y-4">
-          <SideCard title="Freigaben und Kontrollen">
-            <div className="mt-3 space-y-2">
-              {controlFeed.map((item) => (
-                <div key={item.title} className="rounded-xl bg-slate-50 p-2.5">
-                  <p className="text-[12px] font-bold leading-4 text-slate-800">{item.title}</p>
-                  <p className="mt-0.5 text-[10px] font-semibold text-slate-400">{item.meta}</p>
-                  <p className="mt-1.5 line-clamp-3 text-[11px] font-medium leading-4 text-slate-500">{item.note}</p>
-                </div>
-              ))}
-            </div>
-          </SideCard>
-
-          <PerformanceCard period={performancePeriod} onPeriodChange={setPerformancePeriod} />
-        </aside>
       </div>
 
+      {activeStat ? (
+        <TaskCollectionPopup
+          title={activeStat.title}
+          subtitle={`${activeStat.value} passende Tickets`}
+          tasks={activeStat.items}
+          onClose={() => setActivePopup(null)}
+          onOpenTask={openTask}
+        />
+      ) : null}
+      {activePopup?.type === 'controls' ? (
+        <ControlsPopup items={controlFeed} tasks={tasks} onClose={() => setActivePopup(null)} onOpenTask={openTask} />
+      ) : null}
+      {activePopup?.type === 'performance' ? (
+        <PopupShell
+          title="Leistungsueberblick"
+          subtitle="Tag, Woche, Monat und Jahr direkt vergleichen"
+          onClose={() => setActivePopup(null)}
+          maxWidth="max-w-2xl"
+        >
+          <PerformanceCard period={performancePeriod} onPeriodChange={setPerformancePeriod} />
+        </PopupShell>
+      ) : null}
       <TaskDetailDrawer
         task={selectedTask}
         form={detailForm}
