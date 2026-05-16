@@ -296,28 +296,21 @@ const initialTasks = [
   },
 ];
 
-const activityFeed = [
-  'QA hat dir Feedback zum Checkout-Test hinterlassen.',
-  'Lisa hat dich bei der Navigation-Aufgabe erwaehnt.',
-  'Die Pricing-Seite ist aktuell blockiert wegen fehlender Infos.',
-  'Die Onboarding-Mail-Serie wurde von dir abgeschlossen.',
-];
-
-const mentionFeed = [
+const controlFeed = [
   {
-    title: 'Kommentar-Mention aus QA',
-    meta: 'Checkout-Testlauf dokumentieren und an QA geben',
-    note: '@Lisa Wagner bitte die Kreditkarten-Fehlerbilder vor dem Sign-off nachreichen.',
+    title: 'Vier-Augen-Freigabe offen',
+    meta: 'CTRL-PAY-771 • Shop Optimierung',
+    note: 'Vor Abschluss fehlt noch die QA- und Product-Owner-Freigabe fuer den Checkout-Testlauf.',
   },
   {
-    title: 'Freigabehinweis Vertrieb',
-    meta: 'Texte fuer Pricing-Seite abstimmen',
-    note: 'Preisfreigabe steht noch aus. Ticket bleibt bis zur Vertriebsrueckmeldung sensitiv.',
+    title: 'Preisfreigabe ausstehend',
+    meta: 'CTRL-PRC-551 • Website Relaunch',
+    note: 'Die Pricing-Seite bleibt blockiert, bis Vertrieb und Fachbereich die finale Preisdatei freigeben.',
   },
   {
-    title: 'Kontrollnachweis offen',
-    meta: 'Hero-Text und CTA fuer Startseite finalisieren',
-    note: 'Word-Freigabe und Screenshot-Nachweis muessen vor Abschluss im Ticket haengen.',
+    title: 'Evidenznachweis nachreichen',
+    meta: 'CTRL-WEB-204 • Website Relaunch',
+    note: 'Word-Freigabe und Screenshot-Nachweis muessen revisionssicher am Ticket verknuepft werden.',
   },
 ];
 
@@ -537,7 +530,7 @@ function SideCard({ title, children }) {
 
 function PerformanceCard({ period, onPeriodChange }) {
   const data = performancePresets[period];
-  const radius = 42;
+  const radius = 34;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (data.progress / 100) * circumference;
   const statusIcons = {
@@ -568,51 +561,52 @@ function PerformanceCard({ period, onPeriodChange }) {
         ))}
       </div>
 
-      <div className="mt-4 rounded-2xl bg-slate-50 p-4">
-        <div className="flex flex-col items-center text-center">
-          <div className="relative h-[108px] w-[108px] flex-none">
-            <svg className="h-full w-full -rotate-90" viewBox="0 0 108 108" aria-hidden="true">
-              <circle cx="54" cy="54" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="10" />
+      <div className="mt-3 rounded-2xl bg-slate-50 p-3">
+        <div className="flex items-center gap-3">
+          <div className="relative h-[88px] w-[88px] flex-none">
+            <svg className="h-full w-full -rotate-90" viewBox="0 0 88 88" aria-hidden="true">
+              <circle cx="44" cy="44" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="8" />
               <circle
-                cx="54"
-                cy="54"
+                cx="44"
+                cy="44"
                 r={radius}
                 fill="none"
                 stroke="#6d5df6"
                 strokeLinecap="round"
-                strokeWidth="10"
+                strokeWidth="8"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-[28px] font-extrabold leading-none text-slate-950">{data.progress}%</span>
+              <span className="text-[24px] font-extrabold leading-none text-slate-950">{data.progress}%</span>
             </div>
           </div>
 
-          <p className="mt-3 text-sm font-bold text-slate-900">{data.summary}</p>
-
-          <div className="mt-4 grid w-full grid-cols-3 gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] font-bold leading-5 text-slate-900">{data.summary}</p>
+            <div className="mt-3 grid w-full grid-cols-3 gap-2">
             {data.metrics.map((metric) => {
               const Icon = statusIcons[metric.type];
               return (
-                <div key={`${period}-${metric.type}`} className="rounded-xl bg-white px-2 py-3 text-center shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
-                  <p className="text-[15px] font-extrabold leading-none text-slate-900">{metric.value}</p>
-                  <span className={`mx-auto mt-2 inline-flex h-8 w-8 items-center justify-center rounded-full ${statusTones[metric.type]}`}>
-                    <Icon className="h-4 w-4" />
+                <div key={`${period}-${metric.type}`} className="rounded-xl bg-white px-2 py-2 text-center shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+                  <p className="text-[14px] font-extrabold leading-none text-slate-900">{metric.value}</p>
+                  <span className={`mx-auto mt-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full ${statusTones[metric.type]}`}>
+                    <Icon className="h-3.5 w-3.5" />
                   </span>
                 </div>
               );
             })}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-4">
-        <div className="flex items-end gap-1.5 rounded-2xl bg-slate-50 p-3">
+      <div className="mt-3">
+        <div className="flex items-end gap-1.5 rounded-2xl bg-slate-50 p-2.5">
           {data.bars.map((value, index) => (
             <div key={`${period}-${index}`} className="flex flex-1 flex-col items-center gap-1">
-              <div className="flex h-14 w-full items-end">
+              <div className="flex h-10 w-full items-end">
                 <div
                   className={`w-full rounded-full ${index === data.bars.length - 1 ? 'bg-[#6d5df6]' : 'bg-[#c7c1ff]'}`}
                   style={{ height: `${Math.max(value, 18)}%` }}
@@ -1338,9 +1332,9 @@ export default function MyTasksPage() {
         </section>
 
         <aside className="space-y-4">
-          <SideCard title="Mentions und Pruefhinweise">
+          <SideCard title="Freigaben und Kontrollen">
             <div className="mt-3 space-y-2">
-              {mentionFeed.map((item) => (
+              {controlFeed.map((item) => (
                 <div key={item.title} className="rounded-xl bg-slate-50 p-2.5">
                   <p className="text-[12px] font-bold leading-4 text-slate-800">{item.title}</p>
                   <p className="mt-0.5 text-[10px] font-semibold text-slate-400">{item.meta}</p>
@@ -1351,19 +1345,6 @@ export default function MyTasksPage() {
           </SideCard>
 
           <PerformanceCard period={performancePeriod} onPeriodChange={setPerformancePeriod} />
-
-          <SideCard title="Letzte Aktivitaet">
-            <div className="mt-3 space-y-2">
-              {activityFeed.map((item) => (
-                <div key={item} className="flex items-start gap-2.5 rounded-xl bg-slate-50 p-2.5">
-                  <span className="mt-0.5 inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-white text-[#6047e8]">
-                    <MessageSquareMore className="h-3.5 w-3.5" />
-                  </span>
-                  <p className="text-[12px] font-medium leading-4 text-slate-600">{item}</p>
-                </div>
-              ))}
-            </div>
-          </SideCard>
         </aside>
       </div>
 
