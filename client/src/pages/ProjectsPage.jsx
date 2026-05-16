@@ -1,854 +1,172 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  DndContext,
-  PointerSensor,
-  closestCorners,
-  useDraggable,
-  useDroppable,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
-import {
-  ArrowUpRight,
-  CalendarCheck,
+  Building2,
   CalendarDays,
-  CheckCircle2,
-  Clock,
-  Flag,
-  MoreHorizontal,
+  FolderOpen,
+  Layers3,
   Plus,
   ShieldCheck,
-  Trash2,
-  ListChecks,
+  Users,
   X,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 
-const statCards = [
+const createMenuItems = ['Neue Abteilung', 'Neues Projekt'];
+
+const initialDepartments = [
   {
-    title: 'Offene Aufgaben',
-    trend: '4 seit gestern',
-    icon: CalendarCheck,
-    iconTone: 'bg-violet-100 text-[#6d5df6]',
-    trendTone: 'text-slate-500',
+    id: 'dept-digital-banking',
+    name: 'Digitales Banking',
+    lead: 'Lisa Wagner',
+    memberCount: 8,
+    description: 'Digitale Produkte, Banking-Journeys und Kundenoberflaechen.',
+    accent: 'border-[#f3d7de] bg-[#fff4f6]',
+    badgeTone: 'bg-[#fff0f2] text-[#b84758]',
   },
   {
-    title: 'In QA',
-    trend: '1 seit gestern',
-    icon: ShieldCheck,
-    iconTone: 'bg-blue-100 text-blue-600',
-    trendTone: 'text-slate-500',
+    id: 'dept-qa',
+    name: 'Qualitaetssicherung',
+    lead: 'Tom Becker',
+    memberCount: 5,
+    description: 'Tests, Freigaben, Regressionen und Produktionsqualitaet.',
+    accent: 'border-[#d8e6fb] bg-[#f4f8ff]',
+    badgeTone: 'bg-[#edf4ff] text-[#4875c8]',
   },
   {
-    title: 'Überfällig',
-    trend: '2 seit gestern',
-    icon: Clock,
-    iconTone: 'bg-red-100 text-red-500',
-    trendTone: 'text-red-500',
+    id: 'dept-marketing',
+    name: 'Marketing und Content',
+    lead: 'Sarah Nguyen',
+    memberCount: 6,
+    description: 'Kampagnen, Content-Produktion und Markenauftritte.',
+    accent: 'border-[#d5eee7] bg-[#effbf7]',
+    badgeTone: 'bg-[#ecfbf6] text-[#2f7d68]',
   },
   {
-    title: 'Erledigt diese Woche',
-    trend: '6 seit letzter Woche',
-    icon: CheckCircle2,
-    iconTone: 'bg-green-100 text-green-600',
-    trendTone: 'text-green-600',
+    id: 'dept-compliance',
+    name: 'Produkt und Compliance',
+    lead: 'Anna Becker',
+    memberCount: 4,
+    description: 'Kontrollpunkte, Freigaben und regulatorische Abstimmungen.',
+    accent: 'border-[#f5dfc7] bg-[#fff8ef]',
+    badgeTone: 'bg-[#fff4e7] text-[#c26a34]',
   },
 ];
 
-const initialKanbanColumns = [
+const initialProjects = [
   {
-    id: 'heute',
-    title: 'Heute',
-    dot: 'bg-amber-400',
+    id: 'proj-1',
+    departmentId: 'dept-digital-banking',
+    name: 'Mobile Banking Relaunch',
+    owner: 'Lisa Wagner',
+    visibility: 'Abteilung',
+    status: 'In Planung',
+    dueDate: '30. Juni 2026',
+    summary: 'Neue mobile Customer Journey fuer Konto, Karten und Self Services.',
   },
   {
-    id: 'diese-woche',
-    title: 'Diese Woche',
-    dot: 'bg-emerald-500',
+    id: 'proj-2',
+    departmentId: 'dept-digital-banking',
+    name: 'Persoenliches Dashboard',
+    owner: 'Elisabeth Bezverkha',
+    visibility: 'Persoenlich',
+    status: 'In Arbeit',
+    dueDate: '12. Juli 2026',
+    summary: 'Eigenes Strukturprojekt fuer persoenliche Aufgaben und Prioritaeten.',
   },
   {
-    id: 'qa',
-    title: 'QA',
-    dot: 'bg-blue-500',
+    id: 'proj-3',
+    departmentId: 'dept-qa',
+    name: 'Checkout Testprogramm',
+    owner: 'Tom Becker',
+    visibility: 'Abteilung',
+    status: 'Review',
+    dueDate: '22. Juni 2026',
+    summary: 'Abteilungsprojekt fuer Regression, Testfallpflege und QA-Freigaben.',
   },
   {
-    id: 'spaeter',
-    title: 'Später',
-    dot: 'bg-violet-500',
+    id: 'proj-4',
+    departmentId: 'dept-qa',
+    name: 'Device Testmatrix 2026',
+    owner: 'Elisabeth Bezverkha',
+    visibility: 'Persoenlich',
+    status: 'In Arbeit',
+    dueDate: '05. Juli 2026',
+    summary: 'Eigene Matrix fuer Browser-, Breakpoint- und Device-Abdeckung.',
   },
   {
-    id: 'erledigt',
-    title: 'Erledigt',
-    dot: 'bg-green-500',
-  },
-];
-
-const initialTasks = [
-  {
-    id: 'task-1',
-    title: 'Startseite Hero sektion umsetzen',
-    status: 'heute',
-    priority: 'hoch',
-    dueDate: 'Heute',
-    dueDateValue: '2026-05-14',
-    assignee: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
-    overdue: true,
-    checklists: [
-      {
-        id: 'checklist-hero',
-        title: 'Hero Umsetzung',
-        items: [
-          { id: 'item-hero-1', text: 'Headline finalisieren', completed: true },
-          { id: 'item-hero-2', text: 'CTA Button stylen', completed: true },
-          { id: 'item-hero-3', text: 'Mobile Layout prüfen', completed: false },
-        ],
-      },
-    ],
+    id: 'proj-5',
+    departmentId: 'dept-marketing',
+    name: 'Sparkassen Herbstkampagne',
+    owner: 'Sarah Nguyen',
+    visibility: 'Abteilung',
+    status: 'Konzept',
+    dueDate: '18. August 2026',
+    summary: 'Kampagnenprojekt fuer Landingpages, Anzeigen und Content-Bausteine.',
   },
   {
-    id: 'task-2',
-    title: 'Navigation verbessern (Responsive)',
-    status: 'heute',
-    priority: 'mittel',
-    dueDate: 'Heute',
-    dueDateValue: '2026-05-14',
-    assignee: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
-    overdue: true,
-    checklists: [
-      {
-        id: 'checklist-nav',
-        title: 'Responsive Navigation',
-        items: [
-          { id: 'item-nav-1', text: 'Mobile Breakpoints prüfen', completed: true },
-          { id: 'item-nav-2', text: 'Dropdown Verhalten testen', completed: false },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'task-3',
-    title: 'SEO Meta-Tags aktualisieren',
-    status: 'heute',
-    priority: 'niedrig',
-    dueDate: 'Heute',
-    dueDateValue: '2026-05-14',
-    assignee: { initials: 'TB', gradient: 'from-slate-200 to-blue-200' },
-  },
-  {
-    id: 'task-4',
-    title: 'Leistungsoptimierung Bilder',
-    status: 'diese-woche',
-    priority: 'mittel',
-    dueDate: '23. Mai',
-    dueDateValue: '2026-05-23',
-    assignee: { initials: 'AB', gradient: 'from-pink-200 to-violet-200' },
-  },
-  {
-    id: 'task-5',
-    title: 'Case Study Seite erstellen',
-    status: 'diese-woche',
-    priority: 'hoch',
-    dueDate: '24. Mai',
-    dueDateValue: '2026-05-24',
-    assignee: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
-  },
-  {
-    id: 'task-6',
-    title: 'Kontaktformular validieren',
-    status: 'diese-woche',
-    priority: 'niedrig',
-    dueDate: '24. Mai',
-    dueDateValue: '2026-05-24',
-    assignee: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
-  },
-  {
-    id: 'task-7',
-    title: 'Analytics Events konfigurieren',
-    status: 'diese-woche',
-    priority: 'mittel',
-    dueDate: '25. Mai',
-    dueDateValue: '2026-05-25',
-    assignee: { initials: 'TB', gradient: 'from-slate-200 to-blue-200' },
-  },
-  {
-    id: 'task-8',
-    title: 'Checkout Flow testen',
-    status: 'qa',
-    priority: 'hoch',
-    dueDate: '22. Mai',
-    dueDateValue: '2026-05-22',
-    assignee: { initials: 'AB', gradient: 'from-pink-200 to-violet-200' },
-    overdue: true,
-  },
-  {
-    id: 'task-9',
-    title: 'Browser-Kompatibilität prüfen',
-    status: 'qa',
-    priority: 'mittel',
-    dueDate: '23. Mai',
-    dueDateValue: '2026-05-23',
-    assignee: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
-  },
-  {
-    id: 'task-10',
-    title: 'Dark Mode umsetzen',
-    status: 'spaeter',
-    priority: 'niedrig',
-    dueDate: '31. Mai',
-    dueDateValue: '2026-05-31',
-    assignee: { initials: 'TB', gradient: 'from-slate-200 to-blue-200' },
-  },
-  {
-    id: 'task-11',
-    title: 'Blog Template erstellen',
-    status: 'spaeter',
-    priority: 'mittel',
-    dueDate: '02. Juni',
-    dueDateValue: '2026-06-02',
-    assignee: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
-  },
-  {
-    id: 'task-12',
-    title: 'Mehrsprachigkeit vorbereiten',
-    status: 'spaeter',
-    priority: 'niedrig',
-    dueDate: '07. Juni',
-    dueDateValue: '2026-06-07',
-    assignee: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
-  },
-  {
-    id: 'task-13',
-    title: 'Projekt Kickoff & Anforderungen',
-    status: 'erledigt',
-    priority: 'niedrig',
-    dueDate: '15. Mai',
-    dueDateValue: '2026-05-15',
-    assignee: { initials: 'AB', gradient: 'from-pink-200 to-violet-200' },
-    completed: true,
-  },
-  {
-    id: 'task-14',
-    title: 'Design System aktualisiert',
-    status: 'erledigt',
-    priority: 'mittel',
-    dueDate: '16. Mai',
-    dueDateValue: '2026-05-16',
-    assignee: { initials: 'TB', gradient: 'from-slate-200 to-blue-200' },
-    completed: true,
-  },
-  {
-    id: 'task-15',
-    title: 'Landingpage Mockup finalisiert',
-    status: 'erledigt',
-    priority: 'hoch',
-    dueDate: '17. Mai',
-    dueDateValue: '2026-05-17',
-    assignee: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
-    completed: true,
+    id: 'proj-6',
+    departmentId: 'dept-compliance',
+    name: 'Freigabe-Cockpit',
+    owner: 'Anna Becker',
+    visibility: 'Abteilung',
+    status: 'In Arbeit',
+    dueDate: '08. Juli 2026',
+    summary: 'Uebersicht fuer Freigaben, Evidenz und Kontroll-IDs pro Fachbereich.',
   },
 ];
 
-const priorityStyles = {
-  hoch: 'border-red-100 bg-red-50 text-red-600',
-  mittel: 'border-amber-100 bg-amber-50 text-amber-600',
-  niedrig: 'border-emerald-100 bg-emerald-50 text-emerald-600',
-};
-
-const initialActivities = [
-  {
-    id: 'activity-1',
-    user: { initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
-    text: 'Markus Klein hat die Aufgabe "Checkout Flow testen" in QA verschoben.',
-    time: 'vor 2 Stunden',
-    dot: 'bg-blue-500',
-  },
-  {
-    id: 'activity-2',
-    user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-    text: 'Du hast die Aufgabe "SEO Meta-Tags aktualisieren" zugewiesen.',
-    time: 'vor 3 Stunden',
-    dot: 'bg-violet-500',
-  },
-  {
-    id: 'activity-3',
-    user: { initials: 'AB', gradient: 'from-pink-200 to-violet-200' },
-    text: 'Anna Becker hat die Aufgabe "Design System aktualisiert" abgeschlossen.',
-    time: 'vor 5 Stunden',
-    dot: 'bg-green-500',
-  },
-  {
-    id: 'activity-4',
-    user: { initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
-    text: 'Lisa Wagner hat einen Kommentar zur Aufgabe "Navigation verbessern (Responsive)" hinzugefügt.',
-    time: 'vor 1 Tag',
-    dot: 'bg-violet-500',
-  },
-];
-
-const teamMembers = [
-  { id: 'markus', name: 'Markus Klein', initials: 'MK', gradient: 'from-blue-200 to-indigo-300' },
-  { id: 'lisa', name: 'Lisa Wagner', initials: 'LW', gradient: 'from-rose-200 to-orange-200' },
-  { id: 'anna', name: 'Anna Becker', initials: 'AB', gradient: 'from-pink-200 to-violet-200' },
-  { id: 'tom', name: 'Tom Becker', initials: 'TB', gradient: 'from-slate-200 to-blue-200' },
-];
-
-const emptyTaskForm = {
-  title: '',
-  status: 'heute',
-  priority: 'mittel',
-  dueDate: '',
-  assigneeId: 'lisa',
+const emptyDepartmentForm = {
+  name: '',
+  lead: 'Elisabeth Bezverkha',
+  memberCount: '4',
   description: '',
 };
 
-function formatDateInputLabel(value) {
-  if (!value) return 'Heute';
+const emptyProjectForm = {
+  name: '',
+  departmentId: initialDepartments[0].id,
+  owner: 'Elisabeth Bezverkha',
+  visibility: 'Persoenlich',
+  status: 'In Planung',
+  dueDate: '2026-07-15',
+  summary: '',
+};
 
-  const [year, month, day] = value.split('-').map(Number);
-  if (!year || !month || !day) return value;
-
-  return new Intl.DateTimeFormat('de-DE', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date(year, month - 1, day));
-}
-
-function getTaskDueDateLabel(task) {
-  if (task.dueDateValue) {
-    return formatDateInputLabel(task.dueDateValue);
-  }
-
-  return task.dueDate;
-}
-
-function getChecklistProgress(task) {
-  const items = (task.checklists || []).flatMap((checklist) => checklist.items || []);
-  if (!items.length) return null;
-
-  const completedItems = items.filter((item) => item.completed).length;
-  return {
-    completedItems,
-    totalItems: items.length,
-    percentage: Math.round((completedItems / items.length) * 100),
-  };
-}
-
-function getDueOrder(dueDate) {
-  if (!dueDate) return 999;
-  const normalizedDate = dueDate.toLowerCase();
-  if (normalizedDate.includes('heute')) return 0;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedDate)) {
-    return new Date(`${normalizedDate}T00:00:00`).getTime();
-  }
-
-  const day = Number.parseInt(normalizedDate, 10);
-  if (Number.isNaN(day)) return 900;
-  if (normalizedDate.includes('mai')) return 100 + day;
-  if (normalizedDate.includes('juni')) return 200 + day;
-  return 800 + day;
-}
-
-function getNextColumnTone(index) {
-  const tones = ['bg-amber-400', 'bg-emerald-500', 'bg-blue-500', 'bg-violet-500', 'bg-green-500', 'bg-rose-500', 'bg-cyan-500'];
-  return tones[index % tones.length];
-}
-
-function PriorityBadge({ priority }) {
-  const label = priority.charAt(0).toUpperCase() + priority.slice(1);
-
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-bold ${priorityStyles[priority]}`}>
-      <Flag className="h-3 w-3" />
-      {label}
-    </span>
-  );
-}
-
-function Avatar({ assignee }) {
-  return (
-    <span
-      className={`inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br ${assignee.gradient} text-[11px] font-extrabold text-slate-700 ring-2 ring-white`}
-    >
-      {assignee.initials}
-    </span>
-  );
-}
-
-function TaskCard({ task, onOpen }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: task.id,
-  });
-  const checklistProgress = getChecklistProgress(task);
-
-  return (
-    <button
-      ref={setNodeRef}
-      type="button"
-      onClick={() => onOpen(task)}
-      style={{ transform: CSS.Translate.toString(transform) }}
-      className={`group w-full rounded-xl border border-slate-200 bg-white p-3 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)] ${
-        isDragging ? 'z-20 opacity-70 shadow-[0_20px_40px_rgba(15,23,42,0.16)]' : ''
-      }`}
-      {...attributes}
-      {...listeners}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="text-sm font-bold leading-5 text-slate-900">{task.title}</h3>
-        {task.completed ? <CheckCircle2 className="h-4 w-4 flex-none text-green-500" /> : null}
-      </div>
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <PriorityBadge priority={task.priority} />
-        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-          <CalendarDays className="h-3.5 w-3.5" />
-          {getTaskDueDateLabel(task)}
-        </span>
-      </div>
-      <div className="mt-3 flex items-center justify-end">
-        <Avatar assignee={task.assignee} />
-      </div>
-      {checklistProgress ? (
-        <div className="mt-3 rounded-xl bg-slate-50 p-2">
-          <div className="flex items-center justify-between gap-3 text-xs font-bold text-slate-500">
-            <span className="inline-flex items-center gap-1.5">
-              <ListChecks className="h-3.5 w-3.5" />
-              Checkliste
-            </span>
-            <span>{checklistProgress.percentage}%</span>
-          </div>
-          <div className="mt-2 h-2 rounded-full bg-slate-200">
-            <div className="h-full rounded-full bg-[#6d5df6]" style={{ width: `${checklistProgress.percentage}%` }} />
-          </div>
-          <p className="mt-1 text-[11px] font-semibold text-slate-400">
-            {checklistProgress.completedItems}/{checklistProgress.totalItems} erledigt
-          </p>
-        </div>
-      ) : null}
-    </button>
-  );
-}
-
-function KanbanColumn({ column, tasks, onAddTask, onOpenTask, onRenameColumn, onDeleteColumn }) {
-  const { setNodeRef, isOver } = useDroppable({ id: column.id });
-  const [isEditing, setIsEditing] = useState(false);
-  const [draftTitle, setDraftTitle] = useState(column.title);
-
-  const saveTitle = () => {
-    const nextTitle = draftTitle.trim();
-    if (nextTitle && nextTitle !== column.title) {
-      onRenameColumn(column.id, nextTitle);
-    } else {
-      setDraftTitle(column.title);
-    }
-    setIsEditing(false);
-  };
-
-  return (
-    <section
-      ref={setNodeRef}
-      className={`flex min-h-[540px] w-[236px] flex-none flex-col rounded-2xl border border-slate-200 bg-white/75 p-3 shadow-[0_12px_30px_rgba(15,23,42,0.04)] transition ${
-        isOver ? 'border-[#6d5df6] bg-violet-50/70 ring-4 ring-[#6d5df6]/10' : ''
-      }`}
-    >
-      <div className="flex items-center gap-2">
-        <span className={`h-2.5 w-2.5 rounded-full ${column.dot}`} />
-        {isEditing ? (
-          <input
-            value={draftTitle}
-            onChange={(event) => setDraftTitle(event.target.value)}
-            onBlur={saveTitle}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') saveTitle();
-              if (event.key === 'Escape') {
-                setDraftTitle(column.title);
-                setIsEditing(false);
-              }
-            }}
-            autoFocus
-            className="h-7 min-w-0 flex-1 rounded-lg border border-violet-200 bg-white px-2 text-sm font-bold text-slate-900 outline-none ring-4 ring-violet-100"
-          />
-        ) : (
-          <button
-            type="button"
-            onDoubleClick={() => setIsEditing(true)}
-            onClick={() => setIsEditing(true)}
-            className="min-w-0 flex-1 truncate rounded-lg px-1 py-1 text-left text-sm font-bold text-slate-900 transition hover:bg-slate-50"
-            title="Kategorie umbenennen"
-          >
-            {column.title}
-          </button>
-        )}
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500">{tasks.length}</span>
-        <button
-          type="button"
-          onClick={() => onDeleteColumn(column)}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-500"
-          aria-label={`${column.title} löschen`}
-          title="Kategorie löschen"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => onAddTask(column.id)}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-[#6d5df6]"
-          aria-label={`${column.title} Aufgabe hinzufügen`}
-        >
-          <Plus className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div className="mt-3 flex flex-1 flex-col gap-3">
-        {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} onOpen={onOpenTask} />
-        ))}
-      </div>
-
-      <button
-        type="button"
-        onClick={() => onAddTask(column.id)}
-        className="mt-3 flex items-center gap-1.5 rounded-xl px-2 py-2 text-sm font-bold text-slate-400 transition hover:bg-slate-50 hover:text-[#6d5df6]"
-      >
-        <Plus className="h-4 w-4" />
-        Aufgabe hinzufügen
-      </button>
-    </section>
-  );
-}
-
-function AddColumnCard({ onAddColumn }) {
-  return (
-    <section className="flex min-h-[540px] w-[236px] flex-none flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/50 p-4 text-center shadow-[0_12px_30px_rgba(15,23,42,0.03)]">
-      <button
-        type="button"
-        onClick={onAddColumn}
-        className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#6d5df6] text-white shadow-[0_14px_28px_rgba(109,93,246,0.25)] transition hover:bg-[#5b4df0]"
-        aria-label="Kategorie hinzufügen"
-      >
-        <Plus className="h-5 w-5" />
-      </button>
-      <p className="mt-3 text-sm font-bold text-slate-800">Kategorie hinzufügen</p>
-      <p className="mt-1 text-xs font-semibold text-slate-400">Neue Spalte für dein Board</p>
-    </section>
-  );
-}
-
-function DeleteColumnDialog({ column, taskCount, onCancel, onConfirm }) {
-  if (!column) return null;
-
+function PopupShell({ title, subtitle, onClose, children, maxWidth = 'max-w-2xl' }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-8 backdrop-blur-sm">
-      <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
-        <div className="flex items-start gap-3">
-          <span className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-red-50 text-red-500">
-            <Trash2 className="h-5 w-5" />
-          </span>
+      <section className={`w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.22)] ${maxWidth}`}>
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
           <div>
-            <h2 className="text-lg font-extrabold text-slate-950">Kategorie löschen?</h2>
-            <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
-              In „{column.title}“ {taskCount === 1 ? 'liegt noch eine Aufgabe' : `liegen noch ${taskCount} Aufgaben`}.
-              Wenn du die Kategorie löschst, werden diese Aufgaben ebenfalls entfernt.
-            </p>
+            <h2 className="text-xl font-extrabold text-slate-950">{title}</h2>
+            {subtitle ? <p className="mt-1 text-sm font-medium text-slate-500">{subtitle}</p> : null}
           </div>
-        </div>
-
-        <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
-            onClick={onCancel}
-            className="h-10 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+            onClick={onClose}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Popup schliessen"
           >
-            Abbrechen
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="h-10 rounded-xl bg-red-500 px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(239,68,68,0.22)] transition hover:bg-red-600"
-          >
-            Kategorie löschen
+            <X className="h-5 w-5" />
           </button>
         </div>
+        <div className="p-6">{children}</div>
       </section>
     </div>
   );
 }
 
-function InfoCard({ title, actionLabel = 'Alle anzeigen', onAction, children }) {
+function CreateDepartmentModal({ form, onChange, onClose, onSubmit }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(39,48,93,0.07)]">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-bold text-slate-900">{title}</h2>
-        {actionLabel ? (
-          <button type="button" onClick={onAction} className="text-xs font-bold text-[#6047e8]">
-            {actionLabel}
-          </button>
-        ) : null}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function ListModal({ title, items, type, onClose, onOpenTask }) {
-  if (!type) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-8 backdrop-blur-sm">
-      <section className="max-h-full w-full max-w-2xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <h2 className="text-lg font-extrabold text-slate-950">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Liste schließen"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="max-h-[70vh] space-y-3 overflow-y-auto p-5">
-          {items.map((item) =>
-            type === 'activities' ? (
-              <div key={item.id} className="flex items-start gap-3 rounded-2xl bg-slate-50 p-3">
-                <Avatar assignee={item.user} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium leading-5 text-slate-700">{item.text}</p>
-                  <p className="mt-1 text-xs font-semibold text-slate-400">{item.time}</p>
-                </div>
-                <span className={`mt-1.5 h-2 w-2 flex-none rounded-full ${item.dot}`} />
-              </div>
-            ) : (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onOpenTask(item);
-                }}
-                className="flex w-full items-center gap-3 rounded-2xl bg-slate-50 p-3 text-left transition hover:bg-violet-50"
-              >
-                <Avatar assignee={item.assignee} />
-                <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">{item.title}</span>
-                <span className={item.overdue || item.dueDate === 'Heute' ? 'rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-500' : 'text-xs font-bold text-slate-400'}>
-                  {getTaskDueDateLabel(item)}
-                </span>
-              </button>
-            ),
-          )}
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function ProjectStatusCard({ progress, openTasks }) {
-  const radius = 37;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
-
-  return (
-    <InfoCard title="Projektstatus" actionLabel="">
-      <div className="mt-5 flex items-center gap-4">
-        <div className="relative h-[96px] w-[96px] flex-none">
-          <svg className="h-full w-full -rotate-90" viewBox="0 0 96 96" aria-hidden="true">
-            <circle cx="48" cy="48" r={radius} fill="none" stroke="#ede9fe" strokeWidth="10" />
-            <circle
-              cx="48"
-              cy="48"
-              r={radius}
-              fill="none"
-              stroke="#6d5df6"
-              strokeLinecap="round"
-              strokeWidth="10"
-              strokeDasharray={circumference}
-              strokeDashoffset={strokeDashoffset}
-            />
-          </svg>
-          <span className="absolute inset-0 flex items-center justify-center text-xl font-extrabold text-slate-950">
-            {progress}%
-          </span>
-        </div>
-
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-slate-900">Projektfortschritt</p>
-          <p className="mt-1 text-sm font-semibold text-slate-500">{progress}% abgeschlossen</p>
-        </div>
-      </div>
-
-      <div className="mt-5 h-2.5 rounded-full bg-violet-100">
-        <div className="h-full rounded-full bg-[#6d5df6]" style={{ width: `${progress}%` }} />
-      </div>
-      <p className="mt-3 text-sm font-semibold text-slate-500">Noch {openTasks} Aufgaben offen</p>
-    </InfoCard>
-  );
-}
-
-function TaskCreateModal({ form, columns, onChange, onClose, onSubmit }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-8 backdrop-blur-sm">
-      <form
-        onSubmit={onSubmit}
-        className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_28px_80px_rgba(15,23,42,0.22)]"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6d5df6]">Neue Aufgabe</p>
-            <h2 className="mt-1 text-xl font-extrabold text-slate-950">Aufgabe erstellen</h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Dialog schließen"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="mt-5 space-y-4">
+    <PopupShell title="Neue Abteilung" subtitle="Lege einen neuen Bereich an, in dem spaeter eigene Projekte organisiert werden." maxWidth="max-w-3xl" onClose={onClose}>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
+        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <label className="block text-sm font-bold text-slate-700">
-            Titel
+            Abteilungsname
             <input
-              value={form.title}
-              onChange={(event) => onChange('title', event.target.value)}
-              placeholder="Aufgabentitel"
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-            />
-          </label>
-
-          <label className="block text-sm font-bold text-slate-700">
-            Beschreibung
-            <textarea
-              value={form.description}
-              onChange={(event) => onChange('description', event.target.value)}
-              rows={3}
-              placeholder="Kurze Beschreibung"
-              className="mt-2 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-            />
-          </label>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-bold text-slate-700">
-              Status
-              <select
-                value={form.status}
-                onChange={(event) => onChange('status', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-              >
-                {columns.map((column) => (
-                  <option key={column.id} value={column.id}>
-                    {column.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block text-sm font-bold text-slate-700">
-              Priorität
-              <select
-                value={form.priority}
-                onChange={(event) => onChange('priority', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-              >
-                <option value="hoch">Hoch</option>
-                <option value="mittel">Mittel</option>
-                <option value="niedrig">Niedrig</option>
-              </select>
-            </label>
-
-            <label className="block text-sm font-bold text-slate-700">
-              Fälligkeit
-              <span className="relative mt-2 block">
-                <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="date"
-                  value={form.dueDate}
-                  onChange={(event) => onChange('dueDate', event.target.value)}
-                  className="h-11 w-full rounded-xl border border-slate-200 px-3 pl-10 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-                />
-              </span>
-            </label>
-
-            <label className="block text-sm font-bold text-slate-700">
-              Zust. Person
-              <select
-                value={form.assigneeId}
-                onChange={(event) => onChange('assigneeId', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-              >
-                {teamMembers.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </div>
-
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-11 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
-          >
-            Abbrechen
-          </button>
-          <button type="submit" className="h-11 rounded-xl bg-[#6d5df6] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(109,93,246,0.22)]">
-            Aufgabe erstellen
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-function TaskDetailDrawer({
-  task,
-  form,
-  columns,
-  commentDraft,
-  onChange,
-  onCommentChange,
-  onCommentSubmit,
-  onChecklistCreate,
-  onChecklistRename,
-  onChecklistItemCreate,
-  onChecklistItemToggle,
-  onClose,
-  onSave,
-  onDelete,
-  onComplete,
-}) {
-  if (!task) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/30 backdrop-blur-sm">
-      <aside className="h-full w-full max-w-xl overflow-y-auto border-l border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
-        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white/95 px-6 py-5 backdrop-blur">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#6d5df6]">Aufgabendetails</p>
-            <h2 className="mt-1 text-xl font-extrabold text-slate-950">{task.title}</h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Drawer schließen"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="space-y-5 px-6 py-6">
-          <label className="block text-sm font-bold text-slate-700">
-            Titel
-            <input
-              value={form.title}
-              onChange={(event) => onChange('title', event.target.value)}
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+              value={form.name}
+              onChange={(event) => onChange('name', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
             />
           </label>
 
@@ -858,891 +176,373 @@ function TaskDetailDrawer({
               value={form.description}
               onChange={(event) => onChange('description', event.target.value)}
               rows={5}
-              placeholder="Noch keine Beschreibung vorhanden."
-              className="mt-2 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
+              className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            />
+          </label>
+        </section>
+
+        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <label className="block text-sm font-bold text-slate-700">
+            Bereichsleitung
+            <input
+              value={form.lead}
+              onChange={(event) => onChange('lead', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
             />
           </label>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-bold text-slate-700">
-              Status
-              <select
-                value={form.status}
-                onChange={(event) => onChange('status', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-              >
-                {columns.map((column) => (
-                  <option key={column.id} value={column.id}>
-                    {column.title}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <label className="block text-sm font-bold text-slate-700">
+            Teamgroesse
+            <input
+              value={form.memberCount}
+              onChange={(event) => onChange('memberCount', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            />
+          </label>
+        </section>
+      </div>
 
-            <label className="block text-sm font-bold text-slate-700">
-              Priorität
-              <select
-                value={form.priority}
-                onChange={(event) => onChange('priority', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-              >
-                <option value="hoch">Hoch</option>
-                <option value="mittel">Mittel</option>
-                <option value="niedrig">Niedrig</option>
-              </select>
-            </label>
-
-            <label className="block text-sm font-bold text-slate-700">
-              Fälligkeitsdatum
-              <span className="relative mt-2 block">
-                <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="date"
-                  value={form.dueDate}
-                  onChange={(event) => onChange('dueDate', event.target.value)}
-                  className="h-11 w-full rounded-xl border border-slate-200 px-3 pl-10 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-                />
-              </span>
-            </label>
-
-            <label className="block text-sm font-bold text-slate-700">
-              Zust. Person
-              <select
-                value={form.assigneeId}
-                onChange={(event) => onChange('assigneeId', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-              >
-                {teamMembers.map((member) => (
-                  <option key={member.id} value={member.id}>
-                    {member.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-bold text-slate-900">Checklisten</h3>
-              <button
-                type="button"
-                onClick={onChecklistCreate}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-white px-2.5 text-xs font-bold text-[#6d5df6] shadow-[0_8px_20px_rgba(15,23,42,0.05)] transition hover:bg-violet-50"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Checkliste
-              </button>
-            </div>
-
-            <div className="mt-3 space-y-4">
-              {task.checklists?.length ? (
-                task.checklists.map((checklist) => {
-                  const totalItems = checklist.items?.length || 0;
-                  const completedItems = checklist.items?.filter((item) => item.completed).length || 0;
-                  const percentage = totalItems ? Math.round((completedItems / totalItems) * 100) : 0;
-
-                  return (
-                    <div key={checklist.id} className="rounded-2xl bg-white p-3 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
-                      <input
-                        value={checklist.title}
-                        onChange={(event) => onChecklistRename(checklist.id, event.target.value)}
-                        className="h-9 w-full rounded-lg border border-transparent px-2 text-sm font-bold text-slate-900 outline-none transition hover:border-slate-200 focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-                        aria-label="Checklistenname"
-                      />
-                      <div className="mt-2 flex items-center gap-3">
-                        <div className="h-2 flex-1 rounded-full bg-slate-200">
-                          <div className="h-full rounded-full bg-[#6d5df6]" style={{ width: `${percentage}%` }} />
-                        </div>
-                        <span className="text-xs font-bold text-slate-500">{percentage}%</span>
-                      </div>
-
-                      <div className="mt-3 space-y-2">
-                        {checklist.items?.map((item) => (
-                          <label key={item.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-                            <input
-                              type="checkbox"
-                              checked={item.completed}
-                              onChange={() => onChecklistItemToggle(checklist.id, item.id)}
-                              className="h-4 w-4 rounded border-slate-300 accent-[#6d5df6]"
-                            />
-                            <span className={item.completed ? 'text-slate-400 line-through' : ''}>{item.text}</span>
-                          </label>
-                        ))}
-                      </div>
-
-                      <form
-                        onSubmit={(event) => {
-                          event.preventDefault();
-                          const formData = new FormData(event.currentTarget);
-                          const text = String(formData.get('item') || '').trim();
-                          if (!text) return;
-                          onChecklistItemCreate(checklist.id, text);
-                          event.currentTarget.reset();
-                        }}
-                        className="mt-3 flex gap-2"
-                      >
-                        <input
-                          name="item"
-                          placeholder="Punkt hinzufügen"
-                          className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-                        />
-                        <button type="submit" className="h-9 rounded-lg bg-slate-900 px-3 text-xs font-bold text-white transition hover:bg-slate-800">
-                          Hinzufügen
-                        </button>
-                      </form>
-                    </div>
-                  );
-                })
-              ) : (
-                <p className="text-sm font-medium text-slate-500">Noch keine Checkliste vorhanden.</p>
-              )}
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <h3 className="text-sm font-bold text-slate-900">Kommentare</h3>
-            <div className="mt-3 space-y-3">
-              {task.comments?.length ? (
-                task.comments.map((comment) => (
-                  <div key={comment.id} className="rounded-xl bg-white p-3 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-bold text-slate-800">{comment.author}</span>
-                      <span className="text-xs font-semibold text-slate-400">{comment.time}</span>
-                    </div>
-                    <p className="mt-1 text-sm font-medium leading-5 text-slate-600">{comment.text}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm font-medium text-slate-500">Noch keine Kommentare vorhanden.</p>
-              )}
-            </div>
-            <div className="mt-4 flex gap-2">
-              <input
-                value={commentDraft}
-                onChange={(event) => onCommentChange(event.target.value)}
-                placeholder="Kommentar schreiben"
-                className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#6d5df6] focus:ring-4 focus:ring-[#6d5df6]/10"
-              />
-              <button
-                type="button"
-                onClick={onCommentSubmit}
-                className="h-10 rounded-xl bg-slate-900 px-3 text-sm font-bold text-white transition hover:bg-slate-800"
-              >
-                Senden
-              </button>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <h3 className="text-sm font-bold text-slate-900">Aktivitätsverlauf</h3>
-            <p className="mt-2 text-sm font-medium text-slate-500">Diese Aufgabe wurde im Web-Relaunch Board angelegt.</p>
-          </section>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onDelete}
-              className="inline-flex h-11 items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 text-sm font-bold text-red-600 transition hover:bg-red-100"
-            >
-              <Trash2 className="h-4 w-4" />
-              Löschen
-            </button>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={onComplete}
-                className="h-11 rounded-xl border border-green-100 bg-green-50 px-4 text-sm font-bold text-green-600 transition hover:bg-green-100"
-              >
-                Abschließen
-              </button>
-              <button
-                type="button"
-                onClick={onSave}
-                className="h-11 rounded-xl bg-[#6d5df6] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(109,93,246,0.22)]"
-              >
-                Speichern
-              </button>
-            </div>
-          </div>
-        </div>
-      </aside>
-    </div>
+      <div className="mt-6 flex justify-end gap-3">
+        <button type="button" onClick={onClose} className="h-11 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
+          Abbrechen
+        </button>
+        <button type="button" onClick={onSubmit} className="h-11 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)]">
+          Abteilung anlegen
+        </button>
+      </div>
+    </PopupShell>
   );
 }
 
-function getColumnTitle(columns, columnId) {
-  return columns.find((column) => column.id === columnId)?.title || 'Board';
+function CreateProjectModal({ departments, form, onChange, onClose, onSubmit }) {
+  return (
+    <PopupShell title="Neues Projekt" subtitle="Lege ein persoenliches Projekt oder ein Projekt fuer eine Abteilung an." maxWidth="max-w-3xl" onClose={onClose}>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <label className="block text-sm font-bold text-slate-700">
+            Projektname
+            <input
+              value={form.name}
+              onChange={(event) => onChange('name', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            />
+          </label>
+
+          <label className="block text-sm font-bold text-slate-700">
+            Projektbeschreibung
+            <textarea
+              value={form.summary}
+              onChange={(event) => onChange('summary', event.target.value)}
+              rows={5}
+              className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            />
+          </label>
+        </section>
+
+        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <label className="block text-sm font-bold text-slate-700">
+            Abteilung
+            <select
+              value={form.departmentId}
+              onChange={(event) => onChange('departmentId', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            >
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block text-sm font-bold text-slate-700">
+            Projektart
+            <select
+              value={form.visibility}
+              onChange={(event) => onChange('visibility', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            >
+              <option value="Persoenlich">Persoenlich</option>
+              <option value="Abteilung">Abteilung</option>
+            </select>
+          </label>
+
+          <label className="block text-sm font-bold text-slate-700">
+            Verantwortung
+            <input
+              value={form.owner}
+              onChange={(event) => onChange('owner', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            />
+          </label>
+
+          <label className="block text-sm font-bold text-slate-700">
+            Zieltermin
+            <input
+              type="date"
+              value={form.dueDate}
+              onChange={(event) => onChange('dueDate', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            />
+          </label>
+        </section>
+      </div>
+
+      <div className="mt-6 flex justify-end gap-3">
+        <button type="button" onClick={onClose} className="h-11 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
+          Abbrechen
+        </button>
+        <button type="button" onClick={onSubmit} className="h-11 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)]">
+          Projekt anlegen
+        </button>
+      </div>
+    </PopupShell>
+  );
+}
+
+function DepartmentCard({ department, projectCount, isActive, onOpen }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(department.id)}
+      className={`rounded-3xl border p-5 text-left shadow-[0_12px_32px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 ${department.accent} ${
+        isActive ? 'ring-4 ring-[#c95767]/12' : ''
+      }`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#b84758] shadow-[0_10px_22px_rgba(184,71,88,0.10)]">
+          <Building2 className="h-6 w-6" />
+        </span>
+        <span className={`rounded-full px-3 py-1 text-xs font-bold ${department.badgeTone}`}>{projectCount} Projekte</span>
+      </div>
+
+      <h2 className="mt-5 text-xl font-extrabold text-slate-950">{department.name}</h2>
+      <p className="mt-2 text-sm font-medium leading-6 text-slate-500">{department.description}</p>
+
+      <div className="mt-5 flex flex-wrap gap-3 text-xs font-bold text-slate-500">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1">
+          <Users className="h-3.5 w-3.5" />
+          {department.memberCount} Personen
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          {department.lead}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+function ProjectCard({ project }) {
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-base font-bold text-slate-950">{project.name}</h3>
+          <p className="mt-1 text-sm font-medium leading-6 text-slate-500">{project.summary}</p>
+        </div>
+        <span className="rounded-full bg-[#fff0f2] px-3 py-1 text-xs font-bold text-[#b84758]">{project.visibility}</span>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+        <span className="rounded-full bg-slate-100 px-3 py-1">{project.status}</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1">
+          <CalendarDays className="h-3.5 w-3.5" />
+          {project.dueDate}
+        </span>
+        <span className="rounded-full bg-slate-100 px-3 py-1">{project.owner}</span>
+      </div>
+    </article>
+  );
 }
 
 export default function ProjectsPage() {
-  const [tasks, setTasks] = useState(initialTasks);
-  const [columns, setColumns] = useState(initialKanbanColumns);
-  const [activityItems, setActivityItems] = useState(initialActivities);
+  const [departments, setDepartments] = useState(initialDepartments);
+  const [projects, setProjects] = useState(initialProjects);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState(initialDepartments[0].id);
   const [searchValue, setSearchValue] = useState('');
-  const [taskFormOpen, setTaskFormOpen] = useState(false);
-  const [taskForm, setTaskForm] = useState(emptyTaskForm);
-  const [selectedTaskId, setSelectedTaskId] = useState(null);
-  const [detailForm, setDetailForm] = useState(emptyTaskForm);
-  const [commentDraft, setCommentDraft] = useState('');
-  const [openStatMenu, setOpenStatMenu] = useState(null);
-  const [hiddenStats, setHiddenStats] = useState([]);
-  const [listModal, setListModal] = useState(null);
-  const [pendingColumnDelete, setPendingColumnDelete] = useState(null);
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    }),
-  );
+  const [createMode, setCreateMode] = useState(null);
+  const [departmentForm, setDepartmentForm] = useState(emptyDepartmentForm);
+  const [projectForm, setProjectForm] = useState(emptyProjectForm);
+
   const normalizedSearch = searchValue.trim().toLowerCase();
-  const visibleTasks = normalizedSearch
-    ? tasks.filter((task) => task.title.toLowerCase().includes(normalizedSearch))
-    : tasks;
-  const completedTasks = tasks.filter((task) => task.completed).length;
-  const openTasks = tasks.length - completedTasks;
-  const projectProgress = tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0;
-  const deadlineTasks = tasks
-    .filter((task) => !task.completed)
-    .sort((left, right) => getDueOrder(left.dueDateValue || left.dueDate) - getDueOrder(right.dueDateValue || right.dueDate))
-    .slice(0, 3);
-  const allDeadlineTasks = tasks
-    .filter((task) => !task.completed)
-    .sort((left, right) => getDueOrder(left.dueDateValue || left.dueDate) - getDueOrder(right.dueDateValue || right.dueDate));
-  const projectStats = statCards.map((stat) => {
-    if (stat.title === 'Offene Aufgaben') {
-      return { ...stat, value: tasks.filter((task) => !task.completed).length };
-    }
 
-    if (stat.title === 'In QA') {
-      return { ...stat, value: tasks.filter((task) => task.status === 'qa').length };
-    }
+  const visibleDepartments = useMemo(
+    () =>
+      normalizedSearch
+        ? departments.filter((department) => {
+            const departmentProjects = projects.filter((project) => project.departmentId === department.id);
+            return (
+              department.name.toLowerCase().includes(normalizedSearch) ||
+              department.description.toLowerCase().includes(normalizedSearch) ||
+              departmentProjects.some((project) => project.name.toLowerCase().includes(normalizedSearch))
+            );
+          })
+        : departments,
+    [departments, normalizedSearch, projects],
+  );
 
-    if (stat.title === 'Überfällig') {
-      return { ...stat, value: tasks.filter((task) => task.overdue && !task.completed).length };
-    }
+  const selectedDepartment =
+    visibleDepartments.find((department) => department.id === selectedDepartmentId) ||
+    visibleDepartments[0] ||
+    departments[0] ||
+    null;
 
-    return { ...stat, value: tasks.filter((task) => task.completed).length };
-  }).filter((stat) => !hiddenStats.includes(stat.title));
-
-  const handleDragEnd = ({ active, over }) => {
-    if (!over) return;
-
-    const targetStatus = over.id;
-    const targetColumn = columns.some((column) => column.id === targetStatus);
-    if (!targetColumn) return;
-
-    const movedTask = tasks.find((task) => task.id === active.id);
-    if (!movedTask || movedTask.status === targetStatus) return;
-
-    setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === active.id
-          ? {
-              ...task,
-              status: targetStatus,
-              completed: targetStatus === 'erledigt',
-            }
-          : task,
-      ),
-    );
-
-    setActivityItems((currentItems) => [
-      {
-        id: `activity-${Date.now()}`,
-        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text: `Du hast die Aufgabe "${movedTask.title}" nach ${getColumnTitle(columns, targetStatus)} verschoben.`,
-        time: 'gerade eben',
-        dot: targetStatus === 'erledigt' ? 'bg-green-500' : 'bg-violet-500',
-      },
-      ...currentItems,
-    ]);
-  };
-
-  const openTaskCreateForm = (status = 'heute') => {
-    setTaskForm({ ...emptyTaskForm, status });
-    setTaskFormOpen(true);
-  };
-
-  const handleColumnRename = (columnId, title) => {
-    const previousTitle = getColumnTitle(columns, columnId);
-    setColumns((currentColumns) =>
-      currentColumns.map((column) => (column.id === columnId ? { ...column, title } : column)),
-    );
-    setActivityItems((currentItems) => [
-      {
-        id: `activity-${Date.now()}`,
-        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text: `Du hast die Kategorie "${previousTitle}" in "${title}" umbenannt.`,
-        time: 'gerade eben',
-        dot: 'bg-violet-500',
-      },
-      ...currentItems,
-    ]);
-  };
-
-  const handleColumnCreate = () => {
-    const title = `Neue Kategorie ${columns.length + 1}`;
-    const newColumn = {
-      id: `kategorie-${Date.now()}`,
-      title,
-      dot: getNextColumnTone(columns.length),
-    };
-
-    setColumns((currentColumns) => [...currentColumns, newColumn]);
-    setActivityItems((currentItems) => [
-      {
-        id: `activity-${Date.now()}`,
-        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text: `Du hast die Kategorie "${title}" erstellt.`,
-        time: 'gerade eben',
-        dot: 'bg-green-500',
-      },
-      ...currentItems,
-    ]);
-  };
-
-  const deleteColumn = (column) => {
-    const removedTaskCount = tasks.filter((task) => task.status === column.id).length;
-
-    setColumns((currentColumns) => currentColumns.filter((candidate) => candidate.id !== column.id));
-    setTasks((currentTasks) => currentTasks.filter((task) => task.status !== column.id));
-    setActivityItems((currentItems) => [
-      {
-        id: `activity-${Date.now()}`,
-        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text:
-          removedTaskCount > 0
-            ? `Du hast die Kategorie "${column.title}" mit ${removedTaskCount} Aufgaben gelöscht.`
-            : `Du hast die Kategorie "${column.title}" gelöscht.`,
-        time: 'gerade eben',
-        dot: 'bg-red-500',
-      },
-      ...currentItems,
-    ]);
-  };
-
-  const handleColumnDeleteRequest = (column) => {
-    const taskCount = tasks.filter((task) => task.status === column.id).length;
-    if (taskCount > 0) {
-      setPendingColumnDelete(column);
-      return;
-    }
-
-    deleteColumn(column);
-  };
-
-  const handleColumnDeleteConfirm = () => {
-    if (!pendingColumnDelete) return;
-    deleteColumn(pendingColumnDelete);
-    setPendingColumnDelete(null);
-  };
-
-  const handleCreateAction = (action) => {
-    if (action === 'Neue Aufgabe') {
-      openTaskCreateForm('heute');
-      return;
-    }
-
-    setActivityItems((currentItems) => [
-      {
-        id: `activity-${Date.now()}`,
-        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text: `Du hast "${action}" vorbereitet.`,
-        time: 'gerade eben',
-        dot: 'bg-violet-500',
-      },
-      ...currentItems,
-    ]);
-  };
-
-  const handleTaskFormChange = (field, value) => {
-    setTaskForm((current) => ({ ...current, [field]: value }));
-  };
-
-  const handleTaskCreate = (event) => {
-    event.preventDefault();
-    if (!taskForm.title.trim()) return;
-
-    const assignee = teamMembers.find((member) => member.id === taskForm.assigneeId) || teamMembers[0];
-    const newTask = {
-      id: `task-${Date.now()}`,
-      title: taskForm.title.trim(),
-      status: taskForm.status,
-      priority: taskForm.priority,
-      dueDate: formatDateInputLabel(taskForm.dueDate.trim()),
-      dueDateValue: taskForm.dueDate.trim(),
-      assignee,
-      completed: taskForm.status === 'erledigt',
-    };
-
-    setTasks((currentTasks) => [...currentTasks, newTask]);
-    setActivityItems((currentItems) => [
-      {
-        id: `activity-${Date.now()}`,
-        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text: `Du hast die Aufgabe "${newTask.title}" erstellt.`,
-        time: 'gerade eben',
-        dot: 'bg-violet-500',
-      },
-      ...currentItems,
-    ]);
-    setTaskFormOpen(false);
-    setTaskForm(emptyTaskForm);
-  };
-
-  const openTaskDetail = (task) => {
-    const assignee = teamMembers.find((member) => member.initials === task.assignee.initials) || teamMembers[0];
-    setSelectedTaskId(task.id);
-    setDetailForm({
-      title: task.title,
-      status: task.status,
-      priority: task.priority,
-      dueDate: task.dueDateValue || '',
-      assigneeId: assignee.id,
-      description: task.description || '',
+  const visibleProjects = useMemo(() => {
+    if (!selectedDepartment) return [];
+    return projects.filter((project) => {
+      if (project.departmentId !== selectedDepartment.id) return false;
+      if (!normalizedSearch) return true;
+      return (
+        project.name.toLowerCase().includes(normalizedSearch) ||
+        project.summary.toLowerCase().includes(normalizedSearch) ||
+        project.owner.toLowerCase().includes(normalizedSearch)
+      );
     });
-    setCommentDraft('');
-  };
+  }, [normalizedSearch, projects, selectedDepartment]);
 
-  const handleDetailFormChange = (field, value) => {
-    setDetailForm((current) => ({ ...current, [field]: value }));
-  };
-
-  const handleTaskSave = () => {
-    if (!selectedTaskId || !detailForm.title.trim()) return;
-
-    const assignee = teamMembers.find((member) => member.id === detailForm.assigneeId) || teamMembers[0];
-    const originalTask = tasks.find((task) => task.id === selectedTaskId);
-    setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === selectedTaskId
-          ? {
-              ...task,
-              title: detailForm.title.trim(),
-              description: detailForm.description.trim(),
-              status: detailForm.status,
-              priority: detailForm.priority,
-              dueDate: formatDateInputLabel(detailForm.dueDate.trim()),
-              dueDateValue: detailForm.dueDate.trim(),
-              assignee,
-              completed: detailForm.status === 'erledigt',
-            }
-          : task,
-      ),
-    );
-    setActivityItems((currentItems) => [
-      {
-        id: `activity-${Date.now()}`,
-        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text: `Du hast die Aufgabe "${detailForm.title.trim()}" aktualisiert.`,
-        time: 'gerade eben',
-        dot: originalTask?.priority !== detailForm.priority ? 'bg-amber-500' : 'bg-violet-500',
-      },
-      ...currentItems,
-    ]);
-    setSelectedTaskId(null);
-  };
-
-  const handleTaskDelete = () => {
-    const deletedTask = tasks.find((task) => task.id === selectedTaskId);
-    if (!deletedTask) return;
-
-    setTasks((currentTasks) => currentTasks.filter((task) => task.id !== selectedTaskId));
-    setActivityItems((currentItems) => [
-      {
-        id: `activity-${Date.now()}`,
-        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text: `Du hast die Aufgabe "${deletedTask.title}" gelöscht.`,
-        time: 'gerade eben',
-        dot: 'bg-red-500',
-      },
-      ...currentItems,
-    ]);
-    setSelectedTaskId(null);
-  };
-
-  const handleTaskComplete = () => {
-    const completedTask = tasks.find((task) => task.id === selectedTaskId);
-    if (!completedTask) return;
-
-    setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === selectedTaskId
-          ? {
-              ...task,
-              status: 'erledigt',
-              completed: true,
-            }
-          : task,
-      ),
-    );
-    setActivityItems((currentItems) => [
-      {
-        id: `activity-${Date.now()}`,
-        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text: `Du hast die Aufgabe "${completedTask.title}" abgeschlossen.`,
-        time: 'gerade eben',
-        dot: 'bg-green-500',
-      },
-      ...currentItems,
-    ]);
-    setSelectedTaskId(null);
-  };
-
-  const handleCommentCreate = () => {
-    if (!selectedTaskId || !commentDraft.trim()) return;
-
-    const selectedTask = tasks.find((task) => task.id === selectedTaskId);
-    if (!selectedTask) return;
-
-    const newComment = {
-      id: `comment-${Date.now()}`,
-      author: 'Du',
-      text: commentDraft.trim(),
-      time: 'gerade eben',
-    };
-
-    setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === selectedTaskId
-          ? {
-              ...task,
-              comments: [...(task.comments || []), newComment],
-            }
-          : task,
-      ),
-    );
-    setActivityItems((currentItems) => [
-      {
-        id: `activity-${Date.now()}`,
-        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text: `Du hast einen Kommentar zur Aufgabe "${selectedTask.title}" hinzugefügt.`,
-        time: 'gerade eben',
-        dot: 'bg-violet-500',
-      },
-      ...currentItems,
-    ]);
-    setCommentDraft('');
-  };
-
-  const handleChecklistCreate = () => {
-    if (!selectedTaskId) return;
-
-    const selectedTask = tasks.find((task) => task.id === selectedTaskId);
-    if (!selectedTask) return;
-
-    const checklist = {
-      id: `checklist-${Date.now()}`,
-      title: `Checkliste ${(selectedTask.checklists?.length || 0) + 1}`,
-      items: [],
-    };
-
-    setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === selectedTaskId
-          ? {
-              ...task,
-              checklists: [...(task.checklists || []), checklist],
-            }
-          : task,
-      ),
-    );
-    setActivityItems((currentItems) => [
-      {
-        id: `activity-${Date.now()}`,
-        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text: `Du hast eine Checkliste zur Aufgabe "${selectedTask.title}" hinzugefügt.`,
-        time: 'gerade eben',
-        dot: 'bg-violet-500',
-      },
-      ...currentItems,
-    ]);
-  };
-
-  const handleChecklistRename = (checklistId, title) => {
-    if (!selectedTaskId) return;
-
-    setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === selectedTaskId
-          ? {
-              ...task,
-              checklists: (task.checklists || []).map((checklist) =>
-                checklist.id === checklistId ? { ...checklist, title } : checklist,
-              ),
-            }
-          : task,
-      ),
-    );
-  };
-
-  const handleChecklistItemCreate = (checklistId, text) => {
-    if (!selectedTaskId) return;
-
-    setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === selectedTaskId
-          ? {
-              ...task,
-              checklists: (task.checklists || []).map((checklist) =>
-                checklist.id === checklistId
-                  ? {
-                      ...checklist,
-                      items: [...(checklist.items || []), { id: `item-${Date.now()}`, text, completed: false }],
-                    }
-                  : checklist,
-              ),
-            }
-          : task,
-      ),
-    );
-  };
-
-  const handleChecklistItemToggle = (checklistId, itemId) => {
-    if (!selectedTaskId) return;
-
-    setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === selectedTaskId
-          ? {
-              ...task,
-              checklists: (task.checklists || []).map((checklist) =>
-                checklist.id === checklistId
-                  ? {
-                      ...checklist,
-                      items: (checklist.items || []).map((item) =>
-                        item.id === itemId ? { ...item, completed: !item.completed } : item,
-                      ),
-                    }
-                  : checklist,
-              ),
-            }
-          : task,
-      ),
-    );
-  };
-
-  const handleStatAction = (statTitle, action) => {
-    setOpenStatMenu(null);
-
-    if (action === 'hide') {
-      setHiddenStats((current) => [...current, statTitle]);
-      return;
+  const handleCreateAction = (item) => {
+    if (item === 'Neue Abteilung') {
+      setDepartmentForm(emptyDepartmentForm);
+      setCreateMode('department');
     }
 
-    setActivityItems((currentItems) => [
-      {
-        id: `activity-${Date.now()}`,
-        user: { initials: 'DU', gradient: 'from-violet-200 to-fuchsia-200' },
-        text:
-          action === 'export'
-            ? `Du hast einen Bericht für "${statTitle}" exportiert.`
-            : `Du hast Details für "${statTitle}" geöffnet.`,
-        time: 'gerade eben',
-        dot: 'bg-violet-500',
-      },
-      ...currentItems,
-    ]);
+    if (item === 'Neues Projekt') {
+      setProjectForm({
+        ...emptyProjectForm,
+        departmentId: selectedDepartment?.id || departments[0]?.id || '',
+      });
+      setCreateMode('project');
+    }
   };
 
-  const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
+  const handleDepartmentSubmit = () => {
+    const trimmedName = departmentForm.name.trim();
+    if (!trimmedName) return;
+
+    const nextDepartment = {
+      id: `dept-${Date.now()}`,
+      name: trimmedName,
+      lead: departmentForm.lead.trim() || 'Elisabeth Bezverkha',
+      memberCount: Number.parseInt(departmentForm.memberCount, 10) || 4,
+      description: departmentForm.description.trim() || 'Neue Abteilung fuer strukturierte Projekte und Zusammenarbeit.',
+      accent: 'border-[#f3d7de] bg-[#fff4f6]',
+      badgeTone: 'bg-[#fff0f2] text-[#b84758]',
+    };
+
+    setDepartments((current) => [nextDepartment, ...current]);
+    setSelectedDepartmentId(nextDepartment.id);
+    setCreateMode(null);
+  };
+
+  const handleProjectSubmit = () => {
+    const trimmedName = projectForm.name.trim();
+    if (!trimmedName || !projectForm.departmentId) return;
+
+    const nextProject = {
+      id: `proj-${Date.now()}`,
+      departmentId: projectForm.departmentId,
+      name: trimmedName,
+      owner: projectForm.owner.trim() || 'Elisabeth Bezverkha',
+      visibility: projectForm.visibility,
+      status: projectForm.visibility === 'Persoenlich' ? 'Eigene Planung' : 'Abteilungsprojekt',
+      dueDate: new Intl.DateTimeFormat('de-DE', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      }).format(new Date(`${projectForm.dueDate}T00:00:00`)),
+      summary: projectForm.summary.trim() || 'Neu angelegtes Projekt ohne weitere Beschreibung.',
+    };
+
+    setProjects((current) => [nextProject, ...current]);
+    setSelectedDepartmentId(projectForm.departmentId);
+    setCreateMode(null);
+  };
 
   return (
     <AppShell
       activeItem="Projekte"
-      breadcrumb={['Workspace', 'Web-Relaunch', 'Projekte']}
+      hideBreadcrumb
+      searchPlacement="actions"
+      createMenuItems={createMenuItems}
+      onCreateAction={handleCreateAction}
       searchValue={searchValue}
       onSearch={setSearchValue}
-      onCreateAction={handleCreateAction}
     >
-      <div className="grid gap-5 px-5 py-5 xl:grid-cols-[1fr_275px] xl:px-7">
-        <section className="space-y-5">
-          <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
-            {projectStats.map((stat) => (
-              <article
-                key={stat.title}
-                className="relative min-h-[104px] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_34px_rgba(15,23,42,0.06)]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <span className={`inline-flex h-11 w-11 items-center justify-center rounded-full ${stat.iconTone}`}>
-                    <stat.icon className="h-5 w-5" />
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setOpenStatMenu((current) => (current === stat.title ? null : stat.title))}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
-                    aria-label={`${stat.title} Optionen`}
-                  >
-                    <MoreHorizontal className="h-5 w-5" />
-                  </button>
-                  {openStatMenu === stat.title ? (
-                    <div className="absolute right-4 top-12 z-20 w-44 rounded-xl border border-slate-200 bg-white p-1.5 text-sm shadow-[0_18px_45px_rgba(15,23,42,0.14)]">
-                      <button
-                        type="button"
-                        onClick={() => handleStatAction(stat.title, 'details')}
-                        className="w-full rounded-lg px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50"
-                      >
-                        Details anzeigen
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleStatAction(stat.title, 'export')}
-                        className="w-full rounded-lg px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50"
-                      >
-                        Bericht exportieren
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleStatAction(stat.title, 'hide')}
-                        className="w-full rounded-lg px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50"
-                      >
-                        Karte ausblenden
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-                <div className="mt-3 flex items-end justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-500">{stat.title}</p>
-                    <p className="mt-1 text-[28px] font-bold leading-none text-slate-950">{stat.value}</p>
-                  </div>
-                  <p className={`flex items-center gap-1 pb-1 text-xs font-bold ${stat.trendTone}`}>
-                    <ArrowUpRight className="h-3.5 w-3.5" />
-                    {stat.trend}
-                  </p>
-                </div>
-              </article>
+      <div className="space-y-6 px-4 py-4 xl:px-6">
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {visibleDepartments.map((department) => (
+            <DepartmentCard
+              key={department.id}
+              department={department}
+              projectCount={projects.filter((project) => project.departmentId === department.id).length}
+              isActive={selectedDepartment?.id === department.id}
+              onOpen={setSelectedDepartmentId}
+            />
+          ))}
+        </section>
+
+        <section className="rounded-3xl border border-[#e6b8c0] bg-white p-5 shadow-[0_16px_40px_rgba(136,54,66,0.08)]">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4">
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#b84758]">
+                {selectedDepartment ? selectedDepartment.name : 'Keine Abteilung'}
+              </p>
+              <h2 className="mt-2 text-2xl font-extrabold text-slate-950">
+                {selectedDepartment ? 'Projekte der Abteilung' : 'Keine Projekte sichtbar'}
+              </h2>
+              {selectedDepartment ? (
+                <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500">{selectedDepartment.description}</p>
+              ) : null}
+            </div>
+
+            {selectedDepartment ? (
+              <div className="rounded-2xl border border-[#f0d7db] bg-[#fff7f8] px-4 py-3 text-right">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#b84758]">Leitung</p>
+                <p className="mt-1 text-sm font-bold text-slate-900">{selectedDepartment.lead}</p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{selectedDepartment.memberCount} Personen im Bereich</p>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+            {visibleProjects.map((project) => (
+              <ProjectCard key={project.id} project={project} />
             ))}
           </div>
 
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_16px_40px_rgba(39,48,93,0.08)]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-bold text-slate-900">Web-Relaunch Board</p>
-                <p className="mt-1 text-sm text-slate-500">Projektaufgaben nach Status, Priorität und Fälligkeit.</p>
+          {!visibleProjects.length ? (
+            <div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center">
+              <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-[#b84758] shadow-[0_10px_24px_rgba(184,71,88,0.10)]">
+                <FolderOpen className="h-7 w-7" />
               </div>
-              <div className="flex gap-2">
-                <button type="button" className="rounded-lg bg-[#6047e8] px-3 py-2 text-sm font-semibold text-white">
-                  Alle
-                </button>
-                <button type="button" className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-600">
-                  Aktiv
-                </button>
-                <button type="button" className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-600">
-                  Archiv
-                </button>
-              </div>
+              <p className="mt-4 text-base font-bold text-slate-900">Noch keine Projekte in diesem Bereich</p>
+              <p className="mt-2 text-sm font-medium text-slate-500">
+                Lege ueber `Erstellen` ein neues Projekt an oder waehle eine andere Abteilung aus.
+              </p>
             </div>
-
-            <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-              <div className="mt-5 overflow-x-auto pb-2">
-                <div className="flex min-w-max gap-3">
-                  {columns.map((column) => (
-                    <KanbanColumn
-                      key={column.id}
-                      column={column}
-                      tasks={visibleTasks.filter((task) => task.status === column.id)}
-                      onAddTask={openTaskCreateForm}
-                      onOpenTask={openTaskDetail}
-                      onRenameColumn={handleColumnRename}
-                      onDeleteColumn={handleColumnDeleteRequest}
-                    />
-                  ))}
-                  <AddColumnCard onAddColumn={handleColumnCreate} />
-                </div>
-                {normalizedSearch && !visibleTasks.length ? (
-                  <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
-                    <p className="text-sm font-bold text-slate-700">Keine Aufgaben gefunden</p>
-                    <p className="mt-1 text-sm text-slate-500">Passe deine Suche an, um weitere Karten zu sehen.</p>
-                  </div>
-                ) : null}
-              </div>
-            </DndContext>
-          </section>
+          ) : null}
         </section>
-
-        <aside className="space-y-5">
-          <InfoCard title="Aktivitäten" onAction={() => setListModal('activities')}>
-            <div className="mt-4 space-y-4">
-              {activityItems.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3">
-                  <Avatar assignee={activity.user} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium leading-5 text-slate-700">{activity.text}</p>
-                    <p className="mt-1 text-xs font-semibold text-slate-400">{activity.time}</p>
-                  </div>
-                  <span className={`mt-1.5 h-2 w-2 flex-none rounded-full ${activity.dot}`} />
-                </div>
-              ))}
-            </div>
-          </InfoCard>
-
-          <InfoCard title="Nächste Deadlines" onAction={() => setListModal('deadlines')}>
-            <div className="mt-4 space-y-3">
-              {deadlineTasks.map((task) => (
-                <button
-                  key={task.id}
-                  type="button"
-                  onClick={() => openTaskDetail(task)}
-                  className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-slate-50"
-                >
-                  <Avatar assignee={task.assignee} />
-                  <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">{task.title}</span>
-                  <span
-                    className={
-                      task.overdue || task.dueDate === 'Heute'
-                        ? 'rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-500'
-                        : 'text-xs font-bold text-slate-400'
-                    }
-                  >
-                    {getTaskDueDateLabel(task)}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </InfoCard>
-
-          <ProjectStatusCard progress={projectProgress} openTasks={openTasks} />
-        </aside>
       </div>
-      {taskFormOpen ? (
-        <TaskCreateModal
-          form={taskForm}
-          columns={columns}
-          onChange={handleTaskFormChange}
-          onClose={() => setTaskFormOpen(false)}
-          onSubmit={handleTaskCreate}
+
+      {createMode === 'department' ? (
+        <CreateDepartmentModal
+          form={departmentForm}
+          onChange={(field, value) => setDepartmentForm((current) => ({ ...current, [field]: value }))}
+          onClose={() => setCreateMode(null)}
+          onSubmit={handleDepartmentSubmit}
         />
       ) : null}
-      <TaskDetailDrawer
-        task={selectedTask}
-        form={detailForm}
-        columns={columns}
-        commentDraft={commentDraft}
-        onChange={handleDetailFormChange}
-        onCommentChange={setCommentDraft}
-        onCommentSubmit={handleCommentCreate}
-        onChecklistCreate={handleChecklistCreate}
-        onChecklistRename={handleChecklistRename}
-        onChecklistItemCreate={handleChecklistItemCreate}
-        onChecklistItemToggle={handleChecklistItemToggle}
-        onClose={() => setSelectedTaskId(null)}
-        onSave={handleTaskSave}
-        onDelete={handleTaskDelete}
-        onComplete={handleTaskComplete}
-      />
-      <ListModal
-        title={listModal === 'activities' ? 'Alle Aktivitäten' : 'Alle Deadlines'}
-        type={listModal}
-        items={listModal === 'activities' ? activityItems : allDeadlineTasks}
-        onClose={() => setListModal(null)}
-        onOpenTask={openTaskDetail}
-      />
-      <DeleteColumnDialog
-        column={pendingColumnDelete}
-        taskCount={pendingColumnDelete ? tasks.filter((task) => task.status === pendingColumnDelete.id).length : 0}
-        onCancel={() => setPendingColumnDelete(null)}
-        onConfirm={handleColumnDeleteConfirm}
-      />
+
+      {createMode === 'project' ? (
+        <CreateProjectModal
+          departments={departments}
+          form={projectForm}
+          onChange={(field, value) => setProjectForm((current) => ({ ...current, [field]: value }))}
+          onClose={() => setCreateMode(null)}
+          onSubmit={handleProjectSubmit}
+        />
+      ) : null}
     </AppShell>
   );
 }
