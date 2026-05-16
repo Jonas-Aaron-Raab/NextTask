@@ -397,6 +397,15 @@ const statusLabels = {
 
 const attachmentSourceOptions = ['SharePoint', 'OneDrive', 'DMS', 'Audit-Ablage'];
 const attachmentTypeOptions = ['Excel', 'Word', 'PDF', 'Link'];
+const createMenuItems = ['Neue Aufgabe', 'Neues Projekt'];
+const initialProjects = Array.from(new Set(initialTasks.map((task) => task.project))).map((name, index) => ({
+  id: `project-${index + 1}`,
+  name,
+  scope: 'abteilung',
+  department: 'Digitales Banking',
+  owner: 'Lisa Wagner',
+  description: `${name} wurde als bestehendes Projekt aus dem Aufgabenbestand uebernommen.`,
+}));
 const performancePresets = {
   day: {
     label: 'Tag',
@@ -769,6 +778,186 @@ function ControlsPopup({ items, tasks, onClose, onOpenTask }) {
             </div>
           );
         })}
+      </div>
+    </PopupShell>
+  );
+}
+
+function CreateTaskModal({ projects, form, onChange, onClose, onSubmit }) {
+  return (
+    <PopupShell title="Neue Aufgabe" subtitle="Lege eine neue Aufgabe mit Status, Projekt und Verantwortlichkeiten an." onClose={onClose} maxWidth="max-w-3xl">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <label className="block text-sm font-bold text-slate-700">
+            Aufgabentitel
+            <input
+              value={form.title}
+              onChange={(event) => onChange('title', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            />
+          </label>
+
+          <label className="block text-sm font-bold text-slate-700">
+            Kurzbeschreibung
+            <textarea
+              value={form.description}
+              onChange={(event) => onChange('description', event.target.value)}
+              rows={5}
+              className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            />
+          </label>
+        </section>
+
+        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <label className="block text-sm font-bold text-slate-700">
+            Projekt
+            <select
+              value={form.project}
+              onChange={(event) => onChange('project', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            >
+              {projects.map((project) => (
+                <option key={project.id} value={project.name}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm font-bold text-slate-700">
+              Status
+              <select
+                value={form.status}
+                onChange={(event) => onChange('status', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              >
+                {columns.filter((column) => column.id !== 'done').map((column) => (
+                  <option key={column.id} value={column.id}>
+                    {column.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Prioritaet
+              <select
+                value={form.priority}
+                onChange={(event) => onChange('priority', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              >
+                <option value="hoch">Hoch</option>
+                <option value="mittel">Mittel</option>
+                <option value="niedrig">Niedrig</option>
+              </select>
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Faelligkeit
+              <input
+                type="date"
+                value={form.dueDateValue}
+                onChange={(event) => onChange('dueDateValue', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              />
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Zustaendig
+              <select
+                value={form.assignee}
+                onChange={(event) => onChange('assignee', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              >
+                {teamMembers.map((member) => (
+                  <option key={member} value={member}>
+                    {member}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <div className="mt-5 flex justify-end gap-3">
+        <button type="button" onClick={onClose} className="h-11 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
+          Abbrechen
+        </button>
+        <button type="button" onClick={onSubmit} className="h-11 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)]">
+          Aufgabe anlegen
+        </button>
+      </div>
+    </PopupShell>
+  );
+}
+
+function CreateProjectModal({ form, onChange, onClose, onSubmit }) {
+  return (
+    <PopupShell title="Neues Projekt" subtitle="Lege ein eigenes Projekt oder ein Projekt fuer deine Abteilung strukturiert an." onClose={onClose} maxWidth="max-w-3xl">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <label className="block text-sm font-bold text-slate-700">
+            Projektname
+            <input
+              value={form.name}
+              onChange={(event) => onChange('name', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            />
+          </label>
+
+          <label className="block text-sm font-bold text-slate-700">
+            Beschreibung
+            <textarea
+              value={form.description}
+              onChange={(event) => onChange('description', event.target.value)}
+              rows={5}
+              className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            />
+          </label>
+        </section>
+
+        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <label className="block text-sm font-bold text-slate-700">
+            Projektart
+            <select
+              value={form.scope}
+              onChange={(event) => onChange('scope', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            >
+              <option value="persoenlich">Persoenlich</option>
+              <option value="abteilung">Abteilung</option>
+            </select>
+          </label>
+
+          <label className="block text-sm font-bold text-slate-700">
+            Bereich / Abteilung
+            <input
+              value={form.department}
+              onChange={(event) => onChange('department', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            />
+          </label>
+
+          <label className="block text-sm font-bold text-slate-700">
+            Projektverantwortung
+            <input
+              value={form.owner}
+              onChange={(event) => onChange('owner', event.target.value)}
+              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            />
+          </label>
+        </section>
+      </div>
+
+      <div className="mt-5 flex justify-end gap-3">
+        <button type="button" onClick={onClose} className="h-11 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
+          Abbrechen
+        </button>
+        <button type="button" onClick={onSubmit} className="h-11 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)]">
+          Projekt anlegen
+        </button>
       </div>
     </PopupShell>
   );
@@ -1321,11 +1510,13 @@ function TaskDetailDrawer({
 
 export default function MyTasksPage() {
   const [tasks, setTasks] = useState(initialTasks);
+  const [projects, setProjects] = useState(initialProjects);
   const [columnOrder, setColumnOrder] = useState(columns.map((column) => column.id));
   const [draggedColumnId, setDraggedColumnId] = useState(null);
   const [searchValue, setSearchValue] = useState('');
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [activePopup, setActivePopup] = useState(null);
+  const [createMode, setCreateMode] = useState(null);
   const [detailForm, setDetailForm] = useState(null);
   const [commentDraft, setCommentDraft] = useState('');
   const [tagDraft, setTagDraft] = useState('');
@@ -1333,6 +1524,22 @@ export default function MyTasksPage() {
   const [attachmentSource, setAttachmentSource] = useState('SharePoint');
   const [attachmentType, setAttachmentType] = useState('Excel');
   const [performancePeriod, setPerformancePeriod] = useState('day');
+  const [createTaskForm, setCreateTaskForm] = useState({
+    title: '',
+    description: '',
+    project: initialProjects[0]?.name || '',
+    status: 'today',
+    priority: 'mittel',
+    dueDateValue: '2026-05-20',
+    assignee: 'Lisa Wagner',
+  });
+  const [createProjectForm, setCreateProjectForm] = useState({
+    name: '',
+    description: '',
+    scope: 'persoenlich',
+    department: 'Digitales Banking',
+    owner: 'Elisabeth Bezverkha',
+  });
 
   const normalizedSearch = searchValue.trim().toLowerCase();
   const visibleTasks = useMemo(
@@ -1564,11 +1771,110 @@ export default function MyTasksPage() {
     setDraggedColumnId(null);
   };
 
+  const handleCreateAction = (item) => {
+    if (item === 'Neue Aufgabe') {
+      setCreateTaskForm({
+        title: '',
+        description: '',
+        project: projects[0]?.name || '',
+        status: 'today',
+        priority: 'mittel',
+        dueDateValue: '2026-05-20',
+        assignee: 'Lisa Wagner',
+      });
+      setCreateMode('task');
+    }
+
+    if (item === 'Neues Projekt') {
+      setCreateProjectForm({
+        name: '',
+        description: '',
+        scope: 'persoenlich',
+        department: 'Digitales Banking',
+        owner: 'Elisabeth Bezverkha',
+      });
+      setCreateMode('project');
+    }
+  };
+
+  const handleCreateTaskFormChange = (field, value) => {
+    setCreateTaskForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleCreateProjectFormChange = (field, value) => {
+    setCreateProjectForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleCreateProjectSubmit = () => {
+    const trimmedName = createProjectForm.name.trim();
+    if (!trimmedName) return;
+
+    const projectExists = projects.some((project) => project.name.toLowerCase() === trimmedName.toLowerCase());
+    if (projectExists) {
+      setCreateMode(null);
+      return;
+    }
+
+    const nextProject = {
+      id: `project-${Date.now()}`,
+      name: trimmedName,
+      scope: createProjectForm.scope,
+      department: createProjectForm.department.trim() || 'Digitales Banking',
+      owner: createProjectForm.owner.trim() || 'Elisabeth Bezverkha',
+      description: createProjectForm.description.trim(),
+    };
+
+    setProjects((current) => [nextProject, ...current]);
+    setCreateTaskForm((current) => ({ ...current, project: nextProject.name }));
+    setCreateMode(null);
+  };
+
+  const handleCreateTaskSubmit = () => {
+    const trimmedTitle = createTaskForm.title.trim();
+    if (!trimmedTitle || !createTaskForm.project) return;
+
+    const dueDateLabel = formatDateLabel(createTaskForm.dueDateValue);
+    const note = createTaskForm.description.trim() || 'Neu angelegte Aufgabe wartet auf weitere Details.';
+
+    const nextTask = {
+      id: `my-task-${Date.now()}`,
+      title: trimmedTitle,
+      status: createTaskForm.status,
+      project: createTaskForm.project,
+      priority: createTaskForm.priority,
+      dueDate: dueDateLabel,
+      dueDateValue: createTaskForm.dueDateValue,
+      progress: 0,
+      checklist: '0/3 erledigt',
+      note,
+      description: note,
+      assignee: createTaskForm.assignee,
+      assignedBy: { name: 'Elisabeth Bezverkha', initials: 'EB', tone: 'from-rose-200 to-orange-200' },
+      tags: ['Neu'],
+      linkedPeople: [],
+      attachments: [],
+      comments: [],
+      compliance: {
+        classification: 'Intern',
+        risk: 'Niedrig',
+        controlId: `CTRL-NEW-${String(Date.now()).slice(-4)}`,
+        approval: 'Noch kein Freigabeprozess definiert',
+        evidence: 'Noch keine Evidenz hinterlegt',
+      },
+      auditTrail: [`${formatDateLabel('2026-05-16')}: Aufgabe neu erstellt.`],
+    };
+
+    setTasks((current) => [nextTask, ...current]);
+    setCreateMode(null);
+  };
+
   return (
     <AppShell
       activeItem="Meine Aufgaben"
       hideBreadcrumb
       searchPlacement="actions"
+      createMenuItems={createMenuItems}
+      onCreateAction={handleCreateAction}
       searchValue={searchValue}
       onSearch={setSearchValue}
     >
@@ -1629,6 +1935,23 @@ export default function MyTasksPage() {
         >
           <PerformanceCard period={performancePeriod} onPeriodChange={setPerformancePeriod} />
         </PopupShell>
+      ) : null}
+      {createMode === 'task' ? (
+        <CreateTaskModal
+          projects={projects}
+          form={createTaskForm}
+          onChange={handleCreateTaskFormChange}
+          onClose={() => setCreateMode(null)}
+          onSubmit={handleCreateTaskSubmit}
+        />
+      ) : null}
+      {createMode === 'project' ? (
+        <CreateProjectModal
+          form={createProjectForm}
+          onChange={handleCreateProjectFormChange}
+          onClose={() => setCreateMode(null)}
+          onSubmit={handleCreateProjectSubmit}
+        />
       ) : null}
       <TaskDetailDrawer
         task={selectedTask}

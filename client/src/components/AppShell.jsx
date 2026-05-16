@@ -31,7 +31,7 @@ const navigationItems = [
   { label: 'Einstellungen', path: '/', icon: Settings },
 ];
 
-const createMenuItems = ['Neue Aufgabe', 'Neues Projekt', 'Neuer Kommentar', 'Teammitglied einladen'];
+const defaultCreateMenuItems = ['Neue Aufgabe', 'Neues Projekt', 'Neuer Kommentar', 'Teammitglied einladen'];
 const notifications = [
   'Checkout Flow testen wurde in QA verschoben.',
   'SEO Meta-Tags aktualisieren wurde dir zugewiesen.',
@@ -55,6 +55,7 @@ export default function AppShell({
   searchValue = '',
   hideBreadcrumb = false,
   searchPlacement = 'center',
+  createMenuItems = defaultCreateMenuItems,
 }) {
   const navigate = useNavigate();
   const searchInputRef = useRef(null);
