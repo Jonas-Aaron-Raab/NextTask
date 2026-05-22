@@ -798,7 +798,7 @@ function BacklogTaskRow({ task, project, isActive, isFavorite, onOpen, onToggleF
         transform: CSS.Transform.toString(transform),
         transition,
       }}
-      className={`grid w-full grid-cols-[44px_44px_minmax(120px,0.8fr)_minmax(240px,2.3fr)_minmax(74px,0.45fr)_minmax(120px,0.85fr)_minmax(90px,0.55fr)_minmax(150px,1fr)_44px] items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm transition hover:bg-[#fff8f9] ${
+      className={`grid min-w-[1180px] w-full grid-cols-[44px_44px_minmax(120px,0.8fr)_minmax(240px,2.3fr)_minmax(74px,0.45fr)_minmax(120px,0.85fr)_minmax(90px,0.55fr)_minmax(150px,1fr)_44px] items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm transition hover:bg-[#fff1f3] ${
         isActive ? 'bg-[#fff1f3]' : 'bg-white'
       } ${isDragging ? 'relative z-10 opacity-70 shadow-[0_18px_34px_rgba(15,23,42,0.16)]' : ''}`}
     >
@@ -865,11 +865,10 @@ function BacklogTaskRow({ task, project, isActive, isFavorite, onOpen, onToggleF
 
 function BacklogProjectGroup({ project, tasks, selectedTaskId, favoriteUserKey, onOpenTask, onToggleFavorite, dragDisabled }) {
   const completed = tasks.filter((task) => task.status === 'done').length;
-  const totalPoints = tasks.reduce((sum, task) => sum + task.points, 0);
 
   return (
     <section className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 px-4 py-3">
+      <div className="flex min-w-[1180px] w-full flex-wrap items-center justify-between gap-3 bg-slate-50 px-4 py-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-base font-extrabold text-slate-950">{project.name}</h3>
@@ -879,11 +878,10 @@ function BacklogProjectGroup({ project, tasks, selectedTaskId, favoriteUserKey, 
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-bold text-slate-500">
           <span className="rounded-full bg-white px-2.5 py-1">{completed} erledigt</span>
-          <span className="rounded-full bg-white px-2.5 py-1">{totalPoints} Punkte</span>
         </div>
       </div>
 
-      <div className="hidden grid-cols-[44px_44px_minmax(120px,0.8fr)_minmax(240px,2.3fr)_minmax(74px,0.45fr)_minmax(120px,0.85fr)_minmax(90px,0.55fr)_minmax(150px,1fr)_44px] gap-3 px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400 md:grid">
+      <div className="hidden min-w-[1180px] w-full grid-cols-[44px_44px_minmax(120px,0.8fr)_minmax(240px,2.3fr)_minmax(74px,0.45fr)_minmax(120px,0.85fr)_minmax(90px,0.55fr)_minmax(150px,1fr)_44px] gap-3 bg-[#fff1f3] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#b84758] md:grid">
         <span />
         <span />
         <span>Key</span>
