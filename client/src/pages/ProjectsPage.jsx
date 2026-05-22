@@ -1,15 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { createElement, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Building2,
   CalendarDays,
   CheckCircle2,
+  FileText,
   Filter,
   FolderOpen,
+  History,
   ListChecks,
+  MessageSquareMore,
   MoreHorizontal,
+  Paperclip,
   ShieldCheck,
   Tag,
+  UserPlus,
   UserRound,
   Users,
   X,
@@ -183,6 +188,9 @@ const priorityMeta = {
   mittel: 'text-amber-700 bg-amber-50',
   hoch: 'text-rose-700 bg-rose-50',
 };
+
+const attachmentTypeOptions = ['Word', 'Excel', 'PDF', 'Screenshot', 'Notiz'];
+const attachmentSourceOptions = ['OneDrive', 'SharePoint', 'DMS', 'Upload'];
 
 const initialBacklogTasks = [
   {
@@ -369,23 +377,95 @@ const initialBacklogTasks = [
   },
 ];
 
+function DetailBlock({ title, icon, children, action }) {
+  const iconNode = createElement(icon, { className: 'h-4 w-4 text-[#c95767]' });
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="inline-flex items-center gap-2 text-sm font-bold text-slate-900">
+          {iconNode}
+          {title}
+        </h3>
+        {action}
+      </div>
+      <div className="mt-3">{children}</div>
+    </section>
+  );
+}
+
+function getSourceTask(task) {
+  return sourceTasks.find((candidate) => candidate.id === task.sourceTaskId) || null;
+}
+
 function getSourceTaskKey(task) {
-  const sourceTask = sourceTasks.find((candidate) => candidate.id === task.sourceTaskId);
+  const sourceTask = getSourceTask(task);
   return task.controlId || sourceTask?.compliance?.controlId || task.sourceTaskId || task.id;
 }
 
 function getTaskCreatorInitials(task) {
-  const sourceTask = sourceTasks.find((candidate) => candidate.id === task.sourceTaskId);
+  if (task.creatorInitials) return task.creatorInitials;
+  const sourceTask = getSourceTask(task);
   return sourceTask?.assignedBy?.initials || 'NT';
 }
 
 function getTaskCreatorName(task) {
-  const sourceTask = sourceTasks.find((candidate) => candidate.id === task.sourceTaskId);
+  if (task.creatorName) return task.creatorName;
+  const sourceTask = getSourceTask(task);
   return sourceTask?.assignedBy?.name || 'NextTask';
+}
+
+function getTaskDetailCollections(task) {
+  const sourceTask = getSourceTask(task);
+  return {
+    attachments: task.attachments || sourceTask?.attachments || [],
+    comments: task.comments || sourceTask?.comments || [],
+    linkedPeople: task.linkedPeople || sourceTask?.linkedPeople || [],
+    compliance: task.compliance ||
+      sourceTask?.compliance || {
+        classification: 'Intern',
+        risk: 'Niedrig',
+        controlId: getSourceTaskKey(task),
+        approval: 'Noch kein Freigabeprozess definiert',
+        evidence: 'Noch keine Evidenz hinterlegt',
+      },
+    auditTrail: task.auditTrail || sourceTask?.auditTrail || [`22. Mai 2026: Backlog-Ticket angelegt.`],
+  };
 }
 
 function getAssigneeLabel(assignee) {
   return assignee?.trim() || 'Ohne Verantwortlichen';
+}
+
+function toDateInputValue(displayDate) {
+  if (!displayDate) return '';
+  const monthMap = {
+    Januar: '01',
+    Februar: '02',
+    Maerz: '03',
+    April: '04',
+    Mai: '05',
+    Juni: '06',
+    Juli: '07',
+    August: '08',
+    September: '09',
+    Oktober: '10',
+    November: '11',
+    Dezember: '12',
+  };
+  const match = displayDate.match(/^(\d{2})\. ([A-Za-z]+) (\d{4})$/);
+  if (!match) return '';
+  const [, day, monthName, year] = match;
+  const month = monthMap[monthName];
+  return month ? `${year}-${month}-${day}` : '';
+}
+
+function toDisplayDate(inputDate) {
+  if (!inputDate) return '';
+  return new Intl.DateTimeFormat('de-DE', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(`${inputDate}T00:00:00`));
 }
 
 function getFilterLabel(filterValue) {
@@ -619,9 +699,13 @@ function DepartmentCard({ department, projectCount, backlogCount, isActive, onOp
   );
 }
 
-function ProjectCard({ project }) {
+function ProjectCard({ project, backlogCount, onOpen }) {
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+    <button
+      type="button"
+      onClick={() => onOpen(project.id)}
+      className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:border-[#e6b8c0] hover:shadow-[0_16px_34px_rgba(136,54,66,0.10)]"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-base font-bold text-slate-950">{project.name}</h3>
@@ -637,8 +721,12 @@ function ProjectCard({ project }) {
           {project.dueDate}
         </span>
         <span className="rounded-full bg-slate-100 px-3 py-1">{project.owner}</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff0f2] px-3 py-1 text-[#b84758]">
+          <ListChecks className="h-3.5 w-3.5" />
+          {backlogCount} Aufgaben
+        </span>
       </div>
-    </article>
+    </button>
   );
 }
 
@@ -729,7 +817,35 @@ function BacklogProjectGroup({ project, tasks, selectedTaskId, onOpenTask }) {
   );
 }
 
-function BacklogDetailPanel({ task, project }) {
+function createBacklogTaskForm(task) {
+  const { compliance } = getTaskDetailCollections(task);
+  return {
+    controlId: getSourceTaskKey(task),
+    creatorInitials: getTaskCreatorInitials(task),
+    creatorName: getTaskCreatorName(task),
+    title: task.title,
+    description: task.description,
+    projectId: task.projectId,
+    status: task.status,
+    priority: task.priority,
+    dueDateValue: toDateInputValue(task.dueDate),
+    assignee: task.assignee,
+    tags: task.tags.join(', '),
+    classification: compliance.classification,
+    risk: compliance.risk,
+    approval: compliance.approval,
+    evidence: compliance.evidence,
+  };
+}
+
+function BacklogDetailPanel({ task, projects, assignees, onSave }) {
+  const [form, setForm] = useState(() => (task ? createBacklogTaskForm(task) : null));
+  const [commentDraft, setCommentDraft] = useState('');
+  const [tagDraft, setTagDraft] = useState('');
+  const [personDraft, setPersonDraft] = useState(assignees[0] || '');
+  const [attachmentType, setAttachmentType] = useState(attachmentTypeOptions[0]);
+  const [attachmentSource, setAttachmentSource] = useState(attachmentSourceOptions[0]);
+
   if (!task) {
     return (
       <aside className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-8 text-center shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
@@ -740,80 +856,495 @@ function BacklogDetailPanel({ task, project }) {
     );
   }
 
+  if (!form) return null;
+
   const status = backlogStatusMeta[task.status] || backlogStatusMeta.todo;
   const taskKey = getSourceTaskKey(task);
-  const creatorInitials = getTaskCreatorInitials(task);
-  const creatorName = getTaskCreatorName(task);
+  const { attachments, comments, linkedPeople, auditTrail } = getTaskDetailCollections(task);
+  const handleChange = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+  const updateTask = (updates, auditText) => {
+    onSave(task.id, {
+      ...updates,
+      auditTrail: auditText ? [`22. Mai 2026: ${auditText}`, ...auditTrail] : auditTrail,
+    });
+  };
+  const handleSave = () => {
+    if (!form.title.trim()) return;
+    onSave(task.id, {
+      controlId: form.controlId.trim() || task.id,
+      creatorInitials: form.creatorInitials.trim() || 'NT',
+      creatorName: form.creatorName.trim() || 'NextTask',
+      title: form.title.trim(),
+      description: form.description.trim(),
+      projectId: form.projectId,
+      status: form.status,
+      priority: form.priority,
+      dueDate: toDisplayDate(form.dueDateValue) || task.dueDate,
+      assignee: form.assignee,
+      tags: form.tags
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+      compliance: {
+        classification: form.classification,
+        risk: form.risk,
+        controlId: form.controlId.trim() || task.id,
+        approval: form.approval.trim(),
+        evidence: form.evidence.trim(),
+      },
+      auditTrail: [`22. Mai 2026: Ticketdetails aktualisiert.`, ...auditTrail],
+    });
+  };
+  const handleTagAdd = () => {
+    const nextTag = tagDraft.trim();
+    if (!nextTag || task.tags.includes(nextTag)) return;
+    const nextTags = [...task.tags, nextTag];
+    setTagDraft('');
+    setForm((current) => ({ ...current, tags: nextTags.join(', ') }));
+    updateTask({ tags: nextTags }, `Tag "${nextTag}" hinzugefuegt.`);
+  };
+  const handleTagRemove = (tagToRemove) => {
+    const nextTags = task.tags.filter((tag) => tag !== tagToRemove);
+    setForm((current) => ({ ...current, tags: nextTags.join(', ') }));
+    updateTask({ tags: nextTags }, `Tag "${tagToRemove}" entfernt.`);
+  };
+  const handlePersonAdd = () => {
+    if (!personDraft || linkedPeople.includes(personDraft)) return;
+    updateTask({ linkedPeople: [...linkedPeople, personDraft] }, `Mitarbeitende Person "${personDraft}" verlinkt.`);
+  };
+  const handlePersonRemove = (personToRemove) => {
+    updateTask(
+      { linkedPeople: linkedPeople.filter((person) => person !== personToRemove) },
+      `Mitarbeitende Person "${personToRemove}" entfernt.`,
+    );
+  };
+  const handleCommentSubmit = () => {
+    const text = commentDraft.trim();
+    if (!text) return;
+    setCommentDraft('');
+    updateTask(
+      {
+        comments: [
+          ...comments,
+          {
+            id: `comment-${comments.length + 1}`,
+            author: form.creatorName || 'NextTask',
+            time: 'gerade eben',
+            text,
+          },
+        ],
+      },
+      'Kommentar hinzugefuegt.',
+    );
+  };
+  const handleMentionInsert = (person) => {
+    setCommentDraft((current) => `${current}${current ? ' ' : ''}@${person} `);
+  };
+  const handleAttachmentFilesAdd = (files) => {
+    const nextFiles = Array.from(files || []);
+    if (!nextFiles.length) return;
+    updateTask(
+      {
+        attachments: [
+          ...attachments,
+          ...nextFiles.map((file, index) => ({
+            id: `attachment-${attachments.length + index + 1}-${file.name}`,
+            name: file.name,
+            type: attachmentType,
+            source: attachmentSource,
+            owner: form.assignee || form.creatorName || 'NextTask',
+          })),
+        ],
+      },
+      `${nextFiles.length} Datei(en) als Evidenz verknuepft.`,
+    );
+  };
+  const handleAttachmentRemove = (attachmentId) => {
+    updateTask(
+      { attachments: attachments.filter((attachment) => attachment.id !== attachmentId) },
+      'Eine Evidenzdatei entfernt.',
+    );
+  };
 
   return (
-    <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_36px_rgba(15,23,42,0.07)]">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#b84758]">{taskKey}</p>
-          <h3 className="mt-2 text-xl font-extrabold leading-tight text-slate-950">{task.title}</h3>
-        </div>
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${status.tone}`}>
-          <span className={`h-2 w-2 rounded-full ${status.dot}`} />
-          {status.label}
-        </span>
-      </div>
-
-      <p className="mt-4 text-sm font-medium leading-6 text-slate-600">{task.description}</p>
-
-      <div className="mt-5 grid gap-3 text-sm">
-        <div className="rounded-xl bg-slate-50 px-3 py-2">
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Projekt</p>
-          <p className="mt-1 font-bold text-slate-900">{project?.name || 'Projekt'}</p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-slate-50 px-3 py-2">
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Status</p>
-            <p className="mt-1 font-bold text-slate-900">{status.label}</p>
+    <aside className="max-h-[calc(100vh-240px)] min-h-[640px] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_36px_rgba(15,23,42,0.07)]">
+      <div className="sticky -top-5 z-10 border-b border-slate-200 bg-white/95 pb-4 pt-1 backdrop-blur">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#b84758]">{taskKey}</p>
+            <h3 className="mt-2 text-xl font-extrabold leading-tight text-slate-950">Ticketdetails bearbeiten</h3>
+            <p className="mt-1 truncate text-sm font-semibold text-slate-500">{task.title}</p>
           </div>
-          <div className="rounded-xl bg-slate-50 px-3 py-2">
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Prioritaet</p>
-            <p className="mt-1 font-bold text-slate-900">{task.priority}</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-slate-50 px-3 py-2">
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Faellig</p>
-            <p className="mt-1 font-bold text-slate-900">{task.dueDate}</p>
-          </div>
-          <div className="rounded-xl bg-slate-50 px-3 py-2">
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Punkte</p>
-            <p className="mt-1 font-bold text-slate-900">{task.points}</p>
-          </div>
-        </div>
-
-        <div className="rounded-xl bg-slate-50 px-3 py-2">
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Verantwortlich</p>
-          <p className="mt-1 flex items-center gap-2 font-bold text-slate-900">
-            <UserRound className="h-4 w-4 text-slate-400" />
-            {getAssigneeLabel(task.assignee)}
-          </p>
-        </div>
-
-        <div className="rounded-xl bg-slate-50 px-3 py-2">
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Erstellt von</p>
-          <p className="mt-1 flex items-center gap-2 font-bold text-slate-900">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#f0edff] text-[10px] font-extrabold text-[#6d5df6]">
-              {creatorInitials}
-            </span>
-            {creatorName}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        {task.tags.map((tag) => (
-          <span key={tag} className="inline-flex items-center gap-1.5 rounded-full bg-[#fff1f3] px-3 py-1 text-xs font-bold text-[#a23d4d]">
-            <Tag className="h-3 w-3" />
-            {tag}
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${status.tone}`}>
+            <span className={`h-2 w-2 rounded-full ${status.dot}`} />
+            {status.label}
           </span>
-        ))}
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            onClick={handleSave}
+            className="h-10 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)] transition hover:bg-[#b84758]"
+          >
+            Aenderungen speichern
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-5 space-y-5">
+        <DetailBlock title="Kerninfos" icon={FileText}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm font-bold text-slate-700">
+              Titel
+              <input
+                value={form.title}
+                onChange={(event) => handleChange('title', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              />
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Projekt
+              <select
+                value={form.projectId}
+                onChange={(event) => handleChange('projectId', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              >
+                {projects.map((candidateProject) => (
+                  <option key={candidateProject.id} value={candidateProject.id}>
+                    {candidateProject.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Status
+              <select
+                value={form.status}
+                onChange={(event) => handleChange('status', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              >
+                {Object.entries(backlogStatusMeta).map(([statusValue, meta]) => (
+                  <option key={statusValue} value={statusValue}>
+                    {meta.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Prioritaet
+              <select
+                value={form.priority}
+                onChange={(event) => handleChange('priority', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              >
+                {Object.keys(priorityMeta).map((priorityValue) => (
+                  <option key={priorityValue} value={priorityValue}>
+                    {priorityValue}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Faelligkeit
+              <input
+                type="date"
+                value={form.dueDateValue}
+                onChange={(event) => handleChange('dueDateValue', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              />
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Zustaendige Person
+              <select
+                value={form.assignee}
+                onChange={(event) => handleChange('assignee', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              >
+                <option value="">Ohne Verantwortlichen</option>
+                {assignees.map((assignee) => (
+                  <option key={assignee} value={assignee}>
+                    {assignee}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+          </div>
+        </DetailBlock>
+
+        <DetailBlock title="Beschreibung" icon={FileText}>
+          <textarea
+            value={form.description}
+            onChange={(event) => handleChange('description', event.target.value)}
+            rows={4}
+            className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+          />
+        </DetailBlock>
+
+        <DetailBlock title="Organisation" icon={Tag}>
+          <div className="space-y-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Tags</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {task.tags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => handleTagRemove(tag)}
+                    className="rounded-full border border-rose-100 bg-rose-50 px-3 py-1 text-xs font-bold text-[#b64454]"
+                  >
+                    {tag} x
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <input
+                  value={tagDraft}
+                  onChange={(event) => setTagDraft(event.target.value)}
+                  placeholder="Neues Tag"
+                  className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+                />
+                <button type="button" onClick={handleTagAdd} className="h-10 rounded-xl bg-slate-900 px-3 text-sm font-bold text-white">
+                  Hinzufuegen
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Verlinkte Mitarbeitende</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {linkedPeople.map((person) => (
+                  <button
+                    key={person}
+                    type="button"
+                    onClick={() => handlePersonRemove(person)}
+                    className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-700"
+                  >
+                    @{person} x
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 flex gap-2">
+                <select
+                  value={personDraft}
+                  onChange={(event) => setPersonDraft(event.target.value)}
+                  className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+                >
+                  {assignees.map((assignee) => (
+                    <option key={assignee} value={assignee}>
+                      {assignee}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" onClick={handlePersonAdd} className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-slate-900 px-3 text-sm font-bold text-white">
+                  <UserPlus className="h-4 w-4" />
+                  Verlinken
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block text-sm font-bold text-slate-700">
+                Erstellt von
+                <input
+                  value={form.creatorName}
+                  onChange={(event) => handleChange('creatorName', event.target.value)}
+                  className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+                />
+              </label>
+
+              <label className="block text-sm font-bold text-slate-700">
+                Initialen
+                <input
+                  value={form.creatorInitials}
+                  onChange={(event) => handleChange('creatorInitials', event.target.value)}
+                  maxLength={4}
+                  className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+                />
+              </label>
+            </div>
+          </div>
+        </DetailBlock>
+
+        <DetailBlock
+          title="Dateien und Evidenz"
+          icon={Paperclip}
+          action={<span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">revisionssicher dokumentierbar</span>}
+        >
+          <div className="space-y-3">
+            {attachments.length ? (
+              attachments.map((attachment) => (
+                <div key={attachment.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-3 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-slate-900">{attachment.name}</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-400">
+                      {attachment.type} - {attachment.source} - Owner: {attachment.owner}
+                    </p>
+                  </div>
+                  <button type="button" onClick={() => handleAttachmentRemove(attachment.id)} className="rounded-lg px-2 py-1 text-xs font-bold text-rose-600 transition hover:bg-rose-50">
+                    Entfernen
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm font-medium text-slate-500">Noch keine Evidenzdatei verknuepft.</p>
+            )}
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+            <select
+              value={attachmentType}
+              onChange={(event) => setAttachmentType(event.target.value)}
+              className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            >
+              {attachmentTypeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <select
+              value={attachmentSource}
+              onChange={(event) => setAttachmentSource(event.target.value)}
+              className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            >
+              {attachmentSourceOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <label className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)]">
+              Datei verknuepfen
+              <input
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(event) => {
+                  handleAttachmentFilesAdd(event.target.files);
+                  event.target.value = '';
+                }}
+              />
+            </label>
+          </div>
+        </DetailBlock>
+
+        <DetailBlock title="Kommentare und Mentions" icon={MessageSquareMore}>
+          <div className="space-y-3">
+            {comments.length ? (
+              comments.map((comment) => (
+                <div key={comment.id} className="rounded-2xl bg-white p-3 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-bold text-slate-900">{comment.author}</span>
+                    <span className="text-xs font-semibold text-slate-400">{comment.time}</span>
+                  </div>
+                  <p className="mt-1 text-sm font-medium leading-6 text-slate-600">{comment.text}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm font-medium text-slate-500">Noch keine Kommentare vorhanden.</p>
+            )}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {assignees.map((assignee) => (
+              <button
+                key={assignee}
+                type="button"
+                onClick={() => handleMentionInsert(assignee)}
+                className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-bold text-slate-600 transition hover:border-rose-200 hover:text-[#b64454]"
+              >
+                @{assignee}
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 flex gap-2">
+            <input
+              value={commentDraft}
+              onChange={(event) => setCommentDraft(event.target.value)}
+              placeholder="Kommentar oder Rueckfrage eingeben"
+              className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+            />
+            <button type="button" onClick={handleCommentSubmit} className="h-11 rounded-xl bg-slate-900 px-4 text-sm font-bold text-white">
+              Senden
+            </button>
+          </div>
+        </DetailBlock>
+
+        <DetailBlock title="Banking Ready" icon={ShieldCheck}>
+          <div className="grid gap-3">
+            <label className="block text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+              Datenklassifizierung
+              <select
+                value={form.classification}
+                onChange={(event) => handleChange('classification', event.target.value)}
+                className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              >
+                <option value="Intern">Intern</option>
+                <option value="Vertraulich">Vertraulich</option>
+                <option value="Reguliert">Reguliert</option>
+              </select>
+            </label>
+
+            <label className="block text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+              Risiko
+              <select
+                value={form.risk}
+                onChange={(event) => handleChange('risk', event.target.value)}
+                className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              >
+                <option value="Niedrig">Niedrig</option>
+                <option value="Mittel">Mittel</option>
+                <option value="Hoch">Hoch</option>
+              </select>
+            </label>
+
+            <label className="block text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+              Kontroll-ID
+              <input
+                value={form.controlId}
+                onChange={(event) => handleChange('controlId', event.target.value)}
+                className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              />
+            </label>
+
+            <label className="block text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+              Freigabeprozess
+              <input
+                value={form.approval}
+                onChange={(event) => handleChange('approval', event.target.value)}
+                className="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              />
+            </label>
+
+            <label className="block text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+              Evidenzhinweis
+              <textarea
+                value={form.evidence}
+                onChange={(event) => handleChange('evidence', event.target.value)}
+                rows={3}
+                className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              />
+            </label>
+          </div>
+        </DetailBlock>
+
+        <DetailBlock title="Audit-Spur" icon={History}>
+          <div className="space-y-2">
+            {auditTrail.map((entry) => (
+              <div key={entry} className="rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
+                {entry}
+              </div>
+            ))}
+          </div>
+        </DetailBlock>
       </div>
     </aside>
   );
@@ -823,10 +1354,11 @@ export default function ProjectsPage() {
   const filterMenuRef = useRef(null);
   const [departments, setDepartments] = useState(initialDepartments);
   const [projects, setProjects] = useState(initialProjects);
-  const [backlogTasks] = useState(initialBacklogTasks);
+  const [backlogTasks, setBacklogTasks] = useState(initialBacklogTasks);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState(initialDepartments[0].id);
-  const [viewMode, setViewMode] = useState('backlog');
-  const [selectedBacklogTaskId, setSelectedBacklogTaskId] = useState(initialBacklogTasks[0]?.id || null);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [viewMode, setViewMode] = useState('projects');
+  const [selectedBacklogTaskId, setSelectedBacklogTaskId] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeBacklogFilters, setActiveBacklogFilters] = useState([]);
   const [draftBacklogFilters, setDraftBacklogFilters] = useState([]);
@@ -873,22 +1405,26 @@ export default function ProjectsPage() {
     });
   }, [normalizedSearch, projects, selectedDepartment]);
 
-  const visibleProjectIds = useMemo(() => new Set(visibleProjects.map((project) => project.id)), [visibleProjects]);
+  const selectedProject = visibleProjects.find((project) => project.id === selectedProjectId) || null;
+  const backlogProjectIds = useMemo(
+    () => new Set(selectedProject ? [selectedProject.id] : visibleProjects.map((project) => project.id)),
+    [selectedProject, visibleProjects],
+  );
 
   const departmentCreators = useMemo(() => {
     const creatorMap = new Map();
     backlogTasks.forEach((task) => {
-      if (!visibleProjectIds.has(task.projectId)) return;
+      if (!backlogProjectIds.has(task.projectId)) return;
       const initials = getTaskCreatorInitials(task);
       creatorMap.set(initials, getTaskCreatorName(task));
     });
     return Array.from(creatorMap, ([initials, name]) => ({ initials, name }));
-  }, [backlogTasks, visibleProjectIds]);
+  }, [backlogProjectIds, backlogTasks]);
 
   const visibleBacklogTasks = useMemo(
     () =>
       backlogTasks.filter((task) => {
-        if (!visibleProjectIds.has(task.projectId)) return false;
+        if (!backlogProjectIds.has(task.projectId)) return false;
         if (activeBacklogFilters.length) {
           const matchesFilter = activeBacklogFilters.some((filterValue) => {
             if (filterValue === 'unassigned') return !task.assignee.trim();
@@ -910,23 +1446,29 @@ export default function ProjectsPage() {
           project?.name.toLowerCase().includes(normalizedSearch)
         );
       }),
-    [activeBacklogFilters, backlogTasks, normalizedSearch, projects, visibleProjectIds],
+    [activeBacklogFilters, backlogProjectIds, backlogTasks, normalizedSearch, projects],
   );
 
   const selectedBacklogTask =
     visibleBacklogTasks.find((task) => task.id === selectedBacklogTaskId) || visibleBacklogTasks[0] || null;
-  const selectedBacklogProject = selectedBacklogTask
-    ? projects.find((project) => project.id === selectedBacklogTask.projectId)
-    : null;
 
   const handleDepartmentOpen = (departmentId) => {
     setSelectedDepartmentId(departmentId);
+    setSelectedProjectId(null);
+    setViewMode('projects');
+    setFilterOpen(false);
+    setActiveBacklogFilters([]);
+    setDraftBacklogFilters([]);
+    setSelectedBacklogTaskId(null);
+  };
+
+  const handleProjectOpen = (projectId) => {
+    setSelectedProjectId(projectId);
     setViewMode('backlog');
     setFilterOpen(false);
     setActiveBacklogFilters([]);
     setDraftBacklogFilters([]);
-    const departmentProjectIds = projects.filter((project) => project.departmentId === departmentId).map((project) => project.id);
-    const firstTask = backlogTasks.find((task) => departmentProjectIds.includes(task.projectId));
+    const firstTask = backlogTasks.find((task) => task.projectId === projectId);
     setSelectedBacklogTaskId(firstTask?.id || null);
   };
 
@@ -988,12 +1530,22 @@ export default function ProjectsPage() {
 
     setProjects((current) => [nextProject, ...current]);
     setSelectedDepartmentId(projectForm.departmentId);
+    setSelectedProjectId(null);
     setViewMode('projects');
     setCreateMode(null);
   };
 
   const handleBacklogTaskOpen = (taskId) => {
     setSelectedBacklogTaskId(taskId);
+  };
+
+  const handleBacklogTaskSave = (taskId, updates) => {
+    setBacklogTasks((current) =>
+      current.map((task) => (task.id === taskId ? { ...task, ...updates } : task)),
+    );
+    if (updates.projectId && updates.projectId !== selectedProjectId) {
+      setSelectedProjectId(updates.projectId);
+    }
   };
 
   const handleFilterMenuOpen = () => {
@@ -1046,33 +1598,39 @@ export default function ProjectsPage() {
       onSearch={setSearchValue}
     >
       <div className="space-y-6 px-4 py-4 xl:px-6">
-        <section className="overflow-x-auto rounded-3xl border border-slate-200 bg-white/70 p-3 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
-          <div className="flex min-w-max gap-4 pb-1">
-            {visibleDepartments.map((department) => (
-              <div key={department.id} className="w-[300px] flex-none xl:w-[320px]">
-              <DepartmentCard
-                department={department}
-                projectCount={projects.filter((project) => project.departmentId === department.id).length}
-                backlogCount={backlogTasks.filter((task) => {
-                  const project = projects.find((candidate) => candidate.id === task.projectId);
-                  return project?.departmentId === department.id;
-                }).length}
-                isActive={selectedDepartment?.id === department.id}
-                onOpen={handleDepartmentOpen}
-              />
-              </div>
-            ))}
-          </div>
-        </section>
+        {viewMode === 'projects' ? (
+          <section className="overflow-x-auto rounded-3xl border border-slate-200 bg-white/70 p-3 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+            <div className="flex min-w-max gap-4 pb-1">
+              {visibleDepartments.map((department) => (
+                <div key={department.id} className="w-[300px] flex-none xl:w-[320px]">
+                  <DepartmentCard
+                    department={department}
+                    projectCount={projects.filter((project) => project.departmentId === department.id).length}
+                    backlogCount={backlogTasks.filter((task) => {
+                      const project = projects.find((candidate) => candidate.id === task.projectId);
+                      return project?.departmentId === department.id;
+                    }).length}
+                    isActive={selectedDepartment?.id === department.id}
+                    onOpen={handleDepartmentOpen}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
-        <section className="rounded-3xl border border-[#e6b8c0] bg-white p-5 shadow-[0_16px_40px_rgba(136,54,66,0.08)]">
+        <section className={`rounded-3xl border border-[#e6b8c0] bg-white p-5 shadow-[0_16px_40px_rgba(136,54,66,0.08)] ${viewMode === 'backlog' ? 'min-h-[calc(100vh-150px)]' : ''}`}>
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#b84758]">
                 {selectedDepartment ? selectedDepartment.name : 'Keine Abteilung'}
               </p>
               <h2 className="mt-2 text-2xl font-extrabold text-slate-950">
-                {selectedDepartment ? 'Projekte der Abteilung' : 'Keine Projekte sichtbar'}
+                {selectedDepartment
+                  ? viewMode === 'backlog' && selectedProject
+                    ? `Backlog: ${selectedProject.name}`
+                    : 'Projekte der Abteilung'
+                  : 'Keine Projekte sichtbar'}
               </h2>
               {selectedDepartment ? (
                 <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500">{selectedDepartment.description}</p>
@@ -1087,45 +1645,44 @@ export default function ProjectsPage() {
                     onClick={() => {
                       setFilterOpen(false);
                       setViewMode('projects');
-                    }}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Projekte
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFilterOpen(false);
-                      setViewMode('backlog');
-                      setSelectedBacklogTaskId((current) => current || visibleBacklogTasks[0]?.id || null);
+                      setSelectedProjectId(null);
+                      setSelectedBacklogTaskId(null);
                     }}
                     className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)] transition hover:bg-[#b84758]"
                   >
-                    <ListChecks className="h-4 w-4" />
-                    Backlog
+                    <ArrowLeft className="h-4 w-4" />
+                    Zurueck zu Abteilungen und Projekten
                   </button>
-                )}
-                <div className="rounded-2xl border border-[#f0d7db] bg-[#fff7f8] px-4 py-3 text-right">
-                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#b84758]">Leitung</p>
-                  <p className="mt-1 text-sm font-bold text-slate-900">{selectedDepartment.lead}</p>
-                  <p className="mt-1 text-xs font-semibold text-slate-500">{selectedDepartment.memberCount} Personen im Bereich</p>
-                </div>
+                ) : null}
+                {viewMode === 'projects' ? (
+                  <div className="rounded-2xl border border-[#f0d7db] bg-[#fff7f8] px-4 py-3 text-right">
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#b84758]">Leitung</p>
+                    <p className="mt-1 text-sm font-bold text-slate-900">{selectedDepartment.lead}</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">{selectedDepartment.memberCount} Personen im Bereich</p>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
 
           {viewMode === 'projects' ? (
             <div className="mt-5 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-              {visibleProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
+              {visibleProjects.map((project) => {
+                const projectBacklogCount = backlogTasks.filter((task) => task.projectId === project.id).length;
+                return (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    backlogCount={projectBacklogCount}
+                    onOpen={handleProjectOpen}
+                  />
+                );
+              })}
             </div>
           ) : null}
 
           {viewMode === 'backlog' ? (
-            <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+            <div className="mt-5 grid gap-5 2xl:grid-cols-[minmax(520px,0.82fr)_minmax(620px,1.18fr)]">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm font-bold text-slate-500">{visibleBacklogTasks.length} Aufgaben im Backlog</p>
@@ -1294,14 +1851,17 @@ export default function ProjectsPage() {
                   <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center">
                     <ListChecks className="mx-auto h-8 w-8 text-[#b84758]" />
                     <p className="mt-4 text-base font-bold text-slate-900">Noch keine Aufgaben im Backlog</p>
-                    <p className="mt-2 text-sm font-medium text-slate-500">Fuer diese Abteilung wurden noch keine Backlog-Aufgaben angelegt.</p>
+                    <p className="mt-2 text-sm font-medium text-slate-500">Fuer dieses Projekt wurden noch keine Backlog-Aufgaben angelegt.</p>
                   </div>
                 ) : null}
               </div>
 
               <BacklogDetailPanel
+                key={selectedBacklogTask?.id || 'empty-backlog-detail'}
                 task={selectedBacklogTask}
-                project={selectedBacklogProject}
+                projects={visibleProjects}
+                assignees={departmentMembers}
+                onSave={handleBacklogTaskSave}
               />
             </div>
           ) : null}
