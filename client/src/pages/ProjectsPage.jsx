@@ -1,5 +1,14 @@
 import { createElement, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  closestCenter,
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
   ArrowLeft,
   Building2,
   CalendarDays,
@@ -7,12 +16,14 @@ import {
   FileText,
   Filter,
   FolderOpen,
+  GripVertical,
   History,
   ListChecks,
   MessageSquareMore,
   MoreHorizontal,
   Paperclip,
   ShieldCheck,
+  Star,
   Tag,
   UserPlus,
   UserRound,
@@ -20,6 +31,7 @@ import {
   X,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
+import { useAuth } from '../context/AuthContext';
 import { initialTasks as sourceTasks } from './MyTasksPage';
 
 const createMenuItems = ['Neue Abteilung', 'Neues Projekt'];
@@ -446,6 +458,18 @@ function getAssigneeLabel(assignee) {
   return assignee?.trim() || 'Ohne Verantwortlichen';
 }
 
+function getTaskFavorites(task) {
+  return Array.isArray(task.favoriteBy) ? task.favoriteBy : [];
+}
+
+function getFavoriteReturnIndexes(task) {
+  return task.favoriteReturnIndexBy && typeof task.favoriteReturnIndexBy === 'object' ? task.favoriteReturnIndexBy : {};
+}
+
+function isFavoriteForUser(task, userKey) {
+  return Boolean(userKey && getTaskFavorites(task).includes(userKey));
+}
+
 function getWorkloadLimit(person) {
   return workloadLimits[person] || defaultWorkloadLimit;
 }
@@ -750,19 +774,66 @@ function ProjectCard({ project, backlogCount, onOpen }) {
   );
 }
 
-function BacklogTaskRow({ task, project, isActive, onOpen }) {
+function BacklogTaskRow({ task, project, isActive, isFavorite, onOpen, onToggleFavorite, dragDisabled }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+    disabled: dragDisabled,
+  });
   const status = backlogStatusMeta[task.status] || backlogStatusMeta.todo;
   const taskKey = getSourceTaskKey(task);
   const creatorInitials = getTaskCreatorInitials(task);
   const creatorName = getTaskCreatorName(task);
   return (
-    <button
-      type="button"
+    <div
+      ref={setNodeRef}
+      role="button"
+      tabIndex={0}
       onClick={() => onOpen(task.id)}
-      className={`grid w-full grid-cols-[minmax(120px,0.8fr)_minmax(240px,2.3fr)_minmax(74px,0.45fr)_minmax(120px,0.85fr)_minmax(90px,0.55fr)_minmax(150px,1fr)_44px] items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm transition hover:bg-[#fff8f9] ${
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        onOpen(task.id);
+      }}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      className={`grid w-full grid-cols-[44px_44px_minmax(120px,0.8fr)_minmax(240px,2.3fr)_minmax(74px,0.45fr)_minmax(120px,0.85fr)_minmax(90px,0.55fr)_minmax(150px,1fr)_44px] items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm transition hover:bg-[#fff8f9] ${
         isActive ? 'bg-[#fff1f3]' : 'bg-white'
-      }`}
+      } ${isDragging ? 'relative z-10 opacity-70 shadow-[0_18px_34px_rgba(15,23,42,0.16)]' : ''}`}
     >
+      <span
+        {...attributes}
+        {...listeners}
+        onClick={(event) => event.stopPropagation()}
+        className={`inline-flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition ${
+          dragDisabled ? 'cursor-not-allowed opacity-40' : 'cursor-grab hover:bg-slate-100 hover:text-slate-600 active:cursor-grabbing'
+        }`}
+        title={dragDisabled ? 'Sortieren ist bei aktiver Suche oder Filterung deaktiviert' : 'Ticket verschieben'}
+      >
+        <GripVertical className="h-4 w-4" />
+      </span>
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggleFavorite(task.id);
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          event.stopPropagation();
+          onToggleFavorite(task.id);
+        }}
+        className={`inline-flex h-8 w-8 items-center justify-center rounded-xl transition ${
+          isFavorite
+            ? 'bg-amber-50 text-amber-500 hover:bg-amber-100'
+            : 'text-slate-300 hover:bg-slate-100 hover:text-amber-500'
+        }`}
+        title={isFavorite ? 'Aus Favoriten entfernen' : 'Als Favorit markieren'}
+      >
+        <Star className="h-4 w-4" fill={isFavorite ? 'currentColor' : 'none'} />
+      </button>
       <span className="font-bold text-slate-500">{taskKey}</span>
       <span className="min-w-0">
         <span className="block truncate font-bold text-slate-900">{task.title}</span>
@@ -788,11 +859,11 @@ function BacklogTaskRow({ task, project, isActive, onOpen }) {
       <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-slate-400">
         <MoreHorizontal className="h-4 w-4" />
       </span>
-    </button>
+    </div>
   );
 }
 
-function BacklogProjectGroup({ project, tasks, selectedTaskId, onOpenTask }) {
+function BacklogProjectGroup({ project, tasks, selectedTaskId, favoriteUserKey, onOpenTask, onToggleFavorite, dragDisabled }) {
   const completed = tasks.filter((task) => task.status === 'done').length;
   const totalPoints = tasks.reduce((sum, task) => sum + task.points, 0);
 
@@ -812,7 +883,9 @@ function BacklogProjectGroup({ project, tasks, selectedTaskId, onOpenTask }) {
         </div>
       </div>
 
-      <div className="hidden grid-cols-[minmax(120px,0.8fr)_minmax(240px,2.3fr)_minmax(74px,0.45fr)_minmax(120px,0.85fr)_minmax(90px,0.55fr)_minmax(150px,1fr)_44px] gap-3 px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400 md:grid">
+      <div className="hidden grid-cols-[44px_44px_minmax(120px,0.8fr)_minmax(240px,2.3fr)_minmax(74px,0.45fr)_minmax(120px,0.85fr)_minmax(90px,0.55fr)_minmax(150px,1fr)_44px] gap-3 px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400 md:grid">
+        <span />
+        <span />
         <span>Key</span>
         <span>Aufgabe</span>
         <span>Erstellt</span>
@@ -823,15 +896,20 @@ function BacklogProjectGroup({ project, tasks, selectedTaskId, onOpenTask }) {
       </div>
 
       <div>
-        {tasks.map((task) => (
-          <BacklogTaskRow
-            key={task.id}
-            task={task}
-            project={project}
-            isActive={selectedTaskId === task.id}
-            onOpen={onOpenTask}
-          />
-        ))}
+        <SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
+          {tasks.map((task) => (
+            <BacklogTaskRow
+              key={task.id}
+              task={task}
+              project={project}
+              isActive={selectedTaskId === task.id}
+              isFavorite={isFavoriteForUser(task, favoriteUserKey)}
+              onOpen={onOpenTask}
+              onToggleFavorite={onToggleFavorite}
+              dragDisabled={dragDisabled}
+            />
+          ))}
+        </SortableContext>
       </div>
     </section>
   );
@@ -998,20 +1076,19 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, onSa
             <h3 className="mt-2 text-xl font-extrabold leading-tight text-slate-950">Ticketdetails bearbeiten</h3>
             <p className="mt-1 truncate text-sm font-semibold text-slate-500">{task.title}</p>
           </div>
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${status.tone}`}>
-            <span className={`h-2 w-2 rounded-full ${status.dot}`} />
-            {status.label}
-          </span>
-        </div>
-
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={handleSave}
-            className="h-10 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)] transition hover:bg-[#b84758]"
-          >
-            Aenderungen speichern
-          </button>
+          <div className="flex flex-none flex-col items-end gap-3">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${status.tone}`}>
+              <span className={`h-2 w-2 rounded-full ${status.dot}`} />
+              {status.label}
+            </span>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="h-10 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)] transition hover:bg-[#b84758]"
+            >
+              Aenderungen speichern
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1382,6 +1459,14 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, onSa
 
 export default function ProjectsPage() {
   const filterMenuRef = useRef(null);
+  const { user } = useAuth();
+  const favoriteUserKey = user?.id || user?.email || user?.name || 'guest';
+  const favoriteUserLabel = user?.name || user?.email || 'Gast';
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+  );
   const [departments, setDepartments] = useState(initialDepartments);
   const [projects, setProjects] = useState(initialProjects);
   const [backlogTasks, setBacklogTasks] = useState(initialBacklogTasks);
@@ -1453,14 +1538,18 @@ export default function ProjectsPage() {
 
   const assigneeWorkloads = useMemo(() => {
     const people = new Set(departmentMembers);
-    backlogTasks.forEach((task) => {
+    const workloadTasks = selectedProject
+      ? backlogTasks.filter((task) => task.projectId === selectedProject.id)
+      : backlogTasks;
+
+    workloadTasks.forEach((task) => {
       if (task.assignee.trim()) people.add(task.assignee);
     });
 
     return new Map(
       Array.from(people).map((person) => {
         const limit = getWorkloadLimit(person);
-        const activeCount = backlogTasks.filter((task) => task.assignee === person && task.status !== 'done').length;
+        const activeCount = workloadTasks.filter((task) => task.assignee === person && task.status !== 'done').length;
         const remaining = Math.max(limit - activeCount, 0);
         const percent = Math.min(Math.round((activeCount / limit) * 100), 100);
         return [
@@ -1475,11 +1564,11 @@ export default function ProjectsPage() {
         ];
       }),
     );
-  }, [backlogTasks, departmentMembers]);
+  }, [backlogTasks, departmentMembers, selectedProject]);
 
   const visibleBacklogTasks = useMemo(
-    () =>
-      backlogTasks.filter((task) => {
+    () => {
+      const filteredTasks = backlogTasks.filter((task) => {
         if (!backlogProjectIds.has(task.projectId)) return false;
         if (activeBacklogFilters.length) {
           const matchesFilter = activeBacklogFilters.some((filterValue) => {
@@ -1501,12 +1590,21 @@ export default function ProjectsPage() {
           task.tags.some((tag) => tag.toLowerCase().includes(normalizedSearch)) ||
           project?.name.toLowerCase().includes(normalizedSearch)
         );
-      }),
-    [activeBacklogFilters, backlogProjectIds, backlogTasks, normalizedSearch, projects],
+      });
+
+      return [...filteredTasks].sort((firstTask, secondTask) => {
+        const firstFavorite = isFavoriteForUser(firstTask, favoriteUserKey);
+        const secondFavorite = isFavoriteForUser(secondTask, favoriteUserKey);
+        if (firstFavorite === secondFavorite) return 0;
+        return firstFavorite ? -1 : 1;
+      });
+    },
+    [activeBacklogFilters, backlogProjectIds, backlogTasks, favoriteUserKey, normalizedSearch, projects],
   );
 
   const selectedBacklogTask =
     visibleBacklogTasks.find((task) => task.id === selectedBacklogTaskId) || visibleBacklogTasks[0] || null;
+  const backlogDragDisabled = Boolean(normalizedSearch || activeBacklogFilters.length);
 
   const handleDepartmentOpen = (departmentId) => {
     setSelectedDepartmentId(departmentId);
@@ -1604,6 +1702,104 @@ export default function ProjectsPage() {
     }
   };
 
+  const handleToggleFavorite = (taskId) => {
+    setBacklogTasks((current) => {
+      const targetTask = current.find((task) => task.id === taskId);
+      if (!targetTask) return current;
+
+      const projectTasks = current.filter((task) => task.projectId === targetTask.projectId);
+      const currentProjectIndex = projectTasks.findIndex((task) => task.id === taskId);
+      if (currentProjectIndex === -1) return current;
+
+      const currentFavorites = getTaskFavorites(targetTask);
+      const currentReturnIndexes = getFavoriteReturnIndexes(targetTask);
+      const isCurrentlyFavorite = currentFavorites.includes(favoriteUserKey);
+      const nextFavorites = isCurrentlyFavorite
+        ? currentFavorites.filter((personKey) => personKey !== favoriteUserKey)
+        : [...currentFavorites, favoriteUserKey];
+      const nextReturnIndexes = { ...currentReturnIndexes };
+
+      if (isCurrentlyFavorite) {
+        delete nextReturnIndexes[favoriteUserKey];
+      } else {
+        nextReturnIndexes[favoriteUserKey] = currentProjectIndex;
+      }
+
+      const nextTasks = current.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              favoriteBy: nextFavorites,
+              favoriteReturnIndexBy: nextReturnIndexes,
+            }
+          : task,
+      );
+      const updatedTarget = nextTasks.find((task) => task.id === taskId);
+      if (!updatedTarget) return nextTasks;
+
+      const projectTasksWithoutTarget = projectTasks.filter((task) => task.id !== taskId);
+      let reorderedProjectTasks;
+
+      if (isCurrentlyFavorite) {
+        const restoreIndex = Math.max(
+          0,
+          Math.min(currentReturnIndexes[favoriteUserKey] ?? currentProjectIndex, projectTasksWithoutTarget.length),
+        );
+        reorderedProjectTasks = [
+          ...projectTasksWithoutTarget.slice(0, restoreIndex),
+          updatedTarget,
+          ...projectTasksWithoutTarget.slice(restoreIndex),
+        ];
+      } else {
+        const insertIndex = projectTasksWithoutTarget.findIndex((task) => !isFavoriteForUser(task, favoriteUserKey));
+        const nextIndex = insertIndex === -1 ? projectTasksWithoutTarget.length : insertIndex;
+        reorderedProjectTasks = [
+          ...projectTasksWithoutTarget.slice(0, nextIndex),
+          updatedTarget,
+          ...projectTasksWithoutTarget.slice(nextIndex),
+        ];
+      }
+
+      let nextProjectTaskIndex = 0;
+      return nextTasks.map((task) => {
+        if (task.projectId !== targetTask.projectId) return task;
+        const nextTask = reorderedProjectTasks[nextProjectTaskIndex];
+        nextProjectTaskIndex += 1;
+        return nextTask;
+      });
+    });
+  };
+
+  const handleBacklogDragEnd = ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    setBacklogTasks((current) => {
+      const activeTask = current.find((task) => task.id === activeId);
+      const overTask = current.find((task) => task.id === overId);
+
+      if (!activeTask || !overTask || activeTask.projectId !== overTask.projectId) return current;
+
+      const projectTasks = current.filter((task) => task.projectId === activeTask.projectId);
+      const oldIndex = projectTasks.findIndex((task) => task.id === activeId);
+      const newIndex = projectTasks.findIndex((task) => task.id === overId);
+
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return current;
+
+      const reorderedProjectTasks = arrayMove(projectTasks, oldIndex, newIndex);
+      let nextProjectTaskIndex = 0;
+
+      return current.map((task) => {
+        if (task.projectId !== activeTask.projectId) return task;
+        const nextTask = reorderedProjectTasks[nextProjectTaskIndex];
+        nextProjectTaskIndex += 1;
+        return nextTask;
+      });
+    });
+  };
+
   const handleFilterMenuOpen = () => {
     setDraftBacklogFilters(activeBacklogFilters);
     setFilterOpen((current) => !current);
@@ -1693,40 +1889,33 @@ export default function ProjectsPage() {
               ) : null}
             </div>
 
-            {selectedDepartment ? (
+            {selectedDepartment && viewMode === 'backlog' ? (
               <div className="flex flex-wrap items-center gap-3">
-                {viewMode === 'backlog' ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFilterOpen(false);
-                      setViewMode('projects');
-                      setSelectedProjectId(null);
-                      setSelectedBacklogTaskId(null);
-                    }}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)] transition hover:bg-[#b84758]"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Zurueck zu Abteilungen und Projekten
-                  </button>
-                ) : null}
-                {viewMode === 'projects' ? (
-                  <div className="rounded-2xl border border-[#f0d7db] bg-[#fff7f8] px-4 py-3 text-right">
-                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#b84758]">Leitung</p>
-                    <p className="mt-1 text-sm font-bold text-slate-900">{selectedDepartment.lead}</p>
-                    <p className="mt-1 text-xs font-semibold text-slate-500">{selectedDepartment.memberCount} Personen im Bereich</p>
-                  </div>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterOpen(false);
+                    setViewMode('projects');
+                    setSelectedProjectId(null);
+                    setSelectedBacklogTaskId(null);
+                  }}
+                  className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)] transition hover:bg-[#b84758]"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Zurueck zu Abteilungen und Projekten
+                </button>
               </div>
             ) : null}
           </div>
 
-          {selectedDepartment && departmentMembers.length ? (
+          {viewMode === 'backlog' && selectedProject && departmentMembers.length ? (
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Auslastungsgrenzen</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-600">Aktive Aufgaben je Person und verbleibende Kapazitaet.</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-600">
+                    Aktive Aufgaben je Person in diesem Projekt und verbleibende Kapazitaet.
+                  </p>
                 </div>
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500">{departmentMembers.length} Personen</span>
               </div>
@@ -1774,7 +1963,12 @@ export default function ProjectsPage() {
             <div className="mt-5 grid gap-5 2xl:grid-cols-[minmax(520px,0.82fr)_minmax(620px,1.18fr)]">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm font-bold text-slate-500">{visibleBacklogTasks.length} Aufgaben im Backlog</p>
+                  <p className="text-sm font-bold text-slate-500">
+                    {visibleBacklogTasks.length} Aufgaben im Backlog
+                    <span className="ml-2 text-xs font-semibold text-slate-400">
+                      Favoriten fuer {favoriteUserLabel} stehen oben.
+                    </span>
+                  </p>
                   <div ref={filterMenuRef} className="relative flex flex-wrap items-center justify-end gap-2">
                     {activeBacklogFilters.map((filterValue) => (
                       <button
@@ -1922,19 +2116,30 @@ export default function ProjectsPage() {
                   </div>
                 </div>
 
-                {visibleProjects.map((project) => {
-                  const projectTasks = visibleBacklogTasks.filter((task) => task.projectId === project.id);
-                  if (!projectTasks.length) return null;
-                  return (
-                    <BacklogProjectGroup
-                      key={project.id}
-                      project={project}
-                      tasks={projectTasks}
-                      selectedTaskId={selectedBacklogTask?.id}
-                      onOpenTask={handleBacklogTaskOpen}
-                    />
-                  );
-                })}
+                {backlogDragDisabled ? (
+                  <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
+                    Sortieren ist pausiert, solange Suche oder Filter aktiv sind.
+                  </p>
+                ) : null}
+
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleBacklogDragEnd}>
+                  {visibleProjects.map((project) => {
+                    const projectTasks = visibleBacklogTasks.filter((task) => task.projectId === project.id);
+                    if (!projectTasks.length) return null;
+                    return (
+                      <BacklogProjectGroup
+                        key={project.id}
+                        project={project}
+                        tasks={projectTasks}
+                        selectedTaskId={selectedBacklogTask?.id}
+                        favoriteUserKey={favoriteUserKey}
+                        onOpenTask={handleBacklogTaskOpen}
+                        onToggleFavorite={handleToggleFavorite}
+                        dragDisabled={backlogDragDisabled}
+                      />
+                    );
+                  })}
+                </DndContext>
 
                 {!visibleBacklogTasks.length ? (
                   <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center">
