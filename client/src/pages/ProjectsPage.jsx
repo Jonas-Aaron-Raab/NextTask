@@ -191,6 +191,16 @@ const priorityMeta = {
 
 const attachmentTypeOptions = ['Word', 'Excel', 'PDF', 'Screenshot', 'Notiz'];
 const attachmentSourceOptions = ['OneDrive', 'SharePoint', 'DMS', 'Upload'];
+const defaultWorkloadLimit = 5;
+const workloadLimits = {
+  'Lisa Wagner': 6,
+  'Markus Klein': 5,
+  'Anna Becker': 5,
+  'Tom Becker': 6,
+  'Sarah Nguyen': 5,
+  'Elisabeth Bezverkha': 4,
+  'Nina Hoffmann': 5,
+};
 
 const initialBacklogTasks = [
   {
@@ -434,6 +444,16 @@ function getTaskDetailCollections(task) {
 
 function getAssigneeLabel(assignee) {
   return assignee?.trim() || 'Ohne Verantwortlichen';
+}
+
+function getWorkloadLimit(person) {
+  return workloadLimits[person] || defaultWorkloadLimit;
+}
+
+function getWorkloadTone(remaining, percent) {
+  if (remaining <= 0) return 'border-rose-200 bg-rose-50 text-rose-700';
+  if (percent >= 75) return 'border-amber-200 bg-amber-50 text-amber-700';
+  return 'border-emerald-200 bg-emerald-50 text-emerald-700';
 }
 
 function toDateInputValue(displayDate) {
@@ -838,7 +858,7 @@ function createBacklogTaskForm(task) {
   };
 }
 
-function BacklogDetailPanel({ task, projects, assignees, onSave }) {
+function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, onSave }) {
   const [form, setForm] = useState(() => (task ? createBacklogTaskForm(task) : null));
   const [commentDraft, setCommentDraft] = useState('');
   const [tagDraft, setTagDraft] = useState('');
@@ -861,6 +881,7 @@ function BacklogDetailPanel({ task, projects, assignees, onSave }) {
   const status = backlogStatusMeta[task.status] || backlogStatusMeta.todo;
   const taskKey = getSourceTaskKey(task);
   const { attachments, comments, linkedPeople, auditTrail } = getTaskDetailCollections(task);
+  const selectedAssigneeWorkload = assigneeWorkloads.get(form.assignee);
   const handleChange = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
   };
@@ -1069,12 +1090,21 @@ function BacklogDetailPanel({ task, projects, assignees, onSave }) {
                 className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
               >
                 <option value="">Ohne Verantwortlichen</option>
-                {assignees.map((assignee) => (
-                  <option key={assignee} value={assignee}>
-                    {assignee}
-                  </option>
-                ))}
+                {assignees.map((assignee) => {
+                  const workload = assigneeWorkloads.get(assignee);
+                  const disabled = workload?.remaining <= 0 && assignee !== form.assignee;
+                  return (
+                    <option key={assignee} value={assignee} disabled={disabled}>
+                      {assignee} ({workload?.activeCount || 0}/{workload?.limit || getWorkloadLimit(assignee)}, {workload?.remaining || 0} frei)
+                    </option>
+                  );
+                })}
               </select>
+              {selectedAssigneeWorkload ? (
+                <span className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-bold ${selectedAssigneeWorkload.tone}`}>
+                  {selectedAssigneeWorkload.remaining} von {selectedAssigneeWorkload.limit} Aufgaben frei
+                </span>
+              ) : null}
             </label>
 
           </div>
@@ -1390,7 +1420,7 @@ export default function ProjectsPage() {
     departments[0] ||
     null;
 
-  const departmentMembers = selectedDepartment?.members || [];
+  const departmentMembers = useMemo(() => selectedDepartment?.members || [], [selectedDepartment]);
 
   const visibleProjects = useMemo(() => {
     if (!selectedDepartment) return [];
@@ -1420,6 +1450,32 @@ export default function ProjectsPage() {
     });
     return Array.from(creatorMap, ([initials, name]) => ({ initials, name }));
   }, [backlogProjectIds, backlogTasks]);
+
+  const assigneeWorkloads = useMemo(() => {
+    const people = new Set(departmentMembers);
+    backlogTasks.forEach((task) => {
+      if (task.assignee.trim()) people.add(task.assignee);
+    });
+
+    return new Map(
+      Array.from(people).map((person) => {
+        const limit = getWorkloadLimit(person);
+        const activeCount = backlogTasks.filter((task) => task.assignee === person && task.status !== 'done').length;
+        const remaining = Math.max(limit - activeCount, 0);
+        const percent = Math.min(Math.round((activeCount / limit) * 100), 100);
+        return [
+          person,
+          {
+            activeCount,
+            limit,
+            remaining,
+            percent,
+            tone: getWorkloadTone(remaining, percent),
+          },
+        ];
+      }),
+    );
+  }, [backlogTasks, departmentMembers]);
 
   const visibleBacklogTasks = useMemo(
     () =>
@@ -1665,6 +1721,39 @@ export default function ProjectsPage() {
             ) : null}
           </div>
 
+          {selectedDepartment && departmentMembers.length ? (
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Auslastungsgrenzen</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-600">Aktive Aufgaben je Person und verbleibende Kapazitaet.</p>
+                </div>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500">{departmentMembers.length} Personen</span>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {departmentMembers.map((person) => {
+                  const workload = assigneeWorkloads.get(person);
+                  return (
+                    <div key={person} className="rounded-2xl border border-white bg-white p-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="truncate text-sm font-extrabold text-slate-900">{person}</p>
+                        <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${workload?.tone}`}>
+                          {workload?.remaining || 0} frei
+                        </span>
+                      </div>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-full rounded-full bg-[#c95767]" style={{ width: `${workload?.percent || 0}%` }} />
+                      </div>
+                      <p className="mt-2 text-xs font-bold text-slate-500">
+                        {workload?.activeCount || 0} / {workload?.limit || getWorkloadLimit(person)} Aufgaben belegt
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
           {viewMode === 'projects' ? (
             <div className="mt-5 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
               {visibleProjects.map((project) => {
@@ -1861,6 +1950,7 @@ export default function ProjectsPage() {
                 task={selectedBacklogTask}
                 projects={visibleProjects}
                 assignees={departmentMembers}
+                assigneeWorkloads={assigneeWorkloads}
                 onSave={handleBacklogTaskSave}
               />
             </div>
