@@ -1,6 +1,38 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const router = express.Router();
+
+const statusMap = {
+  today: 'OPEN',
+  'in-progress': 'IN_PROGRESS',
+  review: 'QA',
+  blocked: 'BLOCKED',
+  done: 'DONE',
+  TODAY: 'OPEN',
+  THIS_WEEK: 'IN_PROGRESS',
+  LATER: 'OPEN',
+  OPEN: 'OPEN',
+  IN_PROGRESS: 'IN_PROGRESS',
+  QA: 'QA',
+  BLOCKED: 'BLOCKED',
+  DONE: 'DONE',
+};
+
+function normalizeStatus(status) {
+  return statusMap[status] || 'OPEN';
+}
+
+function normalizePriority(priority) {
+  const value = String(priority || 'MEDIUM').toUpperCase();
+  return ['LOW', 'MEDIUM', 'HIGH', 'URGENT'].includes(value) ? value : 'MEDIUM';
+}
+
+function parseDate(value) {
+  if (!value) return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
 router.get('/project/:projectId', auth, async (req, res) => {
   try {
     const tasks = await req.prisma.task.findMany({
@@ -24,20 +56,38 @@ router.get('/project/:projectId', auth, async (req, res) => {
 });
 router.post('/', auth, async (req, res) => {
   try {
-    const { title, description, status, priority, projectId, assigneeId } = req.body;
+    const {
+      title,
+      description,
+      status,
+      priority,
+      projectId,
+      assigneeId,
+      startDate,
+      dueDate,
+      endDate,
+      estimatedHours,
+      department,
+    } = req.body;
+    const normalizedStatus = normalizeStatus(status);
     const lastTask = await req.prisma.task.findFirst({
-      where: { projectId, status: status || 'TODAY' },
+      where: { projectId, status: normalizedStatus },
       orderBy: { order: 'desc' },
     });
     const task = await req.prisma.task.create({
       data: {
         title,
         description,
-        status: status || 'TODAY',
-        priority: priority || 'MEDIUM',
+        status: normalizedStatus,
+        priority: normalizePriority(priority),
         projectId,
         assigneeId: assigneeId || null,
         order: lastTask ? lastTask.order + 1 : 0,
+        startDate: parseDate(startDate),
+        dueDate: parseDate(dueDate),
+        endDate: parseDate(endDate),
+        estimatedHours: estimatedHours ? Number(estimatedHours) : null,
+        department: department || null,
       },
     });
     res.status(201).json(task);
@@ -50,15 +100,31 @@ router.post('/', auth, async (req, res) => {
 });
 router.put('/:id', auth, async (req, res) => {
   try {
-    const { title, description, status, priority, assigneeId } = req.body;
+    const {
+      title,
+      description,
+      status,
+      priority,
+      assigneeId,
+      startDate,
+      dueDate,
+      endDate,
+      estimatedHours,
+      department,
+    } = req.body;
     const updated = await req.prisma.task.update({
       where: { id: req.params.id },
       data: {
         title,
         description,
-        status,
-        priority,
+        status: status ? normalizeStatus(status) : undefined,
+        priority: priority ? normalizePriority(priority) : undefined,
         assigneeId,
+        startDate: parseDate(startDate),
+        dueDate: parseDate(dueDate),
+        endDate: parseDate(endDate),
+        estimatedHours: estimatedHours === undefined ? undefined : Number(estimatedHours),
+        department,
       },
     });
     res.json(updated);
@@ -74,12 +140,37 @@ router.patch('/:id/move', auth, async (req, res) => {
     const { status, order } = req.body;
     const updated = await req.prisma.task.update({
       where: { id: req.params.id },
-      data: { status, order },
+      data: { status: normalizeStatus(status), order },
     });
     res.json(updated);
   } catch (error) {
     res.status(500).json({
       message: 'Fehler beim Verschieben',
+      error: error.message,
+    });
+  }
+});
+router.patch('/:id/schedule', auth, async (req, res) => {
+  try {
+    const { startDate, dueDate, endDate, assigneeId, estimatedHours } = req.body;
+    const updated = await req.prisma.task.update({
+      where: { id: req.params.id },
+      data: {
+        startDate: parseDate(startDate),
+        dueDate: parseDate(dueDate),
+        endDate: parseDate(endDate),
+        assigneeId,
+        estimatedHours: estimatedHours === undefined ? undefined : Number(estimatedHours),
+      },
+      include: {
+        assignee: true,
+        project: true,
+      },
+    });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Fehler beim Aktualisieren der Kalenderplanung',
       error: error.message,
     });
   }
