@@ -680,6 +680,8 @@ export default function CalendarPage() {
 
   const handleCreateTask = (form) => {
     if (!form.title.trim()) return;
+    const projectMatch = tasks.find((task) => task.project === form.project && task.source === 'api');
+    const assigneeMatch = tasks.find((task) => task.assignee === form.assignee && task.source === 'api');
     const nextTask = normalizeTask({
       id: `calendar-task-${Date.now()}`,
       title: form.title.trim(),
@@ -693,6 +695,28 @@ export default function CalendarPage() {
     });
     setTasks((current) => [nextTask, ...current]);
     setCreateDate(null);
+
+    if (projectMatch?.projectId) {
+      api
+        .post('/tasks', {
+          title: form.title.trim(),
+          description: form.description.trim(),
+          projectId: projectMatch.projectId,
+          assigneeId: assigneeMatch?.assigneeId,
+          dueDate: form.dueDate,
+          startDate: form.dueDate,
+          endDate: form.dueDate,
+          priority: form.priority,
+          status: form.status,
+          estimatedHours: form.estimatedHours,
+          department: nextTask.department,
+        })
+        .then((response) => {
+          const savedTask = normalizeTask(response.data);
+          setTasks((current) => current.map((task) => (task.id === nextTask.id ? savedTask : task)));
+        })
+        .catch(() => {});
+    }
   };
 
   const renderView = () => {
