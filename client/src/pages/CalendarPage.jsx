@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Clock3,
   Flag,
   FolderKanban,
   ListFilter,
@@ -17,6 +16,11 @@ import {
 import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { initialTasks } from './MyTasksPage';
+import {
+  initialBacklogTasks,
+  initialDepartments,
+  initialProjects,
+} from './ProjectsPage';
 
 const viewOptions = [
   { id: 'month', label: 'Monat' },
@@ -64,6 +68,21 @@ const calendarWeekDays = [
 const projectColors = ['#4f46e5', '#0f766e', '#b45309', '#be123c', '#6d28d9', '#15803d'];
 const mockPeople = ['Lisa Wagner', 'Markus Klein', 'Anna Becker', 'Tom Becker', 'Sarah Nguyen'];
 const mockDepartments = ['Development', 'Design', 'QA', 'Marketing', 'Digitales Banking'];
+const calendarScheduleStorageKey = 'nexttask-calendar-schedule-overrides';
+const germanMonths = {
+  Januar: '01',
+  Februar: '02',
+  Maerz: '03',
+  April: '04',
+  Mai: '05',
+  Juni: '06',
+  Juli: '07',
+  August: '08',
+  September: '09',
+  Oktober: '10',
+  November: '11',
+  Dezember: '12',
+};
 
 function toDateKey(date) {
   return date.toISOString().slice(0, 10);
@@ -127,11 +146,32 @@ function formatFullDate(value) {
   }).format(fromDateKey(value));
 }
 
+function parseCalendarDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return toDateKey(value);
+
+  const textValue = String(value);
+  if (/^\d{4}-\d{2}-\d{2}/.test(textValue)) {
+    return textValue.slice(0, 10);
+  }
+
+  const match = textValue.match(/^(\d{1,2})\.\s*([A-Za-z]+)\s+(\d{4})$/);
+  if (!match) return null;
+
+  const [, day, monthName, year] = match;
+  const month = germanMonths[monthName];
+  if (!month) return null;
+
+  return `${year}-${month}-${day.padStart(2, '0')}`;
+}
+
 function normalizeStatus(status) {
   const map = {
     today: 'OPEN',
     'in-progress': 'IN_PROGRESS',
     review: 'QA',
+    todo: 'OPEN',
+    progress: 'IN_PROGRESS',
     blocked: 'BLOCKED',
     done: 'DONE',
   };
@@ -149,9 +189,9 @@ function normalizePriority(priority) {
 }
 
 function normalizeTask(task, index = 0) {
-  const dueDate = task.dueDateValue || task.dueDate?.slice?.(0, 10) || toDateKey(addDays(new Date(), index % 8));
+  const dueDate = parseCalendarDate(task.dueDateValue || task.dueDate) || toDateKey(addDays(new Date(), index % 8));
   const projectName = task.project?.name || task.project || 'Ohne Projekt';
-  const assigneeName = task.assignee?.name || task.assignee || mockPeople[index % mockPeople.length];
+  const assigneeName = task.assignee?.name || task.assignee || task.assigneeName || mockPeople[index % mockPeople.length];
   return {
     id: task.id,
     title: task.title,
@@ -167,9 +207,103 @@ function normalizeTask(task, index = 0) {
     startDate: task.startDate?.slice?.(0, 10) || dueDate,
     dueDate,
     endDate: task.endDate?.slice?.(0, 10) || dueDate,
-    estimatedHours: task.estimatedHours || Math.max(2, (index % 5) + 2),
-    source: task.project?.id ? 'api' : 'mock',
+    estimatedHours: task.estimatedHours ?? null,
+    source: task.source || (task.project?.id ? 'api' : 'mock'),
   };
+}
+
+function applyTaskSchedule(task, dateKey) {
+  return {
+    ...task,
+    dueDate: dateKey,
+    endDate: dateKey,
+    startDate: task.startDate || dateKey,
+  };
+}
+
+function readScheduleOverrides() {
+  if (typeof window === 'undefined') return {};
+
+  try {
+    const stored = window.localStorage.getItem(calendarScheduleStorageKey);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+function storeScheduleOverride(taskId, dateKey) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const current = readScheduleOverrides();
+    window.localStorage.setItem(
+      calendarScheduleStorageKey,
+      JSON.stringify({ ...current, [taskId]: dateKey }),
+    );
+  } catch {
+    // Local persistence is a convenience; the visible calendar state is already updated.
+  }
+}
+
+function removeScheduleOverride(taskId) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const current = readScheduleOverrides();
+    if (!current[taskId]) return;
+    const { [taskId]: _removed, ...next } = current;
+    window.localStorage.setItem(calendarScheduleStorageKey, JSON.stringify(next));
+  } catch {
+    // Server-saved tasks still keep their updated API schedule.
+  }
+}
+
+function applyScheduleOverrides(tasks) {
+  const overrides = readScheduleOverrides();
+
+  return tasks.map((task) => (overrides[task.id] ? applyTaskSchedule(task, overrides[task.id]) : task));
+}
+
+function getDepartmentName(project) {
+  const department = initialDepartments.find((candidate) => candidate.id === project?.departmentId);
+  return department?.name || 'Ohne Abteilung';
+}
+
+function mapBacklogTaskToCalendarTask(task) {
+  const project = initialProjects.find((candidate) => candidate.id === task.projectId);
+
+  return {
+    id: `backlog-${task.id}`,
+    title: task.title,
+    description: task.description,
+    projectId: task.projectId,
+    project: project?.name || 'Ohne Projekt',
+    assignee: task.assignee || 'Nicht zugewiesen',
+    department: getDepartmentName(project),
+    status: task.status,
+    priority: task.priority,
+    dueDate: task.dueDate,
+    startDate: task.dueDate,
+    endDate: task.dueDate,
+    estimatedHours: null,
+    source: 'project-backlog',
+  };
+}
+
+function getFallbackCalendarTasks() {
+  return applyScheduleOverrides([
+    ...initialTasks,
+    ...initialBacklogTasks.map(mapBacklogTaskToCalendarTask),
+  ].map(normalizeTask));
+}
+
+function mergeCalendarTasks(primaryTasks, fallbackTasks) {
+  const taskMap = new Map();
+  [...fallbackTasks, ...primaryTasks].forEach((task) => {
+    taskMap.set(task.id, task);
+  });
+  return [...taskMap.values()];
 }
 
 function isOverdue(task) {
@@ -188,7 +322,7 @@ function getRange(view, cursorDate) {
   return { from, to: addDays(from, 41) };
 }
 
-function CalendarTask({ task, onOpen, onDragStart }) {
+function CalendarTask({ task, onOpen, onDragStart, expanded = false }) {
   const overdue = isOverdue(task);
   return (
     <button
@@ -199,13 +333,27 @@ function CalendarTask({ task, onOpen, onDragStart }) {
         event.stopPropagation();
         onOpen(task);
       }}
-      className={`w-full min-w-0 rounded-md border px-2.5 py-2 text-left text-xs font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+      className={`w-full min-w-0 rounded-md border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
         overdue ? 'border-red-300 bg-red-50 text-red-700' : statusColors[task.status]
-      }`}
+      } ${expanded ? 'px-3.5 py-3' : 'px-2.5 py-2 text-xs font-semibold'}`}
       style={{ borderLeftWidth: 4, borderLeftColor: overdue ? '#dc2626' : task.projectColor }}
     >
-      <span className="block truncate">{task.title}</span>
-      <span className="mt-0.5 block truncate text-[11px] font-medium opacity-80">{task.assignee}</span>
+      {expanded ? (
+        <span className="block">
+          <span className="block text-sm font-extrabold leading-snug text-slate-950">{task.title}</span>
+          <span className="mt-2 grid gap-1 text-xs font-semibold text-slate-600 sm:grid-cols-2">
+            <span>Projekt: {task.project}</span>
+            <span>Person: {task.assignee}</span>
+            <span>Status: {overdue ? 'Ueberfaellig' : statusLabels[task.status]}</span>
+            <span>Prioritaet: {priorityLabels[task.priority]}</span>
+          </span>
+        </span>
+      ) : (
+        <>
+          <span className="block truncate">{task.title}</span>
+          <span className="mt-0.5 block truncate text-[11px] font-medium opacity-80">{task.assignee}</span>
+        </>
+      )}
     </button>
   );
 }
@@ -230,74 +378,39 @@ function FilterSelect({ label, value, options, onChange }) {
   );
 }
 
-function CalendarSidebar({ cursorDate, filters, filterOptions, stats, filtersOpen, onFilterToggle, onFilterChange }) {
+function CalendarFilterPanel({ filters, filterOptions, onFilterChange }) {
   return (
-    <aside className="w-full border-b border-slate-200 bg-white p-4 lg:w-[280px] lg:border-b-0 lg:border-r">
-      <div>
-        <p className="text-xs font-bold uppercase text-slate-400">Aktueller Monat</p>
-        <p className="mt-1 text-lg font-extrabold text-slate-950">{formatMonth(cursorDate)}</p>
+    <div className="border-b border-slate-200 bg-white px-4 py-3">
+      <div className="grid gap-3 rounded-md border border-slate-200 bg-slate-50 p-3 md:grid-cols-2 xl:grid-cols-5">
+        <FilterSelect label="Projekt" value={filters.project} options={filterOptions.projects} onChange={(value) => onFilterChange('project', value)} />
+        <FilterSelect label="Person" value={filters.person} options={filterOptions.people} onChange={(value) => onFilterChange('person', value)} />
+        <FilterSelect label="Status" value={filters.status} options={Object.values(statusLabels)} onChange={(value) => onFilterChange('statusLabel', value)} />
+        <FilterSelect label="Prioritaet" value={filters.priorityLabel} options={Object.values(priorityLabels)} onChange={(value) => onFilterChange('priorityLabel', value)} />
+        <FilterSelect label="Abteilung" value={filters.department} options={filterOptions.departments} onChange={(value) => onFilterChange('department', value)} />
+        <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+          <input
+            type="checkbox"
+            checked={filters.mineOnly}
+            onChange={(event) => onFilterChange('mineOnly', event.target.checked)}
+            className="h-4 w-4 rounded border-slate-300"
+          />
+          Nur meine Aufgaben
+        </label>
+        <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+          <input
+            type="checkbox"
+            checked={filters.overdueOnly}
+            onChange={(event) => onFilterChange('overdueOnly', event.target.checked)}
+            className="h-4 w-4 rounded border-slate-300"
+          />
+          Nur ueberfaellige Aufgaben
+        </label>
       </div>
-
-      <div className="mt-5 grid grid-cols-3 gap-2">
-        <div className="rounded-md bg-red-50 p-2">
-          <p className="text-lg font-extrabold text-red-700">{stats.overdue}</p>
-          <p className="text-[11px] font-bold text-red-500">Ueberfaellig</p>
-        </div>
-        <div className="rounded-md bg-teal-50 p-2">
-          <p className="text-lg font-extrabold text-teal-700">{stats.qa}</p>
-          <p className="text-[11px] font-bold text-teal-500">QA</p>
-        </div>
-        <div className="rounded-md bg-orange-50 p-2">
-          <p className="text-lg font-extrabold text-orange-700">{stats.high}</p>
-          <p className="text-[11px] font-bold text-orange-500">Hoch</p>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        onClick={onFilterToggle}
-        className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-extrabold text-slate-700 transition hover:border-slate-300 hover:bg-white"
-      >
-        <ListFilter className="h-4 w-4" />
-        Filter
-      </button>
-
-      {filtersOpen ? (
-        <div className="mt-4 space-y-4 rounded-md border border-slate-200 bg-slate-50 p-3">
-          <div className="flex items-center gap-2 text-sm font-extrabold text-slate-900">
-          <ListFilter className="h-4 w-4" />
-            Optionen
-          </div>
-          <FilterSelect label="Projekt" value={filters.project} options={filterOptions.projects} onChange={(value) => onFilterChange('project', value)} />
-          <FilterSelect label="Person" value={filters.person} options={filterOptions.people} onChange={(value) => onFilterChange('person', value)} />
-          <FilterSelect label="Status" value={filters.status} options={Object.values(statusLabels)} onChange={(value) => onFilterChange('statusLabel', value)} />
-          <FilterSelect label="Prioritaet" value={filters.priorityLabel} options={Object.values(priorityLabels)} onChange={(value) => onFilterChange('priorityLabel', value)} />
-          <FilterSelect label="Abteilung" value={filters.department} options={filterOptions.departments} onChange={(value) => onFilterChange('department', value)} />
-          <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-            <input
-              type="checkbox"
-              checked={filters.mineOnly}
-              onChange={(event) => onFilterChange('mineOnly', event.target.checked)}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            Nur meine Aufgaben
-          </label>
-          <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-            <input
-              type="checkbox"
-              checked={filters.overdueOnly}
-              onChange={(event) => onFilterChange('overdueOnly', event.target.checked)}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            Nur ueberfaellige Aufgaben
-          </label>
-        </div>
-      ) : null}
-    </aside>
+    </div>
   );
 }
 
-function CalendarToolbar({ view, cursorDate, onViewChange, onToday, onMove, onCreate }) {
+function CalendarToolbar({ view, cursorDate, filtersOpen, onFilterToggle, onViewChange, onToday, onMove, onCreate }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
       <div className="flex items-center gap-2">
@@ -312,18 +425,6 @@ function CalendarToolbar({ view, cursorDate, onViewChange, onToday, onMove, onCr
         </button>
         <h1 className="ml-2 text-lg font-extrabold text-slate-950">{view === 'day' ? formatFullDate(toDateKey(cursorDate)) : formatMonth(cursorDate)}</h1>
       </div>
-      {view === 'month' ? (
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={() => onMove(-1)} className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
-            <ChevronLeft className="h-4 w-4" />
-            Vorheriger Monat
-          </button>
-          <button type="button" onClick={() => onMove(1)} className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
-            Naechster Monat
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      ) : null}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex rounded-md border border-slate-200 bg-slate-50 p-1">
           {viewOptions.map((option) => (
@@ -343,6 +444,18 @@ function CalendarToolbar({ view, cursorDate, onViewChange, onToday, onMove, onCr
           <Plus className="h-4 w-4" />
           Neue Aufgabe
         </button>
+        <button
+          type="button"
+          onClick={onFilterToggle}
+          className={`inline-flex h-10 items-center gap-2 rounded-md border px-3 text-sm font-bold transition ${
+            filtersOpen
+              ? 'border-slate-900 bg-slate-900 text-white'
+              : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <ListFilter className="h-4 w-4" />
+          Filter
+        </button>
       </div>
     </div>
   );
@@ -354,7 +467,7 @@ function MonthView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, on
 
   return (
     <div className="min-h-[760px] bg-slate-50 p-4">
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-x-auto overscroll-x-contain rounded-lg border border-slate-200 bg-white shadow-sm">
         <div
           className="grid min-w-[1260px]"
           style={{ gridTemplateColumns: 'repeat(7, minmax(180px, 1fr))' }}
@@ -393,7 +506,7 @@ function MonthView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, on
                   onDrop={(event) => {
                     if (isCurrentMonth) onDrop(event, key);
                   }}
-                  className={`min-h-[138px] border-b border-r border-slate-200 p-4 text-left transition ${
+                    className={`min-h-[138px] border-b border-r border-slate-200 p-4 text-left transition ${
                     isCurrentMonth ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/80 text-slate-400'
                   }`}
                 >
@@ -402,14 +515,9 @@ function MonthView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, on
                   </p>
                   {isCurrentMonth ? (
                     <div className="space-y-2">
-                      {dayTasks.slice(0, 2).map((task) => (
+                      {dayTasks.map((task) => (
                         <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} />
                       ))}
-                      {dayTasks.length > 2 ? (
-                        <span className="block rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-500">
-                          +{dayTasks.length - 2} weitere Aufgaben
-                        </span>
-                      ) : null}
                     </div>
                   ) : null}
                 </div>
@@ -425,60 +533,51 @@ function MonthView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, on
 function WeekView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, onDrop }) {
   const start = startOfWeek(cursorDate);
   const days = Array.from({ length: 7 }, (_, index) => addDays(start, index));
-  const timeBlocks = [
-    { id: 'morning', label: 'Vormittag', hint: '08:00 - 12:00' },
-    { id: 'afternoon', label: 'Nachmittag', hint: '12:00 - 17:00' },
-    { id: 'deadline', label: 'Deadline', hint: 'faellige Aufgaben' },
-  ];
 
   return (
     <div className="min-h-[760px] bg-slate-50 p-4">
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="grid min-w-[860px] grid-cols-[148px_repeat(3,minmax(210px,1fr))]">
+      <div className="overflow-x-auto overscroll-x-contain rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="grid min-w-[920px] grid-cols-[168px_minmax(560px,1fr)]">
           <div className="sticky left-0 z-20 border-b border-r border-slate-200 bg-slate-50 px-4 py-3 text-xs font-extrabold uppercase text-slate-500">
             Wochentag
           </div>
-          {timeBlocks.map((block) => (
-            <div key={block.id} className="border-b border-r border-slate-200 bg-slate-50 px-4 py-3">
-              <p className="text-sm font-extrabold text-slate-950">{block.label}</p>
-              <p className="mt-0.5 text-xs font-semibold text-slate-500">{block.hint}</p>
-            </div>
-          ))}
+          <div className="border-b border-r border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-sm font-extrabold text-slate-950">Aufgaben</p>
+            <p className="mt-0.5 text-xs font-semibold text-slate-500">Alle Aufgaben dieser Woche</p>
+          </div>
 
           {days.map((day, index) => {
             const key = toDateKey(day);
             const dayTasks = tasksByDay[key] || [];
-            const totalHours = dayTasks.reduce((sum, task) => sum + task.estimatedHours, 0);
 
             return (
               <div key={key} className="contents">
                 <div className="sticky left-0 z-10 border-b border-r border-slate-200 bg-white px-4 py-4">
                   <p className="text-sm font-extrabold text-slate-950">{calendarWeekDays[index].label}</p>
-                  <p className="mt-1 text-xs font-bold text-slate-400">{formatShortDate(day)} · {totalHours}h geplant</p>
+                  <p className="mt-1 text-xs font-bold text-slate-400">{formatShortDate(day)}</p>
                 </div>
-                {timeBlocks.map((block) => (
-                  <div
-                    key={`${key}-${block.id}`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => onDayClick(key)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        onDayClick(key);
-                      }
-                    }}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => onDrop(event, key)}
-                    className="min-h-[124px] border-b border-r border-slate-200 bg-white p-3 transition hover:bg-slate-50"
-                  >
-                    <div className="space-y-2">
-                      {block.id === 'deadline'
-                        ? dayTasks.map((task) => <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} />)
-                        : null}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onDayClick(key)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onDayClick(key);
+                    }
+                  }}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => onDrop(event, key)}
+                  className="min-h-[142px] border-b border-r border-slate-200 bg-white p-3 transition hover:bg-slate-50"
+                >
+                  {dayTasks.length ? (
+                    <div className="grid gap-3 xl:grid-cols-2">
+                      {dayTasks.map((task) => (
+                        <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} expanded />
+                      ))}
                     </div>
-                  </div>
-                ))}
+                  ) : null}
+                </div>
               </div>
             );
           })}
@@ -497,7 +596,7 @@ function DayView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, onDr
       <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
           <p className="text-sm font-extrabold text-slate-950">{formatFullDate(key)}</p>
-          <p className="mt-0.5 text-xs font-semibold text-slate-500">{tasks.length} Aufgaben · {tasks.reduce((sum, task) => sum + task.estimatedHours, 0)}h geplant</p>
+          <p className="mt-0.5 text-xs font-semibold text-slate-500">{tasks.length} Aufgaben</p>
         </div>
         <div
           onClick={() => onDayClick(key)}
@@ -582,7 +681,6 @@ function DetailPanel({ task, onClose }) {
         <InfoRow icon={Users} label="Verantwortlich" value={task.assignee} />
         <InfoRow icon={FolderKanban} label="Projekt" value={task.project} />
         <InfoRow icon={Flag} label="Prioritaet" value={priorityLabels[task.priority]} />
-        <InfoRow icon={Clock3} label="Aufwand" value={`${task.estimatedHours} Stunden geplant`} />
       </div>
 
       <p className="mt-5 text-sm font-medium leading-6 text-slate-600">{task.description || 'Keine Beschreibung hinterlegt.'}</p>
@@ -613,7 +711,6 @@ function CreateTaskModal({ date, projects, people, onClose, onCreate }) {
     dueDate: date,
     priority: 'MEDIUM',
     status: 'OPEN',
-    estimatedHours: 3,
   });
 
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value }));
@@ -642,10 +739,6 @@ function CreateTaskModal({ date, projects, people, onClose, onCreate }) {
             Deadline
             <input type="date" value={form.dueDate} onChange={(event) => update('dueDate', event.target.value)} className="mt-2 h-10 w-full rounded-md border border-slate-200 px-3 text-sm font-semibold normal-case text-slate-900 outline-none focus:border-slate-500" />
           </label>
-          <label className="block text-xs font-bold uppercase text-slate-400">
-            Aufwand
-            <input type="number" min="1" value={form.estimatedHours} onChange={(event) => update('estimatedHours', Number(event.target.value))} className="mt-2 h-10 w-full rounded-md border border-slate-200 px-3 text-sm font-semibold normal-case text-slate-900 outline-none focus:border-slate-500" />
-          </label>
         </div>
         <div className="flex justify-end gap-3 border-t border-slate-200 px-5 py-4">
           <button type="button" onClick={onClose} className="h-10 rounded-md border border-slate-200 px-4 text-sm font-bold text-slate-600">
@@ -661,7 +754,7 @@ function CreateTaskModal({ date, projects, people, onClose, onCreate }) {
 }
 
 export default function CalendarPage() {
-  const [tasks, setTasks] = useState(() => initialTasks.map(normalizeTask));
+  const [tasks, setTasks] = useState(() => getFallbackCalendarTasks());
   const [view, setView] = useState('month');
   const [cursorDate, setCursorDate] = useState(new Date());
   const [selectedTask, setSelectedTask] = useState(null);
@@ -690,11 +783,11 @@ export default function CalendarPage() {
       })
       .then((response) => {
         if (Array.isArray(response.data) && response.data.length) {
-          setTasks(response.data.map(normalizeTask));
+          setTasks(applyScheduleOverrides(mergeCalendarTasks(response.data.map(normalizeTask), getFallbackCalendarTasks())));
         }
       })
       .catch(() => {
-        setTasks(initialTasks.map(normalizeTask));
+        setTasks(getFallbackCalendarTasks());
       });
   }, [cursorDate, view]);
 
@@ -757,16 +850,24 @@ export default function CalendarPage() {
     if (!taskId) return;
 
     setTasks((current) =>
-      current.map((task) => (task.id === taskId ? { ...task, dueDate: dateKey, endDate: dateKey, startDate: task.startDate || dateKey } : task)),
+      current.map((task) => (task.id === taskId ? applyTaskSchedule(task, dateKey) : task)),
     );
+    setSelectedTask((current) => (current?.id === taskId ? applyTaskSchedule(current, dateKey) : current));
 
     const task = tasks.find((item) => item.id === taskId);
+    const updatedTask = task ? applyTaskSchedule(task, dateKey) : null;
     if (task?.source === 'api') {
       api.patch(`/tasks/${taskId}/schedule`, {
-        startDate: task.startDate,
+        startDate: updatedTask.startDate,
         dueDate: dateKey,
-        endDate: dateKey,
-      }).catch(() => {});
+        endDate: updatedTask.endDate,
+      })
+        .then(() => removeScheduleOverride(taskId))
+        .catch(() => {
+          storeScheduleOverride(taskId, dateKey);
+        });
+    } else {
+      storeScheduleOverride(taskId, dateKey);
     }
     setDraggedTaskId(null);
   };
@@ -784,7 +885,6 @@ export default function CalendarPage() {
       dueDateValue: form.dueDate,
       status: form.status,
       priority: form.priority,
-      estimatedHours: form.estimatedHours,
     });
     setTasks((current) => [nextTask, ...current]);
     setCreateDate(null);
@@ -801,7 +901,6 @@ export default function CalendarPage() {
           endDate: form.dueDate,
           priority: form.priority,
           status: form.status,
-          estimatedHours: form.estimatedHours,
           department: nextTask.department,
         })
         .then((response) => {
@@ -841,25 +940,24 @@ export default function CalendarPage() {
       onCreateAction={() => setCreateDate(toDateKey(cursorDate))}
     >
       <div className="flex min-h-[calc(100vh-72px)] flex-col lg:flex-row">
-        <CalendarSidebar
-          cursorDate={cursorDate}
-          filters={filters}
-          filterOptions={filterOptions}
-          stats={stats}
-          filtersOpen={filtersOpen}
-          onFilterToggle={() => setFiltersOpen((current) => !current)}
-          onFilterChange={updateFilter}
-        />
-
         <section className="min-w-0 flex-1">
           <CalendarToolbar
             view={view}
             cursorDate={cursorDate}
+            filtersOpen={filtersOpen}
+            onFilterToggle={() => setFiltersOpen((current) => !current)}
             onViewChange={setView}
             onToday={() => setCursorDate(new Date())}
             onMove={moveCursor}
             onCreate={() => setCreateDate(toDateKey(cursorDate))}
           />
+          {filtersOpen ? (
+            <CalendarFilterPanel
+              filters={filters}
+              filterOptions={filterOptions}
+              onFilterChange={updateFilter}
+            />
+          ) : null}
           <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-500">
             <Search className="h-4 w-4" />
             {visibleTasks.length} sichtbare Kalenderelemente

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createElement, useEffect, useMemo, useRef, useState } from 'react';
 import {
   closestCenter,
@@ -36,7 +37,7 @@ import { initialTasks as sourceTasks } from './MyTasksPage';
 
 const createMenuItems = ['Neue Abteilung', 'Neues Projekt'];
 
-const initialDepartments = [
+export const initialDepartments = [
   {
     id: 'dept-digital-banking',
     name: 'Digitales Banking',
@@ -89,7 +90,7 @@ const initialDepartments = [
   },
 ];
 
-const initialProjects = [
+export const initialProjects = [
   {
     id: 'proj-1',
     departmentId: 'dept-digital-banking',
@@ -214,7 +215,7 @@ const workloadLimits = {
   'Nina Hoffmann': 5,
 };
 
-const initialBacklogTasks = [
+export const initialBacklogTasks = [
   {
     id: 'bg-101',
     sourceTaskId: 'my-task-1',
@@ -224,7 +225,6 @@ const initialBacklogTasks = [
     priority: 'hoch',
     assignee: 'Lisa Wagner',
     dueDate: '18. Juni 2026',
-    points: 5,
     tags: ['Mobile', 'UX'],
     description: 'Die neue Kontouebersicht soll auf den wichtigsten Smartphone-Breiten ohne horizontales Scrollen funktionieren.',
   },
@@ -237,7 +237,6 @@ const initialBacklogTasks = [
     priority: 'mittel',
     assignee: 'Anna Becker',
     dueDate: '24. Juni 2026',
-    points: 3,
     tags: ['Content', 'Freigabe'],
     description: 'Copy, Hinweistext und Fehlermeldungen fuer Kartenlimits in ein pruefbares Paket ueberfuehren.',
   },
@@ -250,7 +249,6 @@ const initialBacklogTasks = [
     priority: 'mittel',
     assignee: '',
     dueDate: '27. Juni 2026',
-    points: 3,
     tags: ['Mobile', 'Offen'],
     description: 'Fuer Umsatzdetails fehlt noch die fachliche Spezifikation der Push-Hinweise. Die Aufgabe ist noch keiner Person zugeordnet.',
   },
@@ -263,7 +261,6 @@ const initialBacklogTasks = [
     priority: 'mittel',
     assignee: 'Elisabeth Bezverkha',
     dueDate: '02. Juli 2026',
-    points: 2,
     tags: ['Dashboard'],
     description: 'Die wichtigsten Kennzahlen fuer persoenliche Tagesplanung festlegen und mit Beispielwerten abgleichen.',
   },
@@ -276,7 +273,6 @@ const initialBacklogTasks = [
     priority: 'mittel',
     assignee: '',
     dueDate: '10. Juli 2026',
-    points: 3,
     tags: ['Dashboard', 'Offen'],
     description: 'Die finale Reihenfolge der Dashboard-Widgets ist noch nicht vergeben und braucht eine fachliche Entscheidung.',
   },
@@ -289,7 +285,6 @@ const initialBacklogTasks = [
     priority: 'hoch',
     assignee: 'Tom Becker',
     dueDate: '20. Juni 2026',
-    points: 8,
     tags: ['Regression', 'Checkout'],
     description: 'Gastzahlung mit Kreditkarte, Sofortueberweisung und Abbruchpfad testen und dokumentieren.',
   },
@@ -302,7 +297,6 @@ const initialBacklogTasks = [
     priority: 'niedrig',
     assignee: 'Elisabeth Bezverkha',
     dueDate: '28. Juni 2026',
-    points: 3,
     tags: ['Devices'],
     description: 'Aktuelle iPad- und Android-Tablet-Kombinationen in die Testmatrix aufnehmen.',
   },
@@ -315,7 +309,6 @@ const initialBacklogTasks = [
     priority: 'niedrig',
     assignee: '',
     dueDate: '03. Juli 2026',
-    points: 2,
     tags: ['QA', 'Offen'],
     description: 'Fuer mehrere Altgeraete fehlen noch Testdaten. Die Aufgabe ist bewusst ohne Verantwortlichen angelegt.',
   },
@@ -328,7 +321,6 @@ const initialBacklogTasks = [
     priority: 'mittel',
     assignee: 'Sarah Nguyen',
     dueDate: '04. August 2026',
-    points: 5,
     tags: ['Copy', 'Kampagne'],
     description: 'Teaser, CTA und rechtlichen Hinweis als erste Review-Fassung vorbereiten.',
   },
@@ -341,7 +333,6 @@ const initialBacklogTasks = [
     priority: 'mittel',
     assignee: '',
     dueDate: '09. August 2026',
-    points: 3,
     tags: ['Assets', 'Offen'],
     description: 'Die Liste der benoetigten Kampagnenmotive ist noch nicht einer Person zugeordnet.',
   },
@@ -354,7 +345,6 @@ const initialBacklogTasks = [
     priority: 'hoch',
     assignee: 'Anna Becker',
     dueDate: '01. Juli 2026',
-    points: 8,
     tags: ['Compliance', 'Kontrolle'],
     description: 'Pflichtfelder, Nachweise und Vier-Augen-Pruefung fuer Abteilungsfreigaben strukturieren.',
   },
@@ -367,7 +357,6 @@ const initialBacklogTasks = [
     priority: 'mittel',
     assignee: 'Nina Hoffmann',
     dueDate: '11. Juli 2026',
-    points: 5,
     tags: ['Service', 'Vorlagen'],
     description: 'Bestehende Antwortvorlagen fuer Kartenrueckfragen auf Verstaendlichkeit und Freigabestand pruefen.',
   },
@@ -380,7 +369,6 @@ const initialBacklogTasks = [
     priority: 'hoch',
     assignee: '',
     dueDate: '15. Juli 2026',
-    points: 3,
     tags: ['Eskalation', 'Offen'],
     description: 'Fuer dringende Servicefaelle fehlen noch eindeutige Eskalationsregeln und eine verantwortliche Person.',
   },
@@ -393,7 +381,6 @@ const initialBacklogTasks = [
     priority: 'niedrig',
     assignee: 'Elisabeth Bezverkha',
     dueDate: '24. Juli 2026',
-    points: 2,
     tags: ['Feedback'],
     description: 'App-Bewertungen nach wiederkehrenden Themen clustern und fuer die Auswertung vorbereiten.',
   },
