@@ -51,12 +51,15 @@ const priorityLabels = {
   URGENT: 'Kritisch',
 };
 
-const priorityColors = {
-  LOW: 'bg-emerald-100 text-emerald-700',
-  MEDIUM: 'bg-blue-100 text-blue-700',
-  HIGH: 'bg-orange-100 text-orange-700',
-  URGENT: 'bg-red-100 text-red-700',
-};
+const calendarWeekDays = [
+  { index: 1, short: 'Mo', label: 'Montag' },
+  { index: 2, short: 'Di', label: 'Dienstag' },
+  { index: 3, short: 'Mi', label: 'Mittwoch' },
+  { index: 4, short: 'Do', label: 'Donnerstag' },
+  { index: 5, short: 'Fr', label: 'Freitag' },
+  { index: 6, short: 'Sa', label: 'Samstag' },
+  { index: 0, short: 'So', label: 'Sonntag' },
+];
 
 const projectColors = ['#4f46e5', '#0f766e', '#b45309', '#be123c', '#6d28d9', '#15803d'];
 const mockPeople = ['Lisa Wagner', 'Markus Klein', 'Anna Becker', 'Tom Becker', 'Sarah Nguyen'];
@@ -89,17 +92,29 @@ function startOfMonthGrid(date) {
   return startOfWeek(first);
 }
 
-function getMonthDays(date) {
-  const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  return Array.from({ length: daysInMonth }, (_, index) => new Date(date.getFullYear(), date.getMonth(), index + 1));
+function getMonthCalendarWeeks(date) {
+  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const firstGridDay = startOfWeek(firstDay);
+  const weeks = [];
+
+  for (let weekStart = firstGridDay; weekStart <= lastDay; weekStart = addDays(weekStart, 7)) {
+    weeks.push(Array.from({ length: 7 }, (_, index) => addDays(weekStart, index)));
+  }
+
+  return weeks;
 }
 
 function formatMonth(date) {
   return new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' }).format(date);
 }
 
-function formatDay(date) {
-  return new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' }).format(date);
+function formatShortDate(date) {
+  return new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit' }).format(date);
+}
+
+function formatCompactDate(date) {
+  return `${date.getDate()}.${date.getMonth() + 1}.`;
 }
 
 function formatFullDate(value) {
@@ -184,7 +199,7 @@ function CalendarTask({ task, onOpen, onDragStart }) {
         event.stopPropagation();
         onOpen(task);
       }}
-      className={`w-full rounded-md border px-2 py-1.5 text-left text-xs font-semibold shadow-sm transition hover:-translate-y-0.5 ${
+      className={`w-full min-w-0 rounded-md border px-2.5 py-2 text-left text-xs font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
         overdue ? 'border-red-300 bg-red-50 text-red-700' : statusColors[task.status]
       }`}
       style={{ borderLeftWidth: 4, borderLeftColor: overdue ? '#dc2626' : task.projectColor }}
@@ -192,40 +207,6 @@ function CalendarTask({ task, onOpen, onDragStart }) {
       <span className="block truncate">{task.title}</span>
       <span className="mt-0.5 block truncate text-[11px] font-medium opacity-80">{task.assignee}</span>
     </button>
-  );
-}
-
-function MiniMonth({ cursorDate, selectedDate, onSelect }) {
-  const days = Array.from({ length: 35 }, (_, index) => addDays(startOfMonthGrid(cursorDate), index));
-  return (
-    <div>
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-extrabold text-slate-900">{formatMonth(cursorDate)}</p>
-      </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-slate-400">
-        {['M', 'D', 'M', 'D', 'F', 'S', 'S'].map((day, index) => (
-          <span key={`${day}-${index}`}>{day}</span>
-        ))}
-      </div>
-      <div className="mt-2 grid grid-cols-7 gap-1">
-        {days.map((day) => {
-          const key = toDateKey(day);
-          const active = key === toDateKey(selectedDate);
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onSelect(day)}
-              className={`h-8 rounded-md text-xs font-bold transition ${
-                active ? 'bg-slate-950 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              {day.getDate()}
-            </button>
-          );
-        })}
-      </div>
-    </div>
   );
 }
 
@@ -249,10 +230,13 @@ function FilterSelect({ label, value, options, onChange }) {
   );
 }
 
-function CalendarSidebar({ cursorDate, filters, filterOptions, stats, onDateSelect, onFilterChange }) {
+function CalendarSidebar({ cursorDate, filters, filterOptions, stats, filtersOpen, onFilterToggle, onFilterChange }) {
   return (
     <aside className="w-full border-b border-slate-200 bg-white p-4 lg:w-[280px] lg:border-b-0 lg:border-r">
-      <MiniMonth cursorDate={cursorDate} selectedDate={cursorDate} onSelect={onDateSelect} />
+      <div>
+        <p className="text-xs font-bold uppercase text-slate-400">Aktueller Monat</p>
+        <p className="mt-1 text-lg font-extrabold text-slate-950">{formatMonth(cursorDate)}</p>
+      </div>
 
       <div className="mt-5 grid grid-cols-3 gap-2">
         <div className="rounded-md bg-red-50 p-2">
@@ -269,35 +253,46 @@ function CalendarSidebar({ cursorDate, filters, filterOptions, stats, onDateSele
         </div>
       </div>
 
-      <div className="mt-5 space-y-4">
-        <div className="flex items-center gap-2 text-sm font-extrabold text-slate-900">
+      <button
+        type="button"
+        onClick={onFilterToggle}
+        className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-extrabold text-slate-700 transition hover:border-slate-300 hover:bg-white"
+      >
+        <ListFilter className="h-4 w-4" />
+        Filter
+      </button>
+
+      {filtersOpen ? (
+        <div className="mt-4 space-y-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+          <div className="flex items-center gap-2 text-sm font-extrabold text-slate-900">
           <ListFilter className="h-4 w-4" />
-          Filter
+            Optionen
+          </div>
+          <FilterSelect label="Projekt" value={filters.project} options={filterOptions.projects} onChange={(value) => onFilterChange('project', value)} />
+          <FilterSelect label="Person" value={filters.person} options={filterOptions.people} onChange={(value) => onFilterChange('person', value)} />
+          <FilterSelect label="Status" value={filters.status} options={Object.values(statusLabels)} onChange={(value) => onFilterChange('statusLabel', value)} />
+          <FilterSelect label="Prioritaet" value={filters.priorityLabel} options={Object.values(priorityLabels)} onChange={(value) => onFilterChange('priorityLabel', value)} />
+          <FilterSelect label="Abteilung" value={filters.department} options={filterOptions.departments} onChange={(value) => onFilterChange('department', value)} />
+          <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+            <input
+              type="checkbox"
+              checked={filters.mineOnly}
+              onChange={(event) => onFilterChange('mineOnly', event.target.checked)}
+              className="h-4 w-4 rounded border-slate-300"
+            />
+            Nur meine Aufgaben
+          </label>
+          <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+            <input
+              type="checkbox"
+              checked={filters.overdueOnly}
+              onChange={(event) => onFilterChange('overdueOnly', event.target.checked)}
+              className="h-4 w-4 rounded border-slate-300"
+            />
+            Nur ueberfaellige Aufgaben
+          </label>
         </div>
-        <FilterSelect label="Projekt" value={filters.project} options={filterOptions.projects} onChange={(value) => onFilterChange('project', value)} />
-        <FilterSelect label="Person" value={filters.person} options={filterOptions.people} onChange={(value) => onFilterChange('person', value)} />
-        <FilterSelect label="Status" value={filters.status} options={Object.values(statusLabels)} onChange={(value) => onFilterChange('statusLabel', value)} />
-        <FilterSelect label="Prioritaet" value={filters.priorityLabel} options={Object.values(priorityLabels)} onChange={(value) => onFilterChange('priorityLabel', value)} />
-        <FilterSelect label="Abteilung" value={filters.department} options={filterOptions.departments} onChange={(value) => onFilterChange('department', value)} />
-        <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-          <input
-            type="checkbox"
-            checked={filters.mineOnly}
-            onChange={(event) => onFilterChange('mineOnly', event.target.checked)}
-            className="h-4 w-4 rounded border-slate-300"
-          />
-          Nur meine Aufgaben
-        </label>
-        <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-          <input
-            type="checkbox"
-            checked={filters.overdueOnly}
-            onChange={(event) => onFilterChange('overdueOnly', event.target.checked)}
-            className="h-4 w-4 rounded border-slate-300"
-          />
-          Nur ueberfaellige Aufgaben
-        </label>
-      </div>
+      ) : null}
     </aside>
   );
 }
@@ -354,96 +349,74 @@ function CalendarToolbar({ view, cursorDate, onViewChange, onToday, onMove, onCr
 }
 
 function MonthView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, onDrop }) {
-  const monthDays = getMonthDays(cursorDate);
-  const weekDays = [
-    { index: 1, label: 'Montag' },
-    { index: 2, label: 'Dienstag' },
-    { index: 3, label: 'Mittwoch' },
-    { index: 4, label: 'Donnerstag' },
-    { index: 5, label: 'Freitag' },
-    { index: 6, label: 'Samstag' },
-    { index: 0, label: 'Sonntag' },
-  ];
+  const calendarWeeks = getMonthCalendarWeeks(cursorDate);
+  const currentMonth = cursorDate.getMonth();
 
   return (
-    <div className="min-h-[760px] overflow-x-auto bg-white">
-      <div
-        className="grid min-w-max"
-        style={{ gridTemplateColumns: `132px repeat(${monthDays.length}, minmax(132px, 1fr))` }}
-      >
-        <div className="sticky left-0 z-20 border-b border-r border-slate-200 bg-slate-50 px-3 py-3 text-xs font-extrabold uppercase text-slate-500">
-          Wochentag
-        </div>
-        {monthDays.map((day) => {
-          const key = toDateKey(day);
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onDayClick(key)}
-              className="border-b border-r border-slate-200 bg-slate-50 px-3 py-3 text-left transition hover:bg-slate-100"
-            >
-              <span className="block text-sm font-extrabold text-slate-950">{day.getDate()}.</span>
-              <span className="block text-[11px] font-bold text-slate-400">
-                {new Intl.DateTimeFormat('de-DE', { month: 'short' }).format(day)}
-              </span>
-            </button>
-          );
-        })}
-
-        {weekDays.map((weekDay) => (
-          <div key={weekDay.label} className="contents">
-            <div className="sticky left-0 z-10 border-b border-r border-slate-200 bg-white px-3 py-4 text-sm font-extrabold text-slate-700">
-              {weekDay.label}
+    <div className="min-h-[760px] bg-slate-50 p-4">
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div
+          className="grid min-w-[1260px]"
+          style={{ gridTemplateColumns: 'repeat(7, minmax(180px, 1fr))' }}
+        >
+          {calendarWeekDays.map((weekDay) => (
+            <div key={weekDay.label} className="border-b border-r border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-sm font-extrabold text-slate-950">{weekDay.label}</p>
+              <p className="mt-1 text-xs font-bold uppercase text-slate-400">{weekDay.short}</p>
             </div>
-            {monthDays.map((day) => {
+          ))}
+
+          {calendarWeeks.map((week) =>
+            week.map((day) => {
               const key = toDateKey(day);
-              const isMatchingWeekDay = day.getDay() === weekDay.index;
-              const dayTasks = isMatchingWeekDay ? tasksByDay[key] || [] : [];
+              const isCurrentMonth = day.getMonth() === currentMonth;
+              const dayTasks = isCurrentMonth ? tasksByDay[key] || [] : [];
 
               return (
                 <div
-                  key={`${weekDay.label}-${key}`}
-                  role={isMatchingWeekDay ? 'button' : undefined}
-                  tabIndex={isMatchingWeekDay ? 0 : undefined}
+                  key={key}
+                  role={isCurrentMonth ? 'button' : undefined}
+                  tabIndex={isCurrentMonth ? 0 : undefined}
                   onClick={() => {
-                    if (isMatchingWeekDay) onDayClick(key);
+                    if (isCurrentMonth) onDayClick(key);
                   }}
                   onKeyDown={(event) => {
-                    if (!isMatchingWeekDay) return;
+                    if (!isCurrentMonth) return;
                     if (event.key === 'Enter' || event.key === ' ') {
                       event.preventDefault();
                       onDayClick(key);
                     }
                   }}
                   onDragOver={(event) => {
-                    if (isMatchingWeekDay) event.preventDefault();
+                    if (isCurrentMonth) event.preventDefault();
                   }}
                   onDrop={(event) => {
-                    if (isMatchingWeekDay) onDrop(event, key);
+                    if (isCurrentMonth) onDrop(event, key);
                   }}
-                  className={`min-h-[126px] border-b border-r border-slate-200 p-2 text-left align-top transition ${
-                    isMatchingWeekDay ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/60'
+                  className={`min-h-[138px] border-b border-r border-slate-200 p-4 text-left transition ${
+                    isCurrentMonth ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/80 text-slate-400'
                   }`}
                 >
-                  {isMatchingWeekDay ? (
-                    <>
-                      <span className="text-xs font-extrabold text-slate-400">{formatDay(day)}</span>
-                      <div className="mt-2 space-y-1.5">
-                        {dayTasks.slice(0, 3).map((task) => (
-                          <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} />
-                        ))}
-                        {dayTasks.length > 3 ? (
-                          <span className="block text-[11px] font-bold text-slate-400">+{dayTasks.length - 3} weitere</span>
-                        ) : null}
-                      </div>
-                    </>
+                  <p className={`mb-3 text-lg font-extrabold ${isCurrentMonth ? 'text-slate-950' : 'text-slate-400'}`}>
+                    {formatCompactDate(day)}
+                  </p>
+                  {isCurrentMonth ? (
+                    <div className="space-y-2">
+                      {dayTasks.slice(0, 2).map((task) => (
+                        <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} />
+                      ))}
+                      {dayTasks.length > 2 ? (
+                        <span className="block rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-500">
+                          +{dayTasks.length - 2} weitere Aufgaben
+                        </span>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
               );
-            })}
-          </div>
-        ))}
+            }),
+          )}
+        </div>
       </div>
     </div>
   );
@@ -452,32 +425,65 @@ function MonthView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, on
 function WeekView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, onDrop }) {
   const start = startOfWeek(cursorDate);
   const days = Array.from({ length: 7 }, (_, index) => addDays(start, index));
+  const timeBlocks = [
+    { id: 'morning', label: 'Vormittag', hint: '08:00 - 12:00' },
+    { id: 'afternoon', label: 'Nachmittag', hint: '12:00 - 17:00' },
+    { id: 'deadline', label: 'Deadline', hint: 'faellige Aufgaben' },
+  ];
+
   return (
-    <div className="grid min-h-[760px] grid-cols-7">
-      {days.map((day) => {
-        const key = toDateKey(day);
-        const dayTasks = tasksByDay[key] || [];
-        return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onDayClick(key)}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={(event) => onDrop(event, key)}
-            className="border-r border-slate-200 bg-white p-3 text-left hover:bg-slate-50"
-          >
-            <div className="mb-3 border-b border-slate-100 pb-2">
-              <p className="text-sm font-extrabold text-slate-950">{formatDay(day)}</p>
-              <p className="text-xs font-semibold text-slate-400">{dayTasks.reduce((sum, task) => sum + task.estimatedHours, 0)}h geplant</p>
+    <div className="min-h-[760px] bg-slate-50 p-4">
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="grid min-w-[860px] grid-cols-[148px_repeat(3,minmax(210px,1fr))]">
+          <div className="sticky left-0 z-20 border-b border-r border-slate-200 bg-slate-50 px-4 py-3 text-xs font-extrabold uppercase text-slate-500">
+            Wochentag
+          </div>
+          {timeBlocks.map((block) => (
+            <div key={block.id} className="border-b border-r border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-sm font-extrabold text-slate-950">{block.label}</p>
+              <p className="mt-0.5 text-xs font-semibold text-slate-500">{block.hint}</p>
             </div>
-            <div className="space-y-2">
-              {dayTasks.map((task) => (
-                <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} />
-              ))}
-            </div>
-          </button>
-        );
-      })}
+          ))}
+
+          {days.map((day, index) => {
+            const key = toDateKey(day);
+            const dayTasks = tasksByDay[key] || [];
+            const totalHours = dayTasks.reduce((sum, task) => sum + task.estimatedHours, 0);
+
+            return (
+              <div key={key} className="contents">
+                <div className="sticky left-0 z-10 border-b border-r border-slate-200 bg-white px-4 py-4">
+                  <p className="text-sm font-extrabold text-slate-950">{calendarWeekDays[index].label}</p>
+                  <p className="mt-1 text-xs font-bold text-slate-400">{formatShortDate(day)} · {totalHours}h geplant</p>
+                </div>
+                {timeBlocks.map((block) => (
+                  <div
+                    key={`${key}-${block.id}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onDayClick(key)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onDayClick(key);
+                      }
+                    }}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => onDrop(event, key)}
+                    className="min-h-[124px] border-b border-r border-slate-200 bg-white p-3 transition hover:bg-slate-50"
+                  >
+                    <div className="space-y-2">
+                      {block.id === 'deadline'
+                        ? dayTasks.map((task) => <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} />)
+                        : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -487,22 +493,32 @@ function DayView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, onDr
   const tasks = tasksByDay[key] || [];
   const hours = Array.from({ length: 11 }, (_, index) => index + 8);
   return (
-    <div
-      className="min-h-[760px] bg-white"
-      onClick={() => onDayClick(key)}
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={(event) => onDrop(event, key)}
-    >
-      {hours.map((hour, index) => (
-        <div key={hour} className="grid min-h-[66px] grid-cols-[72px_1fr] border-b border-slate-100">
-          <div className="border-r border-slate-100 px-3 py-3 text-xs font-bold text-slate-400">{String(hour).padStart(2, '0')}:00</div>
-          <div className="flex flex-wrap gap-2 p-2">
-            {index === 1
-              ? tasks.map((task) => <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} />)
-              : null}
-          </div>
+    <div className="min-h-[760px] bg-slate-50 p-4">
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-sm font-extrabold text-slate-950">{formatFullDate(key)}</p>
+          <p className="mt-0.5 text-xs font-semibold text-slate-500">{tasks.length} Aufgaben · {tasks.reduce((sum, task) => sum + task.estimatedHours, 0)}h geplant</p>
         </div>
-      ))}
+        <div
+          onClick={() => onDayClick(key)}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => onDrop(event, key)}
+        >
+          {hours.map((hour, index) => (
+            <div key={hour} className="grid min-h-[72px] grid-cols-[88px_1fr] border-b border-slate-100 last:border-b-0">
+              <div className="border-r border-slate-100 px-4 py-3 text-xs font-bold text-slate-400">{String(hour).padStart(2, '0')}:00</div>
+              <div className="flex flex-wrap items-start gap-2 p-3">
+                {index === 1
+                  ? tasks.map((task) => <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} />)
+                  : null}
+              </div>
+            </div>
+          ))}
+          {!tasks.length ? (
+            <div className="px-4 py-8 text-center text-sm font-semibold text-slate-400">Keine Aufgaben fuer diesen Tag geplant.</div>
+          ) : null}
+          </div>
+      </div>
     </div>
   );
 }
@@ -574,10 +590,12 @@ function DetailPanel({ task, onClose }) {
   );
 }
 
-function InfoRow({ icon: Icon, label, value }) {
+function InfoRow({ icon, label, value }) {
+  const IconComponent = icon;
+
   return (
     <div className="flex items-center gap-3 rounded-md border border-slate-100 bg-slate-50 px-3 py-2">
-      <Icon className="h-4 w-4 text-slate-400" />
+      <IconComponent className="h-4 w-4 text-slate-400" />
       <div>
         <p className="text-[11px] font-bold uppercase text-slate-400">{label}</p>
         <p className="text-sm font-bold text-slate-800">{value}</p>
@@ -650,6 +668,7 @@ export default function CalendarPage() {
   const [createDate, setCreateDate] = useState(null);
   const [searchValue, setSearchValue] = useState('');
   const [draggedTaskId, setDraggedTaskId] = useState(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({
     project: 'all',
     person: 'all',
@@ -812,14 +831,23 @@ export default function CalendarPage() {
   };
 
   return (
-    <AppShell activeItem="Kalender" searchPlacement="actions" searchValue={searchValue} onSearch={setSearchValue} createMenuItems={['Neue Aufgabe']} onCreateAction={() => setCreateDate(toDateKey(cursorDate))}>
+    <AppShell
+      activeItem="Kalender"
+      hideBreadcrumb
+      searchPlacement="actions"
+      searchValue={searchValue}
+      onSearch={setSearchValue}
+      createMenuItems={['Neue Aufgabe']}
+      onCreateAction={() => setCreateDate(toDateKey(cursorDate))}
+    >
       <div className="flex min-h-[calc(100vh-72px)] flex-col lg:flex-row">
         <CalendarSidebar
           cursorDate={cursorDate}
           filters={filters}
           filterOptions={filterOptions}
           stats={stats}
-          onDateSelect={setCursorDate}
+          filtersOpen={filtersOpen}
+          onFilterToggle={() => setFiltersOpen((current) => !current)}
           onFilterChange={updateFilter}
         />
 
