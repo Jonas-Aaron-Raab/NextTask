@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import DashboardPage from './pages/DashboardPage';
+import CalendarPage from './pages/CalendarPage';
 import MyTasksPage from './pages/MyTasksPage';
 import ProjectBoardPage from './pages/ProjectBoardPage';
 import ProjectsPage from './pages/ProjectsPage';
@@ -11,6 +12,7 @@ function AppRoutes() {
       <Route path="/login" element={<Navigate to="/" replace />} />
       <Route path="/register" element={<Navigate to="/" replace />} />
       <Route path="/" element={<DashboardPage />} />
+      <Route path="/calendar" element={<CalendarPage />} />
       <Route path="/my-tasks" element={<MyTasksPage />} />
       <Route path="/projects" element={<ProjectsPage />} />
       <Route path="/projects/:projectId" element={<ProjectBoardPage />} />
