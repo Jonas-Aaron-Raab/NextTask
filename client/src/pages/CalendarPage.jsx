@@ -89,6 +89,11 @@ function startOfMonthGrid(date) {
   return startOfWeek(first);
 }
 
+function getMonthDays(date) {
+  const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  return Array.from({ length: daysInMonth }, (_, index) => new Date(date.getFullYear(), date.getMonth(), index + 1));
+}
+
 function formatMonth(date) {
   return new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' }).format(date);
 }
@@ -312,6 +317,18 @@ function CalendarToolbar({ view, cursorDate, onViewChange, onToday, onMove, onCr
         </button>
         <h1 className="ml-2 text-lg font-extrabold text-slate-950">{view === 'day' ? formatFullDate(toDateKey(cursorDate)) : formatMonth(cursorDate)}</h1>
       </div>
+      {view === 'month' ? (
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => onMove(-1)} className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
+            <ChevronLeft className="h-4 w-4" />
+            Vorheriger Monat
+          </button>
+          <button type="button" onClick={() => onMove(1)} className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 px-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
+            Naechster Monat
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex rounded-md border border-slate-200 bg-slate-50 p-1">
           {viewOptions.map((option) => (
@@ -337,40 +354,97 @@ function CalendarToolbar({ view, cursorDate, onViewChange, onToday, onMove, onCr
 }
 
 function MonthView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, onDrop }) {
-  const days = Array.from({ length: 42 }, (_, index) => addDays(startOfMonthGrid(cursorDate), index));
-  const currentMonth = cursorDate.getMonth();
+  const monthDays = getMonthDays(cursorDate);
+  const weekDays = [
+    { index: 1, label: 'Montag' },
+    { index: 2, label: 'Dienstag' },
+    { index: 3, label: 'Mittwoch' },
+    { index: 4, label: 'Donnerstag' },
+    { index: 5, label: 'Freitag' },
+    { index: 6, label: 'Samstag' },
+    { index: 0, label: 'Sonntag' },
+  ];
+
   return (
-    <div className="grid min-h-[760px] grid-cols-7">
-      {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day) => (
-        <div key={day} className="border-b border-r border-slate-200 bg-slate-50 px-2 py-2 text-xs font-extrabold text-slate-500">
-          {day}
+    <div className="min-h-[760px] overflow-x-auto bg-white">
+      <div
+        className="grid min-w-max"
+        style={{ gridTemplateColumns: `132px repeat(${monthDays.length}, minmax(132px, 1fr))` }}
+      >
+        <div className="sticky left-0 z-20 border-b border-r border-slate-200 bg-slate-50 px-3 py-3 text-xs font-extrabold uppercase text-slate-500">
+          Wochentag
         </div>
-      ))}
-      {days.map((day) => {
-        const key = toDateKey(day);
-        return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onDayClick(key)}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={(event) => onDrop(event, key)}
-            className={`min-h-[118px] border-b border-r border-slate-200 p-2 text-left align-top transition hover:bg-slate-50 ${
-              day.getMonth() === currentMonth ? 'bg-white' : 'bg-slate-50/70'
-            }`}
-          >
-            <span className="text-xs font-extrabold text-slate-500">{day.getDate()}</span>
-            <div className="mt-2 space-y-1.5">
-              {(tasksByDay[key] || []).slice(0, 4).map((task) => (
-                <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} />
-              ))}
-              {(tasksByDay[key] || []).length > 4 ? (
-                <span className="block text-[11px] font-bold text-slate-400">+{tasksByDay[key].length - 4} weitere</span>
-              ) : null}
+        {monthDays.map((day) => {
+          const key = toDateKey(day);
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onDayClick(key)}
+              className="border-b border-r border-slate-200 bg-slate-50 px-3 py-3 text-left transition hover:bg-slate-100"
+            >
+              <span className="block text-sm font-extrabold text-slate-950">{day.getDate()}.</span>
+              <span className="block text-[11px] font-bold text-slate-400">
+                {new Intl.DateTimeFormat('de-DE', { month: 'short' }).format(day)}
+              </span>
+            </button>
+          );
+        })}
+
+        {weekDays.map((weekDay) => (
+          <div key={weekDay.label} className="contents">
+            <div className="sticky left-0 z-10 border-b border-r border-slate-200 bg-white px-3 py-4 text-sm font-extrabold text-slate-700">
+              {weekDay.label}
             </div>
-          </button>
-        );
-      })}
+            {monthDays.map((day) => {
+              const key = toDateKey(day);
+              const isMatchingWeekDay = day.getDay() === weekDay.index;
+              const dayTasks = isMatchingWeekDay ? tasksByDay[key] || [] : [];
+
+              return (
+                <div
+                  key={`${weekDay.label}-${key}`}
+                  role={isMatchingWeekDay ? 'button' : undefined}
+                  tabIndex={isMatchingWeekDay ? 0 : undefined}
+                  onClick={() => {
+                    if (isMatchingWeekDay) onDayClick(key);
+                  }}
+                  onKeyDown={(event) => {
+                    if (!isMatchingWeekDay) return;
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onDayClick(key);
+                    }
+                  }}
+                  onDragOver={(event) => {
+                    if (isMatchingWeekDay) event.preventDefault();
+                  }}
+                  onDrop={(event) => {
+                    if (isMatchingWeekDay) onDrop(event, key);
+                  }}
+                  className={`min-h-[126px] border-b border-r border-slate-200 p-2 text-left align-top transition ${
+                    isMatchingWeekDay ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/60'
+                  }`}
+                >
+                  {isMatchingWeekDay ? (
+                    <>
+                      <span className="text-xs font-extrabold text-slate-400">{formatDay(day)}</span>
+                      <div className="mt-2 space-y-1.5">
+                        {dayTasks.slice(0, 3).map((task) => (
+                          <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} />
+                        ))}
+                        {dayTasks.length > 3 ? (
+                          <span className="block text-[11px] font-bold text-slate-400">+{dayTasks.length - 3} weitere</span>
+                        ) : null}
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
