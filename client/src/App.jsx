@@ -4,6 +4,7 @@ import CalendarPage from './pages/CalendarPage';
 import MyTasksPage from './pages/MyTasksPage';
 import ProjectBoardPage from './pages/ProjectBoardPage';
 import ProjectsPage from './pages/ProjectsPage';
+import SettingsPage from './pages/SettingsPage';
 import { AuthProvider } from './context/AuthContext';
 
 function AppRoutes() {
@@ -16,6 +17,7 @@ function AppRoutes() {
       <Route path="/my-tasks" element={<MyTasksPage />} />
       <Route path="/projects" element={<ProjectsPage />} />
       <Route path="/projects/:projectId" element={<ProjectBoardPage />} />
+      <Route path="/settings" element={<SettingsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

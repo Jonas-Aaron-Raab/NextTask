@@ -19,6 +19,7 @@ import {
   User,
   Users,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const navigationItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -28,7 +29,7 @@ const navigationItems = [
   { label: 'Kalender', path: '/calendar', icon: Calendar },
   { label: 'Reports', path: '/', icon: BarChart3 },
   { label: 'Team', path: '/', icon: Users },
-  { label: 'Einstellungen', path: '/', icon: Settings },
+  { label: 'Einstellungen', path: '/settings', icon: Settings },
 ];
 
 const defaultCreateMenuItems = ['Neue Aufgabe', 'Neues Projekt', 'Neuer Kommentar', 'Teammitglied einladen'];
@@ -37,6 +38,16 @@ const notifications = [
   'SEO Meta-Tags aktualisieren wurde dir zugewiesen.',
   'Design System aktualisiert wurde abgeschlossen.',
 ];
+
+function getInitials(value) {
+  if (!value) return 'NT';
+  return value
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+}
 
 function MenuCard({ children, className = '' }) {
   return (
@@ -58,6 +69,7 @@ export default function AppShell({
   createMenuItems = defaultCreateMenuItems,
 }) {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const searchInputRef = useRef(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -94,6 +106,12 @@ export default function AppShell({
   const handleCreateAction = (item) => {
     setCreateOpen(false);
     onCreateAction?.(item);
+  };
+
+  const handleLogout = () => {
+    setProfileOpen(false);
+    logout();
+    navigate('/');
   };
 
   return (
@@ -285,25 +303,43 @@ export default function AppShell({
                   className="flex h-11 items-center gap-3 rounded-xl border border-slate-200 bg-white px-2.5 pr-3 text-left transition hover:bg-slate-50"
                 >
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-amber-200 to-rose-300 text-xs font-extrabold text-slate-800">
-                    LW
+                    {getInitials(user?.name)}
                   </span>
                   <span className="hidden leading-tight sm:block">
-                    <span className="block text-sm font-bold text-slate-900">Lisa Wagner</span>
-                    <span className="block text-xs font-semibold text-slate-400">Produktmanagerin</span>
+                    <span className="block text-sm font-bold text-slate-900">{user?.name || 'Gast'}</span>
+                    <span className="block text-xs font-semibold text-slate-400">{user?.department || 'Workspace'}</span>
                   </span>
                   <ChevronDown className="h-4 w-4 text-slate-400" />
                 </button>
                 {profileOpen ? (
                   <MenuCard>
-                    <button type="button" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        navigate('/settings');
+                      }}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50"
+                    >
                       <User className="h-4 w-4" />
                       Profil
                     </button>
-                    <button type="button" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileOpen(false);
+                        navigate('/settings');
+                      }}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50"
+                    >
                       <Settings className="h-4 w-4" />
                       Einstellungen
                     </button>
-                    <button type="button" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50">
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50"
+                    >
                       <LogOut className="h-4 w-4" />
                       Logout
                     </button>

@@ -1,11 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 
 const AuthContext = createContext();
 const guestUser = {
   id: 'guest',
   name: 'Gast',
   email: 'gast@nexttask.local',
+  role: 'DEVELOPER',
+  department: 'Development',
   isGuest: true,
 };
 
@@ -27,8 +29,16 @@ export function AuthProvider({ children }) {
     setUser(guestUser);
   };
 
+  const updateUser = useCallback((userData) => {
+    setUser((currentUser) => {
+      const nextUser = { ...currentUser, ...userData };
+      localStorage.setItem('user', JSON.stringify(nextUser));
+      return nextUser;
+    });
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
