@@ -7,8 +7,6 @@ import {
   Clock3,
   Download,
   FolderKanban,
-  ShieldAlert,
-  ShieldCheck,
   TrendingDown,
   TrendingUp,
   Users,
@@ -86,6 +84,7 @@ export default function ReportsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState(periods[0]);
   const [selectedProject, setSelectedProject] = useState('Alle Projekte');
   const [selectedDepartment, setSelectedDepartment] = useState(initialDepartments[0]?.name || '');
+  const [selectedLoadDepartment, setSelectedLoadDepartment] = useState(initialDepartments[0]?.name || '');
   const [activeProjectId, setActiveProjectId] = useState('');
 
   const departmentById = useMemo(
@@ -137,16 +136,19 @@ export default function ReportsPage() {
       accumulator[project.owner] = (accumulator[project.owner] || 0) + 1;
       return accumulator;
     }, {});
+    const activeDepartment =
+      initialDepartments.find((department) => department.name === selectedLoadDepartment) || initialDepartments[0];
 
-    return Object.entries(ownerCounts)
-      .map(([name, count], index) => ({
-        name,
-        role: initialDepartments.find((department) => department.lead === name)?.name || 'Projektverantwortung',
-        load: Math.min(100, 45 + count * 15 + index * 5),
-        tone: ['#4875c8', '#b76c12', '#1f7a4f', '#b84758', '#6d5df6'][index % 5],
-      }))
-      .slice(0, 4);
-  }, []);
+    return (activeDepartment?.members || []).map((member, index) => ({
+      name: member,
+      role:
+        member === activeDepartment.lead
+          ? `${activeDepartment.name} Lead`
+          : activeDepartment.name,
+      load: Math.min(100, 42 + (ownerCounts[member] || 0) * 18 + index * 9),
+      tone: ['#4875c8', '#b76c12', '#1f7a4f', '#b84758', '#6d5df6'][index % 5],
+    }));
+  }, [selectedLoadDepartment]);
 
   const projectCards = useMemo(() => {
     return initialProjects.map((project) => {
@@ -227,36 +229,6 @@ export default function ReportsPage() {
     }));
   }, [taskMetrics]);
 
-  const complianceCards = useMemo(
-    () => [
-      {
-        title: 'Offene Compliance-Aufgaben',
-        value: taskMetrics.openApprovals,
-        detail: 'Freigaben und Abstimmungen aus Produkt und Compliance sind noch offen.',
-        tone: 'bg-[#fff7f8]',
-      },
-      {
-        title: 'Kritische Risiken',
-        value: taskMetrics.criticalRisks,
-        detail: 'Blockierte oder risikoreiche Aufgaben muessen priorisiert werden.',
-        tone: 'bg-[#fff7f8]',
-      },
-      {
-        title: 'Kontrollnachweise offen',
-        value: taskMetrics.evidenceOpen,
-        detail: 'Nachweise, Screenshots und Dokumentationen fehlen noch in mehreren Tickets.',
-        tone: 'bg-[#f8fafc]',
-      },
-      {
-        title: 'Vier-Augen-Pruefungen offen',
-        value: taskMetrics.review,
-        detail: 'Review- und Abnahmeaufgaben laufen aktuell ueber QA und Fachbereiche.',
-        tone: 'bg-[#f8fafc]',
-      },
-    ],
-    [taskMetrics],
-  );
-
   const kpis = useMemo(
     () => [
       {
@@ -296,7 +268,7 @@ export default function ReportsPage() {
         label: 'Kritische Risiken',
         value: taskMetrics.criticalRisks,
         trend: 'eng verknuepft mit Blockern',
-        icon: ShieldAlert,
+        icon: AlertTriangle,
         tone: 'bg-[#fff0f2] text-[#b84758]',
       },
       {
@@ -549,48 +521,33 @@ export default function ReportsPage() {
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
+        <section>
           <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Risiken &amp; Compliance</h2>
-                <p className="mt-2 text-sm text-slate-500">Direkt aus den vorhandenen Aufgaben und Freigaben im Tool abgeleitet.</p>
-              </div>
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff0f2] text-[#b84758]">
-                <ShieldCheck className="h-5 w-5" />
-              </span>
-            </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {complianceCards.map((item) => (
-                <div key={item.title} className={`rounded-[24px] border border-slate-200 p-5 ${item.tone}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-500">{item.title}</p>
-                      <p className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950">{item.value}</p>
-                    </div>
-                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#b84758]">
-                      <ShieldAlert className="h-5 w-5" />
-                    </span>
-                  </div>
-                  <p className="mt-4 text-sm leading-6 text-slate-600">{item.detail}</p>
-                </div>
-              ))}
-            </div>
-          </article>
-
-          <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Team-Auslastung</h2>
-                <p className="mt-2 text-sm text-slate-500">Auf Basis der vorhandenen Projektverantwortungen in den Abteilungen.</p>
+                <p className="mt-2 text-sm text-slate-500">Abteilung auswaehlen und dann die aktuelle Auslastung des Teams ansehen.</p>
               </div>
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#edf4ff] text-[#4875c8]">
-                <Users className="h-5 w-5" />
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#edf4ff] text-[#4875c8]">
+                  <Users className="h-5 w-5" />
+                </span>
+                <label className="space-y-2">
+                  <span className="block text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Abteilung</span>
+                  <select
+                    value={selectedLoadDepartment}
+                    onChange={(event) => setSelectedLoadDepartment(event.target.value)}
+                    className="h-12 min-w-[240px] rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12"
+                  >
+                    {departmentOptions.map((department) => (
+                      <option key={department}>{department}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
             </div>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {teamLoad.map((member) => (
                 <div key={member.name} className="rounded-[22px] border border-slate-200 bg-[#fcfdff] p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -678,7 +635,7 @@ export default function ReportsPage() {
               {[
                 'Verwendet die vorhandenen Abteilungen und Projekte aus dem Produktbereich.',
                 'Leitet Fortschritt aus dem bestehenden Projekt-Backlog ab.',
-                'Greift fuer Risiken und Freigaben auf die aktuellen Aufgaben- und Compliance-Felder zu.',
+                'Zeigt Team-Auslastung jetzt gezielt pro ausgewaehlter Abteilung.',
               ].map((item) => (
                 <div key={item} className="flex items-start gap-3 rounded-2xl bg-[#f8fafc] px-4 py-3">
                   <ArrowUpRight className="mt-0.5 h-4 w-4 flex-none text-[#b84758]" />
