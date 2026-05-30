@@ -26,7 +26,7 @@ const navigationItems = [
   { label: 'Meine Aufgaben', path: '/my-tasks', icon: CheckSquare },
   { label: 'QA', path: '/', icon: ShieldCheck },
   { label: 'Kalender', path: '/calendar', icon: Calendar },
-  { label: 'Reports', path: '/', icon: BarChart3 },
+  { label: 'Reports', path: '/reports', icon: BarChart3 },
   { label: 'Team', path: '/', icon: Users },
   { label: 'Einstellungen', path: '/', icon: Settings },
 ];
