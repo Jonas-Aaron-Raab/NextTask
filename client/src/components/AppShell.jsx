@@ -20,6 +20,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getStoredAppearanceSettings } from '../utils/appearance';
 
 const navigationItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -71,7 +72,7 @@ export default function AppShell({
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const searchInputRef = useRef(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => getStoredAppearanceSettings().sidebarDefault === 'collapsed');
   const [createOpen, setCreateOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -97,6 +98,15 @@ export default function AppShell({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const handleAppearanceChange = (event) => {
+      setSidebarCollapsed(event.detail.sidebarDefault === 'collapsed');
+    };
+
+    window.addEventListener('nexttask:appearance-change', handleAppearanceChange);
+    return () => window.removeEventListener('nexttask:appearance-change', handleAppearanceChange);
   }, []);
 
   const handleNavigation = (item) => {

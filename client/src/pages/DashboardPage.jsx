@@ -13,6 +13,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
+import {
+  formatAppearanceDate,
+  getBoardBackgroundStyle,
+  getBoardBackgroundValue,
+  getStoredAppearanceSettings,
+} from '../utils/appearance';
 
 const STATUS_COLUMNS = [
   {
@@ -309,6 +315,7 @@ function TaskModal({
   onDelete,
   onCommentChange,
   onCommentCreate,
+  dateFormat,
 }) {
   if (!task) return null;
 
@@ -411,7 +418,7 @@ function TaskModal({
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-sm font-semibold text-slate-800">{comment.author?.name || 'Team'}</span>
                       <span className="text-xs text-slate-400">
-                        {new Date(comment.createdAt).toLocaleDateString('de-DE')}
+                        {formatAppearanceDate(comment.createdAt, dateFormat)}
                       </span>
                     </div>
                     <p className="mt-2 text-sm leading-6 text-slate-600">{comment.content}</p>
@@ -462,6 +469,7 @@ export default function DashboardPage() {
   const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'MEDIUM', status: 'TODAY' });
   const [commentDraft, setCommentDraft] = useState('');
   const [pageError, setPageError] = useState('');
+  const [appearanceSettings, setAppearanceSettings] = useState(() => getStoredAppearanceSettings());
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   const deferredSearch = useDeferredValue(searchValue);
@@ -472,6 +480,7 @@ export default function DashboardPage() {
     }),
   );
   const activeProjectId = routeProjectId || selectedProjectId;
+  const activeBoardBackground = getBoardBackgroundValue(appearanceSettings, activeProjectId);
 
   const filteredProjects = useMemo(() => {
     const query = deferredSearch.trim().toLowerCase();
@@ -559,6 +568,15 @@ export default function DashboardPage() {
 
     return () => clearTimeout(timeoutId);
   }, [activeProjectId, loadTasks]);
+
+  useEffect(() => {
+    const handleAppearanceChange = (event) => {
+      setAppearanceSettings(event.detail);
+    };
+
+    window.addEventListener('nexttask:appearance-change', handleAppearanceChange);
+    return () => window.removeEventListener('nexttask:appearance-change', handleAppearanceChange);
+  }, []);
 
   const handleProjectSelect = (projectId) => {
     setSelectedProjectId(projectId);
@@ -773,7 +791,7 @@ export default function DashboardPage() {
       searchValue={searchValue}
       onSearch={setSearchValue}
     >
-      <div className="min-h-full bg-[radial-gradient(circle_at_top,_rgba(157,112,242,0.65),_rgba(99,79,219,0.92)_38%,_rgba(193,92,195,0.85)_100%)] text-white">
+      <div className="min-h-full text-white" style={{ backgroundImage: getBoardBackgroundStyle(activeBoardBackground) }}>
       <div className="border-b border-white/10 bg-[#6a4aa4]/55 px-5 py-4 backdrop-blur-sm lg:px-7">
         <div className="flex flex-wrap items-center gap-4">
           <div className="min-w-[240px] flex-1">
@@ -1043,6 +1061,7 @@ export default function DashboardPage() {
         onDelete={handleTaskDelete}
         onCommentChange={setCommentDraft}
         onCommentCreate={handleCreateComment}
+        dateFormat={appearanceSettings.dateFormat}
       />
       </div>
     </AppShell>

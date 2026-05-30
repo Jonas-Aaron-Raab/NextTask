@@ -3,15 +3,35 @@ import {
   BadgeCheck,
   BriefcaseBusiness,
   CheckCircle2,
+  ChevronDown,
+  Check,
+  CalendarDays,
+  Image,
   KeyRound,
+  LayoutPanelLeft,
   Mail,
+  Monitor,
+  Moon,
+  Palette,
+  Rows3,
   Save,
   ShieldCheck,
+  SlidersHorizontal,
+  Sun,
+  Type,
   UserRound,
 } from 'lucide-react';
 import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
+import {
+  applyAppearanceSettings,
+  applyAppearanceTheme,
+  boardBackgroundOptions,
+  formatAppearanceDate,
+  getStoredAppearanceSettings,
+  storeAppearanceSettings,
+} from '../utils/appearance';
 
 const roleOptions = [
   { value: 'ADMIN', label: 'Admin' },
@@ -27,6 +47,29 @@ const emptyPasswordForm = {
   newPassword: '',
   confirmPassword: '',
 };
+const themeOptions = [
+  { value: 'light', label: 'Hell', icon: Sun },
+  { value: 'dark', label: 'Dunkel', icon: Moon },
+  { value: 'system', label: 'System', icon: Monitor },
+];
+const densityOptions = [
+  { value: 'comfortable', label: 'Komfortabel', icon: Rows3 },
+  { value: 'compact', label: 'Kompakt', icon: SlidersHorizontal },
+];
+const startViewOptions = [
+  { value: 'dashboard', label: 'Dashboard' },
+  { value: 'projects', label: 'Projekte' },
+  { value: 'my-tasks', label: 'Meine Aufgaben' },
+  { value: 'calendar', label: 'Kalender' },
+];
+const dateFormatOptions = [
+  { value: 'numeric', label: '30.05.2026', icon: CalendarDays },
+  { value: 'long', label: '30. Mai 2026', icon: CalendarDays },
+];
+const fontSizeOptions = [
+  { value: 'normal', label: 'Normal', icon: Type },
+  { value: 'large', label: 'Gross', icon: Type },
+];
 
 function getInitials(value) {
   if (!value) return 'NT';
@@ -36,15 +79,6 @@ function getInitials(value) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('');
-}
-
-function formatDate(value) {
-  if (!value) return 'Noch nicht erfasst';
-  return new Intl.DateTimeFormat('de-DE', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date(value));
 }
 
 function FieldShell({ label, icon: Icon, children }) {
@@ -58,6 +92,75 @@ function FieldShell({ label, icon: Icon, children }) {
       </span>
       <span className="mt-2 block">{children}</span>
     </label>
+  );
+}
+
+function SegmentedControl({ options, value, onChange }) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-3">
+      {options.map((option) => {
+        const Icon = option.icon;
+        const active = option.value === value;
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onChange(option.value)}
+            className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-extrabold transition ${
+              active
+                ? 'border-[#b84758] bg-[#fff1f3] text-[#b84758] shadow-[0_10px_22px_rgba(184,71,88,0.12)]'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            <Icon className="h-4 w-4" />
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ToggleSwitch({ checked, label, onChange }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`inline-flex h-8 w-14 items-center rounded-full p-1 transition ${
+        checked ? 'bg-[#b84758]' : 'bg-slate-200'
+      }`}
+      title={label}
+    >
+      <span
+        className={`inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-[#b84758] shadow-sm transition ${
+          checked ? 'translate-x-6' : 'translate-x-0'
+        }`}
+      >
+        {checked ? <Check className="h-3.5 w-3.5" /> : null}
+      </span>
+    </button>
+  );
+}
+
+function SettingRow({ icon: Icon, label, description, children }) {
+  const iconNode = createElement(Icon, { className: 'h-5 w-5' });
+
+  return (
+    <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[minmax(0,0.9fr)_minmax(280px,1.1fr)] md:items-center">
+      <div className="flex min-w-0 gap-3">
+        <span className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white text-[#b84758] shadow-sm">
+          {iconNode}
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-extrabold text-slate-900">{label}</p>
+          <p className="mt-1 text-sm font-medium text-slate-500">{description}</p>
+        </div>
+      </div>
+      <div>{children}</div>
+    </div>
   );
 }
 
@@ -76,6 +179,13 @@ export default function SettingsPage() {
   const [profileError, setProfileError] = useState('');
   const [passwordStatus, setPasswordStatus] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [appearanceForm, setAppearanceForm] = useState(() => getStoredAppearanceSettings());
+  const [appearanceOpen, setAppearanceOpen] = useState(true);
+  const [appearanceStatus, setAppearanceStatus] = useState('');
+  const [projects, setProjects] = useState([]);
+  const [selectedAppearanceProjectId, setSelectedAppearanceProjectId] = useState('');
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  const [projectsError, setProjectsError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
@@ -84,6 +194,7 @@ export default function SettingsPage() {
     () => roleOptions.find((option) => option.value === profileForm.role)?.label || profileForm.role,
     [profileForm.role],
   );
+  const selectedProjectBackground = appearanceForm.projectBackgrounds?.[selectedAppearanceProjectId] || boardBackgroundOptions[0].value;
 
   useEffect(() => {
     let ignore = false;
@@ -121,6 +232,55 @@ export default function SettingsPage() {
     };
   }, [updateUser]);
 
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadProjects() {
+      setIsLoadingProjects(true);
+      setProjectsError('');
+
+      try {
+        const { data } = await api.get('/projects');
+        if (ignore) return;
+
+        setProjects(data);
+        setSelectedAppearanceProjectId((current) => current || data[0]?.id || '');
+      } catch (error) {
+        if (!ignore) {
+          setProjects([]);
+          setProjectsError(error.response?.data?.message || 'Projekte konnten nicht geladen werden.');
+        }
+      } finally {
+        if (!ignore) setIsLoadingProjects(false);
+      }
+    }
+
+    loadProjects();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const storedAppearance = getStoredAppearanceSettings();
+    applyAppearanceSettings(storedAppearance);
+
+    const mediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
+    const handleSystemThemeChange = () => {
+      const currentAppearance = getStoredAppearanceSettings();
+      if (currentAppearance.theme === 'system') {
+        applyAppearanceTheme('system');
+      }
+    };
+
+    mediaQuery?.addEventListener?.('change', handleSystemThemeChange);
+
+    return () => {
+      mediaQuery?.removeEventListener?.('change', handleSystemThemeChange);
+    };
+  }, []);
+
   const handleProfileChange = (field, value) => {
     setProfileStatus('');
     setProfileError('');
@@ -131,6 +291,26 @@ export default function SettingsPage() {
     setPasswordStatus('');
     setPasswordError('');
     setPasswordForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleAppearanceChange = (field, value) => {
+    setAppearanceStatus('Layout wurde gespeichert.');
+    setAppearanceForm((current) => storeAppearanceSettings({ ...current, [field]: value }));
+  };
+
+  const handleProjectBackgroundChange = (value) => {
+    if (!selectedAppearanceProjectId) return;
+
+    setAppearanceStatus('Layout wurde gespeichert.');
+    setAppearanceForm((current) =>
+      storeAppearanceSettings({
+        ...current,
+        projectBackgrounds: {
+          ...(current.projectBackgrounds || {}),
+          [selectedAppearanceProjectId]: value,
+        },
+      }),
+    );
   };
 
   const handleProfileSubmit = async (event) => {
@@ -241,7 +421,7 @@ export default function SettingsPage() {
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                   <BadgeCheck className="h-4 w-4 text-slate-400" />
-                  Seit {formatDate(createdAt)}
+                  Seit {formatAppearanceDate(createdAt, appearanceForm.dateFormat)}
                 </span>
               </div>
             </div>
@@ -252,6 +432,203 @@ export default function SettingsPage() {
               Profil wird geladen ...
             </div>
           ) : null}
+
+          <section className="rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+            <button
+              type="button"
+              onClick={() => setAppearanceOpen((current) => !current)}
+              className="flex w-full flex-wrap items-center justify-between gap-4 p-5 text-left"
+            >
+              <span className="flex min-w-0 items-center gap-4">
+                <span className="inline-flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-[#fff1f3] text-[#b84758]">
+                  <Palette className="h-6 w-6" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-xs font-extrabold uppercase tracking-[0.16em] text-[#b84758]">Schublade</span>
+                  <span className="mt-1 block text-lg font-extrabold text-slate-950">Layout & Darstellung</span>
+                  <span className="mt-1 block text-sm font-medium text-slate-500">
+                    Darkmode, Dichte und Startansicht fuer dein Arbeitsgefuehl.
+                  </span>
+                </span>
+              </span>
+              <span className="inline-flex items-center gap-3">
+                {appearanceStatus ? (
+                  <span className="hidden items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 sm:inline-flex">
+                    <CheckCircle2 className="h-4 w-4" />
+                    {appearanceStatus}
+                  </span>
+                ) : null}
+                <ChevronDown className={`h-5 w-5 text-slate-400 transition ${appearanceOpen ? 'rotate-180' : ''}`} />
+              </span>
+            </button>
+
+            {appearanceOpen ? (
+              <div className="border-t border-slate-200 p-5">
+                <div className="space-y-4">
+                  <SettingRow
+                    icon={Moon}
+                    label="Darkmode"
+                    description="Waehle hell, dunkel oder automatisch nach deinem System."
+                  >
+                    <SegmentedControl
+                      options={themeOptions}
+                      value={appearanceForm.theme}
+                      onChange={(value) => handleAppearanceChange('theme', value)}
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    icon={Rows3}
+                    label="Layout-Dichte"
+                    description="Mehr Luft fuer Planung oder kompakter fuer viele Aufgaben."
+                  >
+                    <SegmentedControl
+                      options={densityOptions}
+                      value={appearanceForm.density}
+                      onChange={(value) => handleAppearanceChange('density', value)}
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    icon={Image}
+                    label="Board-Hintergrund"
+                    description="Waehle fuer jedes Projekt einen eigenen Hintergrund."
+                  >
+                    <div className="space-y-3">
+                      <select
+                        value={selectedAppearanceProjectId}
+                        disabled={isLoadingProjects || !projects.length}
+                        onChange={(event) => setSelectedAppearanceProjectId(event.target.value)}
+                        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition disabled:bg-slate-100 disabled:text-slate-400 focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
+                      >
+                        {isLoadingProjects ? (
+                          <option value="">Projekte werden geladen ...</option>
+                        ) : projects.length ? (
+                          projects.map((project) => (
+                            <option key={project.id} value={project.id}>
+                              {project.name}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="">Kein Projekt vorhanden</option>
+                        )}
+                      </select>
+                      {projectsError ? (
+                        <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">
+                          {projectsError}
+                        </p>
+                      ) : null}
+                      {!isLoadingProjects && !projectsError && !projects.length ? (
+                        <p className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-500">
+                          Erstelle zuerst ein Projekt, dann kannst du hier einen Board-Hintergrund zuweisen.
+                        </p>
+                      ) : null}
+                      {selectedAppearanceProjectId ? (
+                        <div className="grid gap-2 sm:grid-cols-4">
+                          {boardBackgroundOptions.map((option) => {
+                            const active = option.value === selectedProjectBackground;
+
+                            return (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => handleProjectBackgroundChange(option.value)}
+                                className={`min-h-20 rounded-xl border p-2 text-left transition ${
+                                  active ? 'border-[#b84758] ring-4 ring-[#b84758]/10' : 'border-slate-200 hover:border-slate-300'
+                                }`}
+                              >
+                                <span
+                                  className="block h-9 rounded-lg"
+                                  style={{ backgroundImage: option.background }}
+                                />
+                                <span className="mt-2 block text-xs font-extrabold text-slate-700">{option.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : null}
+                    </div>
+                  </SettingRow>
+
+                  <SettingRow
+                    icon={CalendarDays}
+                    label="Datumsformat"
+                    description="Bestimme, ob Datumswerte kurz oder ausgeschrieben erscheinen."
+                  >
+                    <SegmentedControl
+                      options={dateFormatOptions}
+                      value={appearanceForm.dateFormat}
+                      onChange={(value) => handleAppearanceChange('dateFormat', value)}
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    icon={Type}
+                    label="Schriftgroesse"
+                    description="Nutze groessere Schrift fuer bessere Lesbarkeit."
+                  >
+                    <SegmentedControl
+                      options={fontSizeOptions}
+                      value={appearanceForm.fontSize}
+                      onChange={(value) => handleAppearanceChange('fontSize', value)}
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    icon={LayoutPanelLeft}
+                    label="Sidebar"
+                    description="Lege fest, ob die Seitenleiste beim Start offen bleibt."
+                  >
+                    <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                      <span className="text-sm font-extrabold text-slate-700">
+                        {appearanceForm.sidebarDefault === 'expanded' ? 'Geoeffnet' : 'Eingeklappt'}
+                      </span>
+                      <ToggleSwitch
+                        checked={appearanceForm.sidebarDefault === 'expanded'}
+                        label="Sidebar beim Start geoeffnet"
+                        onChange={(checked) => handleAppearanceChange('sidebarDefault', checked ? 'expanded' : 'collapsed')}
+                      />
+                    </div>
+                  </SettingRow>
+
+                  <SettingRow
+                    icon={SlidersHorizontal}
+                    label="Animationen"
+                    description="Reduziere Bewegungen, wenn du eine ruhigere Oberflaeche willst."
+                  >
+                    <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                      <span className="text-sm font-extrabold text-slate-700">
+                        {appearanceForm.reduceMotion ? 'Reduziert' : 'Normal'}
+                      </span>
+                      <ToggleSwitch
+                        checked={appearanceForm.reduceMotion}
+                        label="Animationen reduzieren"
+                        onChange={(checked) => handleAppearanceChange('reduceMotion', checked)}
+                      />
+                    </div>
+                  </SettingRow>
+
+                  <SettingRow
+                    icon={Monitor}
+                    label="Startansicht"
+                    description="Die Ansicht, die spaeter nach dem Login zuerst geoeffnet wird."
+                  >
+                    <select
+                      value={appearanceForm.startView}
+                      onChange={(event) => handleAppearanceChange('startView', event.target.value)}
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
+                    >
+                      {startViewOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </SettingRow>
+                </div>
+              </div>
+            ) : null}
+          </section>
 
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
             <form onSubmit={handleProfileSubmit} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
