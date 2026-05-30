@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -17,7 +17,17 @@ import AppShell from '../components/AppShell';
 import { initialTasks } from './MyTasksPage';
 import { initialBacklogTasks, initialDepartments, initialProjects } from './ProjectsPage';
 
-const periods = ['Diese Woche', 'Dieser Monat', 'Quartal'];
+const periods = ['Diese Woche', 'Dieser Monat', 'Dieses Jahr'];
+
+const taskDepartmentMap = {
+  'Website Relaunch': 'Digitales Banking',
+  'Sales Deck': 'Digitales Banking',
+  'NextTask UI': 'Digitales Banking',
+  'Shop Optimierung': 'Qualitaetssicherung',
+  'Content Sprint': 'Marketing und Content',
+  'Sparkasse Kampagne': 'Marketing und Content',
+  'CRM Automation': 'Kundenservice',
+};
 
 const progressWeights = {
   todo: 18,
@@ -75,31 +85,36 @@ export default function ReportsPage() {
   const [searchValue, setSearchValue] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState(periods[0]);
   const [selectedProject, setSelectedProject] = useState('Alle Projekte');
-  const [selectedTeam, setSelectedTeam] = useState('Alle Teams');
+  const [selectedDepartment, setSelectedDepartment] = useState(initialDepartments[0]?.name || '');
+  const [activeProjectId, setActiveProjectId] = useState('');
 
   const departmentById = useMemo(
     () => Object.fromEntries(initialDepartments.map((department) => [department.id, department])),
     [],
   );
 
-  const projectOptions = useMemo(() => ['Alle Projekte', ...initialProjects.map((project) => project.name)], []);
-  const teamOptions = useMemo(() => ['Alle Teams', ...initialDepartments.map((department) => department.name)], []);
+  const departmentOptions = useMemo(() => initialDepartments.map((department) => department.name), []);
+
+  const departmentTasks = useMemo(() => {
+    return initialTasks.filter((task) => taskDepartmentMap[task.project] === selectedDepartment);
+  }, [selectedDepartment]);
 
   const taskMetrics = useMemo(() => {
-    const done = initialTasks.filter((task) => task.status === 'done').length;
-    const inProgress = initialTasks.filter((task) => task.status === 'in-progress').length;
-    const review = initialTasks.filter((task) => task.status === 'review').length;
-    const open = initialTasks.filter((task) => task.status === 'today').length;
-    const blocked = initialTasks.filter((task) => task.status === 'blocked').length;
-    const criticalRisks = initialTasks.filter(
+    const sourceTasks = departmentTasks.length ? departmentTasks : initialTasks;
+    const done = sourceTasks.filter((task) => task.status === 'done').length;
+    const inProgress = sourceTasks.filter((task) => task.status === 'in-progress').length;
+    const review = sourceTasks.filter((task) => task.status === 'review').length;
+    const open = sourceTasks.filter((task) => task.status === 'today').length;
+    const blocked = sourceTasks.filter((task) => task.status === 'blocked').length;
+    const criticalRisks = sourceTasks.filter(
       (task) => task.status === 'blocked' || task.compliance?.risk === 'Hoch',
     ).length;
-    const openApprovals = initialTasks.filter((task) =>
+    const openApprovals = sourceTasks.filter((task) =>
       String(task.compliance?.approval || '')
         .toLowerCase()
         .includes('offen'),
     ).length;
-    const evidenceOpen = initialTasks.filter((task) =>
+    const evidenceOpen = sourceTasks.filter((task) =>
       String(task.compliance?.evidence || '')
         .toLowerCase()
         .includes('erforderlich'),
@@ -115,7 +130,7 @@ export default function ReportsPage() {
       openApprovals,
       evidenceOpen,
     };
-  }, []);
+  }, [departmentTasks]);
 
   const teamLoad = useMemo(() => {
     const ownerCounts = initialProjects.reduce((accumulator, project) => {
@@ -151,23 +166,42 @@ export default function ReportsPage() {
     });
   }, [departmentById]);
 
+  const departmentProjects = useMemo(() => {
+    return projectCards.filter((project) => project.departmentName === selectedDepartment);
+  }, [projectCards, selectedDepartment]);
+
+  const projectOptions = useMemo(() => ['Alle Projekte', ...departmentProjects.map((project) => project.name)], [departmentProjects]);
+
   const filteredProjects = useMemo(() => {
     const query = searchValue.trim().toLowerCase();
 
-    return projectCards.filter((project) => {
+    return departmentProjects.filter((project) => {
       const matchesSearch =
         !query ||
         [project.name, project.departmentName, project.owner, project.summary].some((value) =>
           value.toLowerCase().includes(query),
         );
       const matchesProject = selectedProject === 'Alle Projekte' || project.name === selectedProject;
-      const matchesTeam = selectedTeam === 'Alle Teams' || project.departmentName === selectedTeam;
 
-      return matchesSearch && matchesProject && matchesTeam;
+      return matchesSearch && matchesProject;
     });
-  }, [projectCards, searchValue, selectedProject, selectedTeam]);
+  }, [departmentProjects, searchValue, selectedProject]);
+
+  useEffect(() => {
+    setSelectedProject('Alle Projekte');
+  }, [selectedDepartment]);
+
+  useEffect(() => {
+    setActiveProjectId((current) => {
+      if (filteredProjects.some((project) => project.id === current)) {
+        return current;
+      }
+      return filteredProjects[0]?.id || '';
+    });
+  }, [filteredProjects]);
 
   const visibleProjectCount = filteredProjects.length;
+  const activeProject = filteredProjects.find((project) => project.id === activeProjectId) || filteredProjects[0] || null;
   const avgCycleTime = useMemo(() => {
     const activeBacklog = initialBacklogTasks.filter((task) => task.status !== 'done').length;
     return `${(2.2 + activeBacklog / 10).toFixed(1).replace('.', ',')} Tage`;
@@ -252,8 +286,8 @@ export default function ReportsPage() {
       {
         id: 'projects',
         label: 'Aktive Projekte',
-        value: initialProjects.length,
-        trend: `${visibleProjectCount} aktuell im Filter`,
+        value: departmentProjects.length,
+        trend: `${selectedDepartment} im Fokus`,
         icon: BarChartIcon,
         tone: 'bg-[#fff6e8] text-[#b76c12]',
       },
@@ -274,20 +308,22 @@ export default function ReportsPage() {
         tone: 'bg-[#f2efff] text-[#6d5df6]',
       },
     ],
-    [avgCycleTime, taskMetrics, visibleProjectCount],
+    [avgCycleTime, departmentProjects.length, selectedDepartment, taskMetrics],
   );
 
   const attentionProject = useMemo(() => {
-    return [...projectCards].sort((left, right) => left.progress - right.progress)[0];
-  }, [projectCards]);
+    return [...departmentProjects].sort((left, right) => left.progress - right.progress)[0];
+  }, [departmentProjects]);
 
   const summaryText = useMemo(() => {
-    return `Diese Woche wurden ${taskMetrics.done} Aufgaben abgeschlossen. ${
+    return `In ${selectedDepartment} wurden ${
+      taskMetrics.done
+    } Aufgaben abgeschlossen. ${
       taskMetrics.open + taskMetrics.inProgress + taskMetrics.review
     } Aufgaben sind noch offen, davon ${taskMetrics.blocked} kritisch oder blockiert. Das Projekt ${
       attentionProject?.name || 'mit dem niedrigsten Fortschritt'
     } benoetigt aktuell besondere Aufmerksamkeit.`;
-  }, [attentionProject, taskMetrics]);
+  }, [attentionProject, selectedDepartment, taskMetrics]);
 
   return (
     <AppShell
@@ -323,6 +359,18 @@ export default function ReportsPage() {
                 </select>
               </label>
               <label className="space-y-2">
+                <span className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Abteilung</span>
+                <select
+                  value={selectedDepartment}
+                  onChange={(event) => setSelectedDepartment(event.target.value)}
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12"
+                >
+                  {departmentOptions.map((department) => (
+                    <option key={department}>{department}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-2">
                 <span className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Projekt auswaehlen</span>
                 <select
                   value={selectedProject}
@@ -331,18 +379,6 @@ export default function ReportsPage() {
                 >
                   {projectOptions.map((project) => (
                     <option key={project}>{project}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-2">
-                <span className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Team auswaehlen</span>
-                <select
-                  value={selectedTeam}
-                  onChange={(event) => setSelectedTeam(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12"
-                >
-                  {teamOptions.map((team) => (
-                    <option key={team}>{team}</option>
                   ))}
                 </select>
               </label>
@@ -377,12 +413,30 @@ export default function ReportsPage() {
           })}
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.05fr_1.45fr]">
+        <section className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {departmentOptions.map((department) => (
+              <button
+                key={department}
+                type="button"
+                onClick={() => setSelectedDepartment(department)}
+                className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+                  selectedDepartment === department
+                    ? 'bg-[#b84758] text-white shadow-[0_10px_20px_rgba(184,71,88,0.18)]'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:border-[#f1c6ce] hover:text-[#b84758]'
+                }`}
+              >
+                {department}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr] xl:items-start">
           <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Aufgabenstatus</h2>
-                <p className="mt-2 text-sm text-slate-500">Stand aus dem aktuellen Aufgabenboard und den laufenden Rueckmeldungen.</p>
+                <p className="mt-2 text-sm text-slate-500">Status der Aufgaben fuer die aktuell gewaehlte Abteilung.</p>
               </div>
               <span className="rounded-full bg-[#fff7f8] px-4 py-2 text-sm font-bold text-[#b84758]">{selectedPeriod}</span>
             </div>
@@ -413,54 +467,86 @@ export default function ReportsPage() {
           </article>
 
           <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Projektfortschritt</h2>
-                <p className="mt-2 text-sm text-slate-500">Aktuelle Projekte aus den vorhandenen Abteilungen mit Backlog-Stand und Meilenstein.</p>
-              </div>
-              <span className="rounded-full border border-slate-200 bg-[#f8fafc] px-4 py-2 text-sm font-bold text-slate-600">
-                {filteredProjects.length} Projekte sichtbar
-              </span>
+            <div>
+              <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Projektfortschritt</h2>
+              <p className="mt-2 text-sm text-slate-500">Nur die Projekte der gewaehlten Abteilung. Erst Projekt waehlen, dann den Detailstand ansehen.</p>
             </div>
 
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
-              {filteredProjects.map((project) => (
-                <article key={project.id} className="rounded-[24px] border border-slate-200 bg-[#fcfdff] p-5">
+            <div className="mt-6 grid gap-4 xl:grid-cols-[0.9fr_1.25fr]">
+              <div className="space-y-3">
+                {filteredProjects.map((project) => (
+                  <button
+                    key={project.id}
+                    type="button"
+                    onClick={() => setActiveProjectId(project.id)}
+                    className={`w-full rounded-[22px] border p-4 text-left transition ${
+                      activeProject?.id === project.id
+                        ? 'border-[#e8a9b3] bg-[#fff7f8] shadow-[0_12px_28px_rgba(184,71,88,0.08)]'
+                        : 'border-slate-200 bg-[#fcfdff] hover:border-[#f1c6ce] hover:bg-white'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">{project.departmentName}</p>
+                        <h3 className="mt-2 text-base font-extrabold leading-6 text-slate-950">{project.name}</h3>
+                      </div>
+                      <span className={`rounded-full px-3 py-1 text-xs font-bold ${project.signal.tone}`}>{project.signal.label}</span>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between text-sm font-semibold text-slate-500">
+                      <span>{project.progress}% Fortschritt</span>
+                      <span>{project.openTasks} offen</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {activeProject ? (
+                <article className="rounded-[24px] border border-slate-200 bg-[#fcfdff] p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">{project.departmentName}</p>
-                      <h3 className="mt-2 text-xl font-extrabold leading-tight text-slate-950">{project.name}</h3>
+                      <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">{activeProject.departmentName}</p>
+                      <h3 className="mt-2 text-[1.35rem] font-extrabold leading-tight text-slate-950">{activeProject.name}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">{activeProject.summary}</p>
                     </div>
-                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${project.signal.tone}`}>{project.signal.label}</span>
+                    <span className={`rounded-full px-3 py-1 text-xs font-bold ${activeProject.signal.tone}`}>{activeProject.signal.label}</span>
                   </div>
 
-                  <div className="mt-5">
+                  <div className="mt-6">
                     <div className="flex items-center justify-between text-sm font-semibold text-slate-600">
                       <span>Fortschritt</span>
-                      <span>{project.progress}%</span>
+                      <span>{activeProject.progress}%</span>
                     </div>
                     <div className="mt-2 h-3 rounded-full bg-slate-100">
                       <div
                         className="h-3 rounded-full bg-gradient-to-r from-[#f0b5bf] via-[#d86a7c] to-[#b84758]"
-                        style={{ width: `${project.progress}%` }}
+                        style={{ width: `${activeProject.progress}%` }}
                       />
                     </div>
                   </div>
 
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-2xl bg-white p-3">
+                  <div className="mt-6 grid gap-3 md:grid-cols-2">
+                    <div className="rounded-2xl bg-white p-4">
                       <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Offene Aufgaben</p>
-                      <p className="mt-2 text-lg font-extrabold text-slate-950">{project.openTasks}</p>
+                      <p className="mt-2 text-2xl font-extrabold text-slate-950">{activeProject.openTasks}</p>
                     </div>
-                    <div className="rounded-2xl bg-white p-3">
+                    <div className="rounded-2xl bg-white p-4">
+                      <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Verantwortung</p>
+                      <p className="mt-2 text-base font-extrabold text-slate-950">{activeProject.owner}</p>
+                    </div>
+                    <div className="rounded-2xl bg-white p-4 md:col-span-2">
                       <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Naechster Meilenstein</p>
-                      <p className="mt-2 text-sm font-bold leading-6 text-slate-800">{project.milestone}</p>
+                      <p className="mt-2 text-sm font-bold leading-6 text-slate-800">{activeProject.milestone}</p>
                     </div>
                   </div>
                 </article>
-              ))}
+              ) : (
+                <div className="flex min-h-[280px] items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-[#fcfdff] p-6 text-center text-sm font-semibold text-slate-400">
+                  Kein Projekt im aktuellen Filter gefunden.
+                </div>
+              )}
             </div>
           </article>
+          </div>
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.2fr_0.95fr]">
