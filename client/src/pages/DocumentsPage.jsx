@@ -271,6 +271,7 @@ export default function DocumentsPage() {
   const [selectedType, setSelectedType] = useState(typeOptions[0]);
   const [selectedStatus, setSelectedStatus] = useState(statusOptions[0]);
   const [activeDocumentId, setActiveDocumentId] = useState(null);
+  const [activeSection, setActiveSection] = useState('library');
 
   const activeDocument = documents.find((document) => document.id === activeDocumentId) || null;
 
@@ -305,6 +306,44 @@ export default function DocumentsPage() {
   const evidenceCount = documents.filter((document) => document.type === 'Kontrollnachweis').length;
   const reviewCount = documents.filter((document) => document.status === 'In Pruefung').length;
   const confidentialCount = documents.filter((document) => document.classification !== 'Intern').length;
+  const reviewDocuments = documents
+    .filter((document) => document.status === 'In Pruefung' || document.status === 'Abgelaufen')
+    .slice(0, 4);
+
+  const sectionCards = [
+    {
+      id: 'library',
+      title: 'Dokumentenbibliothek',
+      description: 'Alle Dokumente durchsuchen und oeffnen',
+      count: filteredDocuments.length,
+      icon: FileText,
+      tone: 'bg-[#fff7f8] text-[#b84758]',
+    },
+    {
+      id: 'spaces',
+      title: 'Wissensbereiche',
+      description: 'Abteilungswissen und Spaces',
+      count: knowledgeSpaces.length,
+      icon: BookOpen,
+      tone: 'bg-[#edf4ff] text-[#4875c8]',
+    },
+    {
+      id: 'reviews',
+      title: 'Pruefung & Fristen',
+      description: 'Offene Reviews und Fristen',
+      count: reviewDocuments.length,
+      icon: Clock3,
+      tone: 'bg-[#fff6e8] text-[#b76c12]',
+    },
+    {
+      id: 'templates',
+      title: 'Vorlagen & Nachweise',
+      description: 'Standardvorlagen und Uploads',
+      count: templates.length,
+      icon: Upload,
+      tone: 'bg-[#eefaf4] text-[#1f7a4f]',
+    },
+  ];
 
   return (
     <AppShell
@@ -402,138 +441,172 @@ export default function DocumentsPage() {
             return (
               <article
                 key={item.label}
-                className="rounded-[26px] border border-[#f1c6ce] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]"
+                className="rounded-[24px] border border-[#f1c6ce] bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)]"
               >
                 <div className="flex items-start gap-3">
-                  <span className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${item.tone}`}>
-                    <Icon className="h-5 w-5" />
+                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${item.tone}`}>
+                    <Icon className="h-4.5 w-4.5" />
                   </span>
                 </div>
-                <p className="mt-4 text-sm font-semibold text-slate-500">{item.label}</p>
-                <p className="mt-2 text-[2rem] font-extrabold tracking-tight text-slate-950">{item.value}</p>
-                <p className="mt-2 text-sm font-semibold text-slate-500">{item.detail}</p>
+                <p className="mt-3 text-sm font-semibold text-slate-500">{item.label}</p>
+                <p className="mt-1.5 text-[1.8rem] font-extrabold tracking-tight text-slate-950">{item.value}</p>
+                <p className="mt-1.5 text-sm font-semibold text-slate-500">{item.detail}</p>
               </article>
             );
           })}
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.35fr_0.95fr]">
-          <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Dokumentenbibliothek</h2>
-              </div>
-              <span className="rounded-full bg-[#fff7f8] px-4 py-2 text-sm font-bold text-[#b84758]">
-                {filteredDocuments.length} sichtbar
-              </span>
-            </div>
+        <section className="rounded-[30px] border border-[#f1c6ce] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <div className="flex flex-wrap gap-3">
+            {sectionCards.map((section) => {
+              const Icon = section.icon;
 
-            <div className="mt-6 space-y-4">
-              {filteredDocuments.map((document) => (
+              return (
                 <button
-                  key={document.id}
+                  key={section.id}
                   type="button"
-                  onClick={() => setActiveDocumentId(document.id)}
-                  className="w-full rounded-[24px] border border-slate-200 bg-[#fcfdff] p-5 text-left transition hover:border-[#f1c6ce] hover:bg-white"
+                  onClick={() => setActiveSection(section.id)}
+                  className={`flex min-w-[220px] flex-1 items-center gap-3 rounded-[22px] border px-4 py-4 text-left transition ${
+                    activeSection === section.id
+                      ? 'border-[#e8a9b3] bg-[#fff7f8] shadow-[0_12px_28px_rgba(184,71,88,0.08)]'
+                      : 'border-slate-200 bg-[#fcfdff] hover:border-[#f1c6ce] hover:bg-white'
+                  }`}
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap gap-2">
-                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusTone(document.status)}`}>{document.status}</span>
-                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${classificationTone(document.classification)}`}>
-                          {document.classification}
-                        </span>
-                        <span className="rounded-full bg-[#f8fafc] px-3 py-1 text-xs font-bold text-slate-600">{document.type}</span>
-                      </div>
-                      <h3 className="mt-3 text-xl font-extrabold leading-tight text-slate-950">{document.title}</h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">{document.summary}</p>
-                    </div>
-
-                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff7f8] text-[#b84758]">
-                      <Eye className="h-5 w-5" />
-                    </span>
-                  </div>
-
-                  <div className="mt-5 grid gap-3 md:grid-cols-4">
-                    {[
-                      ['Abteilung', document.department],
-                      ['Projekt', document.project],
-                      ['Version', document.version],
-                      ['Naechste Pruefung', document.reviewDate],
-                    ].map(([label, value]) => (
-                      <div key={label} className="rounded-2xl bg-white p-3">
-                        <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">{label}</p>
-                        <p className="mt-2 text-sm font-bold leading-6 text-slate-900">{value}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${section.tone}`}>
+                    <Icon className="h-4.5 w-4.5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-extrabold text-slate-950">{section.title}</span>
+                    <span className="mt-1 block text-xs font-semibold text-slate-500">{section.description}</span>
+                  </span>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600">{section.count}</span>
                 </button>
-              ))}
-            </div>
-          </article>
+              );
+            })}
+          </div>
 
-          <div className="space-y-6">
-            <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Wissensbereiche</h2>
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#edf4ff] text-[#4875c8]">
-                  <BookOpen className="h-5 w-5" />
-                </span>
-              </div>
+          <div className="mt-5 border-t border-slate-200 pt-5">
+            {activeSection === 'library' ? (
+              <article>
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-xl font-extrabold tracking-tight text-slate-950">Dokumentenbibliothek</h2>
+                  <span className="rounded-full bg-[#fff7f8] px-4 py-2 text-sm font-bold text-[#b84758]">
+                    {filteredDocuments.length} sichtbar
+                  </span>
+                </div>
 
-              <div className="mt-6 space-y-3">
-                {knowledgeSpaces.map((space) => (
-                  <div key={space.id} className={`rounded-[22px] border p-4 ${space.tone}`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-lg font-extrabold text-slate-950">{space.title}</h3>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">{space.description}</p>
+                <div className="mt-5 space-y-3">
+                  {filteredDocuments.map((document) => (
+                    <button
+                      key={document.id}
+                      type="button"
+                      onClick={() => setActiveDocumentId(document.id)}
+                      className="w-full rounded-[22px] border border-slate-200 bg-[#fcfdff] p-4 text-left transition hover:border-[#f1c6ce] hover:bg-white"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap gap-2">
+                            <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusTone(document.status)}`}>{document.status}</span>
+                            <span className={`rounded-full px-3 py-1 text-xs font-bold ${classificationTone(document.classification)}`}>
+                              {document.classification}
+                            </span>
+                            <span className="rounded-full bg-[#f8fafc] px-3 py-1 text-xs font-bold text-slate-600">{document.type}</span>
+                          </div>
+                          <h3 className="mt-3 text-lg font-extrabold leading-tight text-slate-950">{document.title}</h3>
+                          <p className="mt-2 text-sm leading-6 text-slate-500">{document.summary}</p>
+                        </div>
+
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#fff7f8] text-[#b84758]">
+                          <Eye className="h-4.5 w-4.5" />
+                        </span>
                       </div>
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600">{space.docsCount}</span>
-                    </div>
-                    <p className="mt-4 text-sm font-semibold text-slate-500">Lead: {space.lead}</p>
-                  </div>
-                ))}
-              </div>
-            </article>
 
-            <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Pruefung &amp; Fristen</h2>
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff6e8] text-[#b76c12]">
-                  <Clock3 className="h-5 w-5" />
-                </span>
-              </div>
+                      <div className="mt-4 grid gap-3 md:grid-cols-4">
+                        {[
+                          ['Abteilung', document.department],
+                          ['Projekt', document.project],
+                          ['Version', document.version],
+                          ['Naechste Pruefung', document.reviewDate],
+                        ].map(([label, value]) => (
+                          <div key={label} className="rounded-2xl bg-white p-3">
+                            <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-400">{label}</p>
+                            <p className="mt-1.5 text-sm font-bold leading-6 text-slate-900">{value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </article>
+            ) : null}
 
-              <div className="mt-6 space-y-3">
-                {documents
-                  .filter((document) => document.status === 'In Pruefung' || document.status === 'Abgelaufen')
-                  .slice(0, 4)
-                  .map((document) => (
-                    <div key={document.id} className="rounded-[22px] border border-slate-200 bg-[#fcfdff] p-4">
-                      <p className="text-sm font-extrabold text-slate-950">{document.title}</p>
-                      <p className="mt-2 text-sm font-semibold text-slate-500">{document.reviewDate}</p>
+            {activeSection === 'spaces' ? (
+              <article>
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-xl font-extrabold tracking-tight text-slate-950">Wissensbereiche</h2>
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#edf4ff] text-[#4875c8]">
+                    <BookOpen className="h-4.5 w-4.5" />
+                  </span>
+                </div>
+
+                <div className="mt-5 grid gap-3 xl:grid-cols-2">
+                  {knowledgeSpaces.map((space) => (
+                    <div key={space.id} className={`rounded-[22px] border p-4 ${space.tone}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-base font-extrabold text-slate-950">{space.title}</h3>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">{space.description}</p>
+                        </div>
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600">{space.docsCount}</span>
+                      </div>
+                      <p className="mt-4 text-sm font-semibold text-slate-500">Lead: {space.lead}</p>
                     </div>
                   ))}
-              </div>
-            </article>
+                </div>
+              </article>
+            ) : null}
 
-            <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Vorlagen &amp; Nachweise</h2>
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff0f2] text-[#b84758]">
-                  <Upload className="h-5 w-5" />
-                </span>
-              </div>
+            {activeSection === 'reviews' ? (
+              <article>
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-xl font-extrabold tracking-tight text-slate-950">Pruefung & Fristen</h2>
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#fff6e8] text-[#b76c12]">
+                    <Clock3 className="h-4.5 w-4.5" />
+                  </span>
+                </div>
 
-              <div className="mt-6 space-y-3">
-                {templates.map((template) => (
-                  <div key={template} className="rounded-[22px] border border-slate-200 bg-[#fcfdff] px-4 py-3 text-sm font-semibold text-slate-700">
-                    {template}
-                  </div>
-                ))}
-              </div>
-            </article>
+                <div className="mt-5 grid gap-3 xl:grid-cols-2">
+                  {reviewDocuments.map((document) => (
+                    <div key={document.id} className="rounded-[22px] border border-slate-200 bg-[#fcfdff] p-4">
+                      <p className="text-sm font-extrabold text-slate-950">{document.title}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusTone(document.status)}`}>{document.status}</span>
+                        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600">{document.reviewDate}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ) : null}
+
+            {activeSection === 'templates' ? (
+              <article>
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-xl font-extrabold tracking-tight text-slate-950">Vorlagen & Nachweise</h2>
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#fff0f2] text-[#b84758]">
+                    <Upload className="h-4.5 w-4.5" />
+                  </span>
+                </div>
+
+                <div className="mt-5 grid gap-3 xl:grid-cols-2">
+                  {templates.map((template) => (
+                    <div key={template} className="rounded-[22px] border border-slate-200 bg-[#fcfdff] px-4 py-3 text-sm font-semibold text-slate-700">
+                      {template}
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ) : null}
           </div>
         </section>
       </div>
