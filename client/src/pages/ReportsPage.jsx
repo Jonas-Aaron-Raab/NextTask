@@ -84,7 +84,6 @@ export default function ReportsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState(periods[0]);
   const [selectedProject, setSelectedProject] = useState('Alle Projekte');
   const [selectedDepartment, setSelectedDepartment] = useState(initialDepartments[0]?.name || '');
-  const [selectedLoadDepartment, setSelectedLoadDepartment] = useState(initialDepartments[0]?.name || '');
   const [activeProjectId, setActiveProjectId] = useState('');
 
   const departmentById = useMemo(
@@ -137,7 +136,7 @@ export default function ReportsPage() {
       return accumulator;
     }, {});
     const activeDepartment =
-      initialDepartments.find((department) => department.name === selectedLoadDepartment) || initialDepartments[0];
+      initialDepartments.find((department) => department.name === selectedDepartment) || initialDepartments[0];
 
     return (activeDepartment?.members || []).map((member, index) => ({
       name: member,
@@ -148,7 +147,7 @@ export default function ReportsPage() {
       load: Math.min(100, 42 + (ownerCounts[member] || 0) * 18 + index * 9),
       tone: ['#4875c8', '#b76c12', '#1f7a4f', '#b84758', '#6d5df6'][index % 5],
     }));
-  }, [selectedLoadDepartment]);
+  }, [selectedDepartment]);
 
   const projectCards = useMemo(() => {
     return initialProjects.map((project) => {
@@ -506,28 +505,14 @@ export default function ReportsPage() {
 
         <section>
           <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Team-Auslastung</h2>
-                <p className="mt-2 text-sm text-slate-500">Abteilung auswaehlen und dann die aktuelle Auslastung des Teams ansehen.</p>
+                <p className="mt-2 text-sm text-slate-500">Zeigt automatisch die aktuelle Auslastung fuer die oben gewaehlte Abteilung.</p>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#edf4ff] text-[#4875c8]">
-                  <Users className="h-5 w-5" />
-                </span>
-                <label className="space-y-2">
-                  <span className="block text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Abteilung</span>
-                  <select
-                    value={selectedLoadDepartment}
-                    onChange={(event) => setSelectedLoadDepartment(event.target.value)}
-                    className="h-12 min-w-[240px] rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12"
-                  >
-                    {departmentOptions.map((department) => (
-                      <option key={department}>{department}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#edf4ff] text-[#4875c8]">
+                <Users className="h-5 w-5" />
+              </span>
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
