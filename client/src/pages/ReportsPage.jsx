@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
-  ArrowUpRight,
   CheckCircle2,
   CircleDot,
   Clock3,
@@ -85,6 +84,7 @@ export default function ReportsPage() {
   const [selectedProject, setSelectedProject] = useState('Alle Projekte');
   const [selectedDepartment, setSelectedDepartment] = useState(initialDepartments[0]?.name || '');
   const [activeProjectId, setActiveProjectId] = useState('');
+  const [exportFormat, setExportFormat] = useState('PDF');
 
   const departmentById = useMemo(
     () => Object.fromEntries(initialDepartments.map((department) => [department.id, department])),
@@ -303,7 +303,6 @@ export default function ReportsPage() {
       searchPlacement="actions"
       searchValue={searchValue}
       onSearch={setSearchValue}
-      createMenuItems={['Report exportieren']}
     >
       <div className="space-y-7">
         <section className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
@@ -316,7 +315,7 @@ export default function ReportsPage() {
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[760px]">
+            <div className="grid gap-3 sm:grid-cols-4 xl:min-w-[980px]">
               <label className="space-y-2">
                 <span className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Zeitraum</span>
                 <select
@@ -342,6 +341,17 @@ export default function ReportsPage() {
                 </select>
               </label>
               <label className="space-y-2">
+                <span className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Exportformat</span>
+                <select
+                  value={exportFormat}
+                  onChange={(event) => setExportFormat(event.target.value)}
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12"
+                >
+                  <option>PDF</option>
+                  <option>Excel</option>
+                </select>
+              </label>
+              <label className="space-y-2">
                 <span className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Projekt auswaehlen</span>
                 <select
                   value={selectedProject}
@@ -353,6 +363,16 @@ export default function ReportsPage() {
                   ))}
                 </select>
               </label>
+              <div className="space-y-2">
+                <span className="block text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Export</span>
+                <button
+                  type="button"
+                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#b84758] px-5 text-sm font-bold text-white transition hover:bg-[#a23d4d]"
+                >
+                  <Download className="h-4 w-4" />
+                  Als {exportFormat} exportieren
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -549,10 +569,6 @@ export default function ReportsPage() {
               </span>
             </div>
 
-            <div className="mt-6 rounded-[26px] border border-[#f4d9de] bg-[#fff7f8] p-5">
-              <p className="text-base leading-8 text-slate-700">{summaryText}</p>
-            </div>
-
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <div className="rounded-[22px] bg-[#f8fafc] p-4">
                 <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Erledigt</p>
@@ -572,44 +588,6 @@ export default function ReportsPage() {
                 <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Aufmerksamkeit</p>
                 <p className="mt-2 text-lg font-extrabold text-slate-950">{attentionProject?.name}</p>
               </div>
-            </div>
-          </article>
-
-          <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Export</h2>
-                <p className="mt-2 text-sm text-slate-500">Platzhalter fuer spaetere PDF- oder Excel-Exports aus den echten Report-Daten.</p>
-              </div>
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff6e8] text-[#b76c12]">
-                <Download className="h-5 w-5" />
-              </span>
-            </div>
-
-            <div className="mt-6 rounded-[24px] border border-[#f4d9de] bg-[#fff7f8] p-5">
-              <p className="text-sm font-semibold leading-7 text-slate-600">
-                Der Export-Button bleibt sichtbar und kann spaeter direkt an PDF-, Excel- oder Management-Exports angebunden werden.
-              </p>
-              <button
-                type="button"
-                className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#b84758] px-5 text-sm font-bold text-white transition hover:bg-[#a23d4d]"
-              >
-                <Download className="h-4 w-4" />
-                Report exportieren
-              </button>
-            </div>
-
-            <div className="mt-5 space-y-3">
-              {[
-                'Verwendet die vorhandenen Abteilungen und Projekte aus dem Produktbereich.',
-                'Leitet Fortschritt aus dem bestehenden Projekt-Backlog ab.',
-                'Zeigt Team-Auslastung jetzt gezielt pro ausgewaehlter Abteilung.',
-              ].map((item) => (
-                <div key={item} className="flex items-start gap-3 rounded-2xl bg-[#f8fafc] px-4 py-3">
-                  <ArrowUpRight className="mt-0.5 h-4 w-4 flex-none text-[#b84758]" />
-                  <p className="text-sm font-semibold leading-6 text-slate-600">{item}</p>
-                </div>
-              ))}
             </div>
           </article>
         </section>
