@@ -1,1049 +1,451 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import {
-  closestCorners,
-  DndContext,
-  PointerSensor,
-  useDroppable,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { useNavigate, useParams } from 'react-router-dom';
-import api from '../api/axios';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight, Building2, CalendarClock, CircleAlert, FolderOpen } from 'lucide-react';
 import AppShell from '../components/AppShell';
-import { useAuth } from '../context/AuthContext';
+import { initialTasks } from './MyTasksPage';
+import { initialBacklogTasks, initialDepartments, initialProjects } from './ProjectsPage';
 
-const STATUS_COLUMNS = [
-  {
-    key: 'TODAY',
-    label: 'Heute',
-    accent: 'from-[#fff0a8] via-[#ffe76c] to-[#f8d54b]',
-    surface: 'bg-[#fff5b8]',
-    addTone: 'text-[#8a6400]',
-    badge: 'bg-[#6e9617]',
-  },
-  {
-    key: 'THIS_WEEK',
-    label: 'Diese Woche',
-    accent: 'from-[#c6f7df] via-[#aeeecf] to-[#8eddbf]',
-    surface: 'bg-[#baf0d8]',
-    addTone: 'text-[#126145]',
-    badge: 'bg-[#138b64]',
-  },
-  {
-    key: 'LATER',
-    label: 'Spater',
-    accent: 'from-[#ffffff] via-[#f4f5f7] to-[#e8edf4]',
-    surface: 'bg-[#f4f5f7]',
-    addTone: 'text-[#4e5c72]',
-    badge: 'bg-[#5d6b82]',
-  },
-  {
-    key: 'DONE',
-    label: 'Erledigt',
-    accent: 'from-[#d8f5d8] via-[#c9efcf] to-[#a8e2b1]',
-    surface: 'bg-[#d3f2d7]',
-    addTone: 'text-[#1f7048]',
-    badge: 'bg-[#277a4e]',
-  },
-];
+const createMenuItems = ['Neue Aufgabe', 'Neues Projekt', 'Neuer Report', 'Neues Dokument'];
 
-const PRIORITY_META = {
-  LOW: 'bg-emerald-100 text-emerald-700',
-  MEDIUM: 'bg-amber-100 text-amber-700',
-  HIGH: 'bg-orange-100 text-orange-700',
-  URGENT: 'bg-rose-100 text-rose-700',
+const priorityWeight = {
+  hoch: 3,
+  mittel: 2,
+  niedrig: 1,
 };
 
-const PRIORITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
-const BOARD_TABS = ['Projekte', 'Planer', 'Board', 'Boards wechseln'];
-const EMPTY_DRAFTS = {
-  TODAY: '',
-  THIS_WEEK: '',
-  LATER: '',
-  DONE: '',
+const statusMeta = {
+  today: { label: 'Heute', tone: 'bg-[#c97a11]', track: 'bg-[#f7ead8]' },
+  'in-progress': { label: 'In Arbeit', tone: 'bg-[#4875c8]', track: 'bg-[#e6eefc]' },
+  review: { label: 'Review', tone: 'bg-[#7c59dc]', track: 'bg-[#efe9ff]' },
+  blocked: { label: 'Blockiert', tone: 'bg-[#b84758]', track: 'bg-[#fdecef]' },
 };
 
-function sortTasks(taskList) {
-  return [...taskList].sort((left, right) => {
-    if (left.order !== right.order) {
-      return left.order - right.order;
-    }
-    return new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
-  });
+function parseGermanDate(value) {
+  if (!value) return Number.POSITIVE_INFINITY;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return new Date(value).getTime();
+  }
+
+  const months = {
+    januar: 0,
+    februar: 1,
+    maerz: 2,
+    april: 3,
+    mai: 4,
+    juni: 5,
+    juli: 6,
+    august: 7,
+    september: 8,
+    oktober: 9,
+    november: 10,
+    dezember: 11,
+  };
+
+  const normalized = value
+    .toLowerCase()
+    .replace('märz', 'maerz')
+    .replace(/\./g, '')
+    .trim();
+  const [day, monthName, year] = normalized.split(/\s+/);
+  const monthIndex = months[monthName];
+
+  if (!day || monthIndex === undefined || !year) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return new Date(Number(year), monthIndex, Number(day)).getTime();
 }
 
-function getTaskMap(taskList) {
-  return STATUS_COLUMNS.reduce((accumulator, column) => {
-    accumulator[column.key] = sortTasks(taskList.filter((task) => task.status === column.key));
-    return accumulator;
-  }, {});
+function sortByUrgency(left, right) {
+  const priorityDelta = (priorityWeight[right.priority] || 0) - (priorityWeight[left.priority] || 0);
+  if (priorityDelta !== 0) return priorityDelta;
+
+  const dateDelta = parseGermanDate(left.dueDateValue || left.dueDate) - parseGermanDate(right.dueDateValue || right.dueDate);
+  if (dateDelta !== 0) return dateDelta;
+
+  return left.title.localeCompare(right.title, 'de');
 }
 
-function getInitials(value) {
-  if (!value) return 'NT';
-  return value
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('');
-}
-
-function DashboardIcon() {
+function SectionHeader({ title, action }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" className="h-5 w-5">
-      <rect x="3.5" y="3.5" width="6" height="6" rx="1.5" />
-      <rect x="14.5" y="3.5" width="6" height="6" rx="1.5" />
-      <rect x="3.5" y="14.5" width="6" height="6" rx="1.5" />
-      <rect x="14.5" y="14.5" width="6" height="6" rx="1.5" />
-    </svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-      <circle cx="11" cy="11" r="6.5" />
-      <path d="m16 16 4 4" />
-    </svg>
-  );
-}
-
-function PlusIcon({ className = 'h-5 w-5' }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className}>
-      <path d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}
-
-function BellIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-      <path d="M15 17H5.5a1 1 0 0 1-.9-1.43l1.12-2.28A6 6 0 0 0 6.3 10V9a5.7 5.7 0 1 1 11.4 0v1c0 1.14.27 2.26.78 3.28l1.11 2.28A1 1 0 0 1 18.7 17H17" />
-      <path d="M9.5 18a2.5 2.5 0 0 0 5 0" />
-    </svg>
-  );
-}
-
-function LogoutIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-      <path d="M14 16.5 19 12l-5-4.5" />
-      <path d="M8 12h11" />
-      <path d="M10 5H6.5A2.5 2.5 0 0 0 4 7.5v9A2.5 2.5 0 0 0 6.5 19H10" />
-    </svg>
-  );
-}
-
-function ShareIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-      <path d="M15 8a3 3 0 1 0-2.94-3.59L7.8 6.67a3 3 0 1 0 0 4.66l4.26 2.26A3 3 0 1 0 13 15" />
-    </svg>
-  );
-}
-
-function MoreIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-      <circle cx="5" cy="12" r="1.6" />
-      <circle cx="12" cy="12" r="1.6" />
-      <circle cx="19" cy="12" r="1.6" />
-    </svg>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
-      <circle cx="12" cy="12" r="8" />
-      <path d="M12 8v5l3 2" />
-    </svg>
-  );
-}
-
-function CommentIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
-      <path d="M6.5 18.5 4 20V6.75A2.75 2.75 0 0 1 6.75 4h10.5A2.75 2.75 0 0 1 20 6.75v6.5A2.75 2.75 0 0 1 17.25 16H8z" />
-    </svg>
-  );
-}
-
-function GripIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
-      <circle cx="8" cy="8" r="1.3" />
-      <circle cx="8" cy="12" r="1.3" />
-      <circle cx="8" cy="16" r="1.3" />
-      <circle cx="16" cy="8" r="1.3" />
-      <circle cx="16" cy="12" r="1.3" />
-      <circle cx="16" cy="16" r="1.3" />
-    </svg>
-  );
-}
-
-function SortableTaskCard({ task, onOpen, disabled }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: task.id,
-    disabled,
-  });
-
-  return (
-    <button
-      ref={setNodeRef}
-      type="button"
-      onClick={() => onOpen(task.id)}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
-      className={`group w-full rounded-2xl border border-white/70 bg-white px-4 py-3 text-left shadow-[0_8px_20px_rgba(39,43,77,0.12)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(39,43,77,0.18)] ${
-        isDragging ? 'opacity-70 shadow-[0_18px_34px_rgba(33,37,68,0.24)]' : ''
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-[1.05rem] font-semibold text-slate-800">{task.title}</p>
-          {task.description ? (
-            <p className="mt-1 max-h-12 overflow-hidden text-sm leading-6 text-slate-500">{task.description}</p>
-          ) : null}
-        </div>
-        <span
-          {...attributes}
-          {...listeners}
-          onClick={(event) => event.stopPropagation()}
-          className="mt-0.5 inline-flex h-8 w-8 flex-none cursor-grab items-center justify-center rounded-full text-slate-400 transition group-hover:bg-slate-100 group-hover:text-slate-600"
-        >
-          <GripIcon />
-        </span>
-      </div>
-
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${PRIORITY_META[task.priority]}`}>
-          {task.priority}
-        </span>
-        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1">
-            <CommentIcon />
-            {task.comments?.length || 0}
-          </span>
-          {task.assignee?.name ? (
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#5f49d7] text-[0.72rem] font-semibold text-white">
-              {getInitials(task.assignee.name)}
-            </span>
-          ) : null}
-        </div>
-      </div>
-    </button>
-  );
-}
-
-function BoardColumn({ column, tasks, draft, onDraftChange, onSubmit, onOpenTask, dragDisabled }) {
-  const { setNodeRef, isOver } = useDroppable({ id: column.key });
-
-  return (
-    <section
-      ref={setNodeRef}
-      className={`flex min-h-[620px] w-[320px] flex-none flex-col rounded-[22px] border border-white/20 bg-white/12 p-3 shadow-[0_12px_40px_rgba(28,20,78,0.16)] backdrop-blur-sm transition ${
-        isOver ? 'ring-2 ring-white/50' : ''
-      }`}
-    >
-      <div className={`rounded-[18px] bg-gradient-to-r ${column.accent} p-4 shadow-inner`}>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-[1.05rem] font-semibold text-slate-800">{column.label}</h3>
-            <p className="mt-1 text-xs font-medium uppercase tracking-[0.24em] text-slate-500">Task-Liste</p>
-          </div>
-          <span className={`inline-flex min-w-9 items-center justify-center rounded-full px-2 py-1 text-sm font-semibold text-white ${column.badge}`}>
-            {tasks.length}
-          </span>
-        </div>
-      </div>
-
-      <div className={`mt-3 flex min-h-[420px] flex-1 flex-col rounded-[18px] ${column.surface} p-2.5`}>
-        <SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-3">
-            {tasks.map((task) => (
-              <SortableTaskCard key={task.id} task={task} onOpen={onOpenTask} disabled={dragDisabled} />
-            ))}
-          </div>
-        </SortableContext>
-
-        {tasks.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center px-4 py-10 text-center text-sm font-medium text-slate-500">
-            Hier ist noch nichts. Lege die erste Karte fur diese Liste an.
-          </div>
-        ) : null}
-      </div>
-
-      <form onSubmit={(event) => onSubmit(event, column.key)} className="mt-3 rounded-[18px] bg-white/18 p-2">
-        <label className="sr-only" htmlFor={`draft-${column.key}`}>
-          Karte hinzufugen
-        </label>
-        <div className="flex items-center gap-2 rounded-[14px] bg-white/60 px-3 py-2.5 text-slate-600 transition focus-within:bg-white">
-          <PlusIcon className="h-4 w-4 flex-none" />
-          <input
-            id={`draft-${column.key}`}
-            value={draft}
-            onChange={(event) => onDraftChange(column.key, event.target.value)}
-            placeholder="Eine Karte hinzufugen"
-            className="w-full border-0 bg-transparent text-sm font-medium text-slate-700 placeholder:text-slate-500 focus:outline-none"
-          />
-        </div>
-      </form>
-    </section>
-  );
-}
-
-function TaskModal({
-  task,
-  form,
-  commentDraft,
-  onClose,
-  onChange,
-  onSave,
-  onDelete,
-  onCommentChange,
-  onCommentCreate,
-}) {
-  if (!task) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 py-8 backdrop-blur-sm">
-      <div className="max-h-full w-full max-w-4xl overflow-hidden rounded-[32px] border border-white/20 bg-[#f8f7ff] shadow-[0_30px_90px_rgba(14,8,52,0.34)]">
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#6d63d8]">Kartenansicht</p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-900">{task.title}</h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
-          >
-            <span className="text-xl leading-none">x</span>
-          </button>
-        </div>
-
-        <div className="grid gap-0 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-5 px-6 py-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="space-y-2 text-sm font-semibold text-slate-700">
-                Titel
-                <input
-                  value={form.title}
-                  onChange={(event) => onChange('title', event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-[#6a58da] focus:ring-2 focus:ring-[#6a58da]/15"
-                />
-              </label>
-              <label className="space-y-2 text-sm font-semibold text-slate-700">
-                Prioritat
-                <select
-                  value={form.priority}
-                  onChange={(event) => onChange('priority', event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-[#6a58da] focus:ring-2 focus:ring-[#6a58da]/15"
-                >
-                  {PRIORITY_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-2 text-sm font-semibold text-slate-700 md:col-span-2">
-                Status
-                <select
-                  value={form.status}
-                  onChange={(event) => onChange('status', event.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-[#6a58da] focus:ring-2 focus:ring-[#6a58da]/15"
-                >
-                  {STATUS_COLUMNS.map((column) => (
-                    <option key={column.key} value={column.key}>
-                      {column.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <label className="block space-y-2 text-sm font-semibold text-slate-700">
-              Beschreibung
-              <textarea
-                value={form.description}
-                onChange={(event) => onChange('description', event.target.value)}
-                rows={7}
-                className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition focus:border-[#6a58da] focus:ring-2 focus:ring-[#6a58da]/15"
-              />
-            </label>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={onSave}
-                className="rounded-2xl bg-[#614dd8] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(97,77,216,0.28)] transition hover:bg-[#5643ca]"
-              >
-                Karte speichern
-              </button>
-              <button
-                type="button"
-                onClick={onDelete}
-                className="rounded-2xl bg-rose-100 px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-200"
-              >
-                Karte loschen
-              </button>
-            </div>
-          </div>
-
-          <aside className="border-t border-slate-200 bg-white/80 px-6 py-6 lg:border-l lg:border-t-0">
-            <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
-              <ClockIcon />
-              Aktivitat
-            </div>
-
-            <div className="mt-5 space-y-3">
-              {task.comments?.length ? (
-                task.comments.map((comment) => (
-                  <div key={comment.id} className="rounded-2xl bg-white p-4 shadow-[0_10px_25px_rgba(70,75,112,0.1)]">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold text-slate-800">{comment.author?.name || 'Team'}</span>
-                      <span className="text-xs text-slate-400">
-                        {new Date(comment.createdAt).toLocaleDateString('de-DE')}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{comment.content}</p>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-6 text-sm text-slate-500">
-                  Noch keine Kommentare vorhanden.
-                </div>
-              )}
-            </div>
-
-            <div className="mt-5 space-y-3">
-              <textarea
-                value={commentDraft}
-                onChange={(event) => onCommentChange(event.target.value)}
-                rows={4}
-                placeholder="Kommentar schreiben"
-                className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition focus:border-[#6a58da] focus:ring-2 focus:ring-[#6a58da]/15"
-              />
-              <button
-                type="button"
-                onClick={onCommentCreate}
-                className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                Kommentar senden
-              </button>
-            </div>
-          </aside>
-        </div>
-      </div>
+    <div className="flex items-center justify-between gap-4">
+      <h2 className="text-[1.35rem] font-black tracking-tight text-slate-950">{title}</h2>
+      {action ? <span className="text-sm font-semibold text-slate-400">{action}</span> : null}
     </div>
   );
 }
 
 export default function DashboardPage() {
-  const { projectId: routeProjectId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [projects, setProjects] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [selectedProjectId, setSelectedProjectId] = useState(routeProjectId || '');
   const [searchValue, setSearchValue] = useState('');
-  const [projectFormOpen, setProjectFormOpen] = useState(false);
-  const [projectForm, setProjectForm] = useState({ name: '', key: '', description: '' });
-  const [cardDrafts, setCardDrafts] = useState(EMPTY_DRAFTS);
-  const [selectedTaskId, setSelectedTaskId] = useState(null);
-  const [taskForm, setTaskForm] = useState({ title: '', description: '', priority: 'MEDIUM', status: 'TODAY' });
-  const [commentDraft, setCommentDraft] = useState('');
-  const [pageError, setPageError] = useState('');
-  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
-  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
-  const deferredSearch = useDeferredValue(searchValue);
-  const dragDisabled = Boolean(deferredSearch.trim());
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    }),
-  );
-  const activeProjectId = routeProjectId || selectedProjectId;
 
-  const filteredProjects = useMemo(() => {
-    const query = deferredSearch.trim().toLowerCase();
-    if (!query) return projects;
-    return projects.filter((project) => {
-      const haystack = `${project.name} ${project.key} ${project.description || ''}`.toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [deferredSearch, projects]);
+  const searchTerm = searchValue.trim().toLowerCase();
 
-  const visibleTasks = useMemo(() => {
-    const query = deferredSearch.trim().toLowerCase();
-    if (!query) return tasks;
-    return tasks.filter((task) => {
-      const haystack = `${task.title} ${task.description || ''} ${task.priority}`.toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [deferredSearch, tasks]);
+  const openTasks = useMemo(() => initialTasks.filter((task) => task.status !== 'done'), []);
 
-  const taskColumns = useMemo(() => getTaskMap(visibleTasks), [visibleTasks]);
-  const fullTaskColumns = useMemo(() => getTaskMap(tasks), [tasks]);
+  const focusTasks = useMemo(() => {
+    const baseTasks = [...openTasks].sort(sortByUrgency).slice(0, 4);
 
-  const selectedProject = projects.find((project) => project.id === activeProjectId) || null;
-  const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
+    if (!searchTerm) return baseTasks;
 
-  const loadProjects = useCallback(async (preferredProjectId) => {
-    setIsLoadingProjects(true);
-    setPageError('');
-    try {
-      const { data } = await api.get('/projects');
-      setProjects(data);
-
-      const routeStillValid = routeProjectId && data.some((project) => project.id === routeProjectId);
-      const preferredStillValid = preferredProjectId && data.some((project) => project.id === preferredProjectId);
-      const currentStillValid = activeProjectId && data.some((project) => project.id === activeProjectId);
-      const nextProjectId =
-        (routeStillValid && routeProjectId) ||
-        (preferredStillValid && preferredProjectId) ||
-        (currentStillValid && activeProjectId) ||
-        data[0]?.id ||
-        '';
-
-      setSelectedProjectId(nextProjectId);
-
-      if (routeProjectId && !routeStillValid && data[0]?.id) {
-        navigate(`/projects/${data[0].id}`, { replace: true });
-      }
-    } catch (error) {
-      setPageError(error.response?.data?.message || 'Projekte konnten nicht geladen werden.');
-    } finally {
-      setIsLoadingProjects(false);
-    }
-  }, [activeProjectId, navigate, routeProjectId]);
-
-  const loadTasks = useCallback(async (projectId) => {
-    if (!projectId) {
-      setTasks([]);
-      return;
-    }
-
-    setIsLoadingTasks(true);
-    setPageError('');
-    try {
-      const { data } = await api.get(`/tasks/project/${projectId}`);
-      setTasks(sortTasks(data));
-    } catch (error) {
-      setPageError(error.response?.data?.message || 'Tasks konnten nicht geladen werden.');
-    } finally {
-      setIsLoadingTasks(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      void loadProjects();
-    }, 0);
-
-    return () => clearTimeout(timeoutId);
-  }, [loadProjects]);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      void loadTasks(activeProjectId);
-    }, 0);
-
-    return () => clearTimeout(timeoutId);
-  }, [activeProjectId, loadTasks]);
-
-  const handleProjectSelect = (projectId) => {
-    setSelectedProjectId(projectId);
-    setSelectedTaskId(null);
-    navigate(`/projects/${projectId}`);
-  };
-
-  const openTask = (taskId) => {
-    const task = tasks.find((candidate) => candidate.id === taskId);
-    if (!task) return;
-
-    setSelectedTaskId(task.id);
-    setTaskForm({
-      title: task.title,
-      description: task.description || '',
-      priority: task.priority,
-      status: task.status,
-    });
-    setCommentDraft('');
-  };
-
-  const handleProjectFieldChange = (field, value) => {
-    setProjectForm((current) => ({
-      ...current,
-      [field]: field === 'key' ? value.toUpperCase().replace(/[^A-Z0-9-]/g, '') : value,
-    }));
-  };
-
-  const handleCreateProject = async (event) => {
-    event.preventDefault();
-    if (!projectForm.name.trim() || !projectForm.key.trim()) return;
-
-    setPageError('');
-    try {
-      const { data } = await api.post('/projects', {
-        name: projectForm.name.trim(),
-        key: projectForm.key.trim(),
-        description: projectForm.description.trim(),
-      });
-
-      setProjectForm({ name: '', key: '', description: '' });
-      setProjectFormOpen(false);
-      await loadProjects(data.id);
-      navigate(`/projects/${data.id}`);
-    } catch (error) {
-      setPageError(error.response?.data?.message || 'Projekt konnte nicht erstellt werden.');
-    }
-  };
-
-  const handleCardDraftChange = (status, value) => {
-    setCardDrafts((current) => ({ ...current, [status]: value }));
-  };
-
-  const handleCreateTask = async (event, status) => {
-    event.preventDefault();
-    const title = cardDrafts[status]?.trim();
-    if (!title || !activeProjectId) return;
-
-    setPageError('');
-    try {
-      await api.post('/tasks', {
-        title,
-        description: '',
-        priority: 'MEDIUM',
-        status,
-        projectId: activeProjectId,
-      });
-      setCardDrafts((current) => ({ ...current, [status]: '' }));
-      await loadTasks(activeProjectId);
-    } catch (error) {
-      setPageError(error.response?.data?.message || 'Task konnte nicht angelegt werden.');
-    }
-  };
-
-  const persistTaskOrder = async (previousTasks, nextTasks) => {
-    const changedTasks = nextTasks.filter((task) => {
-      const previousTask = previousTasks.find((candidate) => candidate.id === task.id);
-      return previousTask && (previousTask.status !== task.status || previousTask.order !== task.order);
-    });
-
-    if (!changedTasks.length) return;
-
-    try {
-      await Promise.all(
-        changedTasks.map((task) =>
-          api.patch(`/tasks/${task.id}/move`, {
-            status: task.status,
-            order: task.order,
-          }),
-        ),
-      );
-    } catch (error) {
-      setPageError(error.response?.data?.message || 'Die Kartenreihenfolge konnte nicht gespeichert werden.');
-      await loadTasks(activeProjectId);
-    }
-  };
-
-  const handleDragEnd = async ({ active, over }) => {
-    if (!over || dragDisabled) return;
-
-    const activeId = String(active.id);
-    const overId = String(over.id);
-    const previousTasks = sortTasks(tasks);
-    const board = getTaskMap(previousTasks);
-    const sourceStatus = STATUS_COLUMNS.find((column) => board[column.key].some((task) => task.id === activeId))?.key;
-
-    if (!sourceStatus) return;
-
-    const overIsColumn = STATUS_COLUMNS.some((column) => column.key === overId);
-    const targetTask = overIsColumn ? null : previousTasks.find((task) => task.id === overId);
-    const targetStatus = overIsColumn ? overId : targetTask?.status;
-
-    if (!targetStatus) return;
-
-    const sourceIds = board[sourceStatus].map((task) => task.id);
-    const targetIds = board[targetStatus].map((task) => task.id);
-    const sourceIndex = sourceIds.indexOf(activeId);
-
-    if (sourceIndex === -1) return;
-
-    let nextBoard = { ...board };
-
-    if (sourceStatus === targetStatus) {
-      const currentIds = [...sourceIds];
-      const targetIndex = overIsColumn ? currentIds.length - 1 : currentIds.indexOf(overId);
-      if (targetIndex === -1 || targetIndex === sourceIndex) return;
-      const reorderedIds = arrayMove(currentIds, sourceIndex, targetIndex);
-      nextBoard = {
-        ...board,
-        [sourceStatus]: reorderedIds.map((id) => previousTasks.find((task) => task.id === id)).filter(Boolean),
-      };
-    } else {
-      const nextSourceIds = [...sourceIds];
-      nextSourceIds.splice(sourceIndex, 1);
-
-      const nextTargetIds = [...targetIds];
-      const insertIndex = overIsColumn ? nextTargetIds.length : Math.max(nextTargetIds.indexOf(overId), 0);
-      nextTargetIds.splice(insertIndex, 0, activeId);
-
-      nextBoard = {
-        ...board,
-        [sourceStatus]: nextSourceIds.map((id) => previousTasks.find((task) => task.id === id)).filter(Boolean),
-        [targetStatus]: nextTargetIds.map((id) => previousTasks.find((task) => task.id === id)).filter(Boolean),
-      };
-    }
-
-    const taskLookup = new Map(previousTasks.map((task) => [task.id, task]));
-    const nextTasks = STATUS_COLUMNS.flatMap((column) =>
-      nextBoard[column.key].map((task, index) => ({
-        ...taskLookup.get(task.id),
-        status: column.key,
-        order: index,
-      })),
+    return baseTasks.filter((task) =>
+      [task.title, task.project, task.note, task.assignee].join(' ').toLowerCase().includes(searchTerm),
     );
+  }, [openTasks, searchTerm]);
 
-    setTasks(nextTasks);
-    await persistTaskOrder(previousTasks, nextTasks);
-  };
+  const attentionItems = useMemo(() => {
+    const flagged = initialTasks.filter((task) => ['blocked', 'review'].includes(task.status)).sort(sortByUrgency);
 
-  const handleTaskSave = async () => {
-    if (!selectedTask) return;
+    if (!searchTerm) return flagged.slice(0, 4);
 
-    setPageError('');
-    try {
-      await api.put(`/tasks/${selectedTask.id}`, {
-        title: taskForm.title.trim(),
-        description: taskForm.description.trim(),
-        priority: taskForm.priority,
-        status: taskForm.status,
-        assigneeId: selectedTask.assigneeId || null,
-      });
-      await loadTasks(activeProjectId);
-      setSelectedTaskId(selectedTask.id);
-    } catch (error) {
-      setPageError(error.response?.data?.message || 'Task konnte nicht gespeichert werden.');
-    }
-  };
+    return flagged
+      .filter((task) => [task.title, task.project, task.note].join(' ').toLowerCase().includes(searchTerm))
+      .slice(0, 4);
+  }, [searchTerm]);
 
-  const handleTaskDelete = async () => {
-    if (!selectedTask) return;
+  const departmentCards = useMemo(() => {
+    const cards = initialDepartments.map((department) => {
+      const departmentProjects = initialProjects.filter((project) => project.departmentId === department.id);
+      const projectIds = departmentProjects.map((project) => project.id);
+      const departmentBacklog = initialBacklogTasks.filter((task) => projectIds.includes(task.projectId));
+      const openBacklogCount = departmentBacklog.filter((task) => task.status !== 'done').length;
+      const reviewCount = departmentBacklog.filter((task) => task.status === 'review').length;
 
-    setPageError('');
-    try {
-      await api.delete(`/tasks/${selectedTask.id}`);
-      setSelectedTaskId(null);
-      await loadTasks(activeProjectId);
-    } catch (error) {
-      setPageError(error.response?.data?.message || 'Task konnte nicht geloscht werden.');
-    }
-  };
+      return {
+        ...department,
+        activeProjects: departmentProjects.length,
+        openBacklogCount,
+        reviewCount,
+      };
+    });
 
-  const handleCreateComment = async () => {
-    if (!selectedTask || !commentDraft.trim()) return;
+    if (!searchTerm) return cards;
 
-    setPageError('');
-    try {
-      await api.post(`/tasks/${selectedTask.id}/comments`, { content: commentDraft.trim() });
-      setCommentDraft('');
-      await loadTasks(activeProjectId);
-      setSelectedTaskId(selectedTask.id);
-    } catch (error) {
-      setPageError(error.response?.data?.message || 'Kommentar konnte nicht gespeichert werden.');
-    }
-  };
+    return cards.filter((department) =>
+      [department.name, department.lead, department.description].join(' ').toLowerCase().includes(searchTerm),
+    );
+  }, [searchTerm]);
 
-  const visibleTaskCount = tasks.length;
+  const upcomingItems = useMemo(() => {
+    const taskDeadlines = openTasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      meta: task.project,
+      dueLabel: task.dueDate,
+      sortValue: parseGermanDate(task.dueDateValue || task.dueDate),
+      type: 'Aufgabe',
+      path: '/my-tasks',
+    }));
+
+    const projectDeadlines = initialProjects.map((project) => ({
+      id: project.id,
+      title: project.name,
+      meta: project.owner,
+      dueLabel: project.dueDate,
+      sortValue: parseGermanDate(project.dueDate),
+      type: 'Projekt',
+      path: '/projects',
+    }));
+
+    const combined = [...taskDeadlines, ...projectDeadlines]
+      .sort((left, right) => left.sortValue - right.sortValue)
+      .slice(0, 5);
+
+    if (!searchTerm) return combined;
+
+    return combined.filter((item) => [item.title, item.meta, item.type].join(' ').toLowerCase().includes(searchTerm));
+  }, [openTasks, searchTerm]);
+
+  const kpis = useMemo(
+    () => ({
+      openTasks: openTasks.length,
+      todayDue: openTasks.filter((task) => task.status === 'today').length,
+      activeProjects: initialProjects.filter((project) => !['Abgeschlossen', 'Archiviert'].includes(project.status)).length,
+      activeDepartments: initialDepartments.length,
+    }),
+    [openTasks],
+  );
+
+  const statusOverview = useMemo(() => {
+    const total = openTasks.length || 1;
+    const counts = Object.keys(statusMeta).map((key) => ({
+      key,
+      ...statusMeta[key],
+      value: openTasks.filter((task) => task.status === key).length,
+    }));
+
+    return counts.map((item) => ({
+      ...item,
+      percent: Math.round((item.value / total) * 100),
+    }));
+  }, [openTasks]);
+
+  const workloadScore = useMemo(() => {
+    const todayCount = openTasks.filter((task) => task.status === 'today').length;
+    const inProgressCount = openTasks.filter((task) => task.status === 'in-progress').length;
+    const reviewCount = openTasks.filter((task) => task.status === 'review').length;
+    const blockedCount = openTasks.filter((task) => task.status === 'blocked').length;
+
+    return Math.min(100, todayCount * 18 + inProgressCount * 10 + reviewCount * 16 + blockedCount * 24);
+  }, [openTasks]);
+
+  const workloadLabel = useMemo(() => {
+    if (workloadScore >= 75) return 'hoch';
+    if (workloadScore >= 45) return 'mittel';
+    return 'stabil';
+  }, [workloadScore]);
 
   return (
     <AppShell
       activeItem="Dashboard"
-      breadcrumb={['Workspace', selectedProject?.name || 'Web-Relaunch', 'Dashboard']}
+      hideBreadcrumb
+      searchPlacement="actions"
       searchValue={searchValue}
       onSearch={setSearchValue}
+      createMenuItems={createMenuItems}
     >
-      <div className="min-h-full bg-[radial-gradient(circle_at_top,_rgba(157,112,242,0.65),_rgba(99,79,219,0.92)_38%,_rgba(193,92,195,0.85)_100%)] text-white">
-      <div className="border-b border-white/10 bg-[#6a4aa4]/55 px-5 py-4 backdrop-blur-sm lg:px-7">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="min-w-[240px] flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">Mein Board</p>
-            <div className="mt-1 flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-semibold tracking-tight">
-                {selectedProject?.name || (isLoadingProjects ? 'Projekt wird geladen' : 'Projekt auswahlen')}
-              </h1>
-              {selectedProject ? (
-                <span className="rounded-full bg-white/14 px-3 py-1 text-sm font-semibold text-white/90">
-                  {selectedProject.key}
-                </span>
-              ) : null}
-            </div>
-            <p className="mt-2 max-w-3xl text-sm text-white/75">
-              {selectedProject?.description || 'Lege ein Projekt an oder wähle eines aus, um sofort im Board weiterzuarbeiten.'}
-            </p>
-          </div>
+      <div className="space-y-6 px-4 py-5 lg:px-6 lg:py-6">
+        <section className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+          <SectionHeader title="Lagebild heute" action={`${workloadScore}% Auslastung`} />
 
-          {selectedProject ? (
-            <div className="flex items-center gap-3">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#5f49d7] text-sm font-semibold text-white shadow-[0_8px_18px_rgba(44,32,103,0.28)]">
-                {getInitials(user?.name)}
-              </span>
-              <div className="rounded-2xl bg-white/12 px-4 py-3 text-sm font-medium text-white/85">
-                {visibleTaskCount} Karten in {selectedProject.name}
-              </div>
-              <button
-                type="button"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/12 text-white transition hover:bg-white/18"
-              >
-                <MoreIcon />
-              </button>
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      <main className="flex gap-5 px-4 py-5 lg:px-6 lg:py-6">
-        <aside className="hidden w-[290px] flex-none xl:block">
-          <div className="sticky top-5 space-y-4">
-            <div className="rounded-[28px] border border-white/16 bg-white/12 p-4 shadow-[0_16px_50px_rgba(33,25,82,0.24)] backdrop-blur-md">
-              <div className="rounded-[22px] bg-white/14 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/60">Trello-Ansicht</p>
-                <p className="mt-3 text-2xl font-semibold leading-tight">Projekt erstellen und direkt im Board verwalten</p>
-                <button
-                  type="button"
-                  onClick={() => setProjectFormOpen((current) => !current)}
-                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#33456e] transition hover:bg-slate-100"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                  Neues Projekt
-                </button>
-              </div>
-
-              <div className="mt-4 space-y-2">
-                <div className="flex items-center justify-between px-1">
-                  <p className="text-sm font-semibold text-white">Boards</p>
-                  <span className="text-xs text-white/60">{filteredProjects.length}</span>
+          <div className="mt-5 grid gap-5 xl:grid-cols-[220px_1fr_260px]">
+            <div className="rounded-[26px] border border-slate-900 bg-[#fff8fa] p-5">
+              <p className="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-slate-400">Belastungsskala</p>
+              <div className="mt-4 flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-5xl font-black tracking-tight text-slate-950">{workloadScore}</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-500">Arbeitslage {workloadLabel}</p>
                 </div>
-                <div className="max-h-[350px] space-y-2 overflow-y-auto pr-1">
-                  {filteredProjects.map((project) => {
-                    const active = project.id === activeProjectId;
-                    return (
-                      <button
-                        key={project.id}
-                        type="button"
-                        onClick={() => handleProjectSelect(project.id)}
-                        className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
-                          active
-                            ? 'border-white/40 bg-white text-[#2b2d59] shadow-[0_12px_22px_rgba(28,16,78,0.18)]'
-                            : 'border-white/12 bg-white/10 text-white hover:bg-white/18'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold">{project.name}</p>
-                            <p className={`mt-1 text-xs ${active ? 'text-slate-500' : 'text-white/65'}`}>{project.key}</p>
-                          </div>
-                          <span className={`rounded-full px-2 py-1 text-[0.7rem] font-semibold ${active ? 'bg-[#efeaff] text-[#5a49d7]' : 'bg-white/14 text-white/80'}`}>
-                            {active ? `${tasks.length} Karten` : 'Board'}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                  {!filteredProjects.length && !isLoadingProjects ? (
-                    <div className="rounded-2xl border border-dashed border-white/25 px-4 py-8 text-center text-sm text-white/70">
-                      Zu deiner Suche wurden keine Projekte gefunden.
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#b84758]">live</span>
+              </div>
+              <div className="mt-5 h-3 overflow-hidden rounded-full bg-white">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#f3c5cd] via-[#d87384] to-[#b84758]"
+                  style={{ width: `${workloadScore}%` }}
+                />
+              </div>
+              <div className="mt-3 flex justify-between text-xs font-semibold text-slate-400">
+                <span>ruhig</span>
+                <span>normal</span>
+                <span>hoch</span>
+              </div>
+            </div>
+
+            <div className="rounded-[26px] border border-slate-200 bg-[#fcfcfd] p-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                {statusOverview.map((item) => (
+                  <div key={item.key} className="space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-bold text-slate-700">{item.label}</p>
+                      <span className="text-sm font-semibold text-slate-500">{item.value}</span>
                     </div>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-
-            {projectFormOpen ? (
-              <form
-                onSubmit={handleCreateProject}
-                className="rounded-[28px] border border-white/16 bg-white p-5 text-slate-900 shadow-[0_18px_45px_rgba(22,16,60,0.26)]"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#6a58da]">Projekt anlegen</p>
-                <h2 className="mt-2 text-2xl font-semibold">Neues Board erstellen</h2>
-                <div className="mt-5 space-y-3">
-                  <input
-                    value={projectForm.name}
-                    onChange={(event) => handleProjectFieldChange('name', event.target.value)}
-                    placeholder="Projektname"
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-[#6a58da] focus:ring-2 focus:ring-[#6a58da]/15"
-                  />
-                  <input
-                    value={projectForm.key}
-                    onChange={(event) => handleProjectFieldChange('key', event.target.value)}
-                    placeholder="Key"
-                    maxLength={8}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium uppercase text-slate-800 outline-none transition focus:border-[#6a58da] focus:ring-2 focus:ring-[#6a58da]/15"
-                  />
-                  <textarea
-                    value={projectForm.description}
-                    onChange={(event) => handleProjectFieldChange('description', event.target.value)}
-                    rows={4}
-                    placeholder="Beschreibung"
-                    className="w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition focus:border-[#6a58da] focus:ring-2 focus:ring-[#6a58da]/15"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="mt-5 w-full rounded-2xl bg-[#5f49d7] px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_24px_rgba(95,73,215,0.28)] transition hover:bg-[#5640cd]"
-                >
-                  Projekt anlegen
-                </button>
-              </form>
-            ) : null}
-          </div>
-        </aside>
-
-        <section className="min-w-0 flex-1">
-          {pageError ? (
-            <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-              {pageError}
-            </div>
-          ) : null}
-
-          <div className="mb-4 flex flex-wrap items-center gap-3 xl:hidden">
-            <button
-              type="button"
-              onClick={() => setProjectFormOpen((current) => !current)}
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#31456d] shadow-[0_10px_20px_rgba(34,28,78,0.16)]"
-            >
-              {projectFormOpen ? 'Projektformular schliessen' : 'Projekt erstellen'}
-            </button>
-            <div className="min-w-[220px] flex-1 overflow-x-auto">
-              <div className="flex gap-2 pb-1">
-                {filteredProjects.map((project) => (
-                  <button
-                    key={project.id}
-                    type="button"
-                      onClick={() => handleProjectSelect(project.id)}
-                      className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                      project.id === activeProjectId ? 'bg-white text-[#28365c]' : 'bg-white/12 text-white hover:bg-white/18'
-                    }`}
-                  >
-                    {project.name}
-                  </button>
+                    <div className={`h-3 overflow-hidden rounded-full ${item.track}`}>
+                      <div className={`h-full rounded-full ${item.tone}`} style={{ width: `${item.percent}%` }} />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-400">{item.percent}% der offenen Aufgaben</p>
+                  </div>
                 ))}
               </div>
             </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <button
+                type="button"
+                onClick={() => navigate('/my-tasks')}
+                className="rounded-[24px] border border-slate-900 bg-[#fff5f7] px-4 py-4 text-left transition hover:border-slate-900 hover:bg-white"
+              >
+                <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Aufgaben</p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{kpis.openTasks}</p>
+                <p className="mt-2 text-sm font-semibold text-slate-500">offen im persoenlichen Board</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/projects')}
+                className="rounded-[24px] border border-slate-900 bg-[#f4f8ff] px-4 py-4 text-left transition hover:border-slate-900 hover:bg-white"
+              >
+                <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Projekte</p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{kpis.activeProjects}</p>
+                <p className="mt-2 text-sm font-semibold text-slate-500">aktive Vorhaben im Workspace</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/reports')}
+                className="rounded-[24px] border border-slate-900 bg-[#fff8ef] px-4 py-4 text-left transition hover:border-slate-900 hover:bg-white"
+              >
+                <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Fristen</p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{upcomingItems.length}</p>
+                <p className="mt-2 text-sm font-semibold text-slate-500">naechste Termine und Faelligkeiten</p>
+              </button>
+            </div>
           </div>
 
-          {projectFormOpen ? (
-            <form
-              onSubmit={handleCreateProject}
-              className="mb-4 rounded-[28px] border border-white/16 bg-white p-5 text-slate-900 shadow-[0_18px_45px_rgba(22,16,60,0.26)] xl:hidden"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#6a58da]">Projekt anlegen</p>
-              <h2 className="mt-2 text-2xl font-semibold">Neues Board erstellen</h2>
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
-                <input
-                  value={projectForm.name}
-                  onChange={(event) => handleProjectFieldChange('name', event.target.value)}
-                  placeholder="Projektname"
-                  className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-[#6a58da] focus:ring-2 focus:ring-[#6a58da]/15"
-                />
-                <input
-                  value={projectForm.key}
-                  onChange={(event) => handleProjectFieldChange('key', event.target.value)}
-                  placeholder="Key"
-                  maxLength={8}
-                  className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium uppercase text-slate-800 outline-none transition focus:border-[#6a58da] focus:ring-2 focus:ring-[#6a58da]/15"
-                />
-                <input
-                  value={projectForm.description}
-                  onChange={(event) => handleProjectFieldChange('description', event.target.value)}
-                  placeholder="Beschreibung"
-                  className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition focus:border-[#6a58da] focus:ring-2 focus:ring-[#6a58da]/15 md:col-span-3"
-                />
-              </div>
-              <button
-                type="submit"
-                className="mt-5 w-full rounded-2xl bg-[#5f49d7] px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_24px_rgba(95,73,215,0.28)] transition hover:bg-[#5640cd]"
-              >
-                Projekt anlegen
-              </button>
-            </form>
-          ) : null}
-
-          {!selectedProject && !isLoadingProjects ? (
-            <div className="rounded-[28px] border border-dashed border-white/24 bg-white/10 px-6 py-16 text-center shadow-[0_16px_40px_rgba(27,18,77,0.18)] backdrop-blur-sm">
-              <p className="text-lg font-semibold text-white">Noch kein Projekt vorhanden</p>
-              <p className="mt-2 text-sm text-white/75">
-                Erstelle dein erstes Projekt, damit das Board auf der Startseite direkt nutzbar wird.
-              </p>
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <div className="rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4">
+              <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Heute priorisiert</p>
+              <p className="mt-2 text-lg font-black text-slate-950">{kpis.todayDue} Faelligkeiten</p>
+              <p className="mt-1 text-sm text-slate-500">direkt aus dem Aufgabenbereich</p>
             </div>
-          ) : null}
+            <div className="rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4">
+              <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Abteilungen</p>
+              <p className="mt-2 text-lg font-black text-slate-950">{kpis.activeDepartments} Bereiche aktiv</p>
+              <p className="mt-1 text-sm text-slate-500">mit Projekt- und Backlog-Bezug</p>
+            </div>
+            <div className="rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4">
+              <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Fokus</p>
+              <p className="mt-2 text-lg font-black text-slate-950">{focusTasks.length} priorisierte Themen</p>
+              <p className="mt-1 text-sm text-slate-500">sortiert nach Dringlichkeit und Termin</p>
+            </div>
+          </div>
+        </section>
 
-          {selectedProject ? (
-            <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-              <div className="overflow-x-auto pb-6">
-                <div className="flex min-w-max items-start gap-4">
-                  {STATUS_COLUMNS.map((column) => (
-                    <BoardColumn
-                      key={column.key}
-                      column={column}
-                      tasks={taskColumns[column.key]}
-                      draft={cardDrafts[column.key]}
-                      onDraftChange={handleCardDraftChange}
-                      onSubmit={handleCreateTask}
-                      onOpenTask={openTask}
-                      dragDisabled={dragDisabled}
-                    />
-                  ))}
+        <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+            <SectionHeader title="Heute im Fokus" action={`${focusTasks.length} Eintraege`} />
+            <div className="mt-5 space-y-3">
+              {focusTasks.map((task) => (
+                <button
+                  key={task.id}
+                  type="button"
+                  onClick={() => navigate('/my-tasks')}
+                  className="flex w-full items-start justify-between gap-4 rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4 text-left transition hover:border-[#eab7c2] hover:bg-white"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[1rem] font-bold text-slate-950">{task.title}</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-400">{task.project}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">{task.note}</p>
+                  </div>
+                  <div className="flex flex-none flex-col items-end gap-2">
+                    <span className="rounded-full bg-[#fff5f7] px-3 py-1 text-xs font-semibold text-[#b84758]">
+                      {task.priority}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-500">{task.dueDate}</span>
+                  </div>
+                </button>
+              ))}
 
-                  <div className="w-[320px] flex-none rounded-[22px] border border-white/14 bg-white/12 p-4 shadow-[0_12px_40px_rgba(28,20,78,0.16)] backdrop-blur-sm">
-                    <button
-                      type="button"
-                      onClick={() => setProjectFormOpen((current) => !current)}
-                      className="flex w-full items-center gap-3 rounded-[18px] bg-white/14 px-4 py-4 text-left text-lg font-semibold text-white transition hover:bg-white/22"
-                    >
-                      <PlusIcon className="h-5 w-5" />
-                      {projectFormOpen ? 'Projektformular anzeigen' : 'Weiteres Projekt hinzufugen'}
-                    </button>
-                    <div className="mt-4 rounded-[18px] bg-white/10 p-4 text-sm text-white/72">
-                      {dragDisabled
-                        ? 'Suche ist aktiv. Ziehen und Ablegen ist vorubergehend pausiert, damit das Filterergebnis stabil bleibt.'
-                        : 'Nutze die linke Projektliste oder den Erstellen-Button, um weitere Boards in derselben Ansicht anzulegen.'}
+              {!focusTasks.length ? (
+                <div className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm font-medium text-slate-400">
+                  Keine Fokus-Aufgaben fuer den aktuellen Suchbegriff gefunden.
+                </div>
+              ) : null}
+            </div>
+          </article>
+
+          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+            <SectionHeader title="Aufmerksamkeit noetig" action={`${attentionItems.length} Themen`} />
+            <div className="mt-5 space-y-3">
+              {attentionItems.map((task) => (
+                <button
+                  key={task.id}
+                  type="button"
+                  onClick={() => navigate('/my-tasks')}
+                  className="flex w-full items-start gap-3 rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4 text-left transition hover:border-[#eab7c2] hover:bg-white"
+                >
+                  <span className="mt-0.5 inline-flex h-10 w-10 flex-none items-center justify-center rounded-2xl bg-[#fff1f3] text-[#b84758]">
+                    <CircleAlert className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[1rem] font-bold text-slate-950">{task.title}</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-400">{task.project}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">{task.note}</p>
+                  </div>
+                </button>
+              ))}
+
+              {!attentionItems.length ? (
+                <div className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm font-medium text-slate-400">
+                  Aktuell keine Review- oder Blocker-Themen im Filter.
+                </div>
+              ) : null}
+            </div>
+          </article>
+        </section>
+
+        <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+            <SectionHeader title="Abteilungen im Blick" action={`${departmentCards.length} Bereiche`} />
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {departmentCards.map((department) => (
+                <button
+                  key={department.id}
+                  type="button"
+                  onClick={() => navigate('/projects')}
+                  className={`rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)] ${department.accent}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-base font-black text-slate-950">{department.name}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-500">{department.description}</p>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${department.badgeTone}`}>
+                      {department.memberCount} Personen
+                    </span>
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-3 gap-3">
+                    <div className="rounded-2xl bg-white/80 px-3 py-3">
+                      <p className="text-[0.7rem] font-bold uppercase tracking-[0.24em] text-slate-400">Lead</p>
+                      <p className="mt-2 text-sm font-bold text-slate-900">{department.lead}</p>
+                    </div>
+                    <div className="rounded-2xl bg-white/80 px-3 py-3">
+                      <p className="text-[0.7rem] font-bold uppercase tracking-[0.24em] text-slate-400">Projekte</p>
+                      <p className="mt-2 text-sm font-bold text-slate-900">{department.activeProjects}</p>
+                    </div>
+                    <div className="rounded-2xl bg-white/80 px-3 py-3">
+                      <p className="text-[0.7rem] font-bold uppercase tracking-[0.24em] text-slate-400">Offen</p>
+                      <p className="mt-2 text-sm font-bold text-slate-900">{department.openBacklogCount}</p>
                     </div>
                   </div>
+
+                  <div className="mt-4 flex items-center justify-between text-sm font-semibold text-slate-500">
+                    <span>{department.reviewCount} in Review</span>
+                    <span className="inline-flex items-center gap-1 text-[#b84758]">
+                      Bereich oeffnen
+                      <ArrowRight className="h-4 w-4" />
+                    </span>
+                  </div>
+                </button>
+              ))}
+
+              {!departmentCards.length ? (
+                <div className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm font-medium text-slate-400">
+                  Keine Abteilungen passend zum Suchbegriff gefunden.
                 </div>
-              </div>
-            </DndContext>
-          ) : null}
+              ) : null}
+            </div>
+          </article>
 
-          {selectedProject && !isLoadingTasks && !dragDisabled && !fullTaskColumns.DONE.length ? (
-            <p className="mt-1 text-sm text-white/70">
-              Tipp: Karten lassen sich per Drag-and-Drop zwischen Heute, Diese Woche, Spater und Erledigt verschieben.
-            </p>
-          ) : null}
+          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+            <SectionHeader title="Naechste Fristen" action={`${upcomingItems.length} Termine`} />
+            <div className="mt-5 space-y-3">
+              {upcomingItems.map((item) => (
+                <button
+                  key={`${item.type}-${item.id}`}
+                  type="button"
+                  onClick={() => navigate(item.path)}
+                  className="flex w-full items-center justify-between gap-4 rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4 text-left transition hover:border-[#eab7c2] hover:bg-white"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[1rem] font-bold text-slate-950">{item.title}</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-400">
+                      {item.type} · {item.meta}
+                    </p>
+                  </div>
+                  <div className="flex flex-none items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-600">
+                    <CalendarClock className="h-4 w-4" />
+                    {item.dueLabel}
+                  </div>
+                </button>
+              ))}
+
+              {!upcomingItems.length ? (
+                <div className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm font-medium text-slate-400">
+                  Keine Fristen passend zum Suchbegriff gefunden.
+                </div>
+              ) : null}
+            </div>
+          </article>
         </section>
-      </main>
-
-      <TaskModal
-        task={selectedTask}
-        form={taskForm}
-        commentDraft={commentDraft}
-        onClose={() => setSelectedTaskId(null)}
-        onChange={(field, value) => setTaskForm((current) => ({ ...current, [field]: value }))}
-        onSave={handleTaskSave}
-        onDelete={handleTaskDelete}
-        onCommentChange={setCommentDraft}
-        onCommentCreate={handleCreateComment}
-      />
       </div>
     </AppShell>
   );

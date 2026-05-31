@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const { PrismaClient } = require('@prisma/client');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const authRoutes = require('./routes/auth.routes');
+const calendarRoutes = require('./routes/calendar.routes');
 const projectRoutes = require('./routes/project.routes');
 const taskRoutes = require('./routes/task.routes');
 dotenv.config();
@@ -20,6 +21,7 @@ app.get('/', (req, res) => {
   res.json({ message: 'NextTask API läuft' });
 });
 app.use('/api/auth', authRoutes);
+app.use('/api/calendar', calendarRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 const PORT = process.env.PORT || 5000;

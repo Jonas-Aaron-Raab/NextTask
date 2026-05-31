@@ -15,7 +15,7 @@ import {
   Plus,
   Search,
   Settings,
-  ShieldCheck,
+  FileText,
   User,
   Users,
 } from 'lucide-react';
@@ -23,11 +23,10 @@ import {
 const navigationItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
   { label: 'Projekte', path: '/projects', icon: Folder },
-  { label: 'Meine Aufgaben', path: '/my-tasks', icon: CheckSquare },
-  { label: 'QA', path: '/', icon: ShieldCheck },
-  { label: 'Kalender', path: '/', icon: Calendar },
-  { label: 'Reports', path: '/', icon: BarChart3 },
-  { label: 'Team', path: '/', icon: Users },
+  { label: 'Aufgaben', path: '/my-tasks', icon: CheckSquare },
+  { label: 'Kalender', path: '/calendar', icon: Calendar },
+  { label: 'Reports', path: '/reports', icon: BarChart3 },
+  { label: 'Dokumente', path: '/documents', icon: FileText },
   { label: 'Einstellungen', path: '/', icon: Settings },
 ];
 
@@ -109,10 +108,7 @@ export default function AppShell({
               <CheckSquare className="h-5 w-5" />
             </span>
             {!sidebarCollapsed ? (
-              <span className="text-xl font-extrabold tracking-tight">
-                <span className="text-slate-950">Next</span>
-                <span className="text-[#b84758]">Task</span>
-              </span>
+              <span className="text-xl font-extrabold tracking-tight text-[#b84758]">Sparkasse</span>
             ) : null}
           </div>
 

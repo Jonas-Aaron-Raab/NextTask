@@ -16,21 +16,33 @@ enum Priority {
 }
 
 enum TaskStatus {
-  TODAY
-  THIS_WEEK
-  LATER
+  OPEN
+  IN_PROGRESS
+  QA
+  BLOCKED
   DONE
 }
 
+enum UserRole {
+  ADMIN
+  PROJECT_MANAGER
+  DEVELOPER
+  QA
+  DESIGNER
+  MARKETING
+}
+
 model User {
-  id        String    @id @default(cuid())
-  name      String
-  email     String    @unique
-  password  String
-  createdAt DateTime  @default(now())
-  projects  Project[]
-  tasks     Task[]    @relation("AssignedTasks")
-  comments  Comment[]
+  id         String    @id @default(cuid())
+  name       String
+  email      String    @unique
+  password   String
+  role       UserRole  @default(DEVELOPER)
+  department String    @default("Development")
+  createdAt  DateTime  @default(now())
+  projects   Project[]
+  tasks      Task[]    @relation("AssignedTasks")
+  comments   Comment[]
 }
 
 model Project {
@@ -38,6 +50,8 @@ model Project {
   name        String
   key         String   @unique
   description String?
+  color       String?
+  deadline    DateTime?
   createdAt   DateTime @default(now())
   ownerId     String
   owner       User     @relation(fields: [ownerId], references: [id])
@@ -48,9 +62,14 @@ model Task {
   id          String      @id @default(cuid())
   title       String
   description String?
-  status      TaskStatus  @default(TODAY)
+  status      TaskStatus  @default(OPEN)
   priority    Priority    @default(MEDIUM)
   order       Int         @default(0)
+  startDate   DateTime?
+  dueDate     DateTime?
+  endDate     DateTime?
+  estimatedHours Float?
+  department  String?
   projectId   String
   assigneeId  String?
   createdAt   DateTime    @default(now())
