@@ -1870,7 +1870,7 @@ export default function MyTasksPage() {
 
   return (
     <AppShell
-      activeItem="Meine Aufgaben"
+      activeItem="Aufgaben"
       hideBreadcrumb
       searchPlacement="actions"
       createMenuItems={createMenuItems}
