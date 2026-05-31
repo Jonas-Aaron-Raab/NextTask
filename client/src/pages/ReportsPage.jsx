@@ -307,11 +307,7 @@ export default function ReportsPage() {
         <section className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-[#b84758]">Reports</p>
-              <h1 className="mt-3 text-[2.4rem] font-extrabold tracking-tight text-slate-950">Reports</h1>
-              <p className="mt-3 text-base leading-7 text-slate-500">
-                Ueberblick ueber Aufgaben, Projekte, Fortschritt und offene Risiken.
-              </p>
+              <h1 className="text-[2.4rem] font-extrabold tracking-tight text-slate-950">Reports</h1>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-4 xl:min-w-[980px]">
@@ -404,9 +400,7 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Aufgabenstatus</h2>
-                <p className="mt-2 text-sm text-slate-500">Status der Aufgaben fuer die aktuell gewaehlte Abteilung.</p>
               </div>
-              <span className="rounded-full bg-[#fff7f8] px-4 py-2 text-sm font-bold text-[#b84758]">{selectedPeriod}</span>
             </div>
 
             <div className="mt-8 flex min-h-[356px] flex-col items-center gap-8 xl:flex-row xl:items-center">
@@ -437,7 +431,6 @@ export default function ReportsPage() {
           <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div>
               <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Projektfortschritt</h2>
-              <p className="mt-2 text-sm text-slate-500">Nur die Projekte der gewaehlten Abteilung. Erst Projekt waehlen, dann den Detailstand ansehen.</p>
             </div>
 
             <div className="mt-6 grid min-h-[356px] gap-4 xl:grid-cols-[0.92fr_1.08fr]">
@@ -518,7 +511,6 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Team-Auslastung</h2>
-                <p className="mt-2 text-sm text-slate-500">Zeigt automatisch die aktuelle Auslastung fuer die oben gewaehlte Abteilung.</p>
               </div>
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#edf4ff] text-[#4875c8]">
                 <Users className="h-5 w-5" />
@@ -550,7 +542,6 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Wochenzusammenfassung</h2>
-                <p className="mt-2 text-sm text-slate-500">Kurzfazit auf Basis des aktuellen Aufgabenboards und der aktiven Projekte.</p>
               </div>
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eefaf4] text-[#1f7a4f]">
                 <CircleDot className="h-5 w-5" />
