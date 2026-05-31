@@ -385,24 +385,7 @@ export default function ReportsPage() {
           })}
         </section>
 
-        <section className="space-y-4">
-          <div className="flex flex-wrap gap-2">
-            {departmentOptions.map((department) => (
-              <button
-                key={department}
-                type="button"
-                onClick={() => setSelectedDepartment(department)}
-                className={`rounded-full px-4 py-2 text-sm font-bold transition ${
-                  selectedDepartment === department
-                    ? 'bg-[#b84758] text-white shadow-[0_10px_20px_rgba(184,71,88,0.18)]'
-                    : 'border border-slate-200 bg-white text-slate-600 hover:border-[#f1c6ce] hover:text-[#b84758]'
-                }`}
-              >
-                {department}
-              </button>
-            ))}
-          </div>
-
+        <section>
           <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr] xl:items-start">
           <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
