@@ -7,7 +7,6 @@ import {
   Download,
   FolderKanban,
   TrendingDown,
-  TrendingUp,
   Users,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
@@ -380,20 +379,15 @@ export default function ReportsPage() {
         <section className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-6">
           {kpis.map((item) => {
             const Icon = item.icon;
-            const positive = item.trend.startsWith('+') || item.trend.startsWith('-');
 
             return (
               <article
                 key={item.id}
                 className="rounded-[26px] border border-[#f1c6ce] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]"
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
                   <span className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${item.tone}`}>
                     <Icon className="h-5 w-5" />
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-slate-400">
-                    {positive ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-                    Trend
                   </span>
                 </div>
                 <p className="mt-4 text-sm font-semibold text-slate-500">{item.label}</p>
