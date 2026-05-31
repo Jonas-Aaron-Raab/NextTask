@@ -45,7 +45,7 @@ export const initialDepartments = [
     members: ['Lisa Wagner', 'Markus Klein', 'Anna Becker', 'Elisabeth Bezverkha'],
     memberCount: 8,
     description: 'Digitale Produkte, Banking-Journeys und Kundenoberflaechen.',
-    accent: 'border-[#f3d7de] bg-[#fff4f6]',
+    accent: 'border-slate-900 bg-[#fff4f6]',
     badgeTone: 'bg-[#fff0f2] text-[#b84758]',
   },
   {
@@ -55,7 +55,7 @@ export const initialDepartments = [
     members: ['Tom Becker', 'Elisabeth Bezverkha'],
     memberCount: 5,
     description: 'Tests, Freigaben, Regressionen und Produktionsqualitaet.',
-    accent: 'border-[#d8e6fb] bg-[#f4f8ff]',
+    accent: 'border-slate-900 bg-[#f4f8ff]',
     badgeTone: 'bg-[#edf4ff] text-[#4875c8]',
   },
   {
@@ -65,7 +65,7 @@ export const initialDepartments = [
     members: ['Sarah Nguyen', 'Markus Klein'],
     memberCount: 6,
     description: 'Kampagnen, Content-Produktion und Markenauftritte.',
-    accent: 'border-[#d5eee7] bg-[#effbf7]',
+    accent: 'border-slate-900 bg-[#effbf7]',
     badgeTone: 'bg-[#ecfbf6] text-[#2f7d68]',
   },
   {
@@ -75,7 +75,7 @@ export const initialDepartments = [
     members: ['Anna Becker', 'Lisa Wagner'],
     memberCount: 4,
     description: 'Kontrollpunkte, Freigaben und regulatorische Abstimmungen.',
-    accent: 'border-[#f5dfc7] bg-[#fff8ef]',
+    accent: 'border-slate-900 bg-[#fff8ef]',
     badgeTone: 'bg-[#fff4e7] text-[#c26a34]',
   },
   {
@@ -85,7 +85,7 @@ export const initialDepartments = [
     members: ['Nina Hoffmann', 'Tom Becker', 'Elisabeth Bezverkha'],
     memberCount: 7,
     description: 'Serviceprozesse, Rueckfragen, Eskalationen und Kundenkommunikation.',
-    accent: 'border-[#d7e8df] bg-[#f3fbf6]',
+    accent: 'border-slate-900 bg-[#f3fbf6]',
     badgeTone: 'bg-[#edf9f1] text-[#3b7f57]',
   },
 ];
@@ -1636,7 +1636,7 @@ export default function ProjectsPage() {
       lead: departmentForm.lead.trim() || 'Elisabeth Bezverkha',
       memberCount: Number.parseInt(departmentForm.memberCount, 10) || 4,
       description: departmentForm.description.trim() || 'Neue Abteilung fuer strukturierte Projekte und Zusammenarbeit.',
-      accent: 'border-[#f3d7de] bg-[#fff4f6]',
+      accent: 'border-slate-900 bg-[#fff4f6]',
       badgeTone: 'bg-[#fff0f2] text-[#b84758]',
       members: [departmentForm.lead.trim() || 'Elisabeth Bezverkha'],
     };
