@@ -513,7 +513,7 @@ export default function ReportsPage() {
           </div>
         </section>
 
-        <section>
+        <section className="grid gap-6 xl:grid-cols-2">
           <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -545,9 +545,7 @@ export default function ReportsPage() {
               ))}
             </div>
           </article>
-        </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.35fr_0.9fr]">
           <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
