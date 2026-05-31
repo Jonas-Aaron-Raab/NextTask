@@ -85,6 +85,13 @@ const kpiMeta = [
   },
 ];
 
+const statusMeta = {
+  today: { label: 'Heute', tone: 'bg-[#c97a11]', track: 'bg-[#f7ead8]' },
+  'in-progress': { label: 'In Arbeit', tone: 'bg-[#4875c8]', track: 'bg-[#e6eefc]' },
+  review: { label: 'Review', tone: 'bg-[#7c59dc]', track: 'bg-[#efe9ff]' },
+  blocked: { label: 'Blockiert', tone: 'bg-[#b84758]', track: 'bg-[#fdecef]' },
+};
+
 function parseGermanDate(value) {
   if (!value) return Number.POSITIVE_INFINITY;
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -249,6 +256,35 @@ export default function DashboardPage() {
     [openTasks],
   );
 
+  const statusOverview = useMemo(() => {
+    const total = openTasks.length || 1;
+    const counts = Object.keys(statusMeta).map((key) => ({
+      key,
+      ...statusMeta[key],
+      value: openTasks.filter((task) => task.status === key).length,
+    }));
+
+    return counts.map((item) => ({
+      ...item,
+      percent: Math.round((item.value / total) * 100),
+    }));
+  }, [openTasks]);
+
+  const workloadScore = useMemo(() => {
+    const todayCount = openTasks.filter((task) => task.status === 'today').length;
+    const inProgressCount = openTasks.filter((task) => task.status === 'in-progress').length;
+    const reviewCount = openTasks.filter((task) => task.status === 'review').length;
+    const blockedCount = openTasks.filter((task) => task.status === 'blocked').length;
+
+    return Math.min(100, todayCount * 18 + inProgressCount * 10 + reviewCount * 16 + blockedCount * 24);
+  }, [openTasks]);
+
+  const workloadLabel = useMemo(() => {
+    if (workloadScore >= 75) return 'hoch';
+    if (workloadScore >= 45) return 'mittel';
+    return 'stabil';
+  }, [workloadScore]);
+
   const quickLinks = useMemo(() => {
     if (!searchTerm) return workspaceLinks;
 
@@ -269,32 +305,76 @@ export default function DashboardPage() {
       <div className="space-y-6 px-4 py-5 lg:px-6 lg:py-6">
         <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
           <div className="rounded-[30px] border border-[#f2d7dd] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
-            <span className="inline-flex rounded-full bg-[#fff5f7] px-3 py-1 text-xs font-bold uppercase tracking-[0.24em] text-[#b84758]">
-              Dashboard
-            </span>
-            <h1 className="mt-4 text-[2rem] font-black tracking-tight text-slate-950">Arbeitsstand auf einen Blick</h1>
-            <p className="mt-3 max-w-2xl text-[1.02rem] leading-7 text-slate-500">
-              Diese Startseite zeigt nur den taeglichen Fokus, wichtige Fristen und die Abteilungen im Blick.
-              Detailarbeit bleibt in Aufgaben, Projekte, Reports und Dokumente ausgelagert.
-            </p>
+            <SectionHeader title="Lagebild heute" action={`${workloadScore}% Auslastung`} />
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => navigate('/my-tasks')}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#b84758] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#a63d4e]"
-              >
-                Zu meinen Aufgaben
-                <ArrowRight className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/projects')}
-                className="inline-flex items-center gap-2 rounded-2xl border border-[#f2d7dd] bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-[#eab7c2] hover:text-slate-950"
-              >
-                Projekte oeffnen
-                <ArrowRight className="h-4 w-4" />
-              </button>
+            <div className="mt-5 grid gap-5 lg:grid-cols-[220px_1fr]">
+              <div className="rounded-[26px] border border-[#f2d7dd] bg-[#fff8fa] p-5">
+                <p className="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-slate-400">Belastungsskala</p>
+                <div className="mt-4 flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-5xl font-black tracking-tight text-slate-950">{workloadScore}</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-500">Arbeitslage {workloadLabel}</p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#b84758]">
+                    live
+                  </span>
+                </div>
+                <div className="mt-5 h-3 overflow-hidden rounded-full bg-white">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[#f3c5cd] via-[#d87384] to-[#b84758]"
+                    style={{ width: `${workloadScore}%` }}
+                  />
+                </div>
+                <div className="mt-3 flex justify-between text-xs font-semibold text-slate-400">
+                  <span>ruhig</span>
+                  <span>normal</span>
+                  <span>hoch</span>
+                </div>
+              </div>
+
+              <div className="rounded-[26px] border border-slate-200 bg-[#fcfcfd] p-5">
+                <div className="grid gap-4 md:grid-cols-2">
+                  {statusOverview.map((item) => (
+                    <div key={item.key} className="space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-bold text-slate-700">{item.label}</p>
+                        <span className="text-sm font-semibold text-slate-500">{item.value}</span>
+                      </div>
+                      <div className={`h-3 overflow-hidden rounded-full ${item.track}`}>
+                        <div className={`h-full rounded-full ${item.tone}`} style={{ width: `${item.percent}%` }} />
+                      </div>
+                      <p className="text-xs font-semibold text-slate-400">{item.percent}% der offenen Aufgaben</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/my-tasks')}
+                    className="rounded-2xl border border-[#f2d7dd] bg-white px-4 py-3 text-left transition hover:border-[#eab7c2]"
+                  >
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-400">Fokus</p>
+                    <p className="mt-2 text-sm font-bold text-slate-950">{focusTasks.length} priorisierte Aufgaben</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/projects')}
+                    className="rounded-2xl border border-[#f2d7dd] bg-white px-4 py-3 text-left transition hover:border-[#eab7c2]"
+                  >
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-400">Projekte</p>
+                    <p className="mt-2 text-sm font-bold text-slate-950">{kpis.activeProjects} aktive Projekte</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/reports')}
+                    className="rounded-2xl border border-[#f2d7dd] bg-white px-4 py-3 text-left transition hover:border-[#eab7c2]"
+                  >
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-400">Fristen</p>
+                    <p className="mt-2 text-sm font-bold text-slate-950">{upcomingItems.length} naechste Termine</p>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
