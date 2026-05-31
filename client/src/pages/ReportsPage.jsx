@@ -405,7 +405,7 @@ export default function ReportsPage() {
         </section>
 
         <section>
-          <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr] xl:items-start">
+          <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
           <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -415,7 +415,7 @@ export default function ReportsPage() {
               <span className="rounded-full bg-[#fff7f8] px-4 py-2 text-sm font-bold text-[#b84758]">{selectedPeriod}</span>
             </div>
 
-            <div className="mt-8 flex flex-col items-center gap-8 xl:flex-row xl:items-center">
+            <div className="mt-8 flex min-h-[356px] flex-col items-center gap-8 xl:flex-row xl:items-center">
               <DonutChart segments={taskStatusSegments} />
 
               <div className="w-full space-y-4">
@@ -446,7 +446,7 @@ export default function ReportsPage() {
               <p className="mt-2 text-sm text-slate-500">Nur die Projekte der gewaehlten Abteilung. Erst Projekt waehlen, dann den Detailstand ansehen.</p>
             </div>
 
-            <div className="mt-6 grid gap-4 xl:grid-cols-[0.9fr_1.25fr]">
+            <div className="mt-6 grid min-h-[356px] gap-4 xl:grid-cols-[0.92fr_1.08fr]">
               <div className="space-y-3">
                 {filteredProjects.map((project) => (
                   <button
@@ -506,10 +506,6 @@ export default function ReportsPage() {
                     <div className="rounded-2xl bg-white p-4">
                       <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Verantwortung</p>
                       <p className="mt-2 text-base font-extrabold text-slate-950">{activeProject.owner}</p>
-                    </div>
-                    <div className="rounded-2xl bg-white p-4 md:col-span-2">
-                      <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Naechster Meilenstein</p>
-                      <p className="mt-2 text-sm font-bold leading-6 text-slate-800">{activeProject.milestone}</p>
                     </div>
                   </div>
                 </article>
