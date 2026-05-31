@@ -1,16 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  ArrowRight,
-  BarChart3,
-  Building2,
-  CalendarClock,
-  CheckCircle2,
-  CircleAlert,
-  FileText,
-  FolderOpen,
-  LayoutGrid,
-} from 'lucide-react';
+import { ArrowRight, Building2, CalendarClock, CircleAlert, FolderOpen } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { initialTasks } from './MyTasksPage';
 import { initialBacklogTasks, initialDepartments, initialProjects } from './ProjectsPage';
@@ -22,68 +12,6 @@ const priorityWeight = {
   mittel: 2,
   niedrig: 1,
 };
-
-const workspaceLinks = [
-  {
-    id: 'tasks',
-    title: 'Aufgaben',
-    description: 'Persoenliche Aufgaben, Review-Punkte und offene Blocker.',
-    icon: CheckCircle2,
-    path: '/my-tasks',
-    tone: 'border-[#f3d7de] bg-[#fff5f7] text-[#b84758]',
-  },
-  {
-    id: 'projects',
-    title: 'Projekte',
-    description: 'Abteilungen, Backlogs und Projektfortschritte im Ueberblick.',
-    icon: FolderOpen,
-    path: '/projects',
-    tone: 'border-[#d8e6fb] bg-[#f4f8ff] text-[#4875c8]',
-  },
-  {
-    id: 'reports',
-    title: 'Reports',
-    description: 'KPI-Sichten, Wochenlage und Team-Auswertung oeffnen.',
-    icon: BarChart3,
-    path: '/reports',
-    tone: 'border-[#f5dfc7] bg-[#fff8ef] text-[#c26a34]',
-  },
-  {
-    id: 'documents',
-    title: 'Dokumente',
-    description: 'Freigaben, Vorlagen und Nachweise zentral verwalten.',
-    icon: FileText,
-    path: '/documents',
-    tone: 'border-[#d7e8df] bg-[#f3fbf6] text-[#3b7f57]',
-  },
-];
-
-const kpiMeta = [
-  {
-    key: 'openTasks',
-    label: 'Offene Aufgaben',
-    icon: LayoutGrid,
-    tone: 'bg-[#fff5f7] text-[#b84758]',
-  },
-  {
-    key: 'todayDue',
-    label: 'Heute faellig',
-    icon: CalendarClock,
-    tone: 'bg-[#fff8ef] text-[#c26a34]',
-  },
-  {
-    key: 'activeProjects',
-    label: 'Aktive Projekte',
-    icon: FolderOpen,
-    tone: 'bg-[#f4f8ff] text-[#4875c8]',
-  },
-  {
-    key: 'activeDepartments',
-    label: 'Aktive Abteilungen',
-    icon: Building2,
-    tone: 'bg-[#f3fbf6] text-[#3b7f57]',
-  },
-];
 
 const statusMeta = {
   today: { label: 'Heute', tone: 'bg-[#c97a11]', track: 'bg-[#f7ead8]' },
@@ -138,21 +66,6 @@ function sortByUrgency(left, right) {
   return left.title.localeCompare(right.title, 'de');
 }
 
-function DashboardCard({ icon: Icon, label, value, hint, tone }) {
-  return (
-    <article className="rounded-[26px] border border-[#f2d7dd] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
-      <div className="flex items-start justify-between gap-4">
-        <span className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl ${tone}`}>
-          <Icon className="h-5 w-5" />
-        </span>
-        <span className="rounded-full bg-[#fff5f7] px-3 py-1 text-xs font-semibold text-[#b84758]">{hint}</span>
-      </div>
-      <p className="mt-5 text-sm font-semibold text-slate-500">{label}</p>
-      <p className="mt-2 text-4xl font-black tracking-tight text-slate-950">{value}</p>
-    </article>
-  );
-}
-
 function SectionHeader({ title, action }) {
   return (
     <div className="flex items-center justify-between gap-4">
@@ -168,10 +81,7 @@ export default function DashboardPage() {
 
   const searchTerm = searchValue.trim().toLowerCase();
 
-  const openTasks = useMemo(
-    () => initialTasks.filter((task) => task.status !== 'done'),
-    [],
-  );
+  const openTasks = useMemo(() => initialTasks.filter((task) => task.status !== 'done'), []);
 
   const focusTasks = useMemo(() => {
     const baseTasks = [...openTasks].sort(sortByUrgency).slice(0, 4);
@@ -285,14 +195,6 @@ export default function DashboardPage() {
     return 'stabil';
   }, [workloadScore]);
 
-  const quickLinks = useMemo(() => {
-    if (!searchTerm) return workspaceLinks;
-
-    return workspaceLinks.filter((link) =>
-      [link.title, link.description].join(' ').toLowerCase().includes(searchTerm),
-    );
-  }, [searchTerm]);
-
   return (
     <AppShell
       activeItem="Dashboard"
@@ -303,120 +205,97 @@ export default function DashboardPage() {
       createMenuItems={createMenuItems}
     >
       <div className="space-y-6 px-4 py-5 lg:px-6 lg:py-6">
-        <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="rounded-[30px] border border-[#f2d7dd] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
-            <SectionHeader title="Lagebild heute" action={`${workloadScore}% Auslastung`} />
+        <section className="rounded-[30px] border border-[#f2d7dd] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+          <SectionHeader title="Lagebild heute" action={`${workloadScore}% Auslastung`} />
 
-            <div className="mt-5 grid gap-5 lg:grid-cols-[220px_1fr]">
-              <div className="rounded-[26px] border border-[#f2d7dd] bg-[#fff8fa] p-5">
-                <p className="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-slate-400">Belastungsskala</p>
-                <div className="mt-4 flex items-end justify-between gap-4">
-                  <div>
-                    <p className="text-5xl font-black tracking-tight text-slate-950">{workloadScore}</p>
-                    <p className="mt-2 text-sm font-semibold text-slate-500">Arbeitslage {workloadLabel}</p>
-                  </div>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#b84758]">
-                    live
-                  </span>
+          <div className="mt-5 grid gap-5 xl:grid-cols-[220px_1fr_260px]">
+            <div className="rounded-[26px] border border-[#f2d7dd] bg-[#fff8fa] p-5">
+              <p className="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-slate-400">Belastungsskala</p>
+              <div className="mt-4 flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-5xl font-black tracking-tight text-slate-950">{workloadScore}</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-500">Arbeitslage {workloadLabel}</p>
                 </div>
-                <div className="mt-5 h-3 overflow-hidden rounded-full bg-white">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#f3c5cd] via-[#d87384] to-[#b84758]"
-                    style={{ width: `${workloadScore}%` }}
-                  />
-                </div>
-                <div className="mt-3 flex justify-between text-xs font-semibold text-slate-400">
-                  <span>ruhig</span>
-                  <span>normal</span>
-                  <span>hoch</span>
-                </div>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#b84758]">live</span>
               </div>
-
-              <div className="rounded-[26px] border border-slate-200 bg-[#fcfcfd] p-5">
-                <div className="grid gap-4 md:grid-cols-2">
-                  {statusOverview.map((item) => (
-                    <div key={item.key} className="space-y-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-bold text-slate-700">{item.label}</p>
-                        <span className="text-sm font-semibold text-slate-500">{item.value}</span>
-                      </div>
-                      <div className={`h-3 overflow-hidden rounded-full ${item.track}`}>
-                        <div className={`h-full rounded-full ${item.tone}`} style={{ width: `${item.percent}%` }} />
-                      </div>
-                      <p className="text-xs font-semibold text-slate-400">{item.percent}% der offenen Aufgaben</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/my-tasks')}
-                    className="rounded-2xl border border-[#f2d7dd] bg-white px-4 py-3 text-left transition hover:border-[#eab7c2]"
-                  >
-                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-400">Fokus</p>
-                    <p className="mt-2 text-sm font-bold text-slate-950">{focusTasks.length} priorisierte Aufgaben</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/projects')}
-                    className="rounded-2xl border border-[#f2d7dd] bg-white px-4 py-3 text-left transition hover:border-[#eab7c2]"
-                  >
-                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-400">Projekte</p>
-                    <p className="mt-2 text-sm font-bold text-slate-950">{kpis.activeProjects} aktive Projekte</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/reports')}
-                    className="rounded-2xl border border-[#f2d7dd] bg-white px-4 py-3 text-left transition hover:border-[#eab7c2]"
-                  >
-                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-400">Fristen</p>
-                    <p className="mt-2 text-sm font-bold text-slate-950">{upcomingItems.length} naechste Termine</p>
-                  </button>
-                </div>
+              <div className="mt-5 h-3 overflow-hidden rounded-full bg-white">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#f3c5cd] via-[#d87384] to-[#b84758]"
+                  style={{ width: `${workloadScore}%` }}
+                />
+              </div>
+              <div className="mt-3 flex justify-between text-xs font-semibold text-slate-400">
+                <span>ruhig</span>
+                <span>normal</span>
+                <span>hoch</span>
               </div>
             </div>
-          </div>
 
-          <div className="rounded-[30px] border border-[#f2d7dd] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
-            <SectionHeader title="Schnellzugriffe" />
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {quickLinks.map((link) => {
-                const Icon = link.icon;
-
-                return (
-                  <button
-                    key={link.id}
-                    type="button"
-                    onClick={() => navigate(link.path)}
-                    className={`rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)] ${link.tone}`}
-                  >
+            <div className="rounded-[26px] border border-slate-200 bg-[#fcfcfd] p-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                {statusOverview.map((item) => (
+                  <div key={item.key} className="space-y-2">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/80">
-                        <Icon className="h-5 w-5" />
-                      </span>
-                      <ArrowRight className="h-4 w-4 opacity-60" />
+                      <p className="text-sm font-bold text-slate-700">{item.label}</p>
+                      <span className="text-sm font-semibold text-slate-500">{item.value}</span>
                     </div>
-                    <p className="mt-4 text-base font-bold">{link.title}</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{link.description}</p>
-                  </button>
-                );
-              })}
+                    <div className={`h-3 overflow-hidden rounded-full ${item.track}`}>
+                      <div className={`h-full rounded-full ${item.tone}`} style={{ width: `${item.percent}%` }} />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-400">{item.percent}% der offenen Aufgaben</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+              <button
+                type="button"
+                onClick={() => navigate('/my-tasks')}
+                className="rounded-[24px] border border-[#f2d7dd] bg-[#fff5f7] px-4 py-4 text-left transition hover:border-[#eab7c2] hover:bg-white"
+              >
+                <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Aufgaben</p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{kpis.openTasks}</p>
+                <p className="mt-2 text-sm font-semibold text-slate-500">offen im persoenlichen Board</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/projects')}
+                className="rounded-[24px] border border-[#f2d7dd] bg-[#f4f8ff] px-4 py-4 text-left transition hover:border-[#eab7c2] hover:bg-white"
+              >
+                <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Projekte</p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{kpis.activeProjects}</p>
+                <p className="mt-2 text-sm font-semibold text-slate-500">aktive Vorhaben im Workspace</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/reports')}
+                className="rounded-[24px] border border-[#f2d7dd] bg-[#fff8ef] px-4 py-4 text-left transition hover:border-[#eab7c2] hover:bg-white"
+              >
+                <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Fristen</p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{upcomingItems.length}</p>
+                <p className="mt-2 text-sm font-semibold text-slate-500">naechste Termine und Faelligkeiten</p>
+              </button>
             </div>
           </div>
-        </section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {kpiMeta.map((item) => (
-            <DashboardCard
-              key={item.key}
-              icon={item.icon}
-              label={item.label}
-              value={kpis[item.key]}
-              hint={item.key === 'todayDue' ? 'heute priorisiert' : 'live aus dem Workspace'}
-              tone={item.tone}
-            />
-          ))}
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <div className="rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4">
+              <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Heute priorisiert</p>
+              <p className="mt-2 text-lg font-black text-slate-950">{kpis.todayDue} Faelligkeiten</p>
+              <p className="mt-1 text-sm text-slate-500">direkt aus dem Aufgabenbereich</p>
+            </div>
+            <div className="rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4">
+              <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Abteilungen</p>
+              <p className="mt-2 text-lg font-black text-slate-950">{kpis.activeDepartments} Bereiche aktiv</p>
+              <p className="mt-1 text-sm text-slate-500">mit Projekt- und Backlog-Bezug</p>
+            </div>
+            <div className="rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4">
+              <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Fokus</p>
+              <p className="mt-2 text-lg font-black text-slate-950">{focusTasks.length} priorisierte Themen</p>
+              <p className="mt-1 text-sm text-slate-500">sortiert nach Dringlichkeit und Termin</p>
+            </div>
+          </div>
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
