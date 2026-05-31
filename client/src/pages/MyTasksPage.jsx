@@ -1566,7 +1566,7 @@ export default function MyTasksPage() {
       subtitle: 'aktuell aktiv',
       icon: ListChecks,
       iconTone: 'bg-white/85 text-[#2f7d68]',
-      cardTone: 'border-[#d5eee7] bg-[#eefbf6]',
+      cardTone: 'border-slate-900 bg-[#eefbf6]',
       items: tasks.filter((task) => task.status !== 'done'),
     },
     {
@@ -1576,7 +1576,7 @@ export default function MyTasksPage() {
       subtitle: 'sofort pruefen',
       icon: CalendarDays,
       iconTone: 'bg-white/85 text-[#c26a34]',
-      cardTone: 'border-[#f5dfc7] bg-[#fff7ee]',
+      cardTone: 'border-slate-900 bg-[#fff7ee]',
       items: tasks.filter((task) => task.status === 'today'),
     },
     {
@@ -1586,7 +1586,7 @@ export default function MyTasksPage() {
       subtitle: 'Feedback offen',
       icon: ShieldCheck,
       iconTone: 'bg-white/85 text-[#4875c8]',
-      cardTone: 'border-[#d8e6fb] bg-[#f2f7ff]',
+      cardTone: 'border-slate-900 bg-[#f2f7ff]',
       items: tasks.filter((task) => task.status === 'review'),
     },
     {
@@ -1596,7 +1596,7 @@ export default function MyTasksPage() {
       subtitle: 'muss geloest werden',
       icon: CircleAlert,
       iconTone: 'bg-white/85 text-[#c24452]',
-      cardTone: 'border-[#f3d7de] bg-[#fff1f4]',
+      cardTone: 'border-slate-900 bg-[#fff1f4]',
       items: tasks.filter((task) => task.status === 'blocked'),
     },
   ];

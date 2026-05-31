@@ -304,7 +304,7 @@ export default function ReportsPage() {
       onSearch={setSearchValue}
     >
       <div className="space-y-7">
-        <section className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+        <section className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
             <div className="max-w-2xl">
               <h1 className="text-[2.4rem] font-extrabold tracking-tight text-slate-950">Reports</h1>
@@ -379,7 +379,7 @@ export default function ReportsPage() {
             return (
               <article
                 key={item.id}
-                className="rounded-[26px] border border-[#f1c6ce] bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]"
+                className="rounded-[26px] border border-slate-900 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]"
               >
                 <div className="flex items-start gap-3">
                   <span className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${item.tone}`}>
@@ -396,7 +396,7 @@ export default function ReportsPage() {
 
         <section>
           <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
-          <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Aufgabenstatus</h2>
@@ -428,7 +428,7 @@ export default function ReportsPage() {
             </div>
           </article>
 
-          <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div>
               <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Projektfortschritt</h2>
             </div>
@@ -443,7 +443,7 @@ export default function ReportsPage() {
                     className={`w-full rounded-[22px] border p-4 text-left transition ${
                       activeProject?.id === project.id
                         ? 'border-[#e8a9b3] bg-[#fff7f8] shadow-[0_12px_28px_rgba(184,71,88,0.08)]'
-                        : 'border-slate-200 bg-[#fcfdff] hover:border-[#f1c6ce] hover:bg-white'
+                        : 'border-slate-200 bg-[#fcfdff] hover:border-slate-900 hover:bg-white'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -507,7 +507,7 @@ export default function ReportsPage() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-2">
-          <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Team-Auslastung</h2>
@@ -538,7 +538,7 @@ export default function ReportsPage() {
             </div>
           </article>
 
-          <article className="rounded-[30px] border border-[#f1c6ce] bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Wochenzusammenfassung</h2>
