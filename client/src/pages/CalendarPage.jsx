@@ -1,15 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  AlertTriangle,
   CalendarDays,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Flag,
   FolderKanban,
   ListFilter,
-  Plus,
-  Search,
   Users,
   X,
 } from 'lucide-react';
@@ -25,11 +21,6 @@ import {
 const viewOptions = [
   { id: 'month', label: 'Monat' },
   { id: 'week', label: 'Woche' },
-  { id: 'day', label: 'Tag' },
-  { id: 'project', label: 'Projekt-Zeitplan' },
-  { id: 'team', label: 'Team-Kalender' },
-  { id: 'mine', label: 'Meine Aufgaben' },
-  { id: 'department', label: 'Abteilung' },
 ];
 
 const statusLabels = {
@@ -124,16 +115,30 @@ function getMonthCalendarWeeks(date) {
   return weeks;
 }
 
-function formatMonth(date) {
-  return new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' }).format(date);
-}
-
 function formatShortDate(date) {
   return new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit' }).format(date);
 }
 
 function formatCompactDate(date) {
   return `${date.getDate()}.${date.getMonth() + 1}.`;
+}
+
+function formatNumericDate(date, includeYear = false) {
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  return includeYear ? `${day}.${month}.${date.getFullYear()}` : `${day}.${month}.`;
+}
+
+function formatDateRangeTitle(view, cursorDate) {
+  if (view === 'week') {
+    const from = startOfWeek(cursorDate);
+    const to = addDays(from, 6);
+    return `${formatNumericDate(from)} - ${formatNumericDate(to, true)}`;
+  }
+
+  const from = new Date(cursorDate.getFullYear(), cursorDate.getMonth(), 1);
+  const to = new Date(cursorDate.getFullYear(), cursorDate.getMonth() + 1, 0);
+  return `${formatNumericDate(from)} - ${formatNumericDate(to, true)}`;
 }
 
 function formatFullDate(value) {
@@ -327,6 +332,7 @@ function CalendarTask({ task, onOpen, onDragStart, expanded = false }) {
   return (
     <button
       type="button"
+      data-calendar-task
       draggable
       onDragStart={(event) => onDragStart(event, task.id)}
       onClick={(event) => {
@@ -335,8 +341,8 @@ function CalendarTask({ task, onOpen, onDragStart, expanded = false }) {
       }}
       className={`w-full min-w-0 rounded-md border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
         overdue ? 'border-red-300 bg-red-50 text-red-700' : statusColors[task.status]
-      } ${expanded ? 'px-3.5 py-3' : 'px-2.5 py-2 text-xs font-semibold'}`}
-      style={{ borderLeftWidth: 4, borderLeftColor: overdue ? '#dc2626' : task.projectColor }}
+      } ${expanded ? 'px-2.5 py-2' : 'px-1.5 py-1 text-[11px] font-semibold leading-tight'}`}
+      style={{ borderLeftWidth: expanded ? 4 : 3, borderLeftColor: overdue ? '#dc2626' : task.projectColor }}
     >
       {expanded ? (
         <span className="block">
@@ -351,7 +357,7 @@ function CalendarTask({ task, onOpen, onDragStart, expanded = false }) {
       ) : (
         <>
           <span className="block truncate">{task.title}</span>
-          <span className="mt-0.5 block truncate text-[11px] font-medium opacity-80">{task.assignee}</span>
+          <span className="mt-0.5 block truncate text-[10px] font-medium opacity-75">{task.assignee}</span>
         </>
       )}
     </button>
@@ -360,12 +366,12 @@ function CalendarTask({ task, onOpen, onDragStart, expanded = false }) {
 
 function FilterSelect({ label, value, options, onChange }) {
   return (
-    <label className="block text-xs font-bold uppercase text-slate-400">
+    <label className="block text-[11px] font-bold uppercase text-slate-400">
       {label}
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold normal-case text-slate-700 outline-none focus:border-slate-500"
+        className="mt-1 h-8 w-full rounded-md border border-[#f0d7db] bg-white px-2 text-xs font-semibold normal-case text-slate-700 outline-none focus:border-[#c95767] focus:ring-2 focus:ring-[#c95767]/10"
       >
         <option value="all">Alle</option>
         {options.map((option) => (
@@ -380,28 +386,28 @@ function FilterSelect({ label, value, options, onChange }) {
 
 function CalendarFilterPanel({ filters, filterOptions, onFilterChange }) {
   return (
-    <div className="border-b border-slate-200 bg-white px-4 py-3">
-      <div className="grid gap-3 rounded-md border border-slate-200 bg-slate-50 p-3 md:grid-cols-2 xl:grid-cols-5">
+    <div className="border-b-2 border-slate-300 bg-white px-3 py-2">
+      <div className="grid gap-2 rounded-md border border-[#f0d7db] bg-[#fff7f8] p-2 md:grid-cols-3 xl:grid-cols-7">
         <FilterSelect label="Projekt" value={filters.project} options={filterOptions.projects} onChange={(value) => onFilterChange('project', value)} />
         <FilterSelect label="Person" value={filters.person} options={filterOptions.people} onChange={(value) => onFilterChange('person', value)} />
         <FilterSelect label="Status" value={filters.status} options={Object.values(statusLabels)} onChange={(value) => onFilterChange('statusLabel', value)} />
         <FilterSelect label="Prioritaet" value={filters.priorityLabel} options={Object.values(priorityLabels)} onChange={(value) => onFilterChange('priorityLabel', value)} />
         <FilterSelect label="Abteilung" value={filters.department} options={filterOptions.departments} onChange={(value) => onFilterChange('department', value)} />
-        <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+        <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
           <input
             type="checkbox"
             checked={filters.mineOnly}
             onChange={(event) => onFilterChange('mineOnly', event.target.checked)}
-            className="h-4 w-4 rounded border-slate-300"
+            className="h-4 w-4 rounded border-[#d89aa5] accent-[#c95767]"
           />
           Nur meine Aufgaben
         </label>
-        <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+        <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
           <input
             type="checkbox"
             checked={filters.overdueOnly}
             onChange={(event) => onFilterChange('overdueOnly', event.target.checked)}
-            className="h-4 w-4 rounded border-slate-300"
+            className="h-4 w-4 rounded border-[#d89aa5] accent-[#c95767]"
           />
           Nur ueberfaellige Aufgaben
         </label>
@@ -410,47 +416,45 @@ function CalendarFilterPanel({ filters, filterOptions, onFilterChange }) {
   );
 }
 
-function CalendarToolbar({ view, cursorDate, filtersOpen, onFilterToggle, onViewChange, onToday, onMove, onCreate }) {
+function CalendarToolbar({ view, cursorDate, filtersOpen, onFilterToggle, onViewChange, onToday, onMove }) {
+  const dateRangeTitle = formatDateRangeTitle(view, cursorDate);
+
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3">
-      <div className="flex items-center gap-2">
-        <button type="button" onClick={onToday} className="h-10 rounded-md border border-slate-200 px-3 text-sm font-bold text-slate-700 hover:bg-slate-50">
+    <div className="flex flex-wrap items-center gap-3 border-b-2 border-slate-300 bg-white px-4 py-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={onToday} className="h-10 rounded-md border border-[#f0d7db] px-3 text-sm font-bold text-slate-700 transition hover:border-[#d89aa5] hover:bg-[#fff1f3] hover:text-[#a23d4d]">
           Heute
         </button>
-        <button type="button" onClick={() => onMove(-1)} className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50">
+        <button type="button" onClick={() => onMove(-1)} className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#f0d7db] text-slate-600 transition hover:border-[#d89aa5] hover:bg-[#fff1f3] hover:text-[#a23d4d]">
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <button type="button" onClick={() => onMove(1)} className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50">
+        <button type="button" onClick={() => onMove(1)} className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-[#f0d7db] text-slate-600 transition hover:border-[#d89aa5] hover:bg-[#fff1f3] hover:text-[#a23d4d]">
           <ChevronRight className="h-4 w-4" />
         </button>
-        <h1 className="ml-2 text-lg font-extrabold text-slate-950">{view === 'day' ? formatFullDate(toDateKey(cursorDate)) : formatMonth(cursorDate)}</h1>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex rounded-md border border-slate-200 bg-slate-50 p-1">
+        <h1 className="ml-2 mr-3 text-lg font-extrabold text-slate-950">
+          {view === 'day' ? formatFullDate(toDateKey(cursorDate)) : dateRangeTitle}
+        </h1>
+        <div className="flex rounded-md border border-[#f0d7db] bg-[#fff7f8] p-1">
           {viewOptions.map((option) => (
             <button
               key={option.id}
               type="button"
               onClick={() => onViewChange(option.id)}
               className={`h-8 rounded px-2 text-xs font-bold transition ${
-                view === option.id ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                view === option.id ? 'bg-white text-[#a23d4d] shadow-sm' : 'text-slate-500 hover:bg-[#fff1f3] hover:text-[#a23d4d]'
               }`}
             >
               {option.label}
             </button>
           ))}
         </div>
-        <button type="button" onClick={onCreate} className="inline-flex h-10 items-center gap-2 rounded-md bg-slate-950 px-3 text-sm font-bold text-white">
-          <Plus className="h-4 w-4" />
-          Neue Aufgabe
-        </button>
         <button
           type="button"
           onClick={onFilterToggle}
           className={`inline-flex h-10 items-center gap-2 rounded-md border px-3 text-sm font-bold transition ${
             filtersOpen
-              ? 'border-slate-900 bg-slate-900 text-white'
-              : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              ? 'border-[#c95767] bg-[#c95767] text-white'
+              : 'border-[#f0d7db] bg-white text-slate-700 hover:border-[#d89aa5] hover:bg-[#fff1f3] hover:text-[#a23d4d]'
           }`}
         >
           <ListFilter className="h-4 w-4" />
@@ -461,21 +465,24 @@ function CalendarToolbar({ view, cursorDate, filtersOpen, onFilterToggle, onView
   );
 }
 
-function MonthView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, onDrop }) {
+function MonthView({ cursorDate, tasksByDay, filtersOpen, onOpen, onDayClick, onDragStart, onDrop }) {
   const calendarWeeks = getMonthCalendarWeeks(cursorDate);
   const currentMonth = cursorDate.getMonth();
 
   return (
-    <div className="min-h-[760px] bg-slate-50 p-4">
-      <div className="overflow-x-auto overscroll-x-contain rounded-lg border border-slate-200 bg-white shadow-sm">
+    <div className={`${filtersOpen ? 'h-[calc(100vh-246px)] min-h-[420px]' : 'h-[calc(100vh-150px)] min-h-[520px]'} bg-[#fff7f8] p-3`}>
+      <div className="h-full overflow-hidden rounded-lg border border-[#f0d7db] bg-white shadow-sm">
         <div
-          className="grid min-w-[1260px]"
-          style={{ gridTemplateColumns: 'repeat(7, minmax(180px, 1fr))' }}
+          className="grid h-full"
+          style={{
+            gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+            gridTemplateRows: `44px repeat(${calendarWeeks.length}, minmax(0, 1fr))`,
+          }}
         >
           {calendarWeekDays.map((weekDay) => (
-            <div key={weekDay.label} className="border-b border-r border-slate-200 bg-slate-50 px-4 py-3">
-              <p className="text-sm font-extrabold text-slate-950">{weekDay.label}</p>
-              <p className="mt-1 text-xs font-bold uppercase text-slate-400">{weekDay.short}</p>
+            <div key={weekDay.label} className="min-w-0 border-b-2 border-r-2 border-[#f0d7db] bg-[#ffe3e8] px-3 py-2">
+              <p className="truncate text-sm font-extrabold text-slate-950">{weekDay.label}</p>
+              <p className="text-[11px] font-bold uppercase text-slate-400">{weekDay.short}</p>
             </div>
           ))}
 
@@ -506,15 +513,15 @@ function MonthView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, on
                   onDrop={(event) => {
                     if (isCurrentMonth) onDrop(event, key);
                   }}
-                    className={`min-h-[138px] border-b border-r border-slate-200 p-4 text-left transition ${
-                    isCurrentMonth ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/80 text-slate-400'
+                  className={`min-h-0 overflow-hidden border-b-2 border-r-2 border-[#f0d7db] p-2 text-left transition hover:relative hover:z-10 hover:shadow-[0_0_0_2px_rgba(201,87,103,0.16),0_14px_30px_rgba(201,87,103,0.18)] ${
+                    isCurrentMonth ? 'bg-white hover:bg-[#fff1f3]' : 'bg-[#fff7f8] text-slate-400'
                   }`}
                 >
-                  <p className={`mb-3 text-lg font-extrabold ${isCurrentMonth ? 'text-slate-950' : 'text-slate-400'}`}>
+                  <p className={`mb-1 text-sm font-extrabold ${isCurrentMonth ? 'text-slate-950' : 'text-slate-400'}`}>
                     {formatCompactDate(day)}
                   </p>
                   {isCurrentMonth ? (
-                    <div className="space-y-2">
+                    <div className="space-y-0.5 overflow-hidden">
                       {dayTasks.map((task) => (
                         <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} />
                       ))}
@@ -530,20 +537,19 @@ function MonthView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, on
   );
 }
 
-function WeekView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, onDrop }) {
+function WeekView({ cursorDate, tasksByDay, filtersOpen, onOpen, onDayClick, onDragStart, onDrop }) {
   const start = startOfWeek(cursorDate);
   const days = Array.from({ length: 7 }, (_, index) => addDays(start, index));
 
   return (
-    <div className="min-h-[760px] bg-slate-50 p-4">
-      <div className="overflow-x-auto overscroll-x-contain rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="grid min-w-[920px] grid-cols-[168px_minmax(560px,1fr)]">
-          <div className="sticky left-0 z-20 border-b border-r border-slate-200 bg-slate-50 px-4 py-3 text-xs font-extrabold uppercase text-slate-500">
+    <div className={`${filtersOpen ? 'h-[calc(100vh-246px)] min-h-[420px]' : 'h-[calc(100vh-150px)] min-h-[520px]'} bg-[#fff7f8] p-3`}>
+      <div className="h-full overflow-hidden rounded-lg border border-[#f0d7db] bg-white shadow-sm">
+        <div className="grid h-full grid-cols-[128px_minmax(0,1fr)]" style={{ gridTemplateRows: '42px repeat(7, minmax(0, 1fr))' }}>
+          <div className="border-b-2 border-r-2 border-[#f0d7db] bg-[#ffe3e8] px-3 py-2 text-xs font-extrabold uppercase text-[#a23d4d]">
             Wochentag
           </div>
-          <div className="border-b border-r border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="border-b-2 border-r-2 border-[#f0d7db] bg-[#ffe3e8] px-3 py-2">
             <p className="text-sm font-extrabold text-slate-950">Aufgaben</p>
-            <p className="mt-0.5 text-xs font-semibold text-slate-500">Alle Aufgaben dieser Woche</p>
           </div>
 
           {days.map((day, index) => {
@@ -552,7 +558,7 @@ function WeekView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, onD
 
             return (
               <div key={key} className="contents">
-                <div className="sticky left-0 z-10 border-b border-r border-slate-200 bg-white px-4 py-4">
+                <div className="min-h-0 border-b-2 border-r-2 border-[#f0d7db] bg-white px-3 py-2">
                   <p className="text-sm font-extrabold text-slate-950">{calendarWeekDays[index].label}</p>
                   <p className="mt-1 text-xs font-bold text-slate-400">{formatShortDate(day)}</p>
                 </div>
@@ -568,12 +574,12 @@ function WeekView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, onD
                   }}
                   onDragOver={(event) => event.preventDefault()}
                   onDrop={(event) => onDrop(event, key)}
-                  className="min-h-[142px] border-b border-r border-slate-200 bg-white p-3 transition hover:bg-slate-50"
+                  className="min-h-0 overflow-hidden border-b-2 border-r-2 border-[#f0d7db] bg-white p-2 transition hover:relative hover:z-10 hover:bg-[#fff1f3] hover:shadow-[0_0_0_2px_rgba(201,87,103,0.16),0_14px_30px_rgba(201,87,103,0.18)]"
                 >
                   {dayTasks.length ? (
-                    <div className="grid gap-3 xl:grid-cols-2">
+                    <div className="grid max-w-4xl gap-1.5 xl:grid-cols-2">
                       {dayTasks.map((task) => (
-                        <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} expanded />
+                        <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} />
                       ))}
                     </div>
                   ) : null}
@@ -652,17 +658,14 @@ function PlanningListView({ view, tasks, onOpen, onDragStart }) {
 
 function DetailPanel({ task, onClose }) {
   if (!task) {
-    return (
-      <aside className="hidden w-[320px] border-l border-slate-200 bg-white p-4 xl:block">
-        <div className="flex h-full items-center justify-center text-center text-sm font-semibold text-slate-400">
-          Aufgabe auswaehlen, um Details zu sehen.
-        </div>
-      </aside>
-    );
+    return null;
   }
 
   return (
-    <aside className="w-full border-t border-slate-200 bg-white p-4 xl:w-[320px] xl:border-l xl:border-t-0">
+    <aside
+      onMouseDown={(event) => event.stopPropagation()}
+      className="w-full border-t border-slate-200 bg-white p-4 xl:w-[320px] xl:border-l xl:border-t-0"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase text-slate-400">{task.project}</p>
@@ -825,15 +828,6 @@ export default function CalendarPage() {
     [visibleTasks],
   );
 
-  const stats = useMemo(
-    () => ({
-      overdue: visibleTasks.filter(isOverdue).length,
-      qa: visibleTasks.filter((task) => task.status === 'QA').length,
-      high: visibleTasks.filter((task) => ['HIGH', 'URGENT'].includes(task.priority)).length,
-    }),
-    [visibleTasks],
-  );
-
   const updateFilter = (field, value) => setFilters((current) => ({ ...current, [field]: value }));
 
   const moveCursor = (direction) => {
@@ -913,7 +907,7 @@ export default function CalendarPage() {
 
   const renderView = () => {
     if (view === 'week') {
-      return <WeekView cursorDate={cursorDate} tasksByDay={tasksByDay} onOpen={setSelectedTask} onDayClick={setCreateDate} onDragStart={handleDragStart} onDrop={handleDrop} />;
+      return <WeekView cursorDate={cursorDate} tasksByDay={tasksByDay} filtersOpen={filtersOpen} onOpen={setSelectedTask} onDayClick={setCreateDate} onDragStart={handleDragStart} onDrop={handleDrop} />;
     }
     if (view === 'day') {
       return <DayView cursorDate={cursorDate} tasksByDay={tasksByDay} onOpen={setSelectedTask} onDayClick={setCreateDate} onDragStart={handleDragStart} onDrop={handleDrop} />;
@@ -921,7 +915,7 @@ export default function CalendarPage() {
     if (['project', 'team', 'mine', 'department'].includes(view)) {
       return <PlanningListView view={view} tasks={visibleTasks} onOpen={setSelectedTask} onDragStart={handleDragStart} />;
     }
-    return <MonthView cursorDate={cursorDate} tasksByDay={tasksByDay} onOpen={setSelectedTask} onDayClick={setCreateDate} onDragStart={handleDragStart} onDrop={handleDrop} />;
+    return <MonthView cursorDate={cursorDate} tasksByDay={tasksByDay} filtersOpen={filtersOpen} onOpen={setSelectedTask} onDayClick={setCreateDate} onDragStart={handleDragStart} onDrop={handleDrop} />;
   };
 
   const handleDragStart = (event, taskId) => {
@@ -934,12 +928,18 @@ export default function CalendarPage() {
       activeItem="Kalender"
       hideBreadcrumb
       searchPlacement="actions"
+      headerTitle="Kalender"
       searchValue={searchValue}
       onSearch={setSearchValue}
-      createMenuItems={['Neue Aufgabe']}
-      onCreateAction={() => setCreateDate(toDateKey(cursorDate))}
+      createMenuItems={[]}
     >
-      <div className="flex min-h-[calc(100vh-72px)] flex-col lg:flex-row">
+      <div
+        className="flex min-h-[calc(100vh-72px)] flex-col lg:flex-row"
+        onMouseDown={(event) => {
+          if (event.target.closest('[data-calendar-task]')) return;
+          if (selectedTask) setSelectedTask(null);
+        }}
+      >
         <section className="min-w-0 flex-1">
           <CalendarToolbar
             view={view}
@@ -949,7 +949,6 @@ export default function CalendarPage() {
             onViewChange={setView}
             onToday={() => setCursorDate(new Date())}
             onMove={moveCursor}
-            onCreate={() => setCreateDate(toDateKey(cursorDate))}
           />
           {filtersOpen ? (
             <CalendarFilterPanel
@@ -958,21 +957,6 @@ export default function CalendarPage() {
               onFilterChange={updateFilter}
             />
           ) : null}
-          <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-500">
-            <Search className="h-4 w-4" />
-            {visibleTasks.length} sichtbare Kalenderelemente
-            {stats.overdue ? (
-              <span className="ml-2 inline-flex items-center gap-1 rounded bg-red-50 px-2 py-1 font-bold text-red-700">
-                <AlertTriangle className="h-3 w-3" />
-                {stats.overdue} ueberfaellig
-              </span>
-            ) : (
-              <span className="ml-2 inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-1 font-bold text-emerald-700">
-                <CheckCircle2 className="h-3 w-3" />
-                Keine ueberfaelligen Aufgaben
-              </span>
-            )}
-          </div>
           {renderView()}
         </section>
 

@@ -66,6 +66,7 @@ export default function AppShell({
   hideBreadcrumb = false,
   searchPlacement = 'center',
   createMenuItems = defaultCreateMenuItems,
+  headerTitle = '',
 }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -126,7 +127,7 @@ export default function AppShell({
     <div className="min-h-screen bg-[#f8fafc] text-[#111827]">
       <div className="flex min-h-screen">
         <aside
-          className={`hidden flex-none border-r border-[#e5e7eb] bg-white transition-[width] duration-300 lg:flex lg:flex-col ${
+          className={`hidden flex-none border-r-2 border-slate-300 bg-white transition-[width] duration-300 lg:flex lg:flex-col ${
             sidebarCollapsed ? 'w-[84px]' : 'w-[240px]'
           }`}
         >
@@ -209,7 +210,7 @@ export default function AppShell({
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-auto min-h-[72px] flex-wrap items-center gap-4 border-b border-[#e5e7eb] bg-white px-4 py-3 lg:px-6">
+          <header className="flex h-auto min-h-[72px] flex-wrap items-center gap-4 border-b-2 border-slate-300 bg-white px-4 py-3 lg:px-6">
             {!hideBreadcrumb ? (
               <div className="flex min-w-[220px] flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
                 {breadcrumb.map((crumb, index) => (
@@ -238,6 +239,9 @@ export default function AppShell({
             ) : null}
 
             <div className={`ml-auto flex items-center gap-3 ${searchPlacement === 'actions' ? 'w-full justify-end' : ''}`}>
+              {searchPlacement === 'actions' && headerTitle ? (
+                <h1 className="mr-auto w-full max-w-[420px] text-center text-3xl font-extrabold text-slate-950">{headerTitle}</h1>
+              ) : null}
               {searchPlacement === 'actions' ? (
                 <div className="relative w-full min-w-[420px] max-w-[760px]">
                   <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
@@ -253,6 +257,7 @@ export default function AppShell({
                   </span>
                 </div>
               ) : null}
+              {createMenuItems.length ? (
               <div className="relative">
                 <button
                   type="button"
@@ -278,6 +283,7 @@ export default function AppShell({
                   </MenuCard>
                 ) : null}
               </div>
+              ) : null}
 
               <div className="relative">
                 <button
