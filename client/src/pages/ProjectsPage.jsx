@@ -785,7 +785,7 @@ function BacklogTaskRow({ task, project, isActive, isFavorite, onOpen, onToggleF
         transform: CSS.Transform.toString(transform),
         transition,
       }}
-      className={`grid min-w-[1180px] w-full grid-cols-[44px_44px_minmax(120px,0.8fr)_minmax(240px,2.3fr)_minmax(74px,0.45fr)_minmax(120px,0.85fr)_minmax(90px,0.55fr)_minmax(150px,1fr)_44px] items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm transition hover:bg-[#fff1f3] ${
+      className={`grid w-full grid-cols-[36px_36px_minmax(0,1fr)_36px] items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm transition hover:bg-[#fff1f3] lg:grid-cols-[36px_36px_minmax(94px,0.6fr)_minmax(0,2.4fr)_72px_120px_88px_minmax(130px,0.9fr)_36px] ${
         isActive ? 'bg-[#fff1f3]' : 'bg-white'
       } ${isDragging ? 'relative z-10 opacity-70 shadow-[0_18px_34px_rgba(15,23,42,0.16)]' : ''}`}
     >
@@ -821,27 +821,28 @@ function BacklogTaskRow({ task, project, isActive, isFavorite, onOpen, onToggleF
       >
         <Star className="h-4 w-4" fill={isFavorite ? 'currentColor' : 'none'} />
       </button>
-      <span className="font-bold text-slate-500">{taskKey}</span>
+      <span className="hidden font-bold text-slate-500 lg:block">{taskKey}</span>
       <span className="min-w-0">
-        <span className="block truncate font-bold text-slate-900">{task.title}</span>
-        <span className="mt-0.5 block truncate text-xs font-semibold text-slate-400">{project?.name || 'Projekt'}</span>
+        <span className="mb-1 block font-bold leading-5 text-slate-900 lg:hidden">{taskKey}</span>
+        <span className="block whitespace-normal break-words font-bold leading-5 text-slate-900">{task.title}</span>
+        <span className="mt-1 block whitespace-normal break-words text-xs font-semibold text-slate-400">{project?.name || 'Projekt'}</span>
       </span>
       <span
-        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#f0edff] text-[11px] font-extrabold text-[#6d5df6]"
+        className="hidden h-8 w-8 items-center justify-center rounded-full bg-[#f0edff] text-[11px] font-extrabold text-[#6d5df6] lg:inline-flex"
         title={`Erstellt von ${creatorName}`}
       >
         {creatorInitials}
       </span>
-      <span className={`inline-flex w-max items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${status.tone}`}>
+      <span className={`hidden w-max items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold lg:inline-flex ${status.tone}`}>
         <span className={`h-2 w-2 rounded-full ${status.dot}`} />
         {status.label}
       </span>
-      <span className={`inline-flex w-max rounded-full px-2.5 py-1 text-xs font-bold ${priorityMeta[task.priority] || priorityMeta.mittel}`}>
+      <span className={`hidden w-max rounded-full px-2.5 py-1 text-xs font-bold lg:inline-flex ${priorityMeta[task.priority] || priorityMeta.mittel}`}>
         {task.priority}
       </span>
-      <span className="inline-flex min-w-0 items-center gap-2 text-xs font-bold text-slate-600">
+      <span className="hidden min-w-0 items-center gap-2 text-xs font-bold text-slate-600 lg:inline-flex">
         <UserRound className="h-3.5 w-3.5 flex-none text-slate-400" />
-        <span className="truncate">{getAssigneeLabel(task.assignee)}</span>
+        <span className="whitespace-normal break-words">{getAssigneeLabel(task.assignee)}</span>
       </span>
       <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-slate-400">
         <MoreHorizontal className="h-4 w-4" />
@@ -854,8 +855,8 @@ function BacklogProjectGroup({ project, tasks, selectedTaskId, favoriteUserKey, 
   const completed = tasks.filter((task) => task.status === 'done').length;
 
   return (
-    <section className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-      <div className="flex min-w-[1180px] w-full flex-wrap items-center justify-between gap-3 bg-slate-50 px-4 py-3">
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+      <div className="flex w-full flex-wrap items-center justify-between gap-3 bg-slate-50 px-4 py-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-base font-extrabold text-slate-950">{project.name}</h3>
@@ -868,7 +869,7 @@ function BacklogProjectGroup({ project, tasks, selectedTaskId, favoriteUserKey, 
         </div>
       </div>
 
-      <div className="hidden min-w-[1180px] w-full grid-cols-[44px_44px_minmax(120px,0.8fr)_minmax(240px,2.3fr)_minmax(74px,0.45fr)_minmax(120px,0.85fr)_minmax(90px,0.55fr)_minmax(150px,1fr)_44px] gap-3 bg-[#fff1f3] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#b84758] md:grid">
+      <div className="hidden w-full grid-cols-[36px_36px_minmax(94px,0.6fr)_minmax(0,2.4fr)_72px_120px_88px_minmax(130px,0.9fr)_36px] gap-3 bg-[#fff1f3] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#b84758] lg:grid">
         <span />
         <span />
         <span>Key</span>
@@ -921,7 +922,7 @@ function createBacklogTaskForm(task) {
   };
 }
 
-function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, onSave }) {
+function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, onSave, onClose }) {
   const [form, setForm] = useState(() => (task ? createBacklogTaskForm(task) : null));
   const [commentDraft, setCommentDraft] = useState('');
   const [tagDraft, setTagDraft] = useState('');
@@ -930,13 +931,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, onSa
   const [attachmentSource, setAttachmentSource] = useState(attachmentSourceOptions[0]);
 
   if (!task) {
-    return (
-      <aside className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-8 text-center shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
-        <ListChecks className="mx-auto h-8 w-8 text-[#b84758]" />
-        <p className="mt-3 text-sm font-bold text-slate-900">Aufgabe auswaehlen</p>
-        <p className="mt-1 text-sm font-medium text-slate-500">Klicke links auf ein Ticket, um Details im Backlog zu sehen.</p>
-      </aside>
-    );
+    return null;
   }
 
   if (!form) return null;
@@ -1053,31 +1048,45 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, onSa
   };
 
   return (
-    <aside className="max-h-[calc(100vh-240px)] min-h-[640px] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_16px_36px_rgba(15,23,42,0.07)]">
+    <aside
+      onMouseDown={(event) => event.stopPropagation()}
+      className="max-h-[calc(100vh-48px)] w-[min(1180px,calc(100vw-32px))] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.22)]"
+    >
       <div className="sticky -top-5 z-10 border-b border-slate-200 bg-white/95 pb-4 pt-1 backdrop-blur">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#b84758]">{taskKey}</p>
             <h3 className="mt-2 text-xl font-extrabold leading-tight text-slate-950">Ticketdetails bearbeiten</h3>
-            <p className="mt-1 truncate text-sm font-semibold text-slate-500">{task.title}</p>
+            <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">{task.title}</p>
           </div>
           <div className="flex flex-none flex-col items-end gap-3">
             <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${status.tone}`}>
               <span className={`h-2 w-2 rounded-full ${status.dot}`} />
               {status.label}
             </span>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="h-10 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)] transition hover:bg-[#b84758]"
-            >
-              Aenderungen speichern
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSave}
+                className="h-10 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)] transition hover:bg-[#b84758]"
+              >
+                Aenderungen speichern
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
+                aria-label="Ticketdetails schliessen"
+                title="Schliessen"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-5 space-y-5">
+      <div className="mt-5 grid gap-4 xl:grid-cols-2">
         <DetailBlock title="Kerninfos" icon={FileText}>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm font-bold text-slate-700">
@@ -1587,8 +1596,7 @@ export default function ProjectsPage() {
     [activeBacklogFilters, backlogProjectIds, backlogTasks, favoriteUserKey, normalizedSearch, projects],
   );
 
-  const selectedBacklogTask =
-    visibleBacklogTasks.find((task) => task.id === selectedBacklogTaskId) || visibleBacklogTasks[0] || null;
+  const selectedBacklogTask = visibleBacklogTasks.find((task) => task.id === selectedBacklogTaskId) || null;
   const backlogDragDisabled = Boolean(normalizedSearch || activeBacklogFilters.length);
 
   const handleDepartmentOpen = (departmentId) => {
@@ -1607,8 +1615,7 @@ export default function ProjectsPage() {
     setFilterOpen(false);
     setActiveBacklogFilters([]);
     setDraftBacklogFilters([]);
-    const firstTask = backlogTasks.find((task) => task.projectId === projectId);
-    setSelectedBacklogTaskId(firstTask?.id || null);
+    setSelectedBacklogTaskId(null);
   };
 
   const handleCreateAction = (item) => {
@@ -1945,7 +1952,7 @@ export default function ProjectsPage() {
           ) : null}
 
           {viewMode === 'backlog' ? (
-            <div className="mt-5 grid gap-5 2xl:grid-cols-[minmax(520px,0.82fr)_minmax(620px,1.18fr)]">
+            <div className="mt-5">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm font-bold text-slate-500">
@@ -2134,15 +2141,6 @@ export default function ProjectsPage() {
                   </div>
                 ) : null}
               </div>
-
-              <BacklogDetailPanel
-                key={selectedBacklogTask?.id || 'empty-backlog-detail'}
-                task={selectedBacklogTask}
-                projects={visibleProjects}
-                assignees={departmentMembers}
-                assigneeWorkloads={assigneeWorkloads}
-                onSave={handleBacklogTaskSave}
-              />
             </div>
           ) : null}
 
@@ -2159,6 +2157,24 @@ export default function ProjectsPage() {
           ) : null}
         </section>
       </div>
+
+      {selectedBacklogTask ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-6 backdrop-blur-sm"
+          onMouseDown={() => setSelectedBacklogTaskId(null)}
+          role="presentation"
+        >
+          <BacklogDetailPanel
+            key={selectedBacklogTask.id}
+            task={selectedBacklogTask}
+            projects={visibleProjects}
+            assignees={departmentMembers}
+            assigneeWorkloads={assigneeWorkloads}
+            onSave={handleBacklogTaskSave}
+            onClose={() => setSelectedBacklogTaskId(null)}
+          />
+        </div>
+      ) : null}
 
       {createMode === 'department' ? (
         <CreateDepartmentModal
