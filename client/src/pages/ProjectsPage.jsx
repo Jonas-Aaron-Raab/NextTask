@@ -698,7 +698,7 @@ function DepartmentCard({ department, projectCount, backlogCount, isActive, onOp
     <button
       type="button"
       onClick={() => onOpen(department.id)}
-      className={`h-full rounded-[1.75rem] border p-4 text-left shadow-[0_10px_26px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 ${department.accent} ${
+      className={`h-full min-h-[268px] rounded-[1.75rem] border p-4 text-left shadow-[0_10px_26px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 ${department.accent} ${
         isActive ? 'ring-4 ring-[#c95767]/12' : ''
       }`}
     >
@@ -1854,9 +1854,9 @@ export default function ProjectsPage() {
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">{visibleDepartments.length} Bereiche</span>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+            <div className="mx-auto flex max-w-[1012px] flex-wrap justify-center gap-4">
               {visibleDepartments.map((department) => (
-                <div key={department.id} className="min-w-0">
+                <div key={department.id} className="w-full min-w-0 sm:w-[320px]">
                   <DepartmentCard
                     department={department}
                     projectCount={projects.filter((project) => project.departmentId === department.id).length}
