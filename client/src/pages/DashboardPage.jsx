@@ -6,6 +6,8 @@ import { initialTasks } from './MyTasksPage';
 import { initialBacklogTasks, initialDepartments, initialProjects } from './ProjectsPage';
 
 const createMenuItems = ['Neue Aufgabe', 'Neues Projekt', 'Neuer Report', 'Neues Dokument'];
+const dashboardSelectClass =
+  'h-11 min-w-[220px] rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12';
 
 const priorityWeight = {
   hoch: 3,
@@ -70,7 +72,7 @@ function SectionHeader({ title, action }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <h2 className="text-[1.35rem] font-black tracking-tight text-slate-950">{title}</h2>
-      {action ? <span className="text-sm font-semibold text-slate-400">{action}</span> : null}
+      {action ? <div className="text-sm font-semibold text-slate-400">{action}</div> : null}
     </div>
   );
 }
@@ -78,10 +80,54 @@ function SectionHeader({ title, action }) {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('Alle Abteilungen');
 
   const searchTerm = searchValue.trim().toLowerCase();
+  const departmentByProjectName = useMemo(() => {
+    return Object.fromEntries(
+      initialProjects.map((project) => {
+        const department = initialDepartments.find((item) => item.id === project.departmentId);
+        return [project.name, department?.name || 'Ohne Abteilung'];
+      }),
+    );
+  }, []);
 
-  const openTasks = useMemo(() => initialTasks.filter((task) => task.status !== 'done'), []);
+  const departmentOptions = useMemo(() => {
+    const values = new Set(['Alle Abteilungen']);
+    initialDepartments.forEach((department) => values.add(department.name));
+    initialTasks.forEach((task) => {
+      const name = task.department || departmentByProjectName[task.project];
+      if (name) values.add(name);
+    });
+    return [...values];
+  }, [departmentByProjectName]);
+
+  const openTasks = useMemo(() => {
+    return initialTasks.filter((task) => {
+      if (task.status === 'done') return false;
+      if (selectedDepartment === 'Alle Abteilungen') return true;
+      const departmentName = task.department || departmentByProjectName[task.project];
+      return departmentName === selectedDepartment;
+    });
+  }, [departmentByProjectName, selectedDepartment]);
+
+  const visibleProjects = useMemo(() => {
+    return initialProjects.filter((project) => {
+      if (selectedDepartment === 'Alle Abteilungen') return true;
+      const department = initialDepartments.find((item) => item.id === project.departmentId);
+      return department?.name === selectedDepartment;
+    });
+  }, [selectedDepartment]);
+
+  const visibleDepartmentCount = useMemo(() => {
+    if (selectedDepartment !== 'Alle Abteilungen') return visibleProjects.length ? 1 : 0;
+    const activeNames = new Set(
+      visibleProjects
+        .map((project) => initialDepartments.find((department) => department.id === project.departmentId)?.name)
+        .filter(Boolean),
+    );
+    return activeNames.size;
+  }, [selectedDepartment, visibleProjects]);
 
   const focusTasks = useMemo(() => {
     const baseTasks = [...openTasks].sort(sortByUrgency).slice(0, 4);
@@ -94,7 +140,7 @@ export default function DashboardPage() {
   }, [openTasks, searchTerm]);
 
   const attentionItems = useMemo(() => {
-    const flagged = initialTasks.filter((task) => ['blocked', 'review'].includes(task.status)).sort(sortByUrgency);
+    const flagged = openTasks.filter((task) => ['blocked', 'review'].includes(task.status)).sort(sortByUrgency);
 
     if (!searchTerm) return flagged.slice(0, 4);
 
@@ -105,7 +151,7 @@ export default function DashboardPage() {
 
   const departmentCards = useMemo(() => {
     const cards = initialDepartments.map((department) => {
-      const departmentProjects = initialProjects.filter((project) => project.departmentId === department.id);
+      const departmentProjects = visibleProjects.filter((project) => project.departmentId === department.id);
       const projectIds = departmentProjects.map((project) => project.id);
       const departmentBacklog = initialBacklogTasks.filter((task) => projectIds.includes(task.projectId));
       const openBacklogCount = departmentBacklog.filter((task) => task.status !== 'done').length;
@@ -119,12 +165,15 @@ export default function DashboardPage() {
       };
     });
 
-    if (!searchTerm) return cards;
+    const scopedCards =
+      selectedDepartment === 'Alle Abteilungen' ? cards : cards.filter((department) => department.name === selectedDepartment);
 
-    return cards.filter((department) =>
+    if (!searchTerm) return scopedCards;
+
+    return scopedCards.filter((department) =>
       [department.name, department.lead, department.description].join(' ').toLowerCase().includes(searchTerm),
     );
-  }, [searchTerm]);
+  }, [searchTerm, selectedDepartment, visibleProjects]);
 
   const upcomingItems = useMemo(() => {
     const taskDeadlines = openTasks.map((task) => ({
@@ -137,7 +186,7 @@ export default function DashboardPage() {
       path: '/my-tasks',
     }));
 
-    const projectDeadlines = initialProjects.map((project) => ({
+    const projectDeadlines = visibleProjects.map((project) => ({
       id: project.id,
       title: project.name,
       meta: project.owner,
@@ -154,16 +203,16 @@ export default function DashboardPage() {
     if (!searchTerm) return combined;
 
     return combined.filter((item) => [item.title, item.meta, item.type].join(' ').toLowerCase().includes(searchTerm));
-  }, [openTasks, searchTerm]);
+  }, [openTasks, searchTerm, visibleProjects]);
 
   const kpis = useMemo(
     () => ({
       openTasks: openTasks.length,
       todayDue: openTasks.filter((task) => task.status === 'today').length,
-      activeProjects: initialProjects.filter((project) => !['Abgeschlossen', 'Archiviert'].includes(project.status)).length,
-      activeDepartments: initialDepartments.length,
+      activeProjects: visibleProjects.filter((project) => !['Abgeschlossen', 'Archiviert'].includes(project.status)).length,
+      activeDepartments: visibleDepartmentCount,
     }),
-    [openTasks],
+    [openTasks, visibleDepartmentCount, visibleProjects],
   );
 
   const statusOverview = useMemo(() => {
@@ -200,13 +249,36 @@ export default function DashboardPage() {
       activeItem="Dashboard"
       hideBreadcrumb
       searchPlacement="actions"
+      headerTitle="Dashboard"
       searchValue={searchValue}
       onSearch={setSearchValue}
       createMenuItems={createMenuItems}
     >
       <div className="space-y-6 px-4 py-5 lg:px-6 lg:py-6">
         <section className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
-          <SectionHeader title="Lagebild heute" action={`${workloadScore}% Auslastung`} />
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Uebersicht</p>
+              <h2 className="mt-2 text-[1.9rem] font-black tracking-tight text-slate-950">
+                {selectedDepartment === 'Alle Abteilungen' ? 'Aktueller Workspace-Stand' : selectedDepartment}
+              </h2>
+              <p className="mt-2 text-sm font-semibold text-slate-500">Live-Stand fuer Aufgaben, Projekte und anstehende Fristen.</p>
+            </div>
+
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="space-y-2">
+                <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">Abteilung</span>
+                <select value={selectedDepartment} onChange={(event) => setSelectedDepartment(event.target.value)} className={dashboardSelectClass}>
+                  {departmentOptions.map((option) => (
+                    <option key={option}>{option}</option>
+                  ))}
+                </select>
+              </label>
+              <span className="inline-flex h-11 items-center rounded-xl bg-[#fff5f7] px-4 text-sm font-bold text-[#b84758]">
+                {workloadScore}% Auslastung
+              </span>
+            </div>
+          </div>
 
           <div className="mt-5 grid gap-5 xl:grid-cols-[220px_1fr_260px]">
             <div className="rounded-[26px] border border-slate-900 bg-[#fff8fa] p-5">
@@ -256,7 +328,9 @@ export default function DashboardPage() {
               >
                 <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Aufgaben</p>
                 <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{kpis.openTasks}</p>
-                <p className="mt-2 text-sm font-semibold text-slate-500">offen im persoenlichen Board</p>
+                <p className="mt-2 text-sm font-semibold text-slate-500">
+                  {selectedDepartment === 'Alle Abteilungen' ? 'offen im Workspace' : `offen in ${selectedDepartment}`}
+                </p>
               </button>
               <button
                 type="button"
@@ -265,7 +339,9 @@ export default function DashboardPage() {
               >
                 <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Projekte</p>
                 <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{kpis.activeProjects}</p>
-                <p className="mt-2 text-sm font-semibold text-slate-500">aktive Vorhaben im Workspace</p>
+                <p className="mt-2 text-sm font-semibold text-slate-500">
+                  {selectedDepartment === 'Alle Abteilungen' ? 'aktive Vorhaben im Workspace' : 'aktive Vorhaben im Bereich'}
+                </p>
               </button>
               <button
                 type="button"
@@ -287,8 +363,12 @@ export default function DashboardPage() {
             </div>
             <div className="rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4">
               <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Abteilungen</p>
-              <p className="mt-2 text-lg font-black text-slate-950">{kpis.activeDepartments} Bereiche aktiv</p>
-              <p className="mt-1 text-sm text-slate-500">mit Projekt- und Backlog-Bezug</p>
+              <p className="mt-2 text-lg font-black text-slate-950">
+                {selectedDepartment === 'Alle Abteilungen' ? `${kpis.activeDepartments} Bereiche aktiv` : selectedDepartment}
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                {selectedDepartment === 'Alle Abteilungen' ? 'mit Projekt- und Backlog-Bezug' : 'fokussierte Live-Uebersicht'}
+              </p>
             </div>
             <div className="rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4">
               <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Fokus</p>
