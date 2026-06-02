@@ -183,20 +183,27 @@ function DocumentModal({ document, onClose }) {
   if (!document) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-8 backdrop-blur-sm">
-      <div className="relative w-full max-w-5xl rounded-[30px] border border-slate-300 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.22)]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-3 py-3 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative flex max-h-[calc(100vh-1.5rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[26px] border border-slate-300 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.22)]"
+        onClick={(event) => event.stopPropagation()}
+      >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-5 top-5 inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition hover:border-slate-400 hover:text-[#b84758]"
+          aria-label="Dokumentendetails schliessen"
+          className="absolute left-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 transition hover:border-slate-400 hover:text-[#b84758]"
         >
           <X className="h-5 w-5" />
         </button>
 
-        <div className="border-b border-slate-200 px-7 pb-5 pt-7">
+        <div className="border-b border-slate-200 px-5 pb-4 pl-18 pt-5">
           <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-[#b84758]">Dokumentendetails</p>
-          <h2 className="mt-3 text-[2rem] font-extrabold tracking-tight text-slate-950">{document.title}</h2>
-          <div className="mt-4 flex flex-wrap gap-2">
+          <h2 className="mt-2 text-[1.55rem] font-extrabold leading-tight tracking-tight text-slate-950">{document.title}</h2>
+          <div className="mt-3 flex flex-wrap gap-2">
             <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusTone(document.status)}`}>{document.status}</span>
             <span className={`rounded-full px-3 py-1 text-xs font-bold ${classificationTone(document.classification)}`}>
               {document.classification}
@@ -205,35 +212,35 @@ function DocumentModal({ document, onClose }) {
           </div>
         </div>
 
-        <div className="grid gap-6 p-7 xl:grid-cols-[1.35fr_0.95fr]">
-          <div className="space-y-6">
-            <section className="rounded-[24px] border border-slate-200 bg-[#fcfdff] p-5">
-              <h3 className="text-lg font-extrabold text-slate-950">Beschreibung</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{document.summary}</p>
+        <div className="grid min-h-0 gap-4 overflow-hidden p-5 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-4">
+            <section className="rounded-[20px] border border-slate-200 bg-[#fcfdff] p-4">
+              <h3 className="text-base font-extrabold text-slate-950">Beschreibung</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{document.summary}</p>
             </section>
 
-            <section className="rounded-[24px] border border-slate-200 bg-[#fcfdff] p-5">
-              <h3 className="text-lg font-extrabold text-slate-950">Verknuepfte Aufgaben</h3>
-              <div className="mt-4 space-y-3">
+            <section className="rounded-[20px] border border-slate-200 bg-[#fcfdff] p-4">
+              <h3 className="text-base font-extrabold text-slate-950">Verknuepfte Aufgaben</h3>
+              <div className="mt-3 grid gap-2 md:grid-cols-2">
                 {document.linkedTasks.length ? (
                   document.linkedTasks.map((task) => (
-                    <div key={task} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+                    <div key={task} className="rounded-2xl bg-white px-3 py-2.5 text-sm font-semibold leading-5 text-slate-700">
                       {task}
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-400">
+                  <div className="rounded-2xl bg-white px-3 py-2.5 text-sm font-semibold text-slate-400">
                     Noch keine Aufgaben verknuepft.
                   </div>
                 )}
               </div>
             </section>
 
-            <section className="rounded-[24px] border border-slate-200 bg-[#fcfdff] p-5">
-              <h3 className="text-lg font-extrabold text-slate-950">Audit Trail</h3>
-              <div className="mt-4 space-y-3">
+            <section className="rounded-[20px] border border-slate-200 bg-[#fcfdff] p-4">
+              <h3 className="text-base font-extrabold text-slate-950">Audit Trail</h3>
+              <div className="mt-3 grid gap-2 md:grid-cols-2">
                 {document.auditTrail.map((entry) => (
-                  <div key={entry} className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+                  <div key={entry} className="rounded-2xl bg-white px-3 py-2.5 text-sm font-semibold leading-5 text-slate-700">
                     {entry}
                   </div>
                 ))}
@@ -241,10 +248,10 @@ function DocumentModal({ document, onClose }) {
             </section>
           </div>
 
-          <div className="space-y-6">
-            <section className="rounded-[24px] border border-slate-200 bg-[#fcfdff] p-5">
-              <h3 className="text-lg font-extrabold text-slate-950">Metadaten</h3>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+          <div className="space-y-4">
+            <section className="rounded-[20px] border border-slate-200 bg-[#fcfdff] p-4">
+              <h3 className="text-base font-extrabold text-slate-950">Metadaten</h3>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {[
                   ['Abteilung', document.department],
                   ['Projekt', document.project],
@@ -253,19 +260,19 @@ function DocumentModal({ document, onClose }) {
                   ['Naechste Pruefung', document.reviewDate],
                   ['Aufbewahrung', document.retention],
                 ].map(([label, value]) => (
-                  <div key={label} className="rounded-2xl bg-white p-4">
-                    <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">{label}</p>
-                    <p className="mt-2 text-sm font-bold leading-6 text-slate-900">{value}</p>
+                  <div key={label} className="rounded-2xl bg-white p-3">
+                    <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-400">{label}</p>
+                    <p className="mt-1.5 break-words text-sm font-bold leading-5 text-slate-900">{value}</p>
                   </div>
                 ))}
               </div>
             </section>
 
-            <section className="rounded-[24px] border border-slate-200 bg-[#fcfdff] p-5">
-              <h3 className="text-lg font-extrabold text-slate-950">Kontroll-IDs</h3>
-              <div className="mt-4 flex flex-wrap gap-2">
+            <section className="rounded-[20px] border border-slate-200 bg-[#fcfdff] p-4">
+              <h3 className="text-base font-extrabold text-slate-950">Kontroll-IDs</h3>
+              <div className="mt-3 flex flex-wrap gap-2">
                 {document.controls.map((control) => (
-                  <span key={control} className="rounded-full bg-[#fff7f8] px-3 py-2 text-xs font-bold text-[#b84758]">
+                  <span key={control} className="rounded-full bg-[#fff7f8] px-3 py-1.5 text-xs font-bold text-[#b84758]">
                     {control}
                   </span>
                 ))}
