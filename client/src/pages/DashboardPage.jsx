@@ -255,7 +255,7 @@ export default function DashboardPage() {
       createMenuItems={createMenuItems}
     >
       <div className="space-y-6 px-4 py-5 lg:px-6 lg:py-6">
-        <section className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+        <section className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Uebersicht</p>
@@ -281,7 +281,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-5 grid gap-5 xl:grid-cols-[220px_1fr_260px]">
-            <div className="rounded-[26px] border border-slate-900 bg-[#fff8fa] p-5">
+            <div className="rounded-[26px] border border-slate-300 bg-[#fff8fa] p-5">
               <p className="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-slate-400">Belastungsskala</p>
               <div className="mt-4 flex items-end justify-between gap-4">
                 <div>
@@ -324,7 +324,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => navigate('/my-tasks')}
-                className="rounded-[24px] border border-slate-900 bg-[#fff5f7] px-4 py-4 text-left transition hover:border-slate-900 hover:bg-white"
+                className="rounded-[24px] border border-slate-300 bg-[#fff5f7] px-4 py-4 text-left transition hover:border-slate-400 hover:bg-white"
               >
                 <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Aufgaben</p>
                 <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{kpis.openTasks}</p>
@@ -335,7 +335,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => navigate('/projects')}
-                className="rounded-[24px] border border-slate-900 bg-[#f4f8ff] px-4 py-4 text-left transition hover:border-slate-900 hover:bg-white"
+                className="rounded-[24px] border border-slate-300 bg-[#f4f8ff] px-4 py-4 text-left transition hover:border-slate-400 hover:bg-white"
               >
                 <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Projekte</p>
                 <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{kpis.activeProjects}</p>
@@ -346,7 +346,7 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() => navigate('/reports')}
-                className="rounded-[24px] border border-slate-900 bg-[#fff8ef] px-4 py-4 text-left transition hover:border-slate-900 hover:bg-white"
+                className="rounded-[24px] border border-slate-300 bg-[#fff8ef] px-4 py-4 text-left transition hover:border-slate-400 hover:bg-white"
               >
                 <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Fristen</p>
                 <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{upcomingItems.length}</p>
@@ -379,7 +379,7 @@ export default function DashboardPage() {
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+          <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
             <SectionHeader title="Heute im Fokus" action={`${focusTasks.length} Eintraege`} />
             <div className="mt-5 space-y-3">
               {focusTasks.map((task) => (
@@ -411,7 +411,7 @@ export default function DashboardPage() {
             </div>
           </article>
 
-          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+          <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
             <SectionHeader title="Aufmerksamkeit noetig" action={`${attentionItems.length} Themen`} />
             <div className="mt-5 space-y-3">
               {attentionItems.map((task) => (
@@ -442,7 +442,7 @@ export default function DashboardPage() {
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+          <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
             <SectionHeader title="Abteilungen im Blick" action={`${departmentCards.length} Bereiche`} />
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {departmentCards.map((department) => (
@@ -495,7 +495,7 @@ export default function DashboardPage() {
             </div>
           </article>
 
-          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+          <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
             <SectionHeader title="Naechste Fristen" action={`${upcomingItems.length} Termine`} />
             <div className="mt-5 space-y-3">
               {upcomingItems.map((item) => (

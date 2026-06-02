@@ -139,11 +139,11 @@ const knowledgeSpaces = initialDepartments.map((department, index) => ({
   lead: department.lead,
   docsCount: documents.filter((document) => document.department === department.name).length,
   tone: [
-    'bg-[#fff7f8] border-slate-900',
-    'bg-[#f4f8ff] border-slate-900',
-    'bg-[#effbf7] border-slate-900',
-    'bg-[#fff8ef] border-slate-900',
-    'bg-[#f3fbf6] border-slate-900',
+    'bg-[#fff7f8] border-slate-300',
+    'bg-[#f4f8ff] border-slate-300',
+    'bg-[#effbf7] border-slate-300',
+    'bg-[#fff8ef] border-slate-300',
+    'bg-[#f3fbf6] border-slate-300',
   ][index % 5],
 }));
 
@@ -184,11 +184,11 @@ function DocumentModal({ document, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-8 backdrop-blur-sm">
-      <div className="relative w-full max-w-5xl rounded-[30px] border border-slate-900 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.22)]">
+      <div className="relative w-full max-w-5xl rounded-[30px] border border-slate-300 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.22)]">
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-5 top-5 inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition hover:border-slate-900 hover:text-[#b84758]"
+          className="absolute right-5 top-5 inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition hover:border-slate-400 hover:text-[#b84758]"
         >
           <X className="h-5 w-5" />
         </button>
@@ -369,7 +369,7 @@ export default function DocumentsPage() {
       createMenuItems={createMenuItems}
     >
       <div className="space-y-6 px-4 py-4 xl:px-6">
-        <section className="rounded-[30px] border-2 border-slate-900 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+        <section className="rounded-[30px] border border-slate-300 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
           <div className="rounded-[24px] border border-slate-200 bg-[#f8fafc] p-4">
             <div className="flex flex-wrap items-end gap-3 xl:flex-nowrap">
               <DocumentFilterField label="Abteilung" value={selectedDepartment} onChange={(event) => setSelectedDepartment(event.target.value)}>
@@ -427,7 +427,7 @@ export default function DocumentsPage() {
             return (
               <article
                 key={item.label}
-                className="flex min-h-[168px] flex-col rounded-[24px] border-2 border-slate-900 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)]"
+                className="flex min-h-[168px] flex-col rounded-[24px] border border-slate-300 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)]"
               >
                 <div className="flex items-start gap-3">
                   <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${item.tone}`}>
@@ -442,7 +442,7 @@ export default function DocumentsPage() {
           })}
         </section>
 
-        <section className="rounded-[30px] border-2 border-slate-900 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+        <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
           <div className="grid gap-3 xl:grid-cols-4">
             {sectionCards.map((section) => {
               const Icon = section.icon;
@@ -455,7 +455,7 @@ export default function DocumentsPage() {
                   className={`flex min-h-[108px] items-center gap-3 rounded-[22px] border px-4 py-4 text-left transition ${
                     activeSection === section.id
                       ? 'border-[#e8a9b3] bg-[#fff7f8] shadow-[0_12px_28px_rgba(184,71,88,0.08)]'
-                      : 'border-slate-200 bg-[#fcfdff] hover:border-slate-900 hover:bg-white'
+                      : 'border-slate-200 bg-[#fcfdff] hover:border-slate-400 hover:bg-white'
                   }`}
                 >
                   <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${section.tone}`}>
@@ -487,7 +487,7 @@ export default function DocumentsPage() {
                       key={document.id}
                       type="button"
                       onClick={() => setActiveDocumentId(document.id)}
-                      className="w-full rounded-[22px] border border-slate-200 bg-[#fcfdff] p-4 text-left transition hover:border-slate-900 hover:bg-white"
+                      className="w-full rounded-[22px] border border-slate-200 bg-[#fcfdff] p-4 text-left transition hover:border-slate-400 hover:bg-white"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">

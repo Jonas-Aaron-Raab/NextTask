@@ -45,7 +45,7 @@ export const initialDepartments = [
     members: ['Lisa Wagner', 'Markus Klein', 'Anna Becker', 'Elisabeth Bezverkha'],
     memberCount: 8,
     description: 'Digitale Produkte, Banking-Journeys und Kundenoberflaechen.',
-    accent: 'border-slate-900 bg-[#fff4f6]',
+    accent: 'border-slate-300 bg-[#fff4f6]',
     badgeTone: 'bg-[#fff0f2] text-[#b84758]',
   },
   {
@@ -55,7 +55,7 @@ export const initialDepartments = [
     members: ['Tom Becker', 'Elisabeth Bezverkha'],
     memberCount: 5,
     description: 'Tests, Freigaben, Regressionen und Produktionsqualitaet.',
-    accent: 'border-slate-900 bg-[#f4f8ff]',
+    accent: 'border-slate-300 bg-[#f4f8ff]',
     badgeTone: 'bg-[#edf4ff] text-[#4875c8]',
   },
   {
@@ -65,7 +65,7 @@ export const initialDepartments = [
     members: ['Sarah Nguyen', 'Markus Klein'],
     memberCount: 6,
     description: 'Kampagnen, Content-Produktion und Markenauftritte.',
-    accent: 'border-slate-900 bg-[#effbf7]',
+    accent: 'border-slate-300 bg-[#effbf7]',
     badgeTone: 'bg-[#ecfbf6] text-[#2f7d68]',
   },
   {
@@ -75,7 +75,7 @@ export const initialDepartments = [
     members: ['Anna Becker', 'Lisa Wagner'],
     memberCount: 4,
     description: 'Kontrollpunkte, Freigaben und regulatorische Abstimmungen.',
-    accent: 'border-slate-900 bg-[#fff8ef]',
+    accent: 'border-slate-300 bg-[#fff8ef]',
     badgeTone: 'bg-[#fff4e7] text-[#c26a34]',
   },
   {
@@ -85,7 +85,7 @@ export const initialDepartments = [
     members: ['Nina Hoffmann', 'Tom Becker', 'Elisabeth Bezverkha'],
     memberCount: 7,
     description: 'Serviceprozesse, Rueckfragen, Eskalationen und Kundenkommunikation.',
-    accent: 'border-slate-900 bg-[#f3fbf6]',
+    accent: 'border-slate-300 bg-[#f3fbf6]',
     badgeTone: 'bg-[#edf9f1] text-[#3b7f57]',
   },
 ];
@@ -734,7 +734,7 @@ function ProjectCard({ project, backlogCount, onOpen }) {
     <button
       type="button"
       onClick={() => onOpen(project.id)}
-      className="h-full rounded-2xl border border-slate-900/70 bg-white p-4 text-left shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:border-slate-900 hover:shadow-[0_16px_34px_rgba(136,54,66,0.10)]"
+      className="h-full rounded-2xl border border-slate-300 bg-white p-4 text-left shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-[0_16px_34px_rgba(136,54,66,0.10)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -1641,7 +1641,7 @@ export default function ProjectsPage() {
       lead: departmentForm.lead.trim() || 'Elisabeth Bezverkha',
       memberCount: Number.parseInt(departmentForm.memberCount, 10) || 4,
       description: departmentForm.description.trim() || 'Neue Abteilung fuer strukturierte Projekte und Zusammenarbeit.',
-      accent: 'border-slate-900 bg-[#fff4f6]',
+      accent: 'border-slate-300 bg-[#fff4f6]',
       badgeTone: 'bg-[#fff0f2] text-[#b84758]',
       members: [departmentForm.lead.trim() || 'Elisabeth Bezverkha'],
     };
@@ -1848,7 +1848,7 @@ export default function ProjectsPage() {
         }`}
       >
         {viewMode === 'projects' ? (
-          <section className="rounded-3xl border-2 border-slate-900 bg-white/70 p-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+          <section className="rounded-3xl border border-slate-300 bg-white/70 p-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Abteilungen</p>
@@ -1874,7 +1874,7 @@ export default function ProjectsPage() {
           </section>
         ) : null}
 
-        <section className={`rounded-3xl border-2 border-slate-900 bg-white p-5 shadow-[0_16px_40px_rgba(136,54,66,0.08)] ${viewMode === 'backlog' ? 'min-h-[calc(100vh-150px)]' : ''}`}>
+        <section className={`rounded-3xl border border-slate-300 bg-white p-5 shadow-[0_16px_40px_rgba(136,54,66,0.08)] ${viewMode === 'backlog' ? 'min-h-[calc(100vh-150px)]' : ''}`}>
           {viewMode === 'projects' ? (
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
               <div>

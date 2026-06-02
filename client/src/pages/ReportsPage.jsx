@@ -318,7 +318,7 @@ export default function ReportsPage() {
       onSearch={setSearchValue}
     >
       <div className="space-y-6 px-4 py-4 xl:px-6">
-        <section className="rounded-[30px] border-2 border-slate-900 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+        <section className="rounded-[30px] border border-slate-300 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
           <div className="rounded-[24px] border border-slate-200 bg-[#f8fafc] p-4">
             <div className="flex flex-wrap items-end gap-3 xl:flex-nowrap">
               <ReportFilterField label="Zeitraum" value={selectedPeriod} onChange={(event) => setSelectedPeriod(event.target.value)}>
@@ -361,7 +361,7 @@ export default function ReportsPage() {
             return (
               <article
                 key={item.id}
-                className="flex min-h-[168px] flex-col rounded-[24px] border-2 border-slate-900 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.05)]"
+                className="flex min-h-[168px] flex-col rounded-[24px] border border-slate-300 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.05)]"
               >
                 <div className="flex items-start gap-3">
                   <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${item.tone}`}>
@@ -378,7 +378,7 @@ export default function ReportsPage() {
 
         <section>
           <div className="grid gap-6 xl:grid-cols-2 xl:items-stretch">
-          <article className="h-full rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <article className="h-full rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Aufgabenstatus</h2>
@@ -410,7 +410,7 @@ export default function ReportsPage() {
             </div>
           </article>
 
-          <article className="h-full rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <article className="h-full rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div>
               <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Projektfortschritt</h2>
             </div>
@@ -425,7 +425,7 @@ export default function ReportsPage() {
                     className={`flex h-full min-h-[136px] flex-col justify-between rounded-[22px] border p-4 text-left transition ${
                       activeProject?.id === project.id
                         ? 'border-[#e8a9b3] bg-[#fff7f8] shadow-[0_12px_28px_rgba(184,71,88,0.08)]'
-                        : 'border-slate-200 bg-[#fcfdff] hover:border-slate-900 hover:bg-white'
+                        : 'border-slate-200 bg-[#fcfdff] hover:border-slate-400 hover:bg-white'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -489,7 +489,7 @@ export default function ReportsPage() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-2 xl:items-stretch">
-          <article className="h-full rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <article className="h-full rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Team-Auslastung</h2>
@@ -521,7 +521,7 @@ export default function ReportsPage() {
             </div>
           </article>
 
-          <article className="h-full rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <article className="h-full rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Wochenzusammenfassung</h2>

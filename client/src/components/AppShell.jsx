@@ -127,7 +127,7 @@ export default function AppShell({
     <div className="min-h-screen bg-[#f8fafc] text-[#111827]">
       <div className="flex min-h-screen">
         <aside
-          className={`hidden flex-none border-r-2 border-slate-300 bg-white transition-[width] duration-300 lg:flex lg:flex-col ${
+          className={`hidden flex-none border-r border-slate-200 bg-white transition-[width] duration-300 lg:flex lg:flex-col ${
             sidebarCollapsed ? 'w-[84px]' : 'w-[240px]'
           }`}
         >
@@ -210,7 +210,7 @@ export default function AppShell({
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-auto min-h-[72px] flex-wrap items-center gap-4 border-b-2 border-slate-300 bg-white px-4 py-3 lg:px-6">
+          <header className="flex h-auto min-h-[72px] flex-wrap items-center gap-4 border-b border-slate-200 bg-white px-4 py-3 lg:px-6">
             {!hideBreadcrumb ? (
               <div className="flex min-w-[220px] flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
                 {breadcrumb.map((crumb, index) => (

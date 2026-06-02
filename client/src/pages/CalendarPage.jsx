@@ -386,7 +386,7 @@ function FilterSelect({ label, value, options, onChange }) {
 
 function CalendarFilterPanel({ filters, filterOptions, onFilterChange }) {
   return (
-    <div className="border-b-2 border-slate-300 bg-white px-3 py-2">
+    <div className="border-b border-slate-200 bg-white px-3 py-2">
       <div className="grid gap-2 rounded-md border border-[#f0d7db] bg-[#fff7f8] p-2 md:grid-cols-3 xl:grid-cols-7">
         <FilterSelect label="Projekt" value={filters.project} options={filterOptions.projects} onChange={(value) => onFilterChange('project', value)} />
         <FilterSelect label="Person" value={filters.person} options={filterOptions.people} onChange={(value) => onFilterChange('person', value)} />
@@ -420,7 +420,7 @@ function CalendarToolbar({ view, cursorDate, filtersOpen, onFilterToggle, onView
   const dateRangeTitle = formatDateRangeTitle(view, cursorDate);
 
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b-2 border-slate-300 bg-white px-4 py-2">
+    <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-4 py-2">
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={onToday} className="h-10 rounded-md border border-[#f0d7db] px-3 text-sm font-bold text-slate-700 transition hover:border-[#d89aa5] hover:bg-[#fff1f3] hover:text-[#a23d4d]">
           Heute
