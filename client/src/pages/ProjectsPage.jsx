@@ -698,30 +698,35 @@ function DepartmentCard({ department, projectCount, backlogCount, isActive, onOp
     <button
       type="button"
       onClick={() => onOpen(department.id)}
-      className={`rounded-3xl border p-5 text-left shadow-[0_12px_32px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 ${department.accent} ${
+      className={`h-full rounded-[1.75rem] border p-4 text-left shadow-[0_10px_26px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 ${department.accent} ${
         isActive ? 'ring-4 ring-[#c95767]/12' : ''
       }`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#b84758] shadow-[0_10px_22px_rgba(184,71,88,0.10)]">
-          <Building2 className="h-6 w-6" />
+      <div className="flex items-start justify-between gap-3">
+        <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#b84758] shadow-[0_8px_18px_rgba(184,71,88,0.10)]">
+          <Building2 className="h-5 w-5" />
         </span>
-        <span className={`rounded-full px-3 py-1 text-xs font-bold ${department.badgeTone}`}>{projectCount} Projekte</span>
+        <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${department.badgeTone}`}>{projectCount} Projekte</span>
       </div>
 
-      <h2 className="mt-5 text-xl font-extrabold text-slate-950">{department.name}</h2>
-      <p className="mt-2 text-sm font-medium leading-6 text-slate-500">{department.description}</p>
+      <h2 className="mt-4 text-lg font-extrabold leading-tight text-slate-950">{department.name}</h2>
+      <p
+        className="mt-2 text-[13px] font-medium leading-5 text-slate-500"
+        style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+      >
+        {department.description}
+      </p>
 
-      <div className="mt-5 flex flex-wrap gap-3 text-xs font-bold text-slate-500">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1">
+      <div className="mt-4 grid gap-2 text-xs font-bold text-slate-500 sm:grid-cols-2">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5">
           <Users className="h-3.5 w-3.5" />
           {department.memberCount} Personen
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1">
+        <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-white px-3 py-1.5">
           <ShieldCheck className="h-3.5 w-3.5" />
-          {department.lead}
+          <span className="truncate">{department.lead}</span>
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 sm:col-span-2">
           <ListChecks className="h-3.5 w-3.5" />
           {backlogCount} Aufgaben
         </span>
@@ -735,24 +740,29 @@ function ProjectCard({ project, backlogCount, onOpen }) {
     <button
       type="button"
       onClick={() => onOpen(project.id)}
-      className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:border-[#e6b8c0] hover:shadow-[0_16px_34px_rgba(136,54,66,0.10)]"
+      className="h-full rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:border-[#e6b8c0] hover:shadow-[0_16px_34px_rgba(136,54,66,0.10)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-base font-bold text-slate-950">{project.name}</h3>
-          <p className="mt-1 text-sm font-medium leading-6 text-slate-500">{project.summary}</p>
+          <h3 className="text-[15px] font-bold leading-tight text-slate-950">{project.name}</h3>
+          <p
+            className="mt-1 text-sm font-medium leading-5 text-slate-500"
+            style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+          >
+            {project.summary}
+          </p>
         </div>
-        <span className="rounded-full bg-[#fff0f2] px-3 py-1 text-xs font-bold text-[#b84758]">{project.visibility}</span>
+        <span className="rounded-full bg-[#fff0f2] px-2.5 py-1 text-[11px] font-bold text-[#b84758]">{project.visibility}</span>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
-        <span className="rounded-full bg-slate-100 px-3 py-1">{project.status}</span>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1">
+        <span className="rounded-full bg-slate-100 px-2.5 py-1">{project.status}</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1">
           <CalendarDays className="h-3.5 w-3.5" />
           {project.dueDate}
         </span>
-        <span className="rounded-full bg-slate-100 px-3 py-1">{project.owner}</span>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff0f2] px-3 py-1 text-[#b84758]">
+        <span className="rounded-full bg-slate-100 px-2.5 py-1">{project.owner}</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff0f2] px-2.5 py-1 text-[#b84758]">
           <ListChecks className="h-3.5 w-3.5" />
           {backlogCount} Aufgaben
         </span>
@@ -1843,10 +1853,17 @@ export default function ProjectsPage() {
     >
       <div className="space-y-6 px-4 py-4 xl:px-6">
         {viewMode === 'projects' ? (
-          <section className="overflow-x-auto rounded-3xl border border-slate-200 bg-white/70 p-3 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
-            <div className="flex min-w-max gap-4 pb-1">
+          <section className="rounded-3xl border-2 border-slate-900 bg-white/70 p-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Abteilungen</p>
+                <p className="mt-1 text-sm font-semibold text-slate-600">Kompakte Uebersicht ohne horizontales Scrollen.</p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">{visibleDepartments.length} Bereiche</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
               {visibleDepartments.map((department) => (
-                <div key={department.id} className="w-[300px] flex-none xl:w-[320px]">
+                <div key={department.id} className="min-w-0">
                   <DepartmentCard
                     department={department}
                     projectCount={projects.filter((project) => project.departmentId === department.id).length}
@@ -1863,7 +1880,7 @@ export default function ProjectsPage() {
           </section>
         ) : null}
 
-        <section className={`rounded-3xl border border-[#e6b8c0] bg-white p-5 shadow-[0_16px_40px_rgba(136,54,66,0.08)] ${viewMode === 'backlog' ? 'min-h-[calc(100vh-150px)]' : ''}`}>
+        <section className={`rounded-3xl border-2 border-slate-900 bg-white p-5 shadow-[0_16px_40px_rgba(136,54,66,0.08)] ${viewMode === 'backlog' ? 'min-h-[calc(100vh-150px)]' : ''}`}>
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#b84758]">
@@ -1936,7 +1953,7 @@ export default function ProjectsPage() {
           ) : null}
 
           {viewMode === 'projects' ? (
-            <div className="mt-5 grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {visibleProjects.map((project) => {
                 const projectBacklogCount = backlogTasks.filter((task) => task.projectId === project.id).length;
                 return (
