@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Building2, CalendarClock, CircleAlert, FolderOpen } from 'lucide-react';
+import { ArrowRight, CalendarClock, CircleAlert } from 'lucide-react';
 import AppShell from '../components/AppShell';
+import { useAuth } from '../context/AuthContext';
 import { initialTasks } from './MyTasksPage';
 import { initialBacklogTasks, initialDepartments, initialProjects } from './ProjectsPage';
 
@@ -21,6 +22,35 @@ const statusMeta = {
   review: { label: 'Review', tone: 'bg-[#7c59dc]', track: 'bg-[#efe9ff]' },
   blocked: { label: 'Blockiert', tone: 'bg-[#b84758]', track: 'bg-[#fdecef]' },
 };
+
+const defaultTaskLimit = 5;
+const taskLimitsByPerson = {
+  'Lisa Wagner': 6,
+  'Markus Klein': 5,
+  'Anna Becker': 5,
+  'Tom Becker': 6,
+  'Sarah Nguyen': 5,
+  'Elisabeth Bezverkha': 4,
+  'Nina Hoffmann': 5,
+};
+
+const departmentByAssignee = {
+  'Lisa Wagner': 'Digitales Banking',
+  'Markus Klein': 'Digitale Vertriebskanaele',
+  'Anna Becker': 'Produkt und Compliance',
+  'Tom Becker': 'Qualitaetssicherung',
+  'Sarah Nguyen': 'Marketing und Content',
+  'Elisabeth Bezverkha': 'Digitales Banking',
+  'Nina Hoffmann': 'Kundenservice',
+};
+
+const statusOrder = ['today', 'in-progress', 'review', 'blocked'];
+const deadlineMeta = [
+  { key: 'overdue', label: 'Ueberfaellig', tone: 'bg-[#b84758]', track: 'bg-[#fdecef]' },
+  { key: 'today', label: 'Heute', tone: 'bg-[#c97a11]', track: 'bg-[#f7ead8]' },
+  { key: 'soon', label: 'Kurz davor', tone: 'bg-[#4875c8]', track: 'bg-[#e6eefc]' },
+  { key: 'later', label: 'Spaeter', tone: 'bg-slate-400', track: 'bg-slate-100' },
+];
 
 function parseGermanDate(value) {
   if (!value) return Number.POSITIVE_INFINITY;
@@ -68,6 +98,31 @@ function sortByUrgency(left, right) {
   return left.title.localeCompare(right.title, 'de');
 }
 
+function getTaskLimit(person) {
+  return taskLimitsByPerson[person] || defaultTaskLimit;
+}
+
+function getTaskDepartment(task, departmentByProjectName) {
+  return task.department || departmentByProjectName[task.project] || departmentByAssignee[task.assignee] || 'Ohne Abteilung';
+}
+
+function getDaysUntilDue(task) {
+  const dueTime = parseGermanDate(task.dueDateValue || task.dueDate);
+  if (!Number.isFinite(dueTime)) return Number.POSITIVE_INFINITY;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.ceil((dueTime - today.getTime()) / 86400000);
+}
+
+function getDeadlineBucket(task) {
+  const daysUntilDue = getDaysUntilDue(task);
+  if (daysUntilDue < 0) return 'overdue';
+  if (daysUntilDue === 0) return 'today';
+  if (daysUntilDue <= 7) return 'soon';
+  return 'later';
+}
+
 function SectionHeader({ title, action }) {
   return (
     <div className="flex items-center justify-between gap-4">
@@ -79,8 +134,11 @@ function SectionHeader({ title, action }) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchValue, setSearchValue] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('Alle Abteilungen');
+  const assigneeNames = useMemo(() => [...new Set(initialTasks.map((task) => task.assignee).filter(Boolean))], []);
+  const currentAssignee = assigneeNames.includes(user?.name) ? user.name : assigneeNames[0] || user?.name || 'Teammitglied';
 
   const searchTerm = searchValue.trim().toLowerCase();
   const departmentByProjectName = useMemo(() => {
@@ -96,7 +154,7 @@ export default function DashboardPage() {
     const values = new Set(['Alle Abteilungen']);
     initialDepartments.forEach((department) => values.add(department.name));
     initialTasks.forEach((task) => {
-      const name = task.department || departmentByProjectName[task.project];
+      const name = getTaskDepartment(task, departmentByProjectName);
       if (name) values.add(name);
     });
     return [...values];
@@ -106,10 +164,14 @@ export default function DashboardPage() {
     return initialTasks.filter((task) => {
       if (task.status === 'done') return false;
       if (selectedDepartment === 'Alle Abteilungen') return true;
-      const departmentName = task.department || departmentByProjectName[task.project];
+      const departmentName = getTaskDepartment(task, departmentByProjectName);
       return departmentName === selectedDepartment;
     });
   }, [departmentByProjectName, selectedDepartment]);
+
+  const personalOpenTasks = useMemo(() => {
+    return openTasks.filter((task) => task.assignee === currentAssignee);
+  }, [currentAssignee, openTasks]);
 
   const visibleProjects = useMemo(() => {
     return initialProjects.filter((project) => {
@@ -118,16 +180,6 @@ export default function DashboardPage() {
       return department?.name === selectedDepartment;
     });
   }, [selectedDepartment]);
-
-  const visibleDepartmentCount = useMemo(() => {
-    if (selectedDepartment !== 'Alle Abteilungen') return visibleProjects.length ? 1 : 0;
-    const activeNames = new Set(
-      visibleProjects
-        .map((project) => initialDepartments.find((department) => department.id === project.departmentId)?.name)
-        .filter(Boolean),
-    );
-    return activeNames.size;
-  }, [selectedDepartment, visibleProjects]);
 
   const focusTasks = useMemo(() => {
     const baseTasks = [...openTasks].sort(sortByUrgency).slice(0, 4);
@@ -205,44 +257,46 @@ export default function DashboardPage() {
     return combined.filter((item) => [item.title, item.meta, item.type].join(' ').toLowerCase().includes(searchTerm));
   }, [openTasks, searchTerm, visibleProjects]);
 
-  const kpis = useMemo(
-    () => ({
-      openTasks: openTasks.length,
-      todayDue: openTasks.filter((task) => task.status === 'today').length,
-      activeProjects: visibleProjects.filter((project) => !['Abgeschlossen', 'Archiviert'].includes(project.status)).length,
-      activeDepartments: visibleDepartmentCount,
-    }),
-    [openTasks, visibleDepartmentCount, visibleProjects],
-  );
-
   const statusOverview = useMemo(() => {
-    const total = openTasks.length || 1;
-    const counts = Object.keys(statusMeta).map((key) => ({
+    const total = personalOpenTasks.length || 1;
+    const counts = statusOrder.map((key) => ({
       key,
       ...statusMeta[key],
-      value: openTasks.filter((task) => task.status === key).length,
+      value: personalOpenTasks.filter((task) => task.status === key).length,
     }));
 
     return counts.map((item) => ({
       ...item,
       percent: Math.round((item.value / total) * 100),
     }));
-  }, [openTasks]);
+  }, [personalOpenTasks]);
 
-  const workloadScore = useMemo(() => {
-    const todayCount = openTasks.filter((task) => task.status === 'today').length;
-    const inProgressCount = openTasks.filter((task) => task.status === 'in-progress').length;
-    const reviewCount = openTasks.filter((task) => task.status === 'review').length;
-    const blockedCount = openTasks.filter((task) => task.status === 'blocked').length;
+  const workload = useMemo(() => {
+    const limit = getTaskLimit(currentAssignee);
+    const assignedCount = personalOpenTasks.length;
+    const freeSlots = Math.max(limit - assignedCount, 0);
+    const percent = limit ? Math.min(Math.round((assignedCount / limit) * 100), 100) : 0;
 
-    return Math.min(100, todayCount * 18 + inProgressCount * 10 + reviewCount * 16 + blockedCount * 24);
-  }, [openTasks]);
+    return {
+      assignedCount,
+      freeSlots,
+      limit,
+      percent,
+      label: percent >= 85 ? 'hoch' : percent >= 55 ? 'normal' : 'ruhig',
+    };
+  }, [currentAssignee, personalOpenTasks]);
 
-  const workloadLabel = useMemo(() => {
-    if (workloadScore >= 75) return 'hoch';
-    if (workloadScore >= 45) return 'mittel';
-    return 'stabil';
-  }, [workloadScore]);
+  const deadlineOverview = useMemo(() => {
+    const total = personalOpenTasks.length || 1;
+    return deadlineMeta.map((item) => {
+      const value = personalOpenTasks.filter((task) => getDeadlineBucket(task) === item.key).length;
+      return {
+        ...item,
+        value,
+        percent: Math.round((value / total) * 100),
+      };
+    });
+  }, [personalOpenTasks]);
 
   return (
     <AppShell
@@ -275,107 +329,90 @@ export default function DashboardPage() {
                 </select>
               </label>
               <span className="inline-flex h-11 items-center rounded-xl bg-[#fff5f7] px-4 text-sm font-bold text-[#b84758]">
-                {workloadScore}% Auslastung
+                {workload.percent}% Auslastung
               </span>
             </div>
           </div>
 
-          <div className="mt-5 grid gap-5 xl:grid-cols-[220px_1fr_260px]">
+          <div className="mt-5 grid gap-5 xl:grid-cols-[220px_1fr]">
             <div className="rounded-[26px] border border-slate-300 bg-[#fff8fa] p-5">
-              <p className="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-slate-400">Belastungsskala</p>
-              <div className="mt-4 flex items-end justify-between gap-4">
-                <div>
-                  <p className="text-5xl font-black tracking-tight text-slate-950">{workloadScore}</p>
-                  <p className="mt-2 text-sm font-semibold text-slate-500">Arbeitslage {workloadLabel}</p>
-                </div>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#b84758]">live</span>
-              </div>
-              <div className="mt-5 h-3 overflow-hidden rounded-full bg-white">
+              <p className="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-slate-400">Meine Auslastung</p>
+              <div className="mt-5 flex flex-col items-center text-center">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#f3c5cd] via-[#d87384] to-[#b84758]"
-                  style={{ width: `${workloadScore}%` }}
-                />
+                  className="relative flex h-36 w-36 items-center justify-center rounded-full"
+                  style={{
+                    background: `conic-gradient(#b84758 ${workload.percent * 3.6}deg, #f7dfe4 0deg)`,
+                  }}
+                  aria-label={`${workload.assignedCount} von ${workload.limit} Aufgaben belegt`}
+                >
+                  <div className="flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full bg-white shadow-inner">
+                    <p className="text-3xl font-black tracking-tight text-slate-950">
+                      {workload.assignedCount}/{workload.limit}
+                    </p>
+                    <p className="text-xs font-bold text-slate-400">Aufgabenlimit</p>
+                  </div>
+                </div>
+                <p className="mt-4 text-lg font-black text-slate-950">{workload.percent}% ausgelastet</p>
+                <p className="mt-1 text-sm font-semibold text-slate-500">{currentAssignee}</p>
               </div>
-              <div className="mt-3 flex justify-between text-xs font-semibold text-slate-400">
-                <span>ruhig</span>
-                <span>normal</span>
-                <span>hoch</span>
+              <div className="mt-5 grid grid-cols-2 gap-2 text-left">
+                <div className="rounded-2xl bg-white px-3 py-3">
+                  <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-slate-400">zugeteilt</p>
+                  <p className="mt-1 text-lg font-black text-slate-950">{workload.assignedCount}</p>
+                </div>
+                <div className="rounded-2xl bg-white px-3 py-3">
+                  <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-slate-400">frei</p>
+                  <p className="mt-1 text-lg font-black text-slate-950">{workload.freeSlots}</p>
+                </div>
+              </div>
+              <div className="mt-4 flex justify-between text-xs font-semibold text-slate-400">
+                <span className={workload.label === 'ruhig' ? 'text-emerald-600' : ''}>ruhig</span>
+                <span className={workload.label === 'normal' ? 'text-amber-600' : ''}>normal</span>
+                <span className={workload.label === 'hoch' ? 'text-[#b84758]' : ''}>hoch</span>
               </div>
             </div>
 
             <div className="rounded-[26px] border border-slate-200 bg-[#fcfcfd] p-5">
-              <div className="grid gap-4 md:grid-cols-2">
-                {statusOverview.map((item) => (
-                  <div key={item.key} className="space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-bold text-slate-700">{item.label}</p>
-                      <span className="text-sm font-semibold text-slate-500">{item.value}</span>
-                    </div>
-                    <div className={`h-3 overflow-hidden rounded-full ${item.track}`}>
-                      <div className={`h-full rounded-full ${item.tone}`} style={{ width: `${item.percent}%` }} />
-                    </div>
-                    <p className="text-xs font-semibold text-slate-400">{item.percent}% der offenen Aufgaben</p>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div>
+                  <p className="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-slate-400">Aufgabenstatus</p>
+                  <div className="mt-4 space-y-4">
+                    {statusOverview.map((item) => (
+                      <div key={item.key} className="space-y-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-bold text-slate-700">{item.label}</p>
+                          <span className="text-sm font-semibold text-slate-500">{item.value}</span>
+                        </div>
+                        <div className={`h-3 overflow-hidden rounded-full ${item.track}`}>
+                          <div className={`h-full rounded-full ${item.tone}`} style={{ width: `${item.percent}%` }} />
+                        </div>
+                        <p className="text-xs font-semibold text-slate-400">{item.percent}% deiner offenen Aufgaben</p>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                <div>
+                  <p className="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-slate-400">Fristen</p>
+                  <div className="mt-4 space-y-4">
+                    {deadlineOverview.map((item) => (
+                      <div key={item.key} className="space-y-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-bold text-slate-700">{item.label}</p>
+                          <span className="text-sm font-semibold text-slate-500">{item.value}</span>
+                        </div>
+                        <div className={`h-3 overflow-hidden rounded-full ${item.track}`}>
+                          <div className={`h-full rounded-full ${item.tone}`} style={{ width: `${item.percent}%` }} />
+                        </div>
+                        <p className="text-xs font-semibold text-slate-400">{item.percent}% deiner offenen Aufgaben</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-
-            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-              <button
-                type="button"
-                onClick={() => navigate('/my-tasks')}
-                className="rounded-[24px] border border-slate-300 bg-[#fff5f7] px-4 py-4 text-left transition hover:border-slate-400 hover:bg-white"
-              >
-                <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Aufgaben</p>
-                <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{kpis.openTasks}</p>
-                <p className="mt-2 text-sm font-semibold text-slate-500">
-                  {selectedDepartment === 'Alle Abteilungen' ? 'offen im Workspace' : `offen in ${selectedDepartment}`}
-                </p>
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/projects')}
-                className="rounded-[24px] border border-slate-300 bg-[#f4f8ff] px-4 py-4 text-left transition hover:border-slate-400 hover:bg-white"
-              >
-                <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Projekte</p>
-                <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{kpis.activeProjects}</p>
-                <p className="mt-2 text-sm font-semibold text-slate-500">
-                  {selectedDepartment === 'Alle Abteilungen' ? 'aktive Vorhaben im Workspace' : 'aktive Vorhaben im Bereich'}
-                </p>
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/reports')}
-                className="rounded-[24px] border border-slate-300 bg-[#fff8ef] px-4 py-4 text-left transition hover:border-slate-400 hover:bg-white"
-              >
-                <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Fristen</p>
-                <p className="mt-3 text-3xl font-black tracking-tight text-slate-950">{upcomingItems.length}</p>
-                <p className="mt-2 text-sm font-semibold text-slate-500">naechste Termine und Faelligkeiten</p>
-              </button>
-            </div>
           </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
-            <div className="rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4">
-              <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Heute priorisiert</p>
-              <p className="mt-2 text-lg font-black text-slate-950">{kpis.todayDue} Faelligkeiten</p>
-              <p className="mt-1 text-sm text-slate-500">direkt aus dem Aufgabenbereich</p>
-            </div>
-            <div className="rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4">
-              <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Abteilungen</p>
-              <p className="mt-2 text-lg font-black text-slate-950">
-                {selectedDepartment === 'Alle Abteilungen' ? `${kpis.activeDepartments} Bereiche aktiv` : selectedDepartment}
-              </p>
-              <p className="mt-1 text-sm text-slate-500">
-                {selectedDepartment === 'Alle Abteilungen' ? 'mit Projekt- und Backlog-Bezug' : 'fokussierte Live-Uebersicht'}
-              </p>
-            </div>
-            <div className="rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4">
-              <p className="text-[0.72rem] font-bold uppercase tracking-[0.22em] text-slate-400">Fokus</p>
-              <p className="mt-2 text-lg font-black text-slate-950">{focusTasks.length} priorisierte Themen</p>
-              <p className="mt-1 text-sm text-slate-500">sortiert nach Dringlichkeit und Termin</p>
-            </div>
-          </div>
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
