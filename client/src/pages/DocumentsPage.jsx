@@ -24,6 +24,8 @@ const createMenuItems = ['Neue Seite', 'Neues Dokument', 'Neue Vorlage', 'Upload
 
 const typeOptions = ['Alle Typen', 'Richtlinie', 'Kontrollnachweis', 'Projektunterlage', 'Vorlage', 'Prozessdokument'];
 const statusOptions = ['Alle Stati', 'Entwurf', 'In Pruefung', 'Freigegeben', 'Abgelaufen'];
+const documentSelectClass =
+  'h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12';
 
 const documents = [
   {
@@ -164,6 +166,17 @@ function statusTone(value) {
   if (value === 'In Pruefung') return 'bg-[#fff6e8] text-[#b76c12]';
   if (value === 'Abgelaufen') return 'bg-[#fff0f2] text-[#b84758]';
   return 'bg-[#edf4ff] text-[#4875c8]';
+}
+
+function DocumentFilterField({ label, value, onChange, children }) {
+  return (
+    <label className="min-w-[180px] flex-1 space-y-2">
+      <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">{label}</span>
+      <select value={value} onChange={onChange} className={documentSelectClass}>
+        {children}
+      </select>
+    </label>
+  );
 }
 
 function DocumentModal({ document, onClose }) {
@@ -350,63 +363,36 @@ export default function DocumentsPage() {
       activeItem="Dokumente"
       hideBreadcrumb
       searchPlacement="actions"
+      headerTitle="Dokumente"
       searchValue={searchValue}
       onSearch={setSearchValue}
       createMenuItems={createMenuItems}
     >
-      <div className="space-y-7">
-        <section className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-            <div className="max-w-2xl">
-              <h1 className="text-[2.4rem] font-extrabold tracking-tight text-slate-950">Dokumente</h1>
-              <p className="mt-3 text-base leading-7 text-slate-500">
-                Zentrale Wissens-, Freigabe- und Nachweisplattform fuer Projekte, Prozesse und regulatorische Anforderungen.
-              </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[760px]">
-              <label className="space-y-2">
-                <span className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Abteilung</span>
-                <select
-                  value={selectedDepartment}
-                  onChange={(event) => setSelectedDepartment(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12"
-                >
-                  <option>Alle Abteilungen</option>
-                  {initialDepartments.map((department) => (
-                    <option key={department.id}>{department.name}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-2">
-                <span className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Dokumenttyp</span>
-                <select
-                  value={selectedType}
-                  onChange={(event) => setSelectedType(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12"
-                >
-                  {typeOptions.map((option) => (
-                    <option key={option}>{option}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-2">
-                <span className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Status</span>
-                <select
-                  value={selectedStatus}
-                  onChange={(event) => setSelectedStatus(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12"
-                >
-                  {statusOptions.map((option) => (
-                    <option key={option}>{option}</option>
-                  ))}
-                </select>
-              </label>
+      <div className="space-y-6 px-4 py-4 xl:px-6">
+        <section className="rounded-[30px] border-2 border-slate-900 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <div className="rounded-[24px] border border-slate-200 bg-[#f8fafc] p-4">
+            <div className="flex flex-wrap items-end gap-3 xl:flex-nowrap">
+              <DocumentFilterField label="Abteilung" value={selectedDepartment} onChange={(event) => setSelectedDepartment(event.target.value)}>
+                <option>Alle Abteilungen</option>
+                {initialDepartments.map((department) => (
+                  <option key={department.id}>{department.name}</option>
+                ))}
+              </DocumentFilterField>
+              <DocumentFilterField label="Dokumenttyp" value={selectedType} onChange={(event) => setSelectedType(event.target.value)}>
+                {typeOptions.map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
+              </DocumentFilterField>
+              <DocumentFilterField label="Status" value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)}>
+                {statusOptions.map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
+              </DocumentFilterField>
             </div>
           </div>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
             {
               label: 'Freigegebene Dokumente',
@@ -441,23 +427,23 @@ export default function DocumentsPage() {
             return (
               <article
                 key={item.label}
-                className="rounded-[24px] border border-slate-900 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)]"
+                className="flex min-h-[168px] flex-col rounded-[24px] border-2 border-slate-900 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)]"
               >
                 <div className="flex items-start gap-3">
                   <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${item.tone}`}>
                     <Icon className="h-4.5 w-4.5" />
                   </span>
                 </div>
-                <p className="mt-3 text-sm font-semibold text-slate-500">{item.label}</p>
+                <p className="mt-3 text-sm font-semibold leading-5 text-slate-500">{item.label}</p>
                 <p className="mt-1.5 text-[1.8rem] font-extrabold tracking-tight text-slate-950">{item.value}</p>
-                <p className="mt-1.5 text-sm font-semibold text-slate-500">{item.detail}</p>
+                <p className="mt-auto pt-3 text-sm font-semibold leading-5 text-slate-500">{item.detail}</p>
               </article>
             );
           })}
         </section>
 
-        <section className="rounded-[30px] border border-slate-900 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-          <div className="flex flex-wrap gap-3">
+        <section className="rounded-[30px] border-2 border-slate-900 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <div className="grid gap-3 xl:grid-cols-4">
             {sectionCards.map((section) => {
               const Icon = section.icon;
 
@@ -466,7 +452,7 @@ export default function DocumentsPage() {
                   key={section.id}
                   type="button"
                   onClick={() => setActiveSection(section.id)}
-                  className={`flex min-w-[220px] flex-1 items-center gap-3 rounded-[22px] border px-4 py-4 text-left transition ${
+                  className={`flex min-h-[108px] items-center gap-3 rounded-[22px] border px-4 py-4 text-left transition ${
                     activeSection === section.id
                       ? 'border-[#e8a9b3] bg-[#fff7f8] shadow-[0_12px_28px_rgba(184,71,88,0.08)]'
                       : 'border-slate-200 bg-[#fcfdff] hover:border-slate-900 hover:bg-white'
@@ -476,8 +462,8 @@ export default function DocumentsPage() {
                     <Icon className="h-4.5 w-4.5" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-extrabold text-slate-950">{section.title}</span>
-                    <span className="mt-1 block text-xs font-semibold text-slate-500">{section.description}</span>
+                    <span className="block text-sm font-extrabold text-slate-950">{section.title}</span>
+                    <span className="mt-1 block text-xs font-semibold leading-5 text-slate-500">{section.description}</span>
                   </span>
                   <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600">{section.count}</span>
                 </button>
