@@ -166,6 +166,7 @@ function SettingRow({ icon: Icon, label, description, children }) {
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuth();
+  const [searchValue, setSearchValue] = useState('');
   const [profileForm, setProfileForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -397,17 +398,25 @@ export default function SettingsPage() {
   };
 
   return (
-    <AppShell activeItem="Einstellungen" breadcrumb={['Workspace', 'Einstellungen', 'Profil']}>
-      <div className="min-h-full bg-[#f8fafc] px-4 py-5 lg:px-6">
-        <div className="mx-auto max-w-6xl space-y-5">
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+    <AppShell
+      activeItem="Einstellungen"
+      hideBreadcrumb
+      searchPlacement="actions"
+      headerTitle="Einstellungen"
+      createMenuItems={[]}
+      searchValue={searchValue}
+      onSearch={setSearchValue}
+    >
+      <div className="space-y-6 px-4 py-4 xl:px-6">
+        <div className="space-y-5">
+          <section className="rounded-[30px] border-2 border-slate-900 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="flex min-w-0 items-center gap-4">
                 <span className="inline-flex h-16 w-16 flex-none items-center justify-center rounded-2xl bg-[#fff1f3] text-xl font-extrabold text-[#b84758]">
                   {getInitials(profileForm.name)}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#b84758]">Profil</p>
+                  <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Profil</p>
                   <h1 className="mt-1 text-2xl font-extrabold text-slate-950">{profileForm.name || 'Profil bearbeiten'}</h1>
                   <p className="mt-1 text-sm font-medium text-slate-500">
                     {roleLabel} in {profileForm.department || 'keiner Abteilung'}
@@ -428,26 +437,26 @@ export default function SettingsPage() {
           </section>
 
           {isLoading ? (
-            <div className="rounded-2xl border border-slate-200 bg-white px-5 py-8 text-sm font-bold text-slate-500">
+            <div className="rounded-[30px] border-2 border-slate-900 bg-white px-5 py-8 text-sm font-bold text-slate-500">
               Profil wird geladen ...
             </div>
           ) : null}
 
-          <section className="rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+          <section className="rounded-[30px] border-2 border-slate-900 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
             <button
               type="button"
               onClick={() => setAppearanceOpen((current) => !current)}
               className="flex w-full flex-wrap items-center justify-between gap-4 p-5 text-left"
             >
               <span className="flex min-w-0 items-center gap-4">
-                <span className="inline-flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-[#fff1f3] text-[#b84758]">
-                  <Palette className="h-6 w-6" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-xs font-extrabold uppercase tracking-[0.16em] text-[#b84758]">Schublade</span>
-                  <span className="mt-1 block text-lg font-extrabold text-slate-950">Layout & Darstellung</span>
-                  <span className="mt-1 block text-sm font-medium text-slate-500">
-                    Darkmode, Dichte und Startansicht fuer dein Arbeitsgefuehl.
+                  <span className="inline-flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-[#fff1f3] text-[#b84758]">
+                    <Palette className="h-6 w-6" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Darstellung</span>
+                    <span className="mt-1 block text-lg font-extrabold text-slate-950">Layout & Darstellung</span>
+                    <span className="mt-1 block text-sm font-medium text-slate-500">
+                      Darkmode, Dichte und Startansicht fuer dein Arbeitsgefuehl.
                   </span>
                 </span>
               </span>
@@ -631,7 +640,7 @@ export default function SettingsPage() {
           </section>
 
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-            <form onSubmit={handleProfileSubmit} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+            <form onSubmit={handleProfileSubmit} className="rounded-[30px] border-2 border-slate-900 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-4">
                 <div>
                   <h2 className="text-lg font-extrabold text-slate-950">Persoenliche Daten</h2>
@@ -711,7 +720,7 @@ export default function SettingsPage() {
               </div>
             </form>
 
-            <form onSubmit={handlePasswordSubmit} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+            <form onSubmit={handlePasswordSubmit} className="rounded-[30px] border-2 border-slate-900 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
               <div className="border-b border-slate-200 pb-4">
                 <h2 className="text-lg font-extrabold text-slate-950">Passwort</h2>
                 <p className="mt-1 text-sm font-medium text-slate-500">Aendere dein Passwort fuer den direkten Login.</p>
