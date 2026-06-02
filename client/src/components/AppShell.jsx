@@ -240,10 +240,10 @@ export default function AppShell({
 
             <div className={`ml-auto flex items-center gap-3 ${searchPlacement === 'actions' ? 'w-full justify-end' : ''}`}>
               {searchPlacement === 'actions' && headerTitle ? (
-                <h1 className="mr-auto w-full max-w-[420px] text-center text-3xl font-extrabold text-slate-950">{headerTitle}</h1>
+                <h1 className="mr-auto w-full max-w-[240px] text-left text-xl font-extrabold text-slate-950 lg:text-2xl">{headerTitle}</h1>
               ) : null}
               {searchPlacement === 'actions' ? (
-                <div className="relative w-full min-w-[420px] max-w-[760px]">
+                <div className="relative w-full min-w-[280px] max-w-[560px]">
                   <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <input
                     ref={searchInputRef}

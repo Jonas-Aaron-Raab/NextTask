@@ -698,20 +698,20 @@ function DepartmentCard({ department, projectCount, backlogCount, isActive, onOp
     <button
       type="button"
       onClick={() => onOpen(department.id)}
-      className={`h-full min-h-[268px] rounded-[1.75rem] border p-4 text-left shadow-[0_10px_26px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 ${department.accent} ${
+      className={`h-full min-h-[208px] rounded-[1.5rem] border p-3.5 text-left shadow-[0_10px_26px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 ${department.accent} ${
         isActive ? 'ring-4 ring-[#c95767]/12' : ''
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#b84758] shadow-[0_8px_18px_rgba(184,71,88,0.10)]">
-          <Building2 className="h-5 w-5" />
+      <div className="flex items-start justify-between gap-2.5">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#b84758] shadow-[0_8px_18px_rgba(184,71,88,0.10)]">
+          <Building2 className="h-4.5 w-4.5" />
         </span>
         <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${department.badgeTone}`}>{projectCount} Projekte</span>
       </div>
 
-      <h2 className="mt-4 text-lg font-extrabold leading-tight text-slate-950">{department.name}</h2>
+      <h2 className="mt-3.5 text-[1.55rem] font-extrabold leading-tight text-slate-950">{department.name}</h2>
 
-      <div className="mt-4 grid gap-2 text-xs font-bold text-slate-500 sm:grid-cols-2">
+      <div className="mt-3.5 grid gap-2 text-[11px] font-bold text-slate-500 sm:grid-cols-2">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5">
           <Users className="h-3.5 w-3.5" />
           {department.memberCount} Personen
@@ -1834,6 +1834,7 @@ export default function ProjectsPage() {
       activeItem="Projekte"
       hideBreadcrumb
       searchPlacement="actions"
+      headerTitle="Projekte"
       createMenuItems={createMenuItems}
       onCreateAction={handleCreateAction}
       searchValue={searchValue}
@@ -1850,13 +1851,13 @@ export default function ProjectsPage() {
           <section className="rounded-3xl border-2 border-slate-900 bg-white/70 p-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-[#b84758]">Abteilungen</p>
+                <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Abteilungen</p>
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">{visibleDepartments.length} Bereiche</span>
             </div>
-            <div className="mx-auto flex max-w-[1012px] flex-wrap justify-center gap-4">
+            <div className="mx-auto flex max-w-[820px] flex-wrap justify-center gap-3">
               {visibleDepartments.map((department) => (
-                <div key={department.id} className="w-full min-w-0 sm:w-[320px]">
+                <div key={department.id} className="w-full min-w-0 sm:w-[250px]">
                   <DepartmentCard
                     department={department}
                     projectCount={projects.filter((project) => project.departmentId === department.id).length}
@@ -1874,6 +1875,16 @@ export default function ProjectsPage() {
         ) : null}
 
         <section className={`rounded-3xl border-2 border-slate-900 bg-white p-5 shadow-[0_16px_40px_rgba(136,54,66,0.08)] ${viewMode === 'backlog' ? 'min-h-[calc(100vh-150px)]' : ''}`}>
+          {viewMode === 'projects' ? (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+              <div>
+                <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Projekte</p>
+              </div>
+              {selectedDepartment ? (
+                <span className="rounded-full bg-[#fff3f5] px-3 py-1 text-xs font-bold text-[#b84758]">{selectedDepartment.name}</span>
+              ) : null}
+            </div>
+          ) : null}
           {viewMode === 'backlog' ? (
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4">
               <div>
