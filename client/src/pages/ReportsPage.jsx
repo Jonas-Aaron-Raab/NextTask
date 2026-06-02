@@ -14,6 +14,8 @@ import { initialTasks } from './MyTasksPage';
 import { initialBacklogTasks, initialDepartments, initialProjects } from './ProjectsPage';
 
 const periods = ['Diese Woche', 'Dieser Monat', 'Dieses Jahr'];
+const reportSelectClass =
+  'h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12';
 
 const taskDepartmentMap = {
   'Website Relaunch': 'Digitales Banking',
@@ -74,6 +76,17 @@ function DonutChart({ segments }) {
         <p className="mt-1 text-xs font-extrabold uppercase tracking-[0.24em] text-slate-400">Aufgaben</p>
       </div>
     </div>
+  );
+}
+
+function ReportFilterField({ label, value, onChange, children }) {
+  return (
+    <label className="min-w-[180px] flex-1 space-y-2">
+      <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">{label}</span>
+      <select value={value} onChange={onChange} className={reportSelectClass}>
+        {children}
+      </select>
+    </label>
   );
 }
 
@@ -300,69 +313,38 @@ export default function ReportsPage() {
       activeItem="Reports"
       hideBreadcrumb
       searchPlacement="actions"
+      headerTitle="Reports"
       searchValue={searchValue}
       onSearch={setSearchValue}
     >
-      <div className="space-y-7">
-        <section className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-            <div className="max-w-2xl">
-              <h1 className="text-[2.4rem] font-extrabold tracking-tight text-slate-950">Reports</h1>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-4 xl:min-w-[980px]">
-              <label className="space-y-2">
-                <span className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Zeitraum</span>
-                <select
-                  value={selectedPeriod}
-                  onChange={(event) => setSelectedPeriod(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12"
-                >
-                  {periods.map((period) => (
-                    <option key={period}>{period}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-2">
-                <span className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Abteilung</span>
-                <select
-                  value={selectedDepartment}
-                  onChange={(event) => setSelectedDepartment(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12"
-                >
-                  {departmentOptions.map((department) => (
-                    <option key={department}>{department}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-2">
-                <span className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Exportformat</span>
-                <select
-                  value={exportFormat}
-                  onChange={(event) => setExportFormat(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12"
-                >
-                  <option>PDF</option>
-                  <option>Excel</option>
-                </select>
-              </label>
-              <label className="space-y-2">
-                <span className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Projekt auswaehlen</span>
-                <select
-                  value={selectedProject}
-                  onChange={(event) => setSelectedProject(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-[#f8fafc] px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12"
-                >
-                  {projectOptions.map((project) => (
-                    <option key={project}>{project}</option>
-                  ))}
-                </select>
-              </label>
-              <div className="space-y-2">
-                <span className="block text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Export</span>
+      <div className="space-y-6 px-4 py-4 xl:px-6">
+        <section className="rounded-[30px] border-2 border-slate-900 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <div className="rounded-[24px] border border-slate-200 bg-[#f8fafc] p-4">
+            <div className="flex flex-wrap items-end gap-3 xl:flex-nowrap">
+              <ReportFilterField label="Zeitraum" value={selectedPeriod} onChange={(event) => setSelectedPeriod(event.target.value)}>
+                {periods.map((period) => (
+                  <option key={period}>{period}</option>
+                ))}
+              </ReportFilterField>
+              <ReportFilterField label="Abteilung" value={selectedDepartment} onChange={(event) => setSelectedDepartment(event.target.value)}>
+                {departmentOptions.map((department) => (
+                  <option key={department}>{department}</option>
+                ))}
+              </ReportFilterField>
+              <ReportFilterField label="Exportformat" value={exportFormat} onChange={(event) => setExportFormat(event.target.value)}>
+                <option>PDF</option>
+                <option>Excel</option>
+              </ReportFilterField>
+              <ReportFilterField label="Projekt" value={selectedProject} onChange={(event) => setSelectedProject(event.target.value)}>
+                {projectOptions.map((project) => (
+                  <option key={project}>{project}</option>
+                ))}
+              </ReportFilterField>
+              <div className="min-w-[200px] flex-1 space-y-2 xl:max-w-[240px]">
+                <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">Export</span>
                 <button
                   type="button"
-                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#b84758] px-5 text-sm font-bold text-white transition hover:bg-[#a23d4d]"
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white transition hover:bg-[#a23d4d]"
                 >
                   <Download className="h-4 w-4" />
                   Als {exportFormat} exportieren
@@ -372,31 +354,31 @@ export default function ReportsPage() {
           </div>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-6">
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
           {kpis.map((item) => {
             const Icon = item.icon;
 
             return (
               <article
                 key={item.id}
-                className="rounded-[26px] border border-slate-900 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]"
+                className="flex min-h-[168px] flex-col rounded-[24px] border-2 border-slate-900 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.05)]"
               >
                 <div className="flex items-start gap-3">
-                  <span className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${item.tone}`}>
-                    <Icon className="h-5 w-5" />
+                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${item.tone}`}>
+                    <Icon className="h-4.5 w-4.5" />
                   </span>
                 </div>
-                <p className="mt-4 text-sm font-semibold text-slate-500">{item.label}</p>
-                <p className="mt-2 text-[2rem] font-extrabold tracking-tight text-slate-950">{item.value}</p>
-                <p className="mt-2 text-sm font-semibold text-slate-500">{item.trend}</p>
+                <p className="mt-4 text-sm font-semibold leading-5 text-slate-500">{item.label}</p>
+                <p className="mt-2 text-[1.75rem] font-extrabold tracking-tight text-slate-950">{item.value}</p>
+                <p className="mt-auto pt-3 text-sm font-semibold leading-5 text-slate-500">{item.trend}</p>
               </article>
             );
           })}
         </section>
 
         <section>
-          <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
-          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <div className="grid gap-6 xl:grid-cols-2 xl:items-stretch">
+          <article className="h-full rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Aufgabenstatus</h2>
@@ -428,19 +410,19 @@ export default function ReportsPage() {
             </div>
           </article>
 
-          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <article className="h-full rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div>
               <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Projektfortschritt</h2>
             </div>
 
-            <div className="mt-6 grid min-h-[356px] gap-4 xl:grid-cols-[0.92fr_1.08fr]">
-              <div className="space-y-3">
+            <div className="mt-6 grid min-h-[356px] gap-4 xl:grid-cols-[0.92fr_1.08fr] xl:items-stretch">
+              <div className="grid auto-rows-fr gap-3">
                 {filteredProjects.map((project) => (
                   <button
                     key={project.id}
                     type="button"
                     onClick={() => setActiveProjectId(project.id)}
-                    className={`w-full rounded-[22px] border p-4 text-left transition ${
+                    className={`flex h-full min-h-[136px] flex-col justify-between rounded-[22px] border p-4 text-left transition ${
                       activeProject?.id === project.id
                         ? 'border-[#e8a9b3] bg-[#fff7f8] shadow-[0_12px_28px_rgba(184,71,88,0.08)]'
                         : 'border-slate-200 bg-[#fcfdff] hover:border-slate-900 hover:bg-white'
@@ -462,7 +444,7 @@ export default function ReportsPage() {
               </div>
 
               {activeProject ? (
-                <article className="rounded-[24px] border border-slate-200 bg-[#fcfdff] p-5">
+                <article className="flex h-full flex-col rounded-[24px] border border-slate-200 bg-[#fcfdff] p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">{activeProject.departmentName}</p>
@@ -485,7 +467,7 @@ export default function ReportsPage() {
                     </div>
                   </div>
 
-                  <div className="mt-6 grid gap-3 md:grid-cols-2">
+                  <div className="mt-auto grid gap-3 pt-6 md:grid-cols-2">
                     <div className="rounded-2xl bg-white p-4">
                       <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Offene Aufgaben</p>
                       <p className="mt-2 text-2xl font-extrabold text-slate-950">{activeProject.openTasks}</p>
@@ -506,8 +488,8 @@ export default function ReportsPage() {
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-2">
-          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+        <section className="grid gap-6 xl:grid-cols-2 xl:items-stretch">
+          <article className="h-full rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Team-Auslastung</h2>
@@ -517,16 +499,17 @@ export default function ReportsPage() {
               </span>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
               {teamLoad.map((member) => (
-                <div key={member.name} className="rounded-[22px] border border-slate-200 bg-[#fcfdff] p-4">
+                <div key={member.name} className="grid min-h-[220px] grid-rows-[auto_1fr_auto] rounded-[22px] border border-slate-200 bg-[#fcfdff] p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-lg font-extrabold text-slate-950">{member.name}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-lg font-extrabold text-slate-950 break-words">{member.name}</p>
                       <p className="text-sm font-semibold text-slate-500">{member.role}</p>
                     </div>
-                    <p className="text-lg font-extrabold text-slate-950">{member.load}%</p>
+                    <p className="shrink-0 whitespace-nowrap text-lg font-extrabold text-slate-950">{member.load}%</p>
                   </div>
+                  <div />
                   <div className="mt-4 h-3 rounded-full bg-slate-100">
                     <div
                       className="h-3 rounded-full"
@@ -538,7 +521,7 @@ export default function ReportsPage() {
             </div>
           </article>
 
-          <article className="rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <article className="h-full rounded-[30px] border border-slate-900 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Wochenzusammenfassung</h2>
@@ -549,21 +532,21 @@ export default function ReportsPage() {
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <div className="rounded-[22px] bg-[#f8fafc] p-4">
+              <div className="min-h-[150px] rounded-[22px] bg-[#f8fafc] p-4">
                 <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Erledigt</p>
                 <p className="mt-2 text-lg font-extrabold text-slate-950">{taskMetrics.done} Aufgaben abgeschlossen</p>
               </div>
-              <div className="rounded-[22px] bg-[#f8fafc] p-4">
+              <div className="min-h-[150px] rounded-[22px] bg-[#f8fafc] p-4">
                 <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Offen</p>
                 <p className="mt-2 text-lg font-extrabold text-slate-950">
                   {taskMetrics.open + taskMetrics.inProgress + taskMetrics.review} Aufgaben noch offen
                 </p>
               </div>
-              <div className="rounded-[22px] bg-[#f8fafc] p-4">
+              <div className="min-h-[150px] rounded-[22px] bg-[#f8fafc] p-4">
                 <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Ueberfaellig</p>
                 <p className="mt-2 text-lg font-extrabold text-slate-950">{taskMetrics.blocked} Aufgaben kritisch oder blockiert</p>
               </div>
-              <div className="rounded-[22px] bg-[#f8fafc] p-4">
+              <div className="min-h-[150px] rounded-[22px] bg-[#f8fafc] p-4">
                 <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Aufmerksamkeit</p>
                 <p className="mt-2 text-lg font-extrabold text-slate-950">{attentionProject?.name}</p>
               </div>
