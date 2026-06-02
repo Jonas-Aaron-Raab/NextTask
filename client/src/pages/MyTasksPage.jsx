@@ -676,7 +676,7 @@ function PopupShell({ title, subtitle, onClose, children, maxWidth = 'max-w-3xl'
 function SummaryStrip({ stats, controlCount, performanceValue, onOpenStat, onOpenControls, onOpenPerformance }) {
   return (
     <div className="grid gap-3 xl:grid-cols-[minmax(0,2.3fr)_minmax(190px,0.75fr)_minmax(190px,0.75fr)]">
-      <section className="rounded-2xl border border-[#f0d7db] bg-white p-2.5 shadow-[0_12px_32px_rgba(136,54,66,0.08)]">
+      <section className="rounded-2xl border-2 border-slate-900 bg-white p-2.5 shadow-[0_12px_32px_rgba(136,54,66,0.08)]">
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
           {stats.map((stat) => (
             <button
@@ -701,7 +701,7 @@ function SummaryStrip({ stats, controlCount, performanceValue, onOpenStat, onOpe
       <button
         type="button"
         onClick={onOpenControls}
-        className="rounded-2xl border border-[#e6b8c0] bg-white p-4 text-left shadow-[0_12px_32px_rgba(136,54,66,0.07)] transition hover:-translate-y-0.5 hover:border-[#d89aa5] hover:shadow-[0_16px_34px_rgba(136,54,66,0.12)]"
+        className="rounded-2xl border-2 border-slate-900 bg-white p-4 text-left shadow-[0_12px_32px_rgba(136,54,66,0.07)] transition hover:-translate-y-0.5 hover:border-slate-900 hover:shadow-[0_16px_34px_rgba(136,54,66,0.12)]"
       >
         <p className="text-[13px] font-bold text-slate-900">Freigaben und Kontrollen</p>
         <p className="mt-2 text-[28px] font-extrabold leading-none text-slate-950">{controlCount}</p>
@@ -711,7 +711,7 @@ function SummaryStrip({ stats, controlCount, performanceValue, onOpenStat, onOpe
       <button
         type="button"
         onClick={onOpenPerformance}
-        className="rounded-2xl border border-[#e6b8c0] bg-white p-4 text-left shadow-[0_12px_32px_rgba(136,54,66,0.07)] transition hover:-translate-y-0.5 hover:border-[#d89aa5] hover:shadow-[0_16px_34px_rgba(136,54,66,0.12)]"
+        className="rounded-2xl border-2 border-slate-900 bg-white p-4 text-left shadow-[0_12px_32px_rgba(136,54,66,0.07)] transition hover:-translate-y-0.5 hover:border-slate-900 hover:shadow-[0_16px_34px_rgba(136,54,66,0.12)]"
       >
         <p className="text-[13px] font-bold text-slate-900">Leistungsueberblick</p>
         <p className="mt-2 text-[30px] font-extrabold leading-none text-slate-950">{performanceValue}%</p>
@@ -1888,7 +1888,7 @@ export default function MyTasksPage() {
           onOpenPerformance={() => setActivePopup({ type: 'performance' })}
         />
 
-        <section className="rounded-2xl border border-[#e6b8c0] bg-white p-3.5 shadow-[0_16px_40px_rgba(136,54,66,0.08)]">
+        <section className="rounded-2xl border-2 border-slate-900 bg-white p-3.5 shadow-[0_16px_40px_rgba(136,54,66,0.08)]">
           <div className="rounded-2xl border border-[#f2d8dd] bg-[#fff8f9] p-3">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             {orderedColumns.map((column) => (
