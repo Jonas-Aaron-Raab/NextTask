@@ -1873,6 +1873,7 @@ export default function MyTasksPage() {
       activeItem="Aufgaben"
       hideBreadcrumb
       searchPlacement="actions"
+      headerTitle="Aufgaben"
       createMenuItems={createMenuItems}
       onCreateAction={handleCreateAction}
       searchValue={searchValue}
