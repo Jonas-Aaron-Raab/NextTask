@@ -32,17 +32,40 @@ enum UserRole {
   MARKETING
 }
 
+enum AccessRoleKind {
+  ADMIN
+  GBL
+  MEMBER
+}
+
 model User {
-  id         String    @id @default(cuid())
-  name       String
-  email      String    @unique
-  password   String
-  role       UserRole  @default(DEVELOPER)
-  department String    @default("Development")
-  createdAt  DateTime  @default(now())
-  projects   Project[]
-  tasks      Task[]    @relation("AssignedTasks")
-  comments   Comment[]
+  id           String      @id @default(cuid())
+  name         String
+  email        String      @unique
+  password     String
+  role         UserRole    @default(DEVELOPER)
+  department   String      @default("Development")
+  accessRoleId String?
+  accessRole   AccessRole? @relation("UserAccessRole", fields: [accessRoleId], references: [id])
+  createdAt    DateTime    @default(now())
+  projects     Project[]
+  tasks        Task[]      @relation("AssignedTasks")
+  comments     Comment[]
+}
+
+model AccessRole {
+  id            String         @id @default(cuid())
+  name          String
+  code          String         @unique
+  kind          AccessRoleKind
+  description   String         @default("")
+  businessAreas String[]       @default([])
+  departmentIds String[]       @default([])
+  permissions   Json
+  system        Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  users         User[]         @relation("UserAccessRole")
 }
 
 model Project {

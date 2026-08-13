@@ -1,21 +1,25 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 const AuthContext = createContext();
-const guestUser = {
-  id: 'guest',
-  name: 'Gast',
-  email: 'gast@nexttask.local',
-  role: 'DEVELOPER',
-  department: 'Development',
-  isGuest: true,
-};
+
+function readStoredUser() {
+  const token = localStorage.getItem('token');
+  const savedUser = localStorage.getItem('user');
+
+  if (!token || !savedUser) return null;
+
+  try {
+    return JSON.parse(savedUser);
+  } catch {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    return null;
+  }
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('user');
-    return savedUser ? JSON.parse(savedUser) : guestUser;
-  });
+  const [user, setUser] = useState(() => readStoredUser());
 
   const login = (token, userData) => {
     localStorage.setItem('token', token);
@@ -26,23 +30,25 @@ export function AuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    setUser(guestUser);
+    setUser(null);
   };
 
   const updateUser = useCallback((userData) => {
     setUser((currentUser) => {
-      const nextUser = { ...currentUser, ...userData };
+      const nextUser = { ...(currentUser || {}), ...userData };
       localStorage.setItem('user', JSON.stringify(nextUser));
       return nextUser;
     });
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ user, isAuthenticated: Boolean(user && localStorage.getItem('token')), login, logout, updateUser }),
+    [user, updateUser],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
 export function useAuth() {
   return useContext(AuthContext);
 }

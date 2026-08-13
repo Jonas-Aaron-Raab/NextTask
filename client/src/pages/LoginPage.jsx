@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 export default function LoginPage() {
@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +21,7 @@ export default function LoginPage() {
     try {
       const { data } = await api.post('/auth/login', { email: email.trim(), password });
       login(data.token, data.user);
-      navigate('/');
+      navigate(location.state?.from?.pathname || '/', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Login fehlgeschlagen');
     }

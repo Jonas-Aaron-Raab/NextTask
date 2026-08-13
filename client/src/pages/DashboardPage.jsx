@@ -199,7 +199,7 @@ export default function DashboardPage() {
     return flagged
       .filter((task) => [task.title, task.project, task.note].join(' ').toLowerCase().includes(searchTerm))
       .slice(0, 4);
-  }, [searchTerm]);
+  }, [openTasks, searchTerm]);
 
   const departmentCards = useMemo(() => {
     const cards = initialDepartments.map((department) => {
@@ -486,7 +486,7 @@ export default function DashboardPage() {
                 <button
                   key={department.id}
                   type="button"
-                  onClick={() => navigate('/projects')}
+                  onClick={() => navigate('/departments')}
                   className={`rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)] ${department.accent}`}
                 >
                   <div className="flex items-start justify-between gap-3">

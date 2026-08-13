@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
+const { ensureDefaultAccessRoles, serializeRole } = require('../utils/accessRoles');
 const router = express.Router();
 
 const userSelect = {
@@ -11,6 +12,8 @@ const userSelect = {
   role: true,
   department: true,
   createdAt: true,
+  accessRoleId: true,
+  accessRole: true,
 };
 
 function isBlank(value) {
@@ -19,7 +22,7 @@ function isBlank(value) {
 
 function createToken(user) {
   return jwt.sign(
-    { id: user.id, email: user.email, name: user.name, role: user.role, department: user.department },
+    { id: user.id, email: user.email, name: user.name, role: user.role, department: user.department, accessRoleId: user.accessRoleId },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -33,6 +36,8 @@ function toPublicUser(user, extra = {}) {
     role: user.role,
     department: user.department,
     createdAt: user.createdAt,
+    accessRoleId: user.accessRoleId,
+    accessRole: serializeRole(user.accessRole),
     ...extra,
   };
 }
@@ -53,6 +58,8 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'E-Mail existiert bereits' });
     }
 
+    await ensureDefaultAccessRoles(prisma);
+    const accessRole = await prisma.accessRole.findUnique({ where: { code: 'M-OR-IT' } });
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: {
@@ -61,7 +68,9 @@ router.post('/register', async (req, res) => {
         password: hashedPassword,
         role: role || 'DEVELOPER',
         department: department || 'Development',
+        accessRoleId: accessRole?.id || null,
       },
+      include: { accessRole: true },
     });
     const token = createToken(user);
     res.status(201).json({
@@ -82,7 +91,10 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'E-Mail und Passwort sind erforderlich' });
     }
 
-    const user = await prisma.user.findUnique({ where: { email: trimmedEmail } });
+    const user = await prisma.user.findUnique({
+      where: { email: trimmedEmail },
+      include: { accessRole: true },
+    });
     if (!user) {
       return res.status(400).json({ message: 'Benutzer nicht gefunden' });
     }
@@ -104,7 +116,7 @@ router.get('/me', auth, async (req, res) => {
   try {
     const user = await req.prisma.user.findUnique({
       where: { id: req.user.id },
-      select: userSelect,
+      include: { accessRole: true },
     });
 
     if (!user) {
@@ -150,7 +162,7 @@ router.put('/me', auth, async (req, res) => {
         role: currentUser.role,
         department: department.trim(),
       },
-      select: userSelect,
+      include: { accessRole: true },
     });
     const token = req.user.isGuest ? null : createToken(user);
 

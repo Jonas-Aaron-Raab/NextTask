@@ -1,32 +1,19 @@
 const jwt = require('jsonwebtoken');
-const { getOrCreateGuestUser } = require('../utils/guestUser');
 
 module.exports = async function auth(req, res, next) {
   const header = req.headers.authorization;
 
-  if (header && header.startsWith('Bearer ')) {
-    const token = header.split(' ')[1];
-
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      req.user = decoded;
-      next();
-      return;
-    } catch (error) {
-      // Im Gastmodus fallen wir bei ungultigen Tokens auf den Gastbenutzer zuruck.
-    }
+  if (!header || !header.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Bitte einloggen' });
   }
 
+  const token = header.split(' ')[1];
+
   try {
-    const guestUser = await getOrCreateGuestUser(req.prisma);
-    req.user = {
-      id: guestUser.id,
-      email: guestUser.email,
-      name: guestUser.name,
-      isGuest: true,
-    };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
     next();
   } catch (error) {
-    return res.status(500).json({ message: 'Gastmodus konnte nicht vorbereitet werden' });
+    return res.status(401).json({ message: 'Login ist abgelaufen oder ungueltig' });
   }
 };

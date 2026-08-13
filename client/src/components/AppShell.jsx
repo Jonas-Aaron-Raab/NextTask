@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BarChart3,
@@ -15,19 +15,23 @@ import {
   Plus,
   Search,
   Settings,
+  ShieldCheck,
   FileText,
   User,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { canManageRoles } from '../data/bankOrganization';
 import { getStoredAppearanceSettings } from '../utils/appearance';
 
 const navigationItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+  { label: 'Abteilungen', path: '/departments', icon: Building2 },
   { label: 'Projekte', path: '/projects', icon: Folder },
   { label: 'Aufgaben', path: '/my-tasks', icon: CheckSquare },
   { label: 'Kalender', path: '/calendar', icon: Calendar },
   { label: 'Reports', path: '/reports', icon: BarChart3 },
   { label: 'Dokumente', path: '/documents', icon: FileText },
+  { label: 'Rollen', path: '/roles', icon: ShieldCheck, adminOnly: true },
   { label: 'Einstellungen', path: '/settings', icon: Settings },
 ];
 
@@ -76,15 +80,13 @@ export default function AppShell({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
-
-  const activeNavigation = useMemo(
-    () =>
-      navigationItems.map((item) => ({
-        ...item,
-        active: item.label === activeItem,
-      })),
-    [activeItem],
-  );
+  const [, setRoleNavigationVersion] = useState(0);
+  const activeNavigation = navigationItems
+    .filter((item) => !item.adminOnly || canManageRoles(user))
+    .map((item) => ({
+      ...item,
+      active: item.label === activeItem,
+    }));
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -108,6 +110,13 @@ export default function AppShell({
     return () => window.removeEventListener('nexttask:appearance-change', handleAppearanceChange);
   }, []);
 
+  useEffect(() => {
+    const handleRolesChange = () => setRoleNavigationVersion((current) => current + 1);
+
+    window.addEventListener('nexttask:roles-change', handleRolesChange);
+    return () => window.removeEventListener('nexttask:roles-change', handleRolesChange);
+  }, []);
+
   const handleNavigation = (item) => {
     navigate(item.path);
   };
@@ -120,7 +129,7 @@ export default function AppShell({
   const handleLogout = () => {
     setProfileOpen(false);
     logout();
-    navigate('/');
+    navigate('/login', { replace: true });
   };
 
   return (

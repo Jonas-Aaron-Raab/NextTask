@@ -3,11 +3,19 @@ const GUEST_NAME = 'Gast';
 const GUEST_PASSWORD = 'guest-mode-disabled';
 
 async function getOrCreateGuestUser(prisma) {
+  const adminRole = await prisma.accessRole.findUnique({ where: { code: 'A' } }).catch(() => null);
   const existingGuest = await prisma.user.findUnique({
     where: { email: GUEST_EMAIL },
   });
 
   if (existingGuest) {
+    if (adminRole && existingGuest.accessRoleId !== adminRole.id) {
+      return prisma.user.update({
+        where: { id: existingGuest.id },
+        data: { accessRoleId: adminRole.id, role: 'ADMIN' },
+      });
+    }
+
     return existingGuest;
   }
 
@@ -16,6 +24,8 @@ async function getOrCreateGuestUser(prisma) {
       name: GUEST_NAME,
       email: GUEST_EMAIL,
       password: GUEST_PASSWORD,
+      role: adminRole ? 'ADMIN' : 'DEVELOPER',
+      accessRoleId: adminRole?.id || null,
     },
   });
 }
