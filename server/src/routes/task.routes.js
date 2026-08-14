@@ -68,6 +68,7 @@ router.post('/', auth, async (req, res) => {
       endDate,
       estimatedHours,
       department,
+      markerId,
     } = req.body;
     const normalizedStatus = normalizeStatus(status);
     const lastTask = await req.prisma.task.findFirst({
@@ -88,6 +89,7 @@ router.post('/', auth, async (req, res) => {
         endDate: parseDate(endDate),
         estimatedHours: estimatedHours ? Number(estimatedHours) : null,
         department: department || null,
+        markerId: markerId || null,
       },
     });
     res.status(201).json(task);
@@ -111,6 +113,7 @@ router.put('/:id', auth, async (req, res) => {
       endDate,
       estimatedHours,
       department,
+      markerId,
     } = req.body;
     const updated = await req.prisma.task.update({
       where: { id: req.params.id },
@@ -125,6 +128,7 @@ router.put('/:id', auth, async (req, res) => {
         endDate: parseDate(endDate),
         estimatedHours: estimatedHours === undefined ? undefined : Number(estimatedHours),
         department,
+        markerId: markerId === undefined ? undefined : markerId || null,
       },
     });
     res.json(updated);

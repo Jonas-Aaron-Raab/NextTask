@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowUpRight,
   CalendarDays,
@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
+import { getStoredTaskMarkers, getTaskMarker } from '../utils/taskMarkers';
 
 const columns = [
   { id: 'today', title: 'Heute', dot: 'bg-amber-400' },
@@ -364,19 +365,19 @@ const controlFeed = [
   {
     taskId: 'my-task-5',
     title: 'Vier-Augen-Freigabe offen',
-    meta: 'CTRL-PAY-771 • Shop Optimierung',
+    meta: 'CTRL-PAY-771 - Shop Optimierung',
     note: 'Vor Abschluss fehlt noch die QA- und Product-Owner-Freigabe fuer den Checkout-Testlauf.',
   },
   {
     taskId: 'my-task-7',
     title: 'Preisfreigabe ausstehend',
-    meta: 'CTRL-PRC-551 • Website Relaunch',
+    meta: 'CTRL-PRC-551 - Website Relaunch',
     note: 'Die Pricing-Seite bleibt blockiert, bis Vertrieb und Fachbereich die finale Preisdatei freigeben.',
   },
   {
     taskId: 'my-task-1',
     title: 'Evidenznachweis nachreichen',
-    meta: 'CTRL-WEB-204 • Website Relaunch',
+    meta: 'CTRL-WEB-204 - Website Relaunch',
     note: 'Word-Freigabe und Screenshot-Nachweis muessen revisionssicher am Ticket verknuepft werden.',
   },
 ];
@@ -527,6 +528,7 @@ function TaskCard({ task, onOpen }) {
   const checklistStats = parseChecklistStats(task.checklist);
   const [showAssignerProfile, setShowAssignerProfile] = useState(false);
   const assignerProfile = teamProfiles[task.assignedBy.name];
+  const marker = getTaskMarker(task);
 
   return (
     <div
@@ -539,8 +541,10 @@ function TaskCard({ task, onOpen }) {
           onOpen(task);
         }
       }}
-      className="rounded-xl border border-slate-200 bg-white p-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-rose-200 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]"
+      className="relative overflow-hidden rounded-xl border border-slate-200 bg-white py-2.5 pl-4 pr-2.5 text-left shadow-[0_8px_22px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-rose-200 hover:shadow-[0_14px_30px_rgba(15,23,42,0.08)]"
+      title={marker.label}
     >
+      <span className="absolute left-0 top-0 h-full w-1.5" style={{ backgroundColor: marker.color }} aria-hidden="true" />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[13px] font-bold leading-4 text-slate-900">{task.title}</p>
@@ -733,8 +737,10 @@ function TaskCollectionPopup({ title, subtitle, tasks, onClose, onOpenTask }) {
               onClose();
               onOpenTask(task);
             }}
-            className="flex w-full items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-rose-200 hover:bg-rose-50"
+            className="relative flex w-full items-start gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-white py-3 pl-5 pr-3 text-left transition hover:border-rose-200 hover:bg-rose-50"
+            title={getTaskMarker(task).label}
           >
+            <span className="absolute left-0 top-0 h-full w-1.5" style={{ backgroundColor: getTaskMarker(task).color }} aria-hidden="true" />
             <AssignerAvatar person={task.assignedBy} />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-slate-900">{task.title}</p>
@@ -783,7 +789,38 @@ function ControlsPopup({ items, tasks, onClose, onOpenTask }) {
   );
 }
 
-function CreateTaskModal({ projects, form, onChange, onClose, onSubmit }) {
+function TaskMarkerField({ value, markers, onChange }) {
+  const selectedMarker = markers.find((marker) => marker.id === value) || null;
+
+  return (
+    <label className="block text-sm font-bold text-slate-700">
+      Farbstreifen
+      <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <select
+          value={value || ''}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+        >
+          <option value="">Automatisch nach Regel</option>
+          {markers.map((marker) => (
+            <option key={marker.id} value={marker.id}>
+              {marker.label}
+            </option>
+          ))}
+        </select>
+        <span className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-extrabold text-slate-600">
+          <span
+            className="h-5 w-5 rounded-full border border-white shadow-sm"
+            style={{ backgroundColor: selectedMarker?.color || '#cbd5e1' }}
+            aria-hidden="true"
+          />
+          {selectedMarker ? selectedMarker.label : 'Auto'}
+        </span>
+      </div>
+    </label>
+  );
+}
+function CreateTaskModal({ projects, form, taskMarkers, onChange, onClose, onSubmit }) {
   return (
     <PopupShell title="Neue Aufgabe" subtitle="Lege eine neue Aufgabe mit Status, Projekt und Verantwortlichkeiten an." onClose={onClose} maxWidth="max-w-3xl">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
@@ -877,6 +914,12 @@ function CreateTaskModal({ projects, form, onChange, onClose, onSubmit }) {
                 ))}
               </select>
             </label>
+
+            <TaskMarkerField
+              value={form.markerId || ''}
+              markers={taskMarkers}
+              onChange={(value) => onChange('markerId', value)}
+            />
           </div>
         </section>
       </div>
@@ -1095,6 +1138,7 @@ function TaskDetailDrawer({
   onAttachmentFilesAdd,
   onAttachmentRemove,
   onSave,
+  taskMarkers,
 }) {
   if (!task || !form) return null;
 
@@ -1108,11 +1152,11 @@ function TaskDetailDrawer({
               <h2 className="mt-1 text-xl font-extrabold text-slate-950">{task.title}</h2>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
                 <span>{task.project}</span>
-                <span className="text-slate-300">•</span>
+                <span className="text-slate-300">-</span>
                 <span>{task.assignee}</span>
-                <span className="text-slate-300">•</span>
+                <span className="text-slate-300">-</span>
                 <span>{statusLabels[task.status]}</span>
-                <span className="text-slate-300">•</span>
+                <span className="text-slate-300">-</span>
                 <span>{task.assignedBy.name}</span>
               </div>
             </div>
@@ -1210,6 +1254,12 @@ function TaskDetailDrawer({
                       ))}
                     </select>
                   </label>
+
+                  <TaskMarkerField
+                    value={form.markerId || ''}
+                    markers={taskMarkers}
+                    onChange={(value) => onFormChange('markerId', value)}
+                  />
                 </div>
               </DetailBlock>
 
@@ -1238,7 +1288,7 @@ function TaskDetailDrawer({
                         <div className="min-w-0">
                           <p className="truncate text-sm font-bold text-slate-900">{attachment.name}</p>
                           <p className="mt-1 text-xs font-semibold text-slate-400">
-                            {attachment.type} • {attachment.source} • Owner: {attachment.owner}
+                            {attachment.type} - {attachment.source} - Owner: {attachment.owner}
                           </p>
                         </div>
                         <button
@@ -1348,14 +1398,21 @@ function TaskDetailDrawer({
                     <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Tags</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {task.tags.map((tag) => (
-                        <button
+                        <span
                           key={tag}
-                          type="button"
-                          onClick={() => onTagRemove(tag)}
-                          className="rounded-full border border-rose-100 bg-rose-50 px-3 py-1 text-xs font-bold text-[#b64454]"
+                          className="inline-flex items-center gap-1 rounded-full border border-rose-100 bg-rose-50 px-3 py-1 text-xs font-bold text-[#b64454]"
                         >
-                          {tag} ×
-                        </button>
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() => onTagRemove(tag)}
+                            className="inline-flex h-4 w-4 items-center justify-center rounded-full transition hover:bg-[#b64454]/10"
+                            aria-label={`${tag} entfernen`}
+                            title="Entfernen"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
                       ))}
                     </div>
                     <div className="mt-3 flex gap-2">
@@ -1379,14 +1436,21 @@ function TaskDetailDrawer({
                     <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Verlinkte Mitarbeitende</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {task.linkedPeople.map((person) => (
-                        <button
+                        <span
                           key={person}
-                          type="button"
-                          onClick={() => onPersonRemove(person)}
-                          className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-700"
+                          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-700"
                         >
-                          @{person} ×
-                        </button>
+                          @{person}
+                          <button
+                            type="button"
+                            onClick={() => onPersonRemove(person)}
+                            className="inline-flex h-4 w-4 items-center justify-center rounded-full transition hover:bg-slate-100 hover:text-slate-900"
+                            aria-label={`${person} entfernen`}
+                            title="Entfernen"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
                       ))}
                     </div>
                     <div className="mt-3 flex gap-2">
@@ -1511,6 +1575,7 @@ function TaskDetailDrawer({
 export default function MyTasksPage() {
   const [tasks, setTasks] = useState(initialTasks);
   const [projects, setProjects] = useState(initialProjects);
+  const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
   const [columnOrder, setColumnOrder] = useState(columns.map((column) => column.id));
   const [draggedColumnId, setDraggedColumnId] = useState(null);
   const [searchValue, setSearchValue] = useState('');
@@ -1532,6 +1597,7 @@ export default function MyTasksPage() {
     priority: 'mittel',
     dueDateValue: '2026-05-20',
     assignee: 'Lisa Wagner',
+    markerId: '',
   });
   const [createProjectForm, setCreateProjectForm] = useState({
     name: '',
@@ -1601,6 +1667,17 @@ export default function MyTasksPage() {
     },
   ];
 
+  useEffect(() => {
+    const handleTaskMarkerChange = (event) => {
+      setTaskMarkers(event.detail || getStoredTaskMarkers());
+    };
+
+    window.addEventListener('nexttask:task-markers-change', handleTaskMarkerChange);
+
+    return () => {
+      window.removeEventListener('nexttask:task-markers-change', handleTaskMarkerChange);
+    };
+  }, []);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
   const activeStat = activePopup?.type === 'stat' ? statGroups.find((stat) => stat.id === activePopup.statId) : null;
 
@@ -1620,6 +1697,7 @@ export default function MyTasksPage() {
       controlId: task.compliance.controlId,
       approval: task.compliance.approval,
       evidence: task.compliance.evidence,
+      markerId: task.markerId || '',
     });
     setCommentDraft('');
     setTagDraft('');
@@ -1654,6 +1732,7 @@ export default function MyTasksPage() {
       project: detailForm.project.trim(),
       status: detailForm.status,
       priority: detailForm.priority,
+      markerId: detailForm.markerId || undefined,
       dueDateValue: detailForm.dueDateValue,
       dueDate: formatDateLabel(detailForm.dueDateValue),
       assignee: detailForm.assignee,
@@ -1842,6 +1921,7 @@ export default function MyTasksPage() {
       status: createTaskForm.status,
       project: createTaskForm.project,
       priority: createTaskForm.priority,
+      markerId: createTaskForm.markerId || undefined,
       dueDate: dueDateLabel,
       dueDateValue: createTaskForm.dueDateValue,
       progress: 0,
@@ -1941,6 +2021,7 @@ export default function MyTasksPage() {
         <CreateTaskModal
           projects={projects}
           form={createTaskForm}
+          taskMarkers={taskMarkers}
           onChange={handleCreateTaskFormChange}
           onClose={() => setCreateMode(null)}
           onSubmit={handleCreateTaskSubmit}
@@ -1978,6 +2059,7 @@ export default function MyTasksPage() {
         onAttachmentFilesAdd={handleAttachmentFilesAdd}
         onAttachmentRemove={handleAttachmentRemove}
         onSave={handleSave}
+        taskMarkers={taskMarkers}
       />
     </AppShell>
   );

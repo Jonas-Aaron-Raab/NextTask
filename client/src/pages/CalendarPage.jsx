@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import api from '../api/axios';
 import AppShell from '../components/AppShell';
+import { getTaskMarker } from '../utils/taskMarkers';
 import { initialTasks } from './MyTasksPage';
 import {
   initialBacklogTasks,
@@ -329,6 +330,7 @@ function getRange(view, cursorDate) {
 
 function CalendarTask({ task, onOpen, onDragStart, expanded = false }) {
   const overdue = isOverdue(task);
+  const marker = getTaskMarker(task);
   return (
     <button
       type="button"
@@ -342,7 +344,8 @@ function CalendarTask({ task, onOpen, onDragStart, expanded = false }) {
       className={`w-full min-w-0 rounded-md border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
         overdue ? 'border-red-300 bg-red-50 text-red-700' : statusColors[task.status]
       } ${expanded ? 'px-2.5 py-2' : 'px-1.5 py-1 text-[11px] font-semibold leading-tight'}`}
-      style={{ borderLeftWidth: expanded ? 4 : 3, borderLeftColor: overdue ? '#dc2626' : task.projectColor }}
+      title={overdue ? `Ueberfaellig - ${marker.label}` : marker.label}
+      style={{ borderLeftWidth: expanded ? 4 : 3, borderLeftColor: overdue ? '#dc2626' : marker.color }}
     >
       {expanded ? (
         <span className="block">

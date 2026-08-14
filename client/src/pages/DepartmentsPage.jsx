@@ -15,6 +15,7 @@ import {
 import AppShell from '../components/AppShell';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import { getTaskMarker } from '../utils/taskMarkers';
 import {
   bankProjects,
   canManageRoles,
@@ -102,21 +103,30 @@ function ProjectPanel({ project }) {
       </div>
 
       <div className="mt-4 space-y-2">
-        {project.tasks.map((task) => (
-          <div key={task.id} className="grid gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 md:grid-cols-[1fr_150px_100px] md:items-center">
-            <div className="min-w-0">
-              <p className="text-sm font-extrabold text-slate-900">{task.title}</p>
-              <p className="mt-1 text-xs font-bold text-slate-400">{task.status}</p>
+        {project.tasks.map((task) => {
+          const marker = getTaskMarker(task);
+
+          return (
+            <div
+              key={task.id}
+              className="relative grid gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-white py-3 pl-5 pr-4 md:grid-cols-[1fr_150px_100px] md:items-center"
+              title={marker.label}
+            >
+              <span className="absolute left-0 top-0 h-full w-1.5" style={{ backgroundColor: marker.color }} aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="text-sm font-extrabold text-slate-900">{task.title}</p>
+                <p className="mt-1 text-xs font-bold text-slate-400">{task.status}</p>
+              </div>
+              <span className="inline-flex items-center gap-2 text-sm font-bold text-slate-500">
+                <UserRound className="h-4 w-4 text-slate-400" />
+                {task.assignee}
+              </span>
+              <span className={`w-fit rounded-full px-3 py-1 text-xs font-extrabold ${priorityTone[task.priority] || priorityTone.mittel}`}>
+                {task.priority}
+              </span>
             </div>
-            <span className="inline-flex items-center gap-2 text-sm font-bold text-slate-500">
-              <UserRound className="h-4 w-4 text-slate-400" />
-              {task.assignee}
-            </span>
-            <span className={`w-fit rounded-full px-3 py-1 text-xs font-extrabold ${priorityTone[task.priority] || priorityTone.mittel}`}>
-              {task.priority}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </article>
   );

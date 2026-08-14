@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
+import { getStoredTaskMarkers, getTaskMarker } from '../utils/taskMarkers';
 import { initialTasks as sourceTasks } from './MyTasksPage';
 
 const createMenuItems = ['Neue Abteilung', 'Neues Projekt'];
@@ -768,6 +769,7 @@ function BacklogTaskRow({ task, project, isActive, isFavorite, onOpen, onToggleF
   const taskKey = getSourceTaskKey(task);
   const creatorInitials = getTaskCreatorInitials(task);
   const creatorName = getTaskCreatorName(task);
+  const marker = getTaskMarker(task);
   return (
     <div
       ref={setNodeRef}
@@ -783,10 +785,12 @@ function BacklogTaskRow({ task, project, isActive, isFavorite, onOpen, onToggleF
         transform: CSS.Transform.toString(transform),
         transition,
       }}
-      className={`grid w-full grid-cols-[36px_36px_minmax(0,1fr)_36px] items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm transition hover:bg-[#fff1f3] lg:grid-cols-[36px_36px_minmax(94px,0.6fr)_minmax(0,2.4fr)_72px_120px_88px_minmax(130px,0.9fr)_36px] ${
+      className={`relative grid w-full grid-cols-[36px_36px_minmax(0,1fr)_36px] items-center gap-3 overflow-hidden border-t border-slate-100 py-3 pl-5 pr-4 text-left text-sm transition hover:bg-[#fff1f3] lg:grid-cols-[36px_36px_minmax(94px,0.6fr)_minmax(0,2.4fr)_72px_120px_88px_minmax(130px,0.9fr)_36px] ${
         isActive ? 'bg-[#fff1f3]' : 'bg-white'
       } ${isDragging ? 'relative z-10 opacity-70 shadow-[0_18px_34px_rgba(15,23,42,0.16)]' : ''}`}
+      title={marker.label}
     >
+      <span className="absolute left-0 top-0 h-full w-1.5" style={{ backgroundColor: marker.color }} aria-hidden="true" />
       <span
         {...attributes}
         {...listeners}
@@ -899,6 +903,37 @@ function BacklogProjectGroup({ project, tasks, selectedTaskId, favoriteUserKey, 
   );
 }
 
+function TaskMarkerField({ value, markers, onChange }) {
+  const selectedMarker = markers.find((marker) => marker.id === value) || null;
+
+  return (
+    <label className="block text-sm font-bold text-slate-700">
+      Farbstreifen
+      <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+        <select
+          value={value || ''}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+        >
+          <option value="">Automatisch nach Regel</option>
+          {markers.map((marker) => (
+            <option key={marker.id} value={marker.id}>
+              {marker.label}
+            </option>
+          ))}
+        </select>
+        <span className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-extrabold text-slate-600">
+          <span
+            className="h-5 w-5 rounded-full border border-white shadow-sm"
+            style={{ backgroundColor: selectedMarker?.color || '#cbd5e1' }}
+            aria-hidden="true"
+          />
+          {selectedMarker ? selectedMarker.label : 'Auto'}
+        </span>
+      </div>
+    </label>
+  );
+}
 function createBacklogTaskForm(task) {
   const { compliance } = getTaskDetailCollections(task);
   return {
@@ -910,6 +945,7 @@ function createBacklogTaskForm(task) {
     projectId: task.projectId,
     status: task.status,
     priority: task.priority,
+    markerId: task.markerId || '',
     dueDateValue: toDateInputValue(task.dueDate),
     assignee: task.assignee,
     tags: task.tags.join(', '),
@@ -920,7 +956,7 @@ function createBacklogTaskForm(task) {
   };
 }
 
-function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, onSave, onClose }) {
+function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, taskMarkers, onSave, onClose }) {
   const [form, setForm] = useState(() => (task ? createBacklogTaskForm(task) : null));
   const [commentDraft, setCommentDraft] = useState('');
   const [tagDraft, setTagDraft] = useState('');
@@ -958,6 +994,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, onSa
       projectId: form.projectId,
       status: form.status,
       priority: form.priority,
+      markerId: form.markerId || undefined,
       dueDate: toDisplayDate(form.dueDateValue) || task.dueDate,
       assignee: form.assignee,
       tags: form.tags
@@ -1176,6 +1213,12 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, onSa
               ) : null}
             </label>
 
+            <TaskMarkerField
+              value={form.markerId || ''}
+              markers={taskMarkers}
+              onChange={(value) => handleChange('markerId', value)}
+            />
+
           </div>
         </DetailBlock>
 
@@ -1194,14 +1237,21 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, onSa
               <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Tags</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {task.tags.map((tag) => (
-                  <button
+                  <span
                     key={tag}
-                    type="button"
-                    onClick={() => handleTagRemove(tag)}
-                    className="rounded-full border border-rose-100 bg-rose-50 px-3 py-1 text-xs font-bold text-[#b64454]"
+                    className="inline-flex items-center gap-1 rounded-full border border-rose-100 bg-rose-50 px-3 py-1 text-xs font-bold text-[#b64454]"
                   >
-                    {tag} x
-                  </button>
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleTagRemove(tag)}
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full transition hover:bg-[#b64454]/10"
+                      aria-label={`${tag} entfernen`}
+                      title="Entfernen"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
                 ))}
               </div>
               <div className="mt-3 flex gap-2">
@@ -1221,14 +1271,21 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, onSa
               <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Verlinkte Mitarbeitende</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {linkedPeople.map((person) => (
-                  <button
+                  <span
                     key={person}
-                    type="button"
-                    onClick={() => handlePersonRemove(person)}
-                    className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-700"
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-700"
                   >
-                    @{person} x
-                  </button>
+                    @{person}
+                    <button
+                      type="button"
+                      onClick={() => handlePersonRemove(person)}
+                      className="inline-flex h-4 w-4 items-center justify-center rounded-full transition hover:bg-slate-100 hover:text-slate-900"
+                      aria-label={`${person} entfernen`}
+                      title="Entfernen"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
                 ))}
               </div>
               <div className="mt-3 flex gap-2">
@@ -1462,6 +1519,7 @@ export default function ProjectsPage() {
   const [departments, setDepartments] = useState(initialDepartments);
   const [projects, setProjects] = useState(initialProjects);
   const [backlogTasks, setBacklogTasks] = useState(initialBacklogTasks);
+  const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
   const [selectedDepartmentId, setSelectedDepartmentId] = useState(initialDepartments[0].id);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [viewMode, setViewMode] = useState('projects');
@@ -1593,6 +1651,18 @@ export default function ProjectsPage() {
     },
     [activeBacklogFilters, backlogProjectIds, backlogTasks, favoriteUserKey, normalizedSearch, projects],
   );
+
+  useEffect(() => {
+    const handleTaskMarkerChange = (event) => {
+      setTaskMarkers(event.detail || getStoredTaskMarkers());
+    };
+
+    window.addEventListener('nexttask:task-markers-change', handleTaskMarkerChange);
+
+    return () => {
+      window.removeEventListener('nexttask:task-markers-change', handleTaskMarkerChange);
+    };
+  }, []);
 
   const selectedBacklogTask = visibleBacklogTasks.find((task) => task.id === selectedBacklogTaskId) || null;
   const backlogDragDisabled = Boolean(normalizedSearch || activeBacklogFilters.length);
@@ -2186,6 +2256,7 @@ export default function ProjectsPage() {
             projects={visibleProjects}
             assignees={departmentMembers}
             assigneeWorkloads={assigneeWorkloads}
+            taskMarkers={taskMarkers}
             onSave={handleBacklogTaskSave}
             onClose={() => setSelectedBacklogTaskId(null)}
           />

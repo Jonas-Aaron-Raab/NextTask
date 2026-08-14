@@ -7,17 +7,21 @@ import {
   Check,
   CalendarDays,
   Image,
+  Flag,
   KeyRound,
   LayoutPanelLeft,
   Mail,
   Monitor,
   Moon,
   Palette,
+  Plus,
+  RotateCcw,
   Rows3,
   Save,
   ShieldCheck,
   SlidersHorizontal,
   Sun,
+  Trash2,
   Type,
   UserRound,
 } from 'lucide-react';
@@ -32,6 +36,16 @@ import {
   getStoredAppearanceSettings,
   storeAppearanceSettings,
 } from '../utils/appearance';
+import {
+  createTaskMarker,
+  getStoredTaskMarkers,
+  loadTaskMarkersFromApi,
+  resetTaskMarkers,
+  saveTaskMarkersToApi,
+  storeTaskMarkers,
+  taskMarkerMatchFields,
+  taskMarkerQuickColors,
+} from '../utils/taskMarkers';
 
 const roleOptions = [
   { value: 'ADMIN', label: 'Admin' },
@@ -164,6 +178,33 @@ function SettingRow({ icon: Icon, label, description, children }) {
   );
 }
 
+function ColorWheelPicker({ value, label, onChange }) {
+  return (
+    <label className="relative block h-28 w-28 flex-none cursor-pointer" title={label}>
+      <span
+        className="absolute inset-0 rounded-full border border-slate-300 shadow-inner"
+        style={{
+          background:
+            'conic-gradient(from 90deg, #ff004c, #ff8a00, #ffe600, #39ff14, #00d4ff, #304ffe, #a100ff, #ff00aa, #ff004c)',
+        }}
+        aria-hidden="true"
+      />
+      <span className="absolute inset-4 rounded-full bg-white/45 blur-[1px]" aria-hidden="true" />
+      <span
+        className="absolute left-1/2 top-1/2 h-11 w-11 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white shadow-[0_8px_22px_rgba(15,23,42,0.22)]"
+        style={{ backgroundColor: value }}
+        aria-hidden="true"
+      />
+      <input
+        type="color"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+        aria-label={label}
+      />
+    </label>
+  );
+}
 export default function SettingsPage() {
   const { user, updateUser } = useAuth();
   const [searchValue, setSearchValue] = useState('');
@@ -183,6 +224,11 @@ export default function SettingsPage() {
   const [appearanceForm, setAppearanceForm] = useState(() => getStoredAppearanceSettings());
   const [appearanceOpen, setAppearanceOpen] = useState(true);
   const [appearanceStatus, setAppearanceStatus] = useState('');
+  const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
+  const [taskMarkersOpen, setTaskMarkersOpen] = useState(false);
+  const [taskMarkerStatus, setTaskMarkerStatus] = useState('');
+  const [taskMarkerError, setTaskMarkerError] = useState('');
+  const [isLoadingTaskMarkers, setIsLoadingTaskMarkers] = useState(false);
   const [projects, setProjects] = useState([]);
   const [selectedAppearanceProjectId, setSelectedAppearanceProjectId] = useState('');
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
@@ -282,6 +328,32 @@ export default function SettingsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadTaskMarkers() {
+      setIsLoadingTaskMarkers(true);
+      setTaskMarkerError('');
+
+      try {
+        const markers = await loadTaskMarkersFromApi();
+        if (!ignore) setTaskMarkers(markers);
+      } catch (error) {
+        if (!ignore) {
+          setTaskMarkers(getStoredTaskMarkers());
+          setTaskMarkerError(error.response?.data?.message || 'Aufgabenfarben konnten nicht aus der Datenbank geladen werden.');
+        }
+      } finally {
+        if (!ignore) setIsLoadingTaskMarkers(false);
+      }
+    }
+
+    loadTaskMarkers();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
   const handleProfileChange = (field, value) => {
     setProfileStatus('');
     setProfileError('');
@@ -312,6 +384,48 @@ export default function SettingsPage() {
         },
       }),
     );
+  };
+
+  const persistTaskMarkers = async (nextMarkers, message = 'Aufgabenfarben wurden gespeichert.') => {
+    const locallyStoredMarkers = storeTaskMarkers(nextMarkers);
+    setTaskMarkers(locallyStoredMarkers);
+    setTaskMarkerStatus('Speichert ...');
+    setTaskMarkerError('');
+
+    try {
+      const savedMarkers = await saveTaskMarkersToApi(locallyStoredMarkers);
+      setTaskMarkers(savedMarkers);
+      setTaskMarkerStatus(message);
+    } catch (error) {
+      setTaskMarkerStatus('Lokal gespeichert.');
+      setTaskMarkerError(error.response?.data?.message || 'Datenbank-Speicherung ist fehlgeschlagen. Die Aenderung bleibt lokal erhalten.');
+    }
+  };
+
+  const handleTaskMarkerChange = (markerId, field, value) => {
+    persistTaskMarkers(
+      taskMarkers.map((marker) => (marker.id === markerId ? { ...marker, [field]: value } : marker)),
+    );
+  };
+
+  const handleTaskMarkerAdd = () => {
+    persistTaskMarkers([...taskMarkers, createTaskMarker()], 'Neue Markierung wurde angelegt.');
+  };
+
+  const handleTaskMarkerRemove = (markerId) => {
+    if (taskMarkers.length <= 1) {
+      setTaskMarkerStatus('Mindestens eine Markierung bleibt aktiv.');
+      return;
+    }
+
+    persistTaskMarkers(
+      taskMarkers.filter((marker) => marker.id !== markerId),
+      'Markierung wurde entfernt.',
+    );
+  };
+
+  const handleTaskMarkerReset = () => {
+    persistTaskMarkers(resetTaskMarkers(), 'Standardfarben wurden wiederhergestellt.');
   };
 
   const handleProfileSubmit = async (event) => {
@@ -634,6 +748,165 @@ export default function SettingsPage() {
                       ))}
                     </select>
                   </SettingRow>
+                </div>
+              </div>
+            ) : null}
+          </section>
+
+          <section className="rounded-[30px] border border-slate-300 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+            <button
+              type="button"
+              onClick={() => setTaskMarkersOpen((current) => !current)}
+              className="flex w-full flex-wrap items-center justify-between gap-4 p-5 text-left"
+            >
+              <span className="flex min-w-0 items-center gap-4">
+                <span className="inline-flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-[#fff1f3] text-[#b84758]">
+                  <Flag className="h-6 w-6" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Aufgabenfarben</span>
+                  <span className="mt-1 block text-lg font-extrabold text-slate-950">Farbstreifen</span>
+                  <span className="mt-1 block text-sm font-medium text-slate-500">
+                    Bedeutungen, Farben und Zuordnung fuer Aufgaben-Markierungen.
+                  </span>
+                </span>
+              </span>
+              <span className="inline-flex items-center gap-3">
+                {taskMarkerStatus ? (
+                  <span className="hidden items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 sm:inline-flex">
+                    <CheckCircle2 className="h-4 w-4" />
+                    {taskMarkerStatus}
+                  </span>
+                ) : null}
+                <ChevronDown className={`h-5 w-5 text-slate-400 transition ${taskMarkersOpen ? 'rotate-180' : ''}`} />
+              </span>
+            </button>
+
+            {taskMarkersOpen ? (
+              <div className="border-t border-slate-200 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={handleTaskMarkerAdd}
+                      className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#b84758] px-3 text-sm font-bold text-white shadow-[0_10px_22px_rgba(184,71,88,0.18)] transition hover:bg-[#a23d4d]"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Neue Markierung
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleTaskMarkerReset}
+                      className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      Zuruecksetzen
+                    </button>
+                  </div>
+                  {taskMarkerStatus ? (
+                    <span className="text-sm font-bold text-emerald-700 sm:hidden">{taskMarkerStatus}</span>
+                  ) : null}
+                </div>
+
+                {isLoadingTaskMarkers ? (
+                  <p className="mt-4 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-500">
+                    Aufgabenfarben werden geladen ...
+                  </p>
+                ) : null}
+                {taskMarkerError ? (
+                  <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700">
+                    {taskMarkerError}
+                  </p>
+                ) : null}
+
+                <div className="mt-4 space-y-3">
+                  {taskMarkers.map((marker) => (
+                    <div key={marker.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="grid gap-4 lg:grid-cols-[128px_minmax(0,1fr)_auto]">
+                        <div className="flex items-center gap-4 lg:block">
+                          <ColorWheelPicker
+                            value={marker.color}
+                            label={`Farbe fuer ${marker.label} waehlen`}
+                            onChange={(value) => handleTaskMarkerChange(marker.id, 'color', value)}
+                          />
+                          <span className="inline-flex h-12 w-12 flex-none rounded-xl border border-white shadow-sm lg:mt-3" style={{ backgroundColor: marker.color }} />
+                        </div>
+
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <label className="block text-sm font-bold text-slate-700">
+                            Name
+                            <input
+                              value={marker.label}
+                              onChange={(event) => handleTaskMarkerChange(marker.id, 'label', event.target.value)}
+                              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
+                            />
+                          </label>
+                          <label className="block text-sm font-bold text-slate-700">
+                            Bedeutung
+                            <input
+                              value={marker.description}
+                              onChange={(event) => handleTaskMarkerChange(marker.id, 'description', event.target.value)}
+                              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
+                            />
+                          </label>
+                          <label className="block text-sm font-bold text-slate-700">
+                            Zuordnung
+                            <select
+                              value={marker.matchField}
+                              onChange={(event) => handleTaskMarkerChange(marker.id, 'matchField', event.target.value)}
+                              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
+                            >
+                              {taskMarkerMatchFields.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label className="block text-sm font-bold text-slate-700">
+                            Wert
+                            <input
+                              value={marker.matchValue}
+                              onChange={(event) => handleTaskMarkerChange(marker.id, 'matchValue', event.target.value)}
+                              placeholder={
+                                marker.matchField === 'priority'
+                                  ? 'hoch, mittel oder niedrig'
+                                  : marker.matchField === 'status'
+                                    ? 'review, blocked, done ...'
+                                    : marker.matchField === 'project'
+                                      ? 'Projektname'
+                                      : 'Tag'
+                              }
+                              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
+                            />
+                          </label>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleTaskMarkerRemove(marker.id)}
+                          disabled={taskMarkers.length <= 1}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-[#b84758] disabled:cursor-not-allowed disabled:opacity-40"
+                          aria-label={`${marker.label} entfernen`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {taskMarkerQuickColors.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => handleTaskMarkerChange(marker.id, 'color', color)}
+                            className={`h-7 w-7 rounded-full border-2 transition ${marker.color.toLowerCase() === color.toLowerCase() ? 'border-slate-900 ring-2 ring-slate-200' : 'border-white hover:scale-105'}`}
+                            style={{ backgroundColor: color }}
+                            aria-label={`${color} auswaehlen`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : null}
