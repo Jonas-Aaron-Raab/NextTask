@@ -47,6 +47,12 @@ import {
   taskMarkerQuickColors,
 } from '../utils/taskMarkers';
 
+const taskMarkerPriorityOptions = [
+  { value: '', label: 'Keine Prioritaet' },
+  { value: 'hoch', label: 'Hoch' },
+  { value: 'mittel', label: 'Mittel' },
+  { value: 'niedrig', label: 'Niedrig' },
+];
 const roleOptions = [
   { value: 'ADMIN', label: 'Admin' },
   { value: 'PROJECT_MANAGER', label: 'Projektmanager' },
@@ -404,7 +410,11 @@ export default function SettingsPage() {
 
   const handleTaskMarkerChange = (markerId, field, value) => {
     persistTaskMarkers(
-      taskMarkers.map((marker) => (marker.id === markerId ? { ...marker, [field]: value } : marker)),
+      taskMarkers.map((marker) => {
+        if (marker.id !== markerId) return marker;
+        if (field === 'matchField') return { ...marker, matchField: value, matchValue: '' };
+        return { ...marker, [field]: value };
+      }),
     );
   };
 
@@ -865,20 +875,35 @@ export default function SettingsPage() {
                           </label>
                           <label className="block text-sm font-bold text-slate-700">
                             Wert
-                            <input
-                              value={marker.matchValue}
-                              onChange={(event) => handleTaskMarkerChange(marker.id, 'matchValue', event.target.value)}
-                              placeholder={
-                                marker.matchField === 'priority'
-                                  ? 'hoch, mittel oder niedrig'
-                                  : marker.matchField === 'status'
+                            {marker.matchField === 'priority' ? (
+                              <select
+                                value={marker.matchValue}
+                                onChange={(event) => handleTaskMarkerChange(marker.id, 'matchValue', event.target.value)}
+                                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
+                              >
+                                {taskMarkerPriorityOptions.map((option) => (
+                                  <option key={option.value || 'empty'} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                value={marker.matchValue}
+                                onChange={(event) => handleTaskMarkerChange(marker.id, 'matchValue', event.target.value)}
+                                disabled={!marker.matchField}
+                                placeholder={
+                                  marker.matchField === 'status'
                                     ? 'review, blocked, done ...'
                                     : marker.matchField === 'project'
                                       ? 'Projektname'
-                                      : 'Tag'
-                              }
-                              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
-                            />
+                                      : marker.matchField === 'tag'
+                                        ? 'Tag'
+                                        : 'Keine Zuordnung ausgewaehlt'
+                                }
+                                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10 disabled:bg-slate-100 disabled:text-slate-400"
+                              />
+                            )}
                           </label>
                         </div>
 

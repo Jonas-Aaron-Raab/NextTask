@@ -9,6 +9,7 @@ const projectRoutes = require('./routes/project.routes');
 const taskRoutes = require('./routes/task.routes');
 const roleRoutes = require('./routes/role.routes');
 const taskMarkerRoutes = require('./routes/taskMarker.routes');
+const auditLogRoutes = require('./routes/auditLog.routes');
 dotenv.config();
 const app = express();
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -28,6 +29,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/task-markers', taskMarkerRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server läuft auf http://localhost:${PORT}`);

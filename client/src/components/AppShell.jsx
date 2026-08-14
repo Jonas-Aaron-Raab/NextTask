@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Folder,
+  History,
   LayoutDashboard,
   LogOut,
   Plus,
@@ -32,6 +33,7 @@ const navigationItems = [
   { label: 'Reports', path: '/reports', icon: BarChart3 },
   { label: 'Dokumente', path: '/documents', icon: FileText },
   { label: 'Rollen', path: '/roles', icon: ShieldCheck, adminOnly: true },
+  { label: 'Audit-Log', path: '/audit-log', icon: History, adminOnly: true },
   { label: 'Einstellungen', path: '/settings', icon: Settings },
 ];
 

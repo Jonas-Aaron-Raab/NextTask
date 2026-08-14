@@ -3,18 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
 const { ensureDefaultAccessRoles, serializeRole } = require('../utils/accessRoles');
+const { pickFields, summarizeChanges, writeAuditLog } = require('../utils/auditLog');
 const router = express.Router();
-
-const userSelect = {
-  id: true,
-  name: true,
-  email: true,
-  role: true,
-  department: true,
-  createdAt: true,
-  accessRoleId: true,
-  accessRole: true,
-};
 
 function isBlank(value) {
   return typeof value !== 'string' || value.trim().length === 0;
@@ -24,7 +14,7 @@ function createToken(user) {
   return jwt.sign(
     { id: user.id, email: user.email, name: user.name, role: user.role, department: user.department, accessRoleId: user.accessRoleId },
     process.env.JWT_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: '7d' },
   );
 }
 
@@ -46,13 +36,13 @@ router.post('/register', async (req, res) => {
   try {
     const { name, email, password, role, department } = req.body;
     const prisma = req.prisma;
-    const trimmedName = name.trim();
-    const trimmedEmail = email.trim();
 
     if (isBlank(name) || isBlank(email) || isBlank(password)) {
       return res.status(400).json({ message: 'Name, E-Mail und Passwort sind erforderlich' });
     }
 
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim().toLowerCase();
     const existing = await prisma.user.findUnique({ where: { email: trimmedEmail } });
     if (existing) {
       return res.status(400).json({ message: 'E-Mail existiert bereits' });
@@ -73,6 +63,18 @@ router.post('/register', async (req, res) => {
       include: { accessRole: true },
     });
     const token = createToken(user);
+
+    await writeAuditLog(req, {
+      action: 'USER_REGISTERED',
+      entityType: 'USER',
+      entityId: user.id,
+      entityLabel: user.name,
+      summary: `Benutzer ${user.name} wurde registriert.`,
+      severity: 'NOTICE',
+      user,
+      after: pickFields(user, ['id', 'name', 'email', 'role', 'department', 'accessRoleId']),
+    });
+
     res.status(201).json({
       token,
       user: toPublicUser(user),
@@ -81,28 +83,59 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ message: 'Serverfehler', error: error.message });
   }
 });
+
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const prisma = req.prisma;
-    const trimmedEmail = email.trim();
 
     if (isBlank(email) || isBlank(password)) {
       return res.status(400).json({ message: 'E-Mail und Passwort sind erforderlich' });
     }
 
+    const trimmedEmail = email.trim().toLowerCase();
     const user = await prisma.user.findUnique({
       where: { email: trimmedEmail },
       include: { accessRole: true },
     });
+
     if (!user) {
+      await writeAuditLog(req, {
+        action: 'LOGIN_FAILED',
+        entityType: 'AUTH',
+        entityLabel: trimmedEmail,
+        summary: `Fehlgeschlagener Login fuer ${trimmedEmail}: Benutzer nicht gefunden.`,
+        severity: 'WARNING',
+        actor: { actorName: trimmedEmail, actorEmail: trimmedEmail },
+      });
       return res.status(400).json({ message: 'Benutzer nicht gefunden' });
     }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      await writeAuditLog(req, {
+        action: 'LOGIN_FAILED',
+        entityType: 'AUTH',
+        entityId: user.id,
+        entityLabel: user.name,
+        summary: `Fehlgeschlagener Login fuer ${user.email}: falsches Passwort.`,
+        severity: 'WARNING',
+        user,
+      });
       return res.status(400).json({ message: 'Falsches Passwort' });
     }
+
     const token = createToken(user);
+    await writeAuditLog(req, {
+      action: 'LOGIN_SUCCESS',
+      entityType: 'AUTH',
+      entityId: user.id,
+      entityLabel: user.name,
+      summary: `${user.name} hat sich angemeldet.`,
+      severity: 'INFO',
+      user,
+    });
+
     res.json({
       token,
       user: toPublicUser(user),
@@ -166,6 +199,17 @@ router.put('/me', auth, async (req, res) => {
     });
     const token = req.user.isGuest ? null : createToken(user);
 
+    await writeAuditLog(req, {
+      action: 'PROFILE_UPDATED',
+      entityType: 'USER',
+      entityId: user.id,
+      entityLabel: user.name,
+      summary: `${user.name} hat Profildaten geaendert.`,
+      severity: 'NOTICE',
+      before: summarizeChanges(pickFields(currentUser, ['name', 'email', 'department']), pickFields(user, ['name', 'email', 'department'])),
+      after: pickFields(user, ['name', 'email', 'department']),
+    });
+
     res.json({ token, user: toPublicUser(user, { isGuest: Boolean(req.user.isGuest) }) });
   } catch (error) {
     res.status(500).json({ message: 'Profil konnte nicht gespeichert werden', error: error.message });
@@ -203,9 +247,19 @@ router.put('/me/password', auth, async (req, res) => {
       data: { password: hashedPassword },
     });
 
+    await writeAuditLog(req, {
+      action: 'PASSWORD_CHANGED',
+      entityType: 'USER',
+      entityId: user.id,
+      entityLabel: user.name,
+      summary: `${user.name} hat das Passwort geaendert.`,
+      severity: 'WARNING',
+    });
+
     res.json({ message: 'Passwort wurde geaendert' });
   } catch (error) {
     res.status(500).json({ message: 'Passwort konnte nicht geaendert werden', error: error.message });
   }
 });
+
 module.exports = router;

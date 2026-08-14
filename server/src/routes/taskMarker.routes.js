@@ -1,5 +1,6 @@
 const express = require('express');
 const auth = require('../middleware/auth');
+const { summarizeChanges, writeAuditLog } = require('../utils/auditLog');
 
 const router = express.Router();
 
@@ -41,7 +42,7 @@ const defaultTaskMarkers = [
   },
 ];
 
-const allowedMatchFields = new Set(['priority', 'status', 'project', 'tag']);
+const allowedMatchFields = new Set(['', 'priority', 'status', 'project', 'tag']);
 
 function serializeMarker(marker) {
   return {
@@ -65,7 +66,7 @@ function normalizeMarker(marker, index) {
     label: String(marker?.label || 'Neue Markierung').trim().slice(0, 80) || 'Neue Markierung',
     description: String(marker?.description || '').trim().slice(0, 180),
     color: normalizeColor(marker?.color),
-    matchField: allowedMatchFields.has(marker?.matchField) ? marker.matchField : 'priority',
+    matchField: allowedMatchFields.has(marker?.matchField) ? marker.matchField : '',
     matchValue: String(marker?.matchValue || '').trim().slice(0, 120),
     order: index,
   };
@@ -108,6 +109,7 @@ router.put('/', auth, async (req, res) => {
     const normalizedMarkers = (inputMarkers.length ? inputMarkers : defaultTaskMarkers).map(normalizeMarker).slice(0, 60);
 
     const existingMarkers = await getMarkers(req.prisma, req.user.id);
+    const beforeMarkers = existingMarkers.map(serializeMarker);
     const existingIds = new Set(existingMarkers.map((marker) => marker.id));
     const retainedIds = normalizedMarkers.map((marker) => marker.id).filter((id) => existingIds.has(id));
     const operations = [
@@ -139,7 +141,19 @@ router.put('/', auth, async (req, res) => {
     await req.prisma.$transaction(operations);
 
     const markers = await getMarkers(req.prisma, req.user.id);
-    res.json({ markers: markers.map(serializeMarker) });
+    const afterMarkers = markers.map(serializeMarker);
+    await writeAuditLog(req, {
+      action: 'TASK_MARKERS_UPDATED',
+      entityType: 'TASK_MARKER_SETTINGS',
+      entityId: req.user.id,
+      entityLabel: 'Aufgabenfarben',
+      summary: 'Aufgabenfarben und Farbstreifen-Regeln wurden gespeichert.',
+      severity: 'NOTICE',
+      before: summarizeChanges({ markers: beforeMarkers }, { markers: afterMarkers }),
+      after: { markers: afterMarkers },
+      metadata: { markerCount: afterMarkers.length },
+    });
+    res.json({ markers: afterMarkers });
   } catch (error) {
     res.status(500).json({ message: 'Aufgabenfarben konnten nicht gespeichert werden', error: error.message });
   }

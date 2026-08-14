@@ -52,6 +52,7 @@ model User {
   tasks        Task[]      @relation("AssignedTasks")
   comments     Comment[]
   taskMarkers  TaskMarker[]
+  auditLogs    AuditLog[]
 }
 
 model AccessRole {
@@ -128,4 +129,31 @@ model TaskMarker {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, order])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  entityType  String
+  entityId    String?
+  entityLabel String?
+  summary     String
+  severity    String   @default("INFO")
+  before      Json?
+  after       Json?
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  actorName   String
+  actorEmail  String?
+  actorRole   String?
+  createdAt   DateTime @default(now())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([severity])
 }

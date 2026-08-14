@@ -1,5 +1,6 @@
 const express = require('express');
 const auth = require('../middleware/auth');
+const { pickFields, summarizeChanges, writeAuditLog } = require('../utils/auditLog');
 const router = express.Router();
 
 const statusMap = {
@@ -17,6 +18,23 @@ const statusMap = {
   BLOCKED: 'BLOCKED',
   DONE: 'DONE',
 };
+
+const auditTaskFields = [
+  'id',
+  'title',
+  'description',
+  'status',
+  'priority',
+  'order',
+  'startDate',
+  'dueDate',
+  'endDate',
+  'estimatedHours',
+  'department',
+  'markerId',
+  'projectId',
+  'assigneeId',
+];
 
 function normalizeStatus(status) {
   return statusMap[status] || 'OPEN';
@@ -54,6 +72,7 @@ router.get('/project/:projectId', auth, async (req, res) => {
     });
   }
 });
+
 router.post('/', auth, async (req, res) => {
   try {
     const {
@@ -92,6 +111,18 @@ router.post('/', auth, async (req, res) => {
         markerId: markerId || null,
       },
     });
+
+    await writeAuditLog(req, {
+      action: 'TASK_CREATED',
+      entityType: 'TASK',
+      entityId: task.id,
+      entityLabel: task.title,
+      summary: `Aufgabe ${task.title} wurde erstellt.`,
+      severity: 'NOTICE',
+      after: pickFields(task, auditTaskFields),
+      metadata: { projectId: task.projectId },
+    });
+
     res.status(201).json(task);
   } catch (error) {
     res.status(500).json({
@@ -100,6 +131,7 @@ router.post('/', auth, async (req, res) => {
     });
   }
 });
+
 router.put('/:id', auth, async (req, res) => {
   try {
     const {
@@ -115,6 +147,7 @@ router.put('/:id', auth, async (req, res) => {
       department,
       markerId,
     } = req.body;
+    const before = await req.prisma.task.findUnique({ where: { id: req.params.id } });
     const updated = await req.prisma.task.update({
       where: { id: req.params.id },
       data: {
@@ -131,6 +164,19 @@ router.put('/:id', auth, async (req, res) => {
         markerId: markerId === undefined ? undefined : markerId || null,
       },
     });
+
+    await writeAuditLog(req, {
+      action: 'TASK_UPDATED',
+      entityType: 'TASK',
+      entityId: updated.id,
+      entityLabel: updated.title,
+      summary: `Aufgabe ${updated.title} wurde aktualisiert.`,
+      severity: 'NOTICE',
+      before: summarizeChanges(pickFields(before, auditTaskFields), pickFields(updated, auditTaskFields)),
+      after: pickFields(updated, auditTaskFields),
+      metadata: { projectId: updated.projectId },
+    });
+
     res.json(updated);
   } catch (error) {
     res.status(500).json({
@@ -139,13 +185,28 @@ router.put('/:id', auth, async (req, res) => {
     });
   }
 });
+
 router.patch('/:id/move', auth, async (req, res) => {
   try {
     const { status, order } = req.body;
+    const before = await req.prisma.task.findUnique({ where: { id: req.params.id } });
     const updated = await req.prisma.task.update({
       where: { id: req.params.id },
       data: { status: normalizeStatus(status), order },
     });
+
+    await writeAuditLog(req, {
+      action: 'TASK_MOVED',
+      entityType: 'TASK',
+      entityId: updated.id,
+      entityLabel: updated.title,
+      summary: `Aufgabe ${updated.title} wurde verschoben.`,
+      severity: updated.status === 'BLOCKED' ? 'WARNING' : 'INFO',
+      before: summarizeChanges(pickFields(before, ['status', 'order']), pickFields(updated, ['status', 'order'])),
+      after: pickFields(updated, ['status', 'order']),
+      metadata: { projectId: updated.projectId },
+    });
+
     res.json(updated);
   } catch (error) {
     res.status(500).json({
@@ -154,9 +215,11 @@ router.patch('/:id/move', auth, async (req, res) => {
     });
   }
 });
+
 router.patch('/:id/schedule', auth, async (req, res) => {
   try {
     const { startDate, dueDate, endDate, assigneeId, estimatedHours } = req.body;
+    const before = await req.prisma.task.findUnique({ where: { id: req.params.id } });
     const updated = await req.prisma.task.update({
       where: { id: req.params.id },
       data: {
@@ -171,6 +234,19 @@ router.patch('/:id/schedule', auth, async (req, res) => {
         project: true,
       },
     });
+
+    await writeAuditLog(req, {
+      action: 'TASK_SCHEDULED',
+      entityType: 'TASK',
+      entityId: updated.id,
+      entityLabel: updated.title,
+      summary: `Zeitplanung fuer Aufgabe ${updated.title} wurde geaendert.`,
+      severity: 'NOTICE',
+      before: summarizeChanges(pickFields(before, ['startDate', 'dueDate', 'endDate', 'assigneeId', 'estimatedHours']), pickFields(updated, ['startDate', 'dueDate', 'endDate', 'assigneeId', 'estimatedHours'])),
+      after: pickFields(updated, ['startDate', 'dueDate', 'endDate', 'assigneeId', 'estimatedHours']),
+      metadata: { projectId: updated.projectId },
+    });
+
     res.json(updated);
   } catch (error) {
     res.status(500).json({
@@ -179,20 +255,36 @@ router.patch('/:id/schedule', auth, async (req, res) => {
     });
   }
 });
+
 router.delete('/:id', auth, async (req, res) => {
   try {
+    const task = await req.prisma.task.findUnique({ where: { id: req.params.id } });
     await req.prisma.task.delete({ where: { id: req.params.id } });
-    res.json({ message: 'Task gelöscht' });
+
+    await writeAuditLog(req, {
+      action: 'TASK_DELETED',
+      entityType: 'TASK',
+      entityId: req.params.id,
+      entityLabel: task?.title || req.params.id,
+      summary: `Aufgabe ${task?.title || req.params.id} wurde geloescht.`,
+      severity: 'WARNING',
+      before: pickFields(task, auditTaskFields),
+      metadata: { projectId: task?.projectId || null },
+    });
+
+    res.json({ message: 'Task geloescht' });
   } catch (error) {
     res.status(500).json({
-      message: 'Fehler beim Löschen',
+      message: 'Fehler beim Loeschen',
       error: error.message,
     });
   }
 });
+
 router.post('/:id/comments', auth, async (req, res) => {
   try {
     const { content } = req.body;
+    const task = await req.prisma.task.findUnique({ where: { id: req.params.id } });
     const comment = await req.prisma.comment.create({
       data: {
         content,
@@ -203,6 +295,18 @@ router.post('/:id/comments', auth, async (req, res) => {
         author: true,
       },
     });
+
+    await writeAuditLog(req, {
+      action: 'COMMENT_CREATED',
+      entityType: 'COMMENT',
+      entityId: comment.id,
+      entityLabel: task?.title || req.params.id,
+      summary: `Kommentar zu ${task?.title || 'einer Aufgabe'} wurde erstellt.`,
+      severity: 'INFO',
+      after: pickFields(comment, ['id', 'taskId', 'authorId', 'createdAt']),
+      metadata: { taskId: req.params.id, projectId: task?.projectId || null },
+    });
+
     res.status(201).json(comment);
   } catch (error) {
     res.status(500).json({
@@ -211,4 +315,5 @@ router.post('/:id/comments', auth, async (req, res) => {
     });
   }
 });
+
 module.exports = router;

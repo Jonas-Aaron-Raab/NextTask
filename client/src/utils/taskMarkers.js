@@ -46,6 +46,7 @@ export const defaultTaskMarkers = [
 ];
 
 export const taskMarkerMatchFields = [
+  { value: '', label: 'Keine Zuordnung' },
   { value: 'priority', label: 'Prioritaet' },
   { value: 'status', label: 'Status' },
   { value: 'project', label: 'Projekt' },
@@ -128,7 +129,7 @@ export function createTaskMarker() {
     label: 'Neue Markierung',
     description: '',
     color: '#3b82f6',
-    matchField: 'priority',
+    matchField: '',
     matchValue: '',
   };
 }
@@ -147,7 +148,7 @@ export function getTaskMarker(task, markers = getStoredTaskMarkers()) {
 
   const marker = orderedMarkers.find((candidate) => {
     const matchValue = normalizeValue(candidate.matchValue);
-    if (!matchValue) return false;
+    if (!candidate.matchField || !matchValue) return false;
 
     if (candidate.matchField === 'status') return normalizeValue(task.status) === matchValue;
     if (candidate.matchField === 'priority') return normalizeValue(task.priority) === matchValue;

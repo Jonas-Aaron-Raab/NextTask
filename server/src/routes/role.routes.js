@@ -8,8 +8,11 @@ const {
   serializeUser,
   userCanManageRoles,
 } = require('../utils/accessRoles');
+const { pickFields, summarizeChanges, writeAuditLog } = require('../utils/auditLog');
 
 const router = express.Router();
+const auditRoleFields = ['id', 'name', 'code', 'kind', 'description', 'businessAreas', 'departmentIds', 'permissions', 'system'];
+const auditUserFields = ['id', 'name', 'email', 'role', 'department', 'accessRoleId'];
 
 function isBlank(value) {
   return typeof value !== 'string' || value.trim().length === 0;
@@ -93,6 +96,16 @@ router.post('/', auth, requireRoleManager, async (req, res) => {
       },
     });
 
+    await writeAuditLog(req, {
+      action: 'ROLE_CREATED',
+      entityType: 'ACCESS_ROLE',
+      entityId: role.id,
+      entityLabel: role.name,
+      summary: `Rolle ${role.name} wurde erstellt.`,
+      severity: 'WARNING',
+      after: pickFields(role, auditRoleFields),
+    });
+
     res.status(201).json({ role: serializeRole(role) });
   } catch (error) {
     res.status(500).json({ message: 'Rolle konnte nicht erstellt werden', error: error.message });
@@ -119,6 +132,17 @@ router.put('/:id', auth, requireRoleManager, async (req, res) => {
       },
     });
 
+    await writeAuditLog(req, {
+      action: 'ROLE_UPDATED',
+      entityType: 'ACCESS_ROLE',
+      entityId: role.id,
+      entityLabel: role.name,
+      summary: `Rolle ${role.name} wurde aktualisiert.`,
+      severity: 'WARNING',
+      before: summarizeChanges(pickFields(currentRole, auditRoleFields), pickFields(role, auditRoleFields)),
+      after: pickFields(role, auditRoleFields),
+    });
+
     res.json({ role: serializeRole(role) });
   } catch (error) {
     res.status(500).json({ message: 'Rolle konnte nicht gespeichert werden', error: error.message });
@@ -143,6 +167,17 @@ router.delete('/:id', auth, requireRoleManager, async (req, res) => {
     });
     await req.prisma.accessRole.delete({ where: { id: role.id } });
 
+    await writeAuditLog(req, {
+      action: 'ROLE_DELETED',
+      entityType: 'ACCESS_ROLE',
+      entityId: role.id,
+      entityLabel: role.name,
+      summary: `Rolle ${role.name} wurde geloescht.`,
+      severity: 'CRITICAL',
+      before: pickFields(role, auditRoleFields),
+      metadata: { fallbackRoleId: fallbackRole?.id || null },
+    });
+
     res.json({ message: 'Rolle wurde geloescht' });
   } catch (error) {
     res.status(500).json({ message: 'Rolle konnte nicht geloescht werden', error: error.message });
@@ -157,6 +192,7 @@ router.put('/users/:id', auth, requireRoleManager, async (req, res) => {
       return res.status(400).json({ message: 'Rolle wurde nicht gefunden' });
     }
 
+    const before = await req.prisma.user.findUnique({ where: { id: req.params.id }, include: { accessRole: true } });
     const user = await req.prisma.user.update({
       where: { id: req.params.id },
       data: {
@@ -164,6 +200,18 @@ router.put('/users/:id', auth, requireRoleManager, async (req, res) => {
         department: isBlank(department) ? undefined : String(department).trim(),
       },
       include: { accessRole: true },
+    });
+
+    await writeAuditLog(req, {
+      action: 'USER_ROLE_ASSIGNED',
+      entityType: 'USER',
+      entityId: user.id,
+      entityLabel: user.name,
+      summary: `${user.name} wurde der Rolle ${role.name} zugeordnet.`,
+      severity: 'WARNING',
+      before: summarizeChanges(pickFields(before, auditUserFields), pickFields(user, auditUserFields)),
+      after: pickFields(user, auditUserFields),
+      metadata: { assignedRoleId: role.id, assignedRoleName: role.name },
     });
 
     res.json({ user: serializeUser(user) });
@@ -196,6 +244,17 @@ router.post('/users', auth, requireRoleManager, async (req, res) => {
         accessRoleId: role?.id || null,
       },
       include: { accessRole: true },
+    });
+
+    await writeAuditLog(req, {
+      action: 'USER_CREATED',
+      entityType: 'USER',
+      entityId: user.id,
+      entityLabel: user.name,
+      summary: `Benutzer ${user.name} wurde angelegt.`,
+      severity: 'WARNING',
+      after: pickFields(user, auditUserFields),
+      metadata: { assignedRoleId: role?.id || null, assignedRoleName: role?.name || null },
     });
 
     res.status(201).json({ user: serializeUser(user) });

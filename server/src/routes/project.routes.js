@@ -1,6 +1,8 @@
 const express = require('express');
 const auth = require('../middleware/auth');
+const { pickFields, writeAuditLog } = require('../utils/auditLog');
 const router = express.Router();
+
 router.get('/', auth, async (req, res) => {
   try {
     const projects = await req.prisma.project.findMany({
@@ -15,6 +17,7 @@ router.get('/', auth, async (req, res) => {
     });
   }
 });
+
 router.post('/', auth, async (req, res) => {
   try {
     const { name, key, description } = req.body;
@@ -26,6 +29,17 @@ router.post('/', auth, async (req, res) => {
         ownerId: req.user.id,
       },
     });
+
+    await writeAuditLog(req, {
+      action: 'PROJECT_CREATED',
+      entityType: 'PROJECT',
+      entityId: project.id,
+      entityLabel: project.name,
+      summary: `Projekt ${project.name} wurde erstellt.`,
+      severity: 'NOTICE',
+      after: pickFields(project, ['id', 'name', 'key', 'description', 'ownerId', 'deadline']),
+    });
+
     res.status(201).json(project);
   } catch (error) {
     res.status(500).json({
@@ -34,4 +48,5 @@ router.post('/', auth, async (req, res) => {
     });
   }
 });
+
 module.exports = router;

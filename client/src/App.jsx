@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import DashboardPage from './pages/DashboardPage';
+import AuditLogPage from './pages/AuditLogPage';
 import DepartmentsPage from './pages/DepartmentsPage';
 import CalendarPage from './pages/CalendarPage';
 import DocumentsPage from './pages/DocumentsPage';
@@ -50,6 +51,7 @@ function AppRoutes() {
       <Route path="/projects/:projectId" element={<RequireAuth><ProjectBoardPage /></RequireAuth>} />
       <Route path="/reports" element={<RequireAuth><ReportsPage /></RequireAuth>} />
       <Route path="/roles" element={<RequireAuth><RoleManagementPage /></RequireAuth>} />
+      <Route path="/audit-log" element={<RequireAuth><AuditLogPage /></RequireAuth>} />
       <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
