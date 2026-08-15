@@ -24,9 +24,12 @@ import {
   MessageSquareMore,
   MoreHorizontal,
   Paperclip,
+  Pencil,
+  Plus,
   ShieldCheck,
   Star,
   Tag,
+  Trash2,
   UserPlus,
   UserRound,
   Users,
@@ -39,6 +42,7 @@ import { getStoredTaskMarkers, getTaskMarker } from '../utils/taskMarkers';
 import { initialTasks as sourceTasks } from './MyTasksPage';
 
 const createMenuItems = ['Neue Abteilung', 'Neues Projekt'];
+export const projectStorageKey = 'nexttask:projects';
 
 export const initialDepartments = [
   {
@@ -99,10 +103,150 @@ export const initialProjects = [
     departmentId: 'dept-digital-banking',
     name: 'Mobile Banking Relaunch',
     owner: 'Lisa Wagner',
+    deputyLead: 'Markus Klein',
+    projectSponsor: 'Mara Stein',
     visibility: 'Abteilung',
     status: 'In Planung',
+    projectType: 'Abteilung',
+    businessArea: 'Digitales Banking',
+    plannedStart: '01. April 2026',
+    plannedStartInput: '2026-04-01',
     dueDate: '30. Juni 2026',
+    dueDateInput: '2026-06-30',
     summary: 'Neue mobile Customer Journey fuer Konto, Karten und Self Services.',
+    projectGoal:
+      'Die mobile Banking-Journey wird fuer Konto, Karten und Self Services modernisiert, damit Kunden Kernfunktionen schneller, barriereaermer und sicher nutzen koennen.',
+    plannedEffortPt: 180,
+    actualEffortPt: 116,
+    effortDifferencePt: -64,
+    plannedBudget: 95000,
+    actualBudget: 57400,
+    reportProgress: 64,
+    overallStatus: 'Gelb',
+    goalStatus: 'Gruen',
+    scheduleStatus: 'Gelb',
+    resourceStatus: 'Gruen',
+    budgetStatus: 'Gelb',
+    collaborationQuality:
+      'Die Zusammenarbeit zwischen Digitales Banking, IT-Schnittstellen und QA ist stabil. Fachliche Rueckfragen werden im Wochenrhythmus geklaert.',
+    reportNotes:
+      'Der Relaunch liegt inhaltlich im Zielbild. Die Terminampel ist gelb, weil App-Store-Freigabe und Device-Testmatrix eng am Planende liegen. Budgetabweichungen entstehen aktuell vor allem durch externe Testunterstuetzung.',
+    nextSteps:
+      'Beta-Release abschliessen, Security-Review terminieren, Testmatrix finalisieren und Produktionsfreigabe mit Compliance vorbereiten.',
+    reportVersion: 'v1.0',
+    keyInterfaces: ['Kartenservice', 'Online-Banking API', 'Push-Benachrichtigungen'],
+    milestones: [
+      {
+        id: 'milestone-mobile-ux',
+        title: 'UX-Prototyp freigegeben',
+        planDate: '30. April 2026',
+        planDateInput: '2026-04-30',
+        newDate: '',
+        newDateInput: '',
+        status: 'Erreicht',
+        progress: 100,
+        statusNote: 'Freigabe durch Fachbereich und Kundenservice erfolgt.',
+      },
+      {
+        id: 'milestone-mobile-beta',
+        title: 'Beta-Release Mobile App',
+        planDate: '31. Mai 2026',
+        planDateInput: '2026-05-31',
+        newDate: '07. Juni 2026',
+        newDateInput: '2026-06-07',
+        status: 'Gefaehrdet',
+        progress: 70,
+        statusNote: 'Push-Freigabe und Device-Testmatrix sind noch offen.',
+      },
+      {
+        id: 'milestone-mobile-prod',
+        title: 'Produktionsfreigabe',
+        planDate: '30. Juni 2026',
+        planDateInput: '2026-06-30',
+        newDate: '',
+        newDateInput: '',
+        status: 'Offen',
+        progress: 35,
+        statusNote: 'Abhaengig von Security-Review und finaler QA-Abnahme.',
+      },
+    ],
+    risks: [
+      {
+        id: 'risk-mobile-store',
+        code: 'R-1',
+        title: 'App-Store-Freigabe verzoegert',
+        impact: 4,
+        probability: 3,
+        riskClass: 'Hoch',
+        trend: 'Steigend',
+        description: 'Externe Review-Zyklen koennen die geplante Veroeffentlichung verschieben.',
+        measure: 'Vorabpruefung einplanen und Fallback-Termin fuer Release-Kommunikation abstimmen.',
+      },
+      {
+        id: 'risk-mobile-cards',
+        code: 'R-2',
+        title: 'Schnittstelle Kartenservice instabil',
+        impact: 3,
+        probability: 2,
+        riskClass: 'Mittel',
+        trend: 'Stabil',
+        description: 'Antwortzeiten schwanken in Lasttests bei Kartensperrung und Kartenlimit.',
+        measure: 'Gemeinsame Lasttest-Slots mit Schnittstellenteam durchfuehren.',
+      },
+    ],
+    budgetLines: [
+      {
+        id: 'budget-mobile-internal',
+        category: 'Interne Personalkosten',
+        plannedAmount: 60000,
+        actualAmount: 36000,
+        difference: -24000,
+        actualPercent: 60,
+      },
+      {
+        id: 'budget-mobile-external',
+        category: 'Externe Dienstleister',
+        plannedAmount: 25000,
+        actualAmount: 18400,
+        difference: -6600,
+        actualPercent: 74,
+      },
+      {
+        id: 'budget-mobile-devices',
+        category: 'Lizenzen und Testgeraete',
+        plannedAmount: 10000,
+        actualAmount: 3000,
+        difference: -7000,
+        actualPercent: 30,
+      },
+    ],
+    interfaces: [
+      {
+        id: 'interface-mobile-cards',
+        name: 'Kartenservice',
+        status: 'In Klaerung',
+        comment: 'Antwortzeiten im Lasttest pruefen.',
+      },
+      {
+        id: 'interface-mobile-api',
+        name: 'Online-Banking API',
+        status: 'Abgestimmt',
+        comment: 'Contract Freeze erfolgt.',
+      },
+      {
+        id: 'interface-mobile-push',
+        name: 'Push-Benachrichtigungen',
+        status: 'Offen',
+        comment: 'Finale Freigabe durch IT-Security ausstehend.',
+      },
+    ],
+    approvals: {
+      projectResponsible: 'Mara Stein',
+      gbl: 'Mara Stein',
+      projectLead: 'Lisa Wagner',
+      approvalDate: '28. Juni 2026',
+      approvalDateInput: '2026-06-28',
+    },
   },
   {
     id: 'proj-2',
@@ -599,15 +743,424 @@ const emptyDepartmentForm = {
   description: '',
 };
 
+function createProjectRowId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function createMilestoneRow(overrides = {}) {
+  return {
+    id: createProjectRowId('milestone'),
+    title: '',
+    planDate: '',
+    newDate: '',
+    status: 'Offen',
+    progress: '0',
+    statusNote: '',
+    ...overrides,
+  };
+}
+
+function createRiskRow(overrides = {}) {
+  return {
+    id: createProjectRowId('risk'),
+    code: '',
+    title: '',
+    impact: '',
+    probability: '',
+    riskClass: '',
+    trend: 'Stabil',
+    description: '',
+    measure: '',
+    ...overrides,
+  };
+}
+
+function createBudgetRow(overrides = {}) {
+  return {
+    id: createProjectRowId('budget'),
+    category: '',
+    plannedAmount: '',
+    actualAmount: '',
+    ...overrides,
+  };
+}
+
+function createInterfaceRow(overrides = {}) {
+  return {
+    id: createProjectRowId('interface'),
+    name: '',
+    status: 'Offen',
+    comment: '',
+    ...overrides,
+  };
+}
+
 const emptyProjectForm = {
   name: '',
   departmentId: initialDepartments[0].id,
   owner: 'Elisabeth Bezverkha',
+  deputyLead: '',
+  projectSponsor: '',
   visibility: 'Persoenlich',
   status: 'In Planung',
+  plannedStart: '2026-06-01',
   dueDate: '2026-07-15',
   summary: '',
+  projectGoal: '',
+  plannedEffortPt: '',
+  plannedBudget: '',
+  keyInterfaces: '',
+  initialMilestones: '',
+  initialRisks: '',
+  budgetCategories: 'Interne Personalkosten\nExterne Dienstleister',
+  reportProgress: '0',
+  overallStatus: 'Gruen',
+  goalStatus: 'Gruen',
+  scheduleStatus: 'Gruen',
+  resourceStatus: 'Gruen',
+  budgetStatus: 'Gruen',
+  collaborationQuality: '',
+  reportNotes: '',
+  nextSteps: '',
+  reportVersion: 'v1',
+  actualEffortPt: '',
+  milestoneRows: [createMilestoneRow()],
+  riskRows: [createRiskRow()],
+  budgetRows: [
+    createBudgetRow({ category: 'Interne Personalkosten' }),
+    createBudgetRow({ category: 'Externe Dienstleister' }),
+  ],
+  interfaceRows: [createInterfaceRow()],
+  projectResponsibleApproval: '',
+  gblApproval: '',
+  projectLeadApproval: '',
+  approvalDate: '',
 };
+
+function parseMultilineList(value) {
+  return String(value || '')
+    .split(/\r?\n|,/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function parseOptionalNumber(value) {
+  if (value === '' || value === null || value === undefined) return null;
+  const parsed = Number(String(value).replace(',', '.'));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatNumberLabel(value, suffix = '') {
+  if (value === null || value === undefined || value === '') return 'Noch offen';
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 'Noch offen';
+  return `${new Intl.NumberFormat('de-DE').format(parsed)}${suffix}`;
+}
+
+function calculateDifference(plannedValue, actualValue) {
+  const planned = parseOptionalNumber(plannedValue) ?? 0;
+  const actual = parseOptionalNumber(actualValue) ?? 0;
+  return actual - planned;
+}
+
+function calculateActualPercent(plannedValue, actualValue) {
+  const planned = parseOptionalNumber(plannedValue) ?? 0;
+  const actual = parseOptionalNumber(actualValue) ?? 0;
+  if (!planned) return null;
+  return Math.round((actual / planned) * 100);
+}
+
+function ensureRows(rows, createRow) {
+  return Array.isArray(rows) && rows.length ? rows : [createRow()];
+}
+
+export function mergeProjectsWithDefaults(storedProjects) {
+  if (!Array.isArray(storedProjects) || !storedProjects.length) return initialProjects;
+
+  const storedById = new Map(storedProjects.map((project) => [project.id, project]));
+  const defaultIds = new Set(initialProjects.map((project) => project.id));
+  const mergedDefaults = initialProjects.map((project) => ({
+    ...project,
+    ...(storedById.get(project.id) || {}),
+  }));
+  const customProjects = storedProjects.filter((project) => !defaultIds.has(project.id));
+
+  return [...mergedDefaults, ...customProjects];
+}
+
+function getStoredProjects() {
+  if (typeof window === 'undefined') return initialProjects;
+  try {
+    const stored = window.localStorage.getItem(projectStorageKey);
+    const parsed = stored ? JSON.parse(stored) : null;
+    return mergeProjectsWithDefaults(parsed);
+  } catch {
+    return initialProjects;
+  }
+}
+
+const germanMonthNumbers = {
+  januar: '01',
+  februar: '02',
+  maerz: '03',
+  marz: '03',
+  april: '04',
+  mai: '05',
+  juni: '06',
+  juli: '07',
+  august: '08',
+  september: '09',
+  oktober: '10',
+  november: '11',
+  dezember: '12',
+};
+
+function formatDateForDisplay(dateValue) {
+  if (!dateValue) return '';
+  return new Intl.DateTimeFormat('de-DE', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(`${dateValue}T00:00:00`));
+}
+
+function toProjectDateInputValue(value) {
+  if (!value) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+  const normalized = String(value).trim().replace(/\.$/, '');
+  const numericMatch = normalized.match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})$/);
+  if (numericMatch) {
+    const [, day, month, year] = numericMatch;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+
+  const longMatch = normalized.match(/^(\d{1,2})\.\s*([^\s]+)\s+(\d{4})$/);
+  if (longMatch) {
+    const [, day, monthName, year] = longMatch;
+    const normalizedMonthName = monthName
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    const month = germanMonthNumbers[normalizedMonthName];
+    if (month) return `${year}-${month}-${day.padStart(2, '0')}`;
+  }
+
+  return '';
+}
+
+function createProjectPayload(projectForm, departments) {
+  const targetDepartment = departments.find((department) => department.id === projectForm.departmentId);
+  const timestamp = Date.now();
+  const interfaceRows = ensureRows(projectForm.interfaceRows, createInterfaceRow)
+    .map((row) => ({
+      ...row,
+      name: row.name?.trim() || '',
+      status: row.status || 'Offen',
+      comment: row.comment?.trim() || '',
+    }))
+    .filter((row) => row.name || row.comment);
+  const keyInterfaces = interfaceRows.length
+    ? interfaceRows.map((row) => row.name).filter(Boolean)
+    : parseMultilineList(projectForm.keyInterfaces);
+  const milestoneSource = Array.isArray(projectForm.milestoneRows)
+    ? projectForm.milestoneRows
+    : parseMultilineList(projectForm.initialMilestones).map((title) => createMilestoneRow({ title }));
+  const milestones = milestoneSource
+    .map((row, index) => ({
+      id: row.id || `milestone-${timestamp}-${index}`,
+      title: row.title?.trim() || '',
+      planDate: formatDateForDisplay(row.planDate),
+      planDateInput: row.planDate || '',
+      newDate: formatDateForDisplay(row.newDate),
+      newDateInput: row.newDate || '',
+      status: row.status || 'Offen',
+      progress: Math.min(Math.max(parseOptionalNumber(row.progress) ?? 0, 0), 100),
+      statusNote: row.statusNote?.trim() || '',
+      order: index,
+    }))
+    .filter((row) => row.title || row.planDate || row.statusNote);
+  const riskSource = Array.isArray(projectForm.riskRows)
+    ? projectForm.riskRows
+    : parseMultilineList(projectForm.initialRisks).map((title, index) => createRiskRow({ code: `R-${index + 1}`, title }));
+  const risks = riskSource
+    .map((row, index) => ({
+      id: row.id || `risk-${timestamp}-${index}`,
+      code: row.code?.trim() || `R-${index + 1}`,
+      title: row.title?.trim() || '',
+      impact: parseOptionalNumber(row.impact),
+      probability: parseOptionalNumber(row.probability),
+      riskClass: row.riskClass?.trim() || '',
+      trend: row.trend || 'Stabil',
+      description: row.description?.trim() || '',
+      measure: row.measure?.trim() || '',
+      active: true,
+    }))
+    .filter((row) => row.title || row.description || row.measure);
+  const budgetSource = Array.isArray(projectForm.budgetRows)
+    ? projectForm.budgetRows
+    : parseMultilineList(projectForm.budgetCategories).map((category) => createBudgetRow({ category }));
+  const budgetLines = budgetSource
+    .map((row, index) => {
+      const plannedAmount = parseOptionalNumber(row.plannedAmount) ?? 0;
+      const actualAmount = parseOptionalNumber(row.actualAmount) ?? 0;
+      return {
+        id: row.id || `budget-${timestamp}-${index}`,
+        category: row.category?.trim() || '',
+        plannedAmount,
+        actualAmount,
+        difference: actualAmount - plannedAmount,
+        actualPercent: plannedAmount ? Math.round((actualAmount / plannedAmount) * 100) : null,
+        order: index,
+      };
+    })
+    .filter((row) => row.category);
+  const formattedPlannedStart = formatDateForDisplay(projectForm.plannedStart);
+  const formattedPlannedEnd = formatDateForDisplay(projectForm.dueDate);
+  const plannedEffortPt = parseOptionalNumber(projectForm.plannedEffortPt);
+  const actualEffortPt = parseOptionalNumber(projectForm.actualEffortPt);
+
+  return {
+    departmentId: projectForm.departmentId,
+    name: projectForm.name.trim(),
+    owner: projectForm.owner.trim() || 'Elisabeth Bezverkha',
+    deputyLead: projectForm.deputyLead.trim(),
+    projectSponsor: projectForm.projectSponsor.trim(),
+    visibility: projectForm.visibility,
+    status: projectForm.visibility === 'Persoenlich' ? 'Eigene Planung' : 'Abteilungsprojekt',
+    dueDate: formattedPlannedEnd || 'Noch offen',
+    summary: projectForm.summary.trim() || 'Neu angelegtes Projekt ohne weitere Beschreibung.',
+    businessArea: targetDepartment?.name || '',
+    projectGoal: projectForm.projectGoal.trim(),
+    plannedStart: formattedPlannedStart,
+    plannedEnd: formattedPlannedEnd,
+    plannedStartInput: projectForm.plannedStart,
+    plannedEndInput: projectForm.dueDate,
+    plannedEffortPt,
+    plannedBudget: parseOptionalNumber(projectForm.plannedBudget),
+    keyInterfaces,
+    interfaces: interfaceRows,
+    milestones,
+    risks,
+    budgetLines,
+    reportProgress: Math.min(Math.max(parseOptionalNumber(projectForm.reportProgress) ?? 0, 0), 100),
+    overallStatus: projectForm.overallStatus,
+    goalStatus: projectForm.goalStatus,
+    scheduleStatus: projectForm.scheduleStatus,
+    resourceStatus: projectForm.resourceStatus,
+    budgetStatus: projectForm.budgetStatus,
+    collaborationQuality: projectForm.collaborationQuality.trim(),
+    reportNotes: projectForm.reportNotes.trim(),
+    nextSteps: projectForm.nextSteps.trim(),
+    reportVersion: projectForm.reportVersion.trim() || 'v1',
+    actualEffortPt,
+    effortDifferencePt:
+      actualEffortPt === null || plannedEffortPt === null
+        ? null
+        : actualEffortPt - plannedEffortPt,
+    approvals: {
+      projectResponsible: projectForm.projectResponsibleApproval.trim(),
+      gbl: projectForm.gblApproval.trim(),
+      projectLead: projectForm.projectLeadApproval.trim(),
+      approvalDate: formatDateForDisplay(projectForm.approvalDate),
+      approvalDateInput: projectForm.approvalDate,
+    },
+    reportCycle: 'MONTHLY',
+  };
+}
+
+function projectToForm(project, fallbackDepartmentId) {
+  const milestoneRows = Array.isArray(project.milestones) && project.milestones.length
+    ? project.milestones.map((milestone) =>
+        createMilestoneRow({
+          id: milestone.id,
+          title: milestone.title || '',
+          planDate: milestone.planDateInput || toProjectDateInputValue(milestone.planDate),
+          newDate: milestone.newDateInput || toProjectDateInputValue(milestone.newDate),
+          status: milestone.status || 'Offen',
+          progress: milestone.progress ?? '0',
+          statusNote: milestone.statusNote || '',
+        }),
+      )
+    : parseMultilineList(project.initialMilestones).map((title) => createMilestoneRow({ title }));
+  const riskRows = Array.isArray(project.risks) && project.risks.length
+    ? project.risks.map((risk) =>
+        createRiskRow({
+          id: risk.id,
+          code: risk.code || '',
+          title: risk.title || '',
+          impact: risk.impact ?? '',
+          probability: risk.probability ?? '',
+          riskClass: risk.riskClass || '',
+          trend: risk.trend || 'Stabil',
+          description: risk.description || '',
+          measure: risk.measure || '',
+        }),
+      )
+    : parseMultilineList(project.initialRisks).map((title, index) => createRiskRow({ code: `R-${index + 1}`, title }));
+  const budgetRows = Array.isArray(project.budgetLines) && project.budgetLines.length
+    ? project.budgetLines.map((line) =>
+        createBudgetRow({
+          id: line.id,
+          category: line.category || '',
+          plannedAmount: line.plannedAmount ?? '',
+          actualAmount: line.actualAmount ?? '',
+        }),
+      )
+    : parseMultilineList(project.budgetCategories).map((category) => createBudgetRow({ category }));
+  const interfaceRows = Array.isArray(project.interfaces) && project.interfaces.length
+    ? project.interfaces.map((entry) =>
+        createInterfaceRow({
+          id: entry.id,
+          name: entry.name || '',
+          status: entry.status || 'Offen',
+          comment: entry.comment || '',
+        }),
+      )
+    : (Array.isArray(project.keyInterfaces) ? project.keyInterfaces : []).map((name) => createInterfaceRow({ name }));
+
+  return {
+    ...emptyProjectForm,
+    name: project.name || '',
+    departmentId: project.departmentId || fallbackDepartmentId || '',
+    owner: project.owner || 'Elisabeth Bezverkha',
+    deputyLead: project.deputyLead || '',
+    projectSponsor: project.projectSponsor || '',
+    visibility: project.visibility || 'Persoenlich',
+    status: project.status || 'In Planung',
+    plannedStart: project.plannedStartInput || toProjectDateInputValue(project.plannedStart),
+    dueDate: project.plannedEndInput || toProjectDateInputValue(project.plannedEnd || project.dueDate),
+    summary: project.summary || '',
+    projectGoal: project.projectGoal || '',
+    plannedEffortPt: project.plannedEffortPt ?? '',
+    plannedBudget: project.plannedBudget ?? '',
+    keyInterfaces: Array.isArray(project.keyInterfaces) ? project.keyInterfaces.join('\n') : '',
+    initialMilestones: Array.isArray(project.milestones) ? project.milestones.map((milestone) => milestone.title).join('\n') : '',
+    initialRisks: Array.isArray(project.risks) ? project.risks.map((risk) => risk.title).join('\n') : '',
+    budgetCategories: Array.isArray(project.budgetLines) && project.budgetLines.length
+      ? project.budgetLines.map((line) => line.category).join('\n')
+      : emptyProjectForm.budgetCategories,
+    reportProgress: project.reportProgress ?? '0',
+    overallStatus: project.overallStatus || 'Gruen',
+    goalStatus: project.goalStatus || 'Gruen',
+    scheduleStatus: project.scheduleStatus || 'Gruen',
+    resourceStatus: project.resourceStatus || 'Gruen',
+    budgetStatus: project.budgetStatus || 'Gruen',
+    collaborationQuality: project.collaborationQuality || '',
+    reportNotes: project.reportNotes || '',
+    nextSteps: project.nextSteps || '',
+    reportVersion: project.reportVersion || 'v1',
+    actualEffortPt: project.actualEffortPt ?? '',
+    milestoneRows: ensureRows(milestoneRows, createMilestoneRow),
+    riskRows: ensureRows(riskRows, createRiskRow),
+    budgetRows: ensureRows(budgetRows, createBudgetRow),
+    interfaceRows: ensureRows(interfaceRows, createInterfaceRow),
+    projectResponsibleApproval: project.approvals?.projectResponsible || '',
+    gblApproval: project.approvals?.gbl || '',
+    projectLeadApproval: project.approvals?.projectLead || '',
+    approvalDate: project.approvals?.approvalDateInput || toProjectDateInputValue(project.approvals?.approvalDate),
+  };
+}
 
 function PopupShell({ title, subtitle, onClose, children, maxWidth = 'max-w-2xl' }) {
   return (
@@ -691,78 +1244,373 @@ function CreateDepartmentModal({ form, onChange, onClose, onSubmit }) {
   );
 }
 
-function CreateProjectModal({ departments, form, onChange, onClose, onSubmit }) {
+function CreateProjectModal({
+  departments,
+  form,
+  onChange,
+  onClose,
+  onSubmit,
+  title = 'Neues Projekt',
+  subtitle = 'Lege Stammdaten an, die spaeter direkt fuer Statusberichte genutzt werden.',
+  submitLabel = 'Projekt anlegen',
+}) {
+  const [activeTab, setActiveTab] = useState('basis');
+  const inputClass = 'mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10';
+  const textareaClass = 'mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10';
+  const compactInputClass = 'h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10';
+  const tabs = [
+    { id: 'basis', label: 'Projektbasis', icon: FileText },
+    { id: 'status', label: 'Status', icon: ShieldCheck },
+    { id: 'milestones', label: 'Meilensteine', icon: ListChecks },
+    { id: 'risks', label: 'Risiken', icon: Tag },
+    { id: 'budget', label: 'Budget & Ressourcen', icon: CalendarDays },
+    { id: 'interfaces', label: 'Schnittstellen & Freigabe', icon: UserPlus },
+  ];
+  const rowFactories = {
+    milestoneRows: createMilestoneRow,
+    riskRows: createRiskRow,
+    budgetRows: createBudgetRow,
+    interfaceRows: createInterfaceRow,
+  };
+  const statusOptions = ['Gruen', 'Gelb', 'Rot'];
+  const milestoneStatusOptions = ['Offen', 'In Arbeit', 'Erreicht', 'Gefaehrdet', 'Verschoben'];
+  const trendOptions = ['Steigend', 'Stabil', 'Fallend', 'Neu'];
+  const interfaceStatusOptions = ['Offen', 'In Klaerung', 'Abgestimmt', 'Blockiert'];
+
+  const rowsFor = (field) => ensureRows(form[field], rowFactories[field]);
+  const updateRow = (field, rowId, key, value) => {
+    onChange(
+      field,
+      rowsFor(field).map((row) => (row.id === rowId ? { ...row, [key]: value } : row)),
+    );
+  };
+  const addRow = (field) => onChange(field, [...rowsFor(field), rowFactories[field]()]);
+  const removeRow = (field, rowId) => {
+    const nextRows = rowsFor(field).filter((row) => row.id !== rowId);
+    onChange(field, nextRows.length ? nextRows : [rowFactories[field]()]);
+  };
+
+  const renderRowAction = (field, rowId, label) => (
+    <button
+      type="button"
+      onClick={() => removeRow(field, rowId)}
+      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:border-[#d89aa5] hover:bg-[#fff7f8] hover:text-[#a23d4d]"
+      aria-label={label}
+      title={label}
+    >
+      <Trash2 className="h-4 w-4" />
+    </button>
+  );
+
   return (
-    <PopupShell title="Neues Projekt" subtitle="Lege ein persoenliches Projekt oder ein Projekt fuer eine Abteilung an." maxWidth="max-w-3xl" onClose={onClose}>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <label className="block text-sm font-bold text-slate-700">
-            Projektname
-            <input
-              value={form.name}
-              onChange={(event) => onChange('name', event.target.value)}
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-            />
-          </label>
-
-          <label className="block text-sm font-bold text-slate-700">
-            Projektbeschreibung
-            <textarea
-              value={form.summary}
-              onChange={(event) => onChange('summary', event.target.value)}
-              rows={5}
-              className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-            />
-          </label>
-        </section>
-
-        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <label className="block text-sm font-bold text-slate-700">
-            Abteilung
-            <select
-              value={form.departmentId}
-              onChange={(event) => onChange('departmentId', event.target.value)}
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+    <PopupShell title={title} subtitle={subtitle} maxWidth="max-w-7xl" onClose={onClose}>
+      <div className="mb-5 flex flex-wrap gap-2 border-b border-slate-200 pb-4">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-extrabold transition ${
+                isActive
+                  ? 'bg-[#fff1f3] text-[#a23d4d] shadow-[0_8px_18px_rgba(136,54,66,0.08)]'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
+              }`}
             >
-              {departments.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
-                </option>
+              <Icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="max-h-[calc(100vh-17rem)] overflow-y-auto pr-1">
+        {activeTab === 'basis' ? (
+          <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-[#c95767]" />
+              <p className="text-sm font-extrabold text-slate-900">Projektbasis</p>
+            </div>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Projektname
+              <input value={form.name} onChange={(event) => onChange('name', event.target.value)} className={inputClass} />
+            </label>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block text-sm font-bold text-slate-700">
+                Abteilung
+                <select value={form.departmentId} onChange={(event) => onChange('departmentId', event.target.value)} className={inputClass}>
+                  {departments.map((department) => (
+                    <option key={department.id} value={department.id}>{department.name}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block text-sm font-bold text-slate-700">
+                Projektart
+                <select value={form.visibility} onChange={(event) => onChange('visibility', event.target.value)} className={inputClass}>
+                  <option value="Persoenlich">Persoenlich</option>
+                  <option value="Abteilung">Abteilung</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <label className="block text-sm font-bold text-slate-700">
+                Projektleitung
+                <input value={form.owner} onChange={(event) => onChange('owner', event.target.value)} className={inputClass} />
+              </label>
+
+              <label className="block text-sm font-bold text-slate-700">
+                Stellvertretung
+                <input value={form.deputyLead} onChange={(event) => onChange('deputyLead', event.target.value)} placeholder="Optional" className={inputClass} />
+              </label>
+
+              <label className="block text-sm font-bold text-slate-700">
+                Verantwortlicher / GBL
+                <input value={form.projectSponsor} onChange={(event) => onChange('projectSponsor', event.target.value)} placeholder="Optional" className={inputClass} />
+              </label>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block text-sm font-bold text-slate-700">
+                Beginn Plan
+                <input type="date" value={form.plannedStart} onChange={(event) => onChange('plannedStart', event.target.value)} className={inputClass} />
+              </label>
+
+              <label className="block text-sm font-bold text-slate-700">
+                Ende Plan
+                <input type="date" value={form.dueDate} onChange={(event) => onChange('dueDate', event.target.value)} className={inputClass} />
+              </label>
+            </div>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Projektbeschreibung
+              <textarea value={form.summary} onChange={(event) => onChange('summary', event.target.value)} rows={5} className={textareaClass} />
+            </label>
+          </section>
+        ) : null}
+
+        {activeTab === 'status' ? (
+          <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-[#c95767]" />
+              <p className="text-sm font-extrabold text-slate-900">Status & Bericht</p>
+            </div>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Projektziel
+              <textarea value={form.projectGoal} onChange={(event) => onChange('projectGoal', event.target.value)} rows={4} placeholder="Kurz formuliertes Ziel fuer Statusberichte" className={textareaClass} />
+            </label>
+
+            <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+              <label className="block text-sm font-bold text-slate-700">
+                Fortschritt %
+                <input type="number" min="0" max="100" value={form.reportProgress} onChange={(event) => onChange('reportProgress', event.target.value)} className={inputClass} />
+              </label>
+              {[
+                ['overallStatus', 'Gesamtstatus'],
+                ['goalStatus', 'Ziel'],
+                ['scheduleStatus', 'Termine'],
+                ['resourceStatus', 'Ressourcen'],
+                ['budgetStatus', 'Budget'],
+              ].map(([field, label]) => (
+                <label key={field} className="block text-sm font-bold text-slate-700">
+                  {label}
+                  <select value={form[field]} onChange={(event) => onChange(field, event.target.value)} className={inputClass}>
+                    {statusOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                </label>
               ))}
-            </select>
-          </label>
+            </div>
 
-          <label className="block text-sm font-bold text-slate-700">
-            Projektart
-            <select
-              value={form.visibility}
-              onChange={(event) => onChange('visibility', event.target.value)}
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-            >
-              <option value="Persoenlich">Persoenlich</option>
-              <option value="Abteilung">Abteilung</option>
-            </select>
-          </label>
+            <div className="grid gap-4 lg:grid-cols-3">
+              <label className="block text-sm font-bold text-slate-700">
+                Qualitaet der Zusammenarbeit
+                <textarea value={form.collaborationQuality} onChange={(event) => onChange('collaborationQuality', event.target.value)} rows={5} className={textareaClass} />
+              </label>
+              <label className="block text-sm font-bold text-slate-700">
+                Erlaeuterungen / Massnahmen
+                <textarea value={form.reportNotes} onChange={(event) => onChange('reportNotes', event.target.value)} rows={5} className={textareaClass} />
+              </label>
+              <label className="block text-sm font-bold text-slate-700">
+                Naechste Schritte
+                <textarea value={form.nextSteps} onChange={(event) => onChange('nextSteps', event.target.value)} rows={5} className={textareaClass} />
+              </label>
+            </div>
 
-          <label className="block text-sm font-bold text-slate-700">
-            Verantwortung
-            <input
-              value={form.owner}
-              onChange={(event) => onChange('owner', event.target.value)}
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-            />
-          </label>
+            <label className="block max-w-xs text-sm font-bold text-slate-700">
+              Berichtsversion / Stand
+              <input value={form.reportVersion} onChange={(event) => onChange('reportVersion', event.target.value)} className={inputClass} />
+            </label>
+          </section>
+        ) : null}
 
-          <label className="block text-sm font-bold text-slate-700">
-            Zieltermin
-            <input
-              type="date"
-              value={form.dueDate}
-              onChange={(event) => onChange('dueDate', event.target.value)}
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-            />
-          </label>
-        </section>
+        {activeTab === 'milestones' ? (
+          <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <ListChecks className="h-4 w-4 text-[#c95767]" />
+                <p className="text-sm font-extrabold text-slate-900">Meilensteine</p>
+              </div>
+              <button type="button" onClick={() => addRow('milestoneRows')} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#c95767] px-3 text-sm font-bold text-white">
+                <Plus className="h-4 w-4" />
+                Meilenstein
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {rowsFor('milestoneRows').map((row) => (
+                <div key={row.id} className="grid gap-3 rounded-2xl border border-white bg-white p-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)] xl:grid-cols-[minmax(220px,1.4fr)_150px_150px_150px_120px_minmax(220px,1fr)_44px]">
+                  <input value={row.title} onChange={(event) => updateRow('milestoneRows', row.id, 'title', event.target.value)} placeholder="Meilenstein" className={compactInputClass} />
+                  <input type="date" value={row.planDate} onChange={(event) => updateRow('milestoneRows', row.id, 'planDate', event.target.value)} className={compactInputClass} />
+                  <input type="date" value={row.newDate} onChange={(event) => updateRow('milestoneRows', row.id, 'newDate', event.target.value)} className={compactInputClass} />
+                  <select value={row.status} onChange={(event) => updateRow('milestoneRows', row.id, 'status', event.target.value)} className={compactInputClass}>
+                    {milestoneStatusOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                  <input type="number" min="0" max="100" value={row.progress} onChange={(event) => updateRow('milestoneRows', row.id, 'progress', event.target.value)} placeholder="%" className={compactInputClass} />
+                  <input value={row.statusNote} onChange={(event) => updateRow('milestoneRows', row.id, 'statusNote', event.target.value)} placeholder="Statusnotiz" className={compactInputClass} />
+                  {renderRowAction('milestoneRows', row.id, 'Meilenstein entfernen')}
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {activeTab === 'risks' ? (
+          <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Tag className="h-4 w-4 text-[#c95767]" />
+                <p className="text-sm font-extrabold text-slate-900">Risiken</p>
+              </div>
+              <button type="button" onClick={() => addRow('riskRows')} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#c95767] px-3 text-sm font-bold text-white">
+                <Plus className="h-4 w-4" />
+                Risiko
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {rowsFor('riskRows').map((row) => (
+                <div key={row.id} className="rounded-2xl border border-white bg-white p-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
+                  <div className="grid gap-3 xl:grid-cols-[100px_minmax(220px,1.2fr)_120px_120px_150px_140px_44px]">
+                    <input value={row.code} onChange={(event) => updateRow('riskRows', row.id, 'code', event.target.value)} placeholder="Kuerzel" className={compactInputClass} />
+                    <input value={row.title} onChange={(event) => updateRow('riskRows', row.id, 'title', event.target.value)} placeholder="Bezeichnung" className={compactInputClass} />
+                    <input type="number" min="0" value={row.impact} onChange={(event) => updateRow('riskRows', row.id, 'impact', event.target.value)} placeholder="Tragweite" className={compactInputClass} />
+                    <input type="number" min="0" value={row.probability} onChange={(event) => updateRow('riskRows', row.id, 'probability', event.target.value)} placeholder="Wahrscheinlichkeit" className={compactInputClass} />
+                    <input value={row.riskClass} onChange={(event) => updateRow('riskRows', row.id, 'riskClass', event.target.value)} placeholder="Risikoklasse" className={compactInputClass} />
+                    <select value={row.trend} onChange={(event) => updateRow('riskRows', row.id, 'trend', event.target.value)} className={compactInputClass}>
+                      {trendOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                    </select>
+                    {renderRowAction('riskRows', row.id, 'Risiko entfernen')}
+                  </div>
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    <textarea value={row.description} onChange={(event) => updateRow('riskRows', row.id, 'description', event.target.value)} rows={3} placeholder="Beschreibung" className={textareaClass} />
+                    <textarea value={row.measure} onChange={(event) => updateRow('riskRows', row.id, 'measure', event.target.value)} rows={3} placeholder="Massnahme" className={textareaClass} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {activeTab === 'budget' ? (
+          <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-[#c95767]" />
+                <p className="text-sm font-extrabold text-slate-900">Budget & Ressourcen</p>
+              </div>
+              <button type="button" onClick={() => addRow('budgetRows')} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#c95767] px-3 text-sm font-bold text-white">
+                <Plus className="h-4 w-4" />
+                Budgetzeile
+              </button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <label className="block text-sm font-bold text-slate-700">
+                Planaufwand (PT)
+                <input type="number" min="0" value={form.plannedEffortPt} onChange={(event) => onChange('plannedEffortPt', event.target.value)} className={inputClass} />
+              </label>
+              <label className="block text-sm font-bold text-slate-700">
+                Ist-Aufwand (PT)
+                <input type="number" min="0" value={form.actualEffortPt} onChange={(event) => onChange('actualEffortPt', event.target.value)} className={inputClass} />
+              </label>
+              <div className="rounded-2xl border border-white bg-white p-3">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Differenz PT</p>
+                <p className="mt-2 text-lg font-extrabold text-slate-900">{formatNumberLabel(calculateDifference(form.plannedEffortPt, form.actualEffortPt), ' PT')}</p>
+              </div>
+            </div>
+
+            <label className="block max-w-sm text-sm font-bold text-slate-700">
+              Planbudget gesamt (EUR)
+              <input type="number" min="0" value={form.plannedBudget} onChange={(event) => onChange('plannedBudget', event.target.value)} className={inputClass} />
+            </label>
+
+            <div className="space-y-3">
+              {rowsFor('budgetRows').map((row) => (
+                <div key={row.id} className="grid gap-3 rounded-2xl border border-white bg-white p-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)] xl:grid-cols-[minmax(220px,1.4fr)_160px_160px_150px_110px_44px]">
+                  <input value={row.category} onChange={(event) => updateRow('budgetRows', row.id, 'category', event.target.value)} placeholder="Kosten-Kategorie" className={compactInputClass} />
+                  <input type="number" min="0" value={row.plannedAmount} onChange={(event) => updateRow('budgetRows', row.id, 'plannedAmount', event.target.value)} placeholder="Plan" className={compactInputClass} />
+                  <input type="number" min="0" value={row.actualAmount} onChange={(event) => updateRow('budgetRows', row.id, 'actualAmount', event.target.value)} placeholder="Ist" className={compactInputClass} />
+                  <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-extrabold text-slate-700">{formatNumberLabel(calculateDifference(row.plannedAmount, row.actualAmount), ' EUR')}</div>
+                  <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm font-extrabold text-slate-700">{calculateActualPercent(row.plannedAmount, row.actualAmount) ?? 0}%</div>
+                  {renderRowAction('budgetRows', row.id, 'Budgetzeile entfernen')}
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {activeTab === 'interfaces' ? (
+          <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-[#c95767]" />
+                <p className="text-sm font-extrabold text-slate-900">Schnittstellen & Freigabe</p>
+              </div>
+              <button type="button" onClick={() => addRow('interfaceRows')} className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#c95767] px-3 text-sm font-bold text-white">
+                <Plus className="h-4 w-4" />
+                Schnittstelle
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {rowsFor('interfaceRows').map((row) => (
+                <div key={row.id} className="grid gap-3 rounded-2xl border border-white bg-white p-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)] xl:grid-cols-[minmax(220px,1fr)_160px_minmax(240px,1.2fr)_44px]">
+                  <input value={row.name} onChange={(event) => updateRow('interfaceRows', row.id, 'name', event.target.value)} placeholder="Schnittstelle" className={compactInputClass} />
+                  <select value={row.status} onChange={(event) => updateRow('interfaceRows', row.id, 'status', event.target.value)} className={compactInputClass}>
+                    {interfaceStatusOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                  <input value={row.comment} onChange={(event) => updateRow('interfaceRows', row.id, 'comment', event.target.value)} placeholder="Kommentar" className={compactInputClass} />
+                  {renderRowAction('interfaceRows', row.id, 'Schnittstelle entfernen')}
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <label className="block text-sm font-bold text-slate-700">
+                Projektverantwortlicher
+                <input value={form.projectResponsibleApproval} onChange={(event) => onChange('projectResponsibleApproval', event.target.value)} className={inputClass} />
+              </label>
+              <label className="block text-sm font-bold text-slate-700">
+                GBL-Freigabe
+                <input value={form.gblApproval} onChange={(event) => onChange('gblApproval', event.target.value)} className={inputClass} />
+              </label>
+              <label className="block text-sm font-bold text-slate-700">
+                Projektleiter-Freigabe
+                <input value={form.projectLeadApproval} onChange={(event) => onChange('projectLeadApproval', event.target.value)} className={inputClass} />
+              </label>
+              <label className="block text-sm font-bold text-slate-700">
+                Freigabedatum
+                <input type="date" value={form.approvalDate} onChange={(event) => onChange('approvalDate', event.target.value)} className={inputClass} />
+              </label>
+            </div>
+          </section>
+        ) : null}
       </div>
 
       <div className="mt-6 flex justify-end gap-3">
@@ -770,14 +1618,12 @@ function CreateProjectModal({ departments, form, onChange, onClose, onSubmit }) 
           Abbrechen
         </button>
         <button type="button" onClick={onSubmit} className="h-11 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)]">
-          Projekt anlegen
+          {submitLabel}
         </button>
       </div>
     </PopupShell>
   );
-}
-
-function DepartmentCard({ department, projectCount, backlogCount, isActive, onOpen }) {
+}function DepartmentCard({ department, projectCount, backlogCount, isActive, onOpen }) {
   return (
     <button
       type="button"
@@ -839,7 +1685,83 @@ function ProjectCard({ project, backlogCount, onOpen }) {
           {backlogCount} Aufgaben
         </span>
       </div>
+
+      {project.projectSponsor || project.plannedBudget || project.plannedEffortPt ? (
+        <div className="mt-3 grid gap-2 border-t border-slate-100 pt-3 text-[11px] font-bold text-slate-500 sm:grid-cols-3">
+          <span className="truncate rounded-xl bg-slate-50 px-2.5 py-2">{project.projectSponsor || 'GBL offen'}</span>
+          <span className="rounded-xl bg-slate-50 px-2.5 py-2">{formatNumberLabel(project.plannedEffortPt, ' PT')}</span>
+          <span className="rounded-xl bg-slate-50 px-2.5 py-2">{formatNumberLabel(project.plannedBudget, ' EUR')}</span>
+        </div>
+      ) : null}
     </button>
+  );
+}
+
+function ProjectReportOverview({ project }) {
+  const hasReportData =
+    project.projectGoal ||
+    project.deputyLead ||
+    project.projectSponsor ||
+    project.plannedStart ||
+    project.plannedEnd ||
+    project.plannedEffortPt ||
+    project.plannedBudget ||
+    project.keyInterfaces?.length ||
+    project.milestones?.length ||
+    project.risks?.length ||
+    project.budgetLines?.length;
+
+  if (!hasReportData) return null;
+
+  const reportFacts = [
+    { label: 'Projektleitung', value: project.owner },
+    { label: 'Stellvertretung', value: project.deputyLead || 'Noch offen' },
+    { label: 'Verantwortlicher / GBL', value: project.projectSponsor || 'Noch offen' },
+    { label: 'Beginn Plan', value: project.plannedStart || 'Noch offen' },
+    { label: 'Ende Plan', value: project.plannedEnd || project.dueDate || 'Noch offen' },
+    { label: 'Planaufwand', value: formatNumberLabel(project.plannedEffortPt, ' PT') },
+    { label: 'Planbudget', value: formatNumberLabel(project.plannedBudget, ' EUR') },
+  ];
+
+  return (
+    <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Berichtsbasis</p>
+          <p className="mt-1 text-sm font-semibold text-slate-600">Stammdaten fuer Statusbericht, Ressourcen, Budget, Risiken und Meilensteine.</p>
+        </div>
+        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500">{project.reportCycle || 'MONTHLY'}</span>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {reportFacts.map((fact) => (
+          <div key={fact.label} className="rounded-2xl border border-white bg-white p-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">{fact.label}</p>
+            <p className="mt-1 truncate text-sm font-extrabold text-slate-900">{fact.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {project.projectGoal ? (
+        <p className="mt-4 rounded-2xl border border-white bg-white p-3 text-sm font-semibold leading-relaxed text-slate-600">{project.projectGoal}</p>
+      ) : null}
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-3">
+        <div className="rounded-2xl border border-white bg-white p-3">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Schnittstellen</p>
+          <p className="mt-2 text-sm font-bold text-slate-700">{project.keyInterfaces?.length ? project.keyInterfaces.join(', ') : 'Noch offen'}</p>
+        </div>
+        <div className="rounded-2xl border border-white bg-white p-3">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Meilensteine</p>
+          <p className="mt-2 text-sm font-bold text-slate-700">{project.milestones?.length || 0} Eintraege</p>
+        </div>
+        <div className="rounded-2xl border border-white bg-white p-3">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Risiken</p>
+          <p className="mt-2 text-sm font-bold text-slate-700">{project.risks?.length || 0} Eintraege</p>
+        </div>
+      </div>
+
+    </div>
   );
 }
 
@@ -1603,7 +2525,7 @@ export default function ProjectsPage() {
     }),
   );
   const [departments, setDepartments] = useState(initialDepartments);
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState(() => getStoredProjects());
   const [backlogTasks, setBacklogTasks] = useState(initialBacklogTasks);
   const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
   const [selectedDepartmentId, setSelectedDepartmentId] = useState(initialDepartments[0].id);
@@ -1615,10 +2537,15 @@ export default function ProjectsPage() {
   const [draftBacklogFilters, setDraftBacklogFilters] = useState([]);
   const [searchValue, setSearchValue] = useState('');
   const [createMode, setCreateMode] = useState(null);
+  const [editingProjectId, setEditingProjectId] = useState(null);
   const [departmentForm, setDepartmentForm] = useState(emptyDepartmentForm);
   const [projectForm, setProjectForm] = useState(emptyProjectForm);
 
   const normalizedSearch = searchValue.trim().toLowerCase();
+
+  useEffect(() => {
+    window.localStorage.setItem(projectStorageKey, JSON.stringify(projects));
+  }, [projects]);
 
   const visibleDepartments = useMemo(
     () =>
@@ -1887,6 +2814,13 @@ export default function ProjectsPage() {
     setSearchParams(nextParams, { replace: true });
   };
 
+  const handleProjectEditOpen = () => {
+    if (!selectedProject) return;
+    setProjectForm(projectToForm(selectedProject, selectedDepartment?.id || departments[0]?.id || ''));
+    setEditingProjectId(selectedProject.id);
+    setCreateMode('project-edit');
+  };
+
   const handleCreateAction = (item) => {
     if (item === 'Neue Abteilung') {
       setDepartmentForm(emptyDepartmentForm);
@@ -1930,17 +2864,7 @@ export default function ProjectsPage() {
 
     const nextProject = {
       id: `proj-${Date.now()}`,
-      departmentId: projectForm.departmentId,
-      name: trimmedName,
-      owner: projectForm.owner.trim() || 'Elisabeth Bezverkha',
-      visibility: projectForm.visibility,
-      status: projectForm.visibility === 'Persoenlich' ? 'Eigene Planung' : 'Abteilungsprojekt',
-      dueDate: new Intl.DateTimeFormat('de-DE', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      }).format(new Date(`${projectForm.dueDate}T00:00:00`)),
-      summary: projectForm.summary.trim() || 'Neu angelegtes Projekt ohne weitere Beschreibung.',
+      ...createProjectPayload(projectForm, departments),
     };
 
     setProjects((current) => [nextProject, ...current]);
@@ -1948,6 +2872,30 @@ export default function ProjectsPage() {
     setSelectedProjectId(null);
     setViewMode('projects');
     setCreateMode(null);
+  };
+
+  const handleProjectEditSubmit = () => {
+    const trimmedName = projectForm.name.trim();
+    if (!trimmedName || !projectForm.departmentId || !editingProjectId) return;
+
+    const updates = createProjectPayload(projectForm, departments);
+
+    setProjects((current) =>
+      current.map((project) =>
+        project.id === editingProjectId
+          ? {
+              ...project,
+              ...updates,
+              id: project.id,
+            }
+          : project,
+      ),
+    );
+    setSelectedDepartmentId(projectForm.departmentId);
+    setSelectedProjectId(editingProjectId);
+    setViewMode('backlog');
+    setCreateMode(null);
+    setEditingProjectId(null);
   };
 
   const handleBacklogTaskOpen = (taskId) => {
@@ -2169,6 +3117,16 @@ export default function ProjectsPage() {
 
               {selectedDepartment ? (
                 <div className="flex flex-wrap items-center gap-3">
+                  {selectedProject ? (
+                    <button
+                      type="button"
+                      onClick={handleProjectEditOpen}
+                      className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:border-[#d89aa5] hover:bg-[#fff7f8] hover:text-[#a23d4d]"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Bearbeiten
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => {
@@ -2186,6 +3144,8 @@ export default function ProjectsPage() {
               ) : null}
             </div>
           ) : null}
+
+          {viewMode === 'backlog' && selectedProject ? <ProjectReportOverview project={selectedProject} /> : null}
 
           {viewMode === 'backlog' && selectedProject && departmentMembers.length ? (
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -2478,10 +3438,30 @@ export default function ProjectsPage() {
           departments={departments}
           form={projectForm}
           onChange={(field, value) => setProjectForm((current) => ({ ...current, [field]: value }))}
-          onClose={() => setCreateMode(null)}
+          onClose={() => {
+            setCreateMode(null);
+            setEditingProjectId(null);
+          }}
           onSubmit={handleProjectSubmit}
         />
       ) : null}
+
+      {createMode === 'project-edit' ? (
+        <CreateProjectModal
+          departments={departments}
+          form={projectForm}
+          onChange={(field, value) => setProjectForm((current) => ({ ...current, [field]: value }))}
+          onClose={() => {
+            setCreateMode(null);
+            setEditingProjectId(null);
+          }}
+          onSubmit={handleProjectEditSubmit}
+          title="Projekt bearbeiten"
+          subtitle="Passe Stammdaten und Berichtsbasis fuer den naechsten Statusbericht an."
+          submitLabel="Aenderungen speichern"
+        />
+      ) : null}
+
     </AppShell>
   );
 }
