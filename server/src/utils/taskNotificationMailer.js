@@ -8,6 +8,9 @@ const statusLabels = {
   QA: 'Review / QA',
   BLOCKED: 'Blockiert',
   DONE: 'Erledigt',
+  TODAY: 'Offen',
+  THIS_WEEK: 'In Bearbeitung',
+  LATER: 'Geplant',
 };
 
 const priorityLabels = {
@@ -40,8 +43,8 @@ function formatDate(value) {
 
 function getTaskLink(task) {
   const baseUrl = String(process.env.APP_BASE_URL || 'http://localhost:5173').replace(/\/$/, '');
-  if (task?.projectId) {
-    return `${baseUrl}/projects/${task.projectId}`;
+  if (task?.projectId && task?.id) {
+    return `${baseUrl}/projects/${encodeURIComponent(task.projectId)}?taskId=${encodeURIComponent(task.id)}`;
   }
   return `${baseUrl}/calendar`;
 }
@@ -120,14 +123,14 @@ function renderEmailShell({ intro, headline, recipientName, task, projectName, h
             </p>
 
             <div style="border:1px solid #e2e8f0;border-radius:24px;background:#fcfdff;padding:24px;">
-              <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-                <div>
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:240px;">
                   <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;color:#94a3b8;">Projekt</div>
                   <div style="margin-top:6px;font-size:24px;font-weight:700;color:#0f172a;">${escapeHtml(projectName || 'Ohne Projekt')}</div>
                 </div>
-                <div style="min-width:180px;padding:14px 16px;border:1px solid #f0d6db;border-radius:20px;background:#fff7f8;">
-                  <div style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;font-weight:700;color:#94a3b8;">${escapeHtml(highlightLabel)}</div>
-                  <div style="margin-top:8px;font-size:18px;font-weight:700;color:#b84758;">${escapeHtml(highlightValue)}</div>
+                <div style="margin-left:auto;max-width:240px;min-width:180px;padding:12px 14px;border:1px solid #f0d6db;border-radius:20px;background:#fff7f8;text-align:left;">
+                  <div style="font-size:11px;letter-spacing:0.2em;text-transform:uppercase;font-weight:700;color:#94a3b8;">${escapeHtml(highlightLabel)}</div>
+                  <div style="margin-top:6px;font-size:15px;font-weight:700;line-height:1.4;color:#b84758;">${escapeHtml(highlightValue)}</div>
                 </div>
               </div>
 
@@ -212,7 +215,7 @@ async function sendTaskAssignmentEmail({ recipient, task, project, actor, reason
       reason === 'reassigned'
         ? 'du bist jetzt fuer dieses Ticket verantwortlich. In der Uebersicht unten siehst du sofort Projekt, Status, Prioritaet und Faelligkeit.'
         : 'du wurdest fuer dieses Ticket eingetragen. In der Uebersicht unten siehst du sofort Projekt, Status, Prioritaet und Faelligkeit.',
-    ctaLabel: 'Ticket in NextTask ansehen',
+    ctaLabel: 'Ticket ansehen',
   });
 
   const text = [
@@ -249,7 +252,7 @@ async function sendTaskMentionEmail({ recipient, task, project, actor, commentCo
     highlightLabel: 'Kommentar von',
     highlightValue: actor?.name || actor?.email || 'NextTask',
     body: 'jemand hat dich in einem Kommentar erwaehnt. Unten findest du die Ticketdaten und den Kommentartext auf einen Blick.',
-    ctaLabel: 'Kommentar in NextTask ansehen',
+    ctaLabel: 'Ticket ansehen',
   });
 
   const commentPreview = String(commentContent || '').trim() || 'Kein Kommentartext vorhanden.';

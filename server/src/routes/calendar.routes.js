@@ -20,6 +20,7 @@ router.get('/tasks', auth, async (req, res) => {
     const {
       from,
       to,
+      taskId,
       projectId,
       assigneeId,
       status,
@@ -51,6 +52,7 @@ router.get('/tasks', auth, async (req, res) => {
       });
     }
 
+    if (taskId) filters.push({ id: taskId });
     if (projectId) filters.push({ projectId });
     if (assigneeId) filters.push({ assigneeId });
     if (status) filters.push({ status });

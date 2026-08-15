@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createElement, useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import {
   closestCenter,
   DndContext,
@@ -31,6 +32,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 import { getStoredTaskMarkers, getTaskMarker } from '../utils/taskMarkers';
@@ -498,6 +500,87 @@ function toDisplayDate(inputDate) {
     month: 'long',
     year: 'numeric',
   }).format(new Date(`${inputDate}T00:00:00`));
+}
+
+function toSlugPart(value) {
+  return String(value || 'custom')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '') || 'custom';
+}
+
+function normalizeLiveTaskStatus(status) {
+  const value = String(status || '').toUpperCase();
+  if (value === 'DONE') return 'done';
+  if (value === 'QA') return 'review';
+  if (value === 'IN_PROGRESS' || value === 'THIS_WEEK') return 'progress';
+  return 'todo';
+}
+
+function normalizeLiveTaskPriority(priority) {
+  const value = String(priority || '').toUpperCase();
+  if (value === 'LOW') return 'niedrig';
+  if (value === 'HIGH' || value === 'URGENT') return 'hoch';
+  return 'mittel';
+}
+
+function createLiveDepartment({ id, name, members }) {
+  return {
+    id,
+    name: name || 'Live Projekte',
+    lead: 'NextTask',
+    members,
+    memberCount: members.length || 1,
+    description: 'Projektansicht fuer live geladene Tickets aus dem Backend.',
+    accent: 'border-slate-300 bg-[#f7f8ff]',
+    badgeTone: 'bg-[#eef2ff] text-[#4f46e5]',
+  };
+}
+
+function mapApiProjectToProject(project, departmentId, ownerName) {
+  return {
+    id: project.id,
+    departmentId,
+    name: project.name || 'Live Projekt',
+    owner: ownerName || 'Projektteam',
+    visibility: 'Live',
+    status: 'In Arbeit',
+    dueDate: project.deadline ? toDisplayDate(String(project.deadline).slice(0, 10)) : 'Kein Zieltermin',
+    summary: project.description || 'Projekt aus den aktuellen NextTask-Daten.',
+  };
+}
+
+function mapApiTaskToBacklogTask(task) {
+  return {
+    id: task.id,
+    source: 'api',
+    sourceTaskId: null,
+    controlId: task.project?.key ? `${task.project.key}-${String(task.id).slice(-4)}` : task.id,
+    creatorInitials: 'API',
+    creatorName: 'NextTask',
+    projectId: task.projectId,
+    title: task.title,
+    status: normalizeLiveTaskStatus(task.status),
+    priority: normalizeLiveTaskPriority(task.priority),
+    assignee: task.assignee?.name || '',
+    dueDate: task.dueDate ? toDisplayDate(String(task.dueDate).slice(0, 10)) : 'Kein Zieltermin',
+    tags: [task.priority, task.status].filter(Boolean),
+    description: task.description || 'Keine Beschreibung hinterlegt.',
+    markerId: task.markerId || '',
+    comments: Array.isArray(task.comments)
+      ? task.comments.map((comment) => ({
+          id: comment.id,
+          author: comment.author?.name || 'NextTask',
+          time: comment.createdAt ? toDisplayDate(String(comment.createdAt).slice(0, 10)) : 'gerade eben',
+          text: comment.content,
+        }))
+      : [],
+    linkedPeople: task.assignee?.name ? [task.assignee.name] : [],
+    auditTrail: [
+      `Live Sync: ${task.updatedAt ? toDisplayDate(String(task.updatedAt).slice(0, 10)) : 'heute'} aktualisiert.`,
+      `Ticket ${task.id} aus dem Backend geladen.`,
+    ],
+  };
 }
 
 function getFilterLabel(filterValue) {
@@ -1508,9 +1591,12 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, task
 
 export default function ProjectsPage() {
   const filterMenuRef = useRef(null);
+  const { projectId: routeProjectId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const favoriteUserKey = user?.id || user?.email || user?.name || 'guest';
   const favoriteUserLabel = user?.name || user?.email || 'Gast';
+  const routeTaskId = searchParams.get('taskId');
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
@@ -1664,6 +1750,112 @@ export default function ProjectsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!routeProjectId && !routeTaskId) return undefined;
+
+    let cancelled = false;
+
+    const loadProjectRouteData = async () => {
+      try {
+        const requests = [];
+        if (routeTaskId) {
+          requests.push(
+            api.get('/calendar/tasks', {
+              params: { taskId: routeTaskId },
+            }),
+          );
+        } else {
+          requests.push(Promise.resolve({ data: [] }));
+        }
+
+        if (routeProjectId) {
+          requests.push(api.get(`/tasks/project/${routeProjectId}`));
+        } else {
+          requests.push(Promise.resolve({ data: [] }));
+        }
+
+        const [taskResponse, projectTasksResponse] = await Promise.all(requests);
+        if (cancelled) return;
+
+        const highlightedTask = Array.isArray(taskResponse.data) ? taskResponse.data[0] : null;
+        const projectTasks = Array.isArray(projectTasksResponse.data) ? projectTasksResponse.data : [];
+        const combinedTasks = [...projectTasks];
+        if (highlightedTask && !combinedTasks.some((task) => task.id === highlightedTask.id)) {
+          combinedTasks.unshift(highlightedTask);
+        }
+
+        if (!combinedTasks.length && !highlightedTask) return;
+
+        const projectMeta = highlightedTask?.project || {
+          id: routeProjectId || highlightedTask?.projectId,
+          name: highlightedTask?.project?.name || 'Projektansicht',
+          key: highlightedTask?.project?.key || null,
+          deadline: highlightedTask?.project?.deadline || null,
+          description: 'Projekt aus den aktuellen NextTask-Daten.',
+        };
+        const departmentName =
+          highlightedTask?.department ||
+          projectTasks.find((task) => task.department)?.department ||
+          user?.department ||
+          'Live Projekte';
+        const memberNames = Array.from(
+          new Set(
+            combinedTasks
+              .map((task) => task.assignee?.name || '')
+              .filter(Boolean),
+          ),
+        );
+        const departmentId = `dept-live-${toSlugPart(departmentName)}`;
+        const liveDepartment = createLiveDepartment({
+          id: departmentId,
+          name: departmentName,
+          members: memberNames.length ? memberNames : [user?.name || 'NextTask'],
+        });
+        const liveProject = mapApiProjectToProject(
+          projectMeta,
+          departmentId,
+          highlightedTask?.assignee?.name || user?.name || 'Projektteam',
+        );
+        const liveTasks = combinedTasks.map((task) =>
+          mapApiTaskToBacklogTask({
+            ...task,
+            project: task.project || projectMeta,
+          }),
+        );
+
+        setDepartments((current) => {
+          const next = current.filter((department) => department.id !== departmentId);
+          return [liveDepartment, ...next];
+        });
+        setProjects((current) => {
+          const next = current.filter((project) => project.id !== liveProject.id);
+          return [liveProject, ...next];
+        });
+        setBacklogTasks((current) => {
+          const next = current.filter((task) => !(task.source === 'api' && task.projectId === liveProject.id));
+          return [...liveTasks, ...next];
+        });
+        setSelectedDepartmentId(departmentId);
+        setSelectedProjectId(liveProject.id);
+        setViewMode('backlog');
+        setFilterOpen(false);
+        setActiveBacklogFilters([]);
+        setDraftBacklogFilters([]);
+        if (routeTaskId) {
+          setSelectedBacklogTaskId(routeTaskId);
+        }
+      } catch {
+        // Keep the static fallback project board if live route data cannot be loaded.
+      }
+    };
+
+    loadProjectRouteData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [routeProjectId, routeTaskId, user?.department, user?.name]);
+
   const selectedBacklogTask = visibleBacklogTasks.find((task) => task.id === selectedBacklogTaskId) || null;
   const backlogDragDisabled = Boolean(normalizedSearch || activeBacklogFilters.length);
 
@@ -1684,6 +1876,15 @@ export default function ProjectsPage() {
     setActiveBacklogFilters([]);
     setDraftBacklogFilters([]);
     setSelectedBacklogTaskId(null);
+  };
+
+  const handleBacklogTaskClose = () => {
+    setSelectedBacklogTaskId(null);
+    if (!routeTaskId) return;
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('taskId');
+    setSearchParams(nextParams, { replace: true });
   };
 
   const handleCreateAction = (item) => {
@@ -2247,7 +2448,7 @@ export default function ProjectsPage() {
       {selectedBacklogTask ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-6 backdrop-blur-sm"
-          onMouseDown={() => setSelectedBacklogTaskId(null)}
+          onMouseDown={handleBacklogTaskClose}
           role="presentation"
         >
           <BacklogDetailPanel
@@ -2258,7 +2459,7 @@ export default function ProjectsPage() {
             assigneeWorkloads={assigneeWorkloads}
             taskMarkers={taskMarkers}
             onSave={handleBacklogTaskSave}
-            onClose={() => setSelectedBacklogTaskId(null)}
+            onClose={handleBacklogTaskClose}
           />
         </div>
       ) : null}

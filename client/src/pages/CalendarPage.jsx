@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   CalendarDays,
   ChevronLeft,
@@ -180,6 +181,9 @@ function normalizeStatus(status) {
     progress: 'IN_PROGRESS',
     blocked: 'BLOCKED',
     done: 'DONE',
+    TODAY: 'OPEN',
+    THIS_WEEK: 'IN_PROGRESS',
+    LATER: 'OPEN',
   };
   return map[status] || status || 'OPEN';
 }
@@ -760,6 +764,7 @@ function CreateTaskModal({ date, projects, people, onClose, onCreate }) {
 }
 
 export default function CalendarPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tasks, setTasks] = useState(() => getFallbackCalendarTasks());
   const [view, setView] = useState('month');
   const [cursorDate, setCursorDate] = useState(new Date());
@@ -777,25 +782,66 @@ export default function CalendarPage() {
     mineOnly: false,
     overdueOnly: false,
   });
+  const focusedTaskId = searchParams.get('taskId');
 
   useEffect(() => {
     const range = getRange(view, cursorDate);
-    api
-      .get('/calendar/tasks', {
-        params: {
-          from: toDateKey(range.from),
-          to: toDateKey(range.to),
-        },
-      })
-      .then((response) => {
-        if (Array.isArray(response.data) && response.data.length) {
-          setTasks(applyScheduleOverrides(mergeCalendarTasks(response.data.map(normalizeTask), getFallbackCalendarTasks())));
+    const loadTasks = async () => {
+      try {
+        const requests = [
+          api.get('/calendar/tasks', {
+            params: {
+              from: toDateKey(range.from),
+              to: toDateKey(range.to),
+            },
+          }),
+        ];
+
+        if (focusedTaskId) {
+          requests.push(
+            api.get('/calendar/tasks', {
+              params: { taskId: focusedTaskId },
+            }),
+          );
         }
-      })
-      .catch(() => {
+
+        const results = await Promise.allSettled(requests);
+        const apiTasks = results.flatMap((result) => {
+          if (result.status !== 'fulfilled' || !Array.isArray(result.value.data)) return [];
+          return result.value.data.map(normalizeTask);
+        });
+
+        if (apiTasks.length) {
+          setTasks(applyScheduleOverrides(mergeCalendarTasks(apiTasks, getFallbackCalendarTasks())));
+          return;
+        }
+
         setTasks(getFallbackCalendarTasks());
-      });
-  }, [cursorDate, view]);
+      } catch {
+        setTasks(getFallbackCalendarTasks());
+      }
+    };
+
+    loadTasks();
+  }, [cursorDate, focusedTaskId, view]);
+
+  useEffect(() => {
+    if (!focusedTaskId) return;
+
+    const task = tasks.find((entry) => entry.id === focusedTaskId);
+    if (!task) return;
+
+    setSelectedTask((current) => (current?.id === task.id ? current : task));
+    setView((current) => (current === 'week' ? current : 'week'));
+
+    const focusDateKey = task.dueDate || task.startDate || task.endDate;
+    if (!focusDateKey) return;
+
+    setCursorDate((current) => {
+      const currentKey = toDateKey(current);
+      return currentKey === focusDateKey ? current : fromDateKey(focusDateKey);
+    });
+  }, [focusedTaskId, tasks]);
 
   const filterOptions = useMemo(
     () => ({
@@ -926,6 +972,15 @@ export default function CalendarPage() {
     event.dataTransfer.setData('text/plain', taskId);
   };
 
+  const closeSelectedTask = () => {
+    setSelectedTask(null);
+    if (!focusedTaskId) return;
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('taskId');
+    setSearchParams(nextParams, { replace: true });
+  };
+
   return (
     <AppShell
       activeItem="Kalender"
@@ -940,7 +995,7 @@ export default function CalendarPage() {
         className="flex min-h-[calc(100vh-72px)] flex-col lg:flex-row"
         onMouseDown={(event) => {
           if (event.target.closest('[data-calendar-task]')) return;
-          if (selectedTask) setSelectedTask(null);
+          if (selectedTask) closeSelectedTask();
         }}
       >
         <section className="min-w-0 flex-1">
@@ -963,7 +1018,7 @@ export default function CalendarPage() {
           {renderView()}
         </section>
 
-        <DetailPanel task={selectedTask} onClose={() => setSelectedTask(null)} />
+        <DetailPanel task={selectedTask} onClose={closeSelectedTask} />
       </div>
 
       {createDate ? (
