@@ -1,6 +1,12 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const { pickFields, summarizeChanges, writeAuditLog } = require('../utils/auditLog');
+const {
+  canSendEmails,
+  extractMentionedUsers,
+  sendTaskAssignmentEmail,
+  sendTaskMentionEmail,
+} = require('../utils/taskNotificationMailer');
 const router = express.Router();
 
 const statusMap = {
@@ -51,6 +57,89 @@ function parseDate(value) {
   return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
+async function getTaskNotificationContext(prisma, taskId) {
+  return prisma.task.findUnique({
+    where: { id: taskId },
+    include: {
+      assignee: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          notificationEmail: true,
+          emailNotificationsEnabled: true,
+          department: true,
+          role: true,
+        },
+      },
+      project: {
+        select: { id: true, name: true, key: true, deadline: true, ownerId: true },
+      },
+    },
+  });
+}
+
+function getActor(req) {
+  return {
+    id: req.user?.id || null,
+    name: req.user?.name || null,
+    email: req.user?.email || null,
+    role: req.user?.role || null,
+  };
+}
+
+async function notifyTaskAssignment({ req, task, previousAssigneeId, reason }) {
+  if (!canSendEmails() || !task?.assignee?.email) return;
+  if (task.assignee.id === previousAssigneeId) return;
+
+  try {
+    await sendTaskAssignmentEmail({
+      recipient: task.assignee,
+      task,
+      project: task.project,
+      actor: getActor(req),
+      reason,
+    });
+  } catch (error) {
+    console.error('Task assignment email failed:', error.message);
+  }
+}
+
+async function notifyCommentMentions({ req, task, content }) {
+  if (!canSendEmails() || !task) return;
+
+  try {
+    const users = await req.prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        notificationEmail: true,
+        emailNotificationsEnabled: true,
+      },
+    });
+    const mentionedUsers = extractMentionedUsers(content, users)
+      .filter((user) => user.id !== req.user.id)
+      .filter((user, index, all) => all.findIndex((candidate) => candidate.id === user.id) === index);
+
+    await Promise.all(
+      mentionedUsers.map((recipient) =>
+        sendTaskMentionEmail({
+          recipient,
+          task,
+          project: task.project,
+          actor: getActor(req),
+          commentContent: content,
+        }).catch((error) => {
+          console.error(`Mention email failed for ${recipient.email}:`, error.message);
+        }),
+      ),
+    );
+  } catch (error) {
+    console.error('Mention lookup failed:', error.message);
+  }
+}
+
 router.get('/project/:projectId', auth, async (req, res) => {
   try {
     const tasks = await req.prisma.task.findMany({
@@ -94,7 +183,7 @@ router.post('/', auth, async (req, res) => {
       where: { projectId, status: normalizedStatus },
       orderBy: { order: 'desc' },
     });
-    const task = await req.prisma.task.create({
+    const createdTask = await req.prisma.task.create({
       data: {
         title,
         description,
@@ -111,16 +200,24 @@ router.post('/', auth, async (req, res) => {
         markerId: markerId || null,
       },
     });
+    const task = await getTaskNotificationContext(req.prisma, createdTask.id);
 
     await writeAuditLog(req, {
       action: 'TASK_CREATED',
       entityType: 'TASK',
-      entityId: task.id,
-      entityLabel: task.title,
-      summary: `Aufgabe ${task.title} wurde erstellt.`,
+      entityId: createdTask.id,
+      entityLabel: createdTask.title,
+      summary: `Aufgabe ${createdTask.title} wurde erstellt.`,
       severity: 'NOTICE',
-      after: pickFields(task, auditTaskFields),
-      metadata: { projectId: task.projectId },
+      after: pickFields(createdTask, auditTaskFields),
+      metadata: { projectId: createdTask.projectId },
+    });
+
+    await notifyTaskAssignment({
+      req,
+      task,
+      previousAssigneeId: null,
+      reason: 'created',
     });
 
     res.status(201).json(task);
@@ -148,7 +245,7 @@ router.put('/:id', auth, async (req, res) => {
       markerId,
     } = req.body;
     const before = await req.prisma.task.findUnique({ where: { id: req.params.id } });
-    const updated = await req.prisma.task.update({
+    const updatedTask = await req.prisma.task.update({
       where: { id: req.params.id },
       data: {
         title,
@@ -164,6 +261,7 @@ router.put('/:id', auth, async (req, res) => {
         markerId: markerId === undefined ? undefined : markerId || null,
       },
     });
+    const updated = await getTaskNotificationContext(req.prisma, req.params.id);
 
     await writeAuditLog(req, {
       action: 'TASK_UPDATED',
@@ -175,6 +273,13 @@ router.put('/:id', auth, async (req, res) => {
       before: summarizeChanges(pickFields(before, auditTaskFields), pickFields(updated, auditTaskFields)),
       after: pickFields(updated, auditTaskFields),
       metadata: { projectId: updated.projectId },
+    });
+
+    await notifyTaskAssignment({
+      req,
+      task: updated,
+      previousAssigneeId: before?.assigneeId || null,
+      reason: before?.assigneeId ? 'reassigned' : 'created',
     });
 
     res.json(updated);
@@ -247,6 +352,13 @@ router.patch('/:id/schedule', auth, async (req, res) => {
       metadata: { projectId: updated.projectId },
     });
 
+    await notifyTaskAssignment({
+      req,
+      task: updated,
+      previousAssigneeId: before?.assigneeId || null,
+      reason: before?.assigneeId ? 'reassigned' : 'created',
+    });
+
     res.json(updated);
   } catch (error) {
     res.status(500).json({
@@ -305,6 +417,13 @@ router.post('/:id/comments', auth, async (req, res) => {
       severity: 'INFO',
       after: pickFields(comment, ['id', 'taskId', 'authorId', 'createdAt']),
       metadata: { taskId: req.params.id, projectId: task?.projectId || null },
+    });
+
+    const taskContext = await getTaskNotificationContext(req.prisma, req.params.id);
+    await notifyCommentMentions({
+      req,
+      task: taskContext,
+      content,
     });
 
     res.status(201).json(comment);

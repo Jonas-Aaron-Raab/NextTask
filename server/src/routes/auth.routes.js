@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
 const { ensureDefaultAccessRoles, serializeRole } = require('../utils/accessRoles');
 const { pickFields, summarizeChanges, writeAuditLog } = require('../utils/auditLog');
+const { canSendEmails, sendNotificationTestEmail } = require('../utils/taskNotificationMailer');
 const router = express.Router();
 
 function isBlank(value) {
@@ -23,6 +24,9 @@ function toPublicUser(user, extra = {}) {
     id: user.id,
     name: user.name,
     email: user.email,
+    notificationEmail: user.notificationEmail,
+    emailNotificationsEnabled: Boolean(user.emailNotificationsEnabled),
+    emailDeliveryReady: canSendEmails(),
     role: user.role,
     department: user.department,
     createdAt: user.createdAt,
@@ -55,6 +59,8 @@ router.post('/register', async (req, res) => {
       data: {
         name: trimmedName,
         email: trimmedEmail,
+        notificationEmail: trimmedEmail,
+        emailNotificationsEnabled: false,
         password: hashedPassword,
         role: role || 'DEVELOPER',
         department: department || 'Development',
@@ -164,7 +170,7 @@ router.get('/me', auth, async (req, res) => {
 
 router.put('/me', auth, async (req, res) => {
   try {
-    const { name, email, department } = req.body;
+    const { name, email, department, notificationEmail, emailNotificationsEnabled } = req.body;
 
     if (isBlank(name) || isBlank(department)) {
       return res.status(400).json({ message: 'Name und Abteilung sind erforderlich' });
@@ -187,11 +193,22 @@ router.put('/me', auth, async (req, res) => {
       }
     }
 
+    const nextNotificationEmail = req.user.isGuest
+      ? currentUser.notificationEmail || currentUser.email
+      : String(notificationEmail || '').trim().toLowerCase();
+    const notificationsEnabled = req.user.isGuest ? false : Boolean(emailNotificationsEnabled);
+
+    if (notificationsEnabled && isBlank(nextNotificationEmail) && isBlank(nextEmail)) {
+      return res.status(400).json({ message: 'Bitte hinterlege eine E-Mail fuer Benachrichtigungen.' });
+    }
+
     const user = await req.prisma.user.update({
       where: { id: req.user.id },
       data: {
         name: name.trim(),
         email: nextEmail,
+        notificationEmail: nextNotificationEmail || null,
+        emailNotificationsEnabled: notificationsEnabled,
         role: currentUser.role,
         department: department.trim(),
       },
@@ -206,8 +223,11 @@ router.put('/me', auth, async (req, res) => {
       entityLabel: user.name,
       summary: `${user.name} hat Profildaten geaendert.`,
       severity: 'NOTICE',
-      before: summarizeChanges(pickFields(currentUser, ['name', 'email', 'department']), pickFields(user, ['name', 'email', 'department'])),
-      after: pickFields(user, ['name', 'email', 'department']),
+      before: summarizeChanges(
+        pickFields(currentUser, ['name', 'email', 'notificationEmail', 'emailNotificationsEnabled', 'department']),
+        pickFields(user, ['name', 'email', 'notificationEmail', 'emailNotificationsEnabled', 'department']),
+      ),
+      after: pickFields(user, ['name', 'email', 'notificationEmail', 'emailNotificationsEnabled', 'department']),
     });
 
     res.json({ token, user: toPublicUser(user, { isGuest: Boolean(req.user.isGuest) }) });
@@ -259,6 +279,35 @@ router.put('/me/password', auth, async (req, res) => {
     res.json({ message: 'Passwort wurde geaendert' });
   } catch (error) {
     res.status(500).json({ message: 'Passwort konnte nicht geaendert werden', error: error.message });
+  }
+});
+
+router.post('/me/notifications/test', auth, async (req, res) => {
+  try {
+    if (req.user.isGuest) {
+      return res.status(400).json({ message: 'Im Gastmodus ist keine Testmail verfuegbar.' });
+    }
+
+    if (!canSendEmails()) {
+      return res.status(400).json({ message: 'Der E-Mail-Versand ist auf dem Server noch nicht aktiviert.' });
+    }
+
+    const user = await req.prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { accessRole: true },
+    });
+    if (!user) {
+      return res.status(404).json({ message: 'Profil wurde nicht gefunden' });
+    }
+
+    if (!user.emailNotificationsEnabled) {
+      return res.status(400).json({ message: 'Aktiviere zuerst deine E-Mail-Benachrichtigungen.' });
+    }
+
+    await sendNotificationTestEmail({ recipient: user });
+    res.json({ message: 'Testmail wurde versendet.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Testmail konnte nicht versendet werden', error: error.message });
   }
 });
 

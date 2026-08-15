@@ -238,6 +238,8 @@ router.post('/users', auth, requireRoleManager, async (req, res) => {
       data: {
         name: String(name).trim(),
         email: String(email).trim().toLowerCase(),
+        notificationEmail: String(email).trim().toLowerCase(),
+        emailNotificationsEnabled: false,
         password: hashedPassword,
         department: isBlank(department) ? 'Development' : String(department).trim(),
         role: role?.kind === 'ADMIN' ? 'ADMIN' : role?.kind === 'GBL' ? 'PROJECT_MANAGER' : 'DEVELOPER',

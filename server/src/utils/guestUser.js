@@ -23,6 +23,8 @@ async function getOrCreateGuestUser(prisma) {
     data: {
       name: GUEST_NAME,
       email: GUEST_EMAIL,
+      notificationEmail: GUEST_EMAIL,
+      emailNotificationsEnabled: false,
       password: GUEST_PASSWORD,
       role: adminRole ? 'ADMIN' : 'DEVELOPER',
       accessRoleId: adminRole?.id || null,

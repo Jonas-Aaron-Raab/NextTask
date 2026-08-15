@@ -1,6 +1,7 @@
 import { createElement, useEffect, useMemo, useState } from 'react';
 import {
   BadgeCheck,
+  Bell,
   BriefcaseBusiness,
   CheckCircle2,
   ChevronDown,
@@ -217,6 +218,9 @@ export default function SettingsPage() {
   const [profileForm, setProfileForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
+    notificationEmail: user?.notificationEmail || user?.email || '',
+    emailNotificationsEnabled: Boolean(user?.emailNotificationsEnabled),
+    emailDeliveryReady: Boolean(user?.emailDeliveryReady),
     role: user?.role || 'DEVELOPER',
     department: user?.department || 'Development',
   });
@@ -225,6 +229,8 @@ export default function SettingsPage() {
   const [isGuest, setIsGuest] = useState(Boolean(user?.isGuest));
   const [profileStatus, setProfileStatus] = useState('');
   const [profileError, setProfileError] = useState('');
+  const [notificationStatus, setNotificationStatus] = useState('');
+  const [notificationError, setNotificationError] = useState('');
   const [passwordStatus, setPasswordStatus] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [appearanceForm, setAppearanceForm] = useState(() => getStoredAppearanceSettings());
@@ -242,6 +248,7 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [isSendingTestMail, setIsSendingTestMail] = useState(false);
 
   const roleLabel = useMemo(
     () => roleOptions.find((option) => option.value === profileForm.role)?.label || profileForm.role,
@@ -263,6 +270,9 @@ export default function SettingsPage() {
         setProfileForm({
           name: data.user.name || '',
           email: data.user.email || '',
+          notificationEmail: data.user.notificationEmail || data.user.email || '',
+          emailNotificationsEnabled: Boolean(data.user.emailNotificationsEnabled),
+          emailDeliveryReady: Boolean(data.user.emailDeliveryReady),
           role: data.user.role || 'DEVELOPER',
           department: data.user.department || 'Development',
         });
@@ -363,6 +373,8 @@ export default function SettingsPage() {
   const handleProfileChange = (field, value) => {
     setProfileStatus('');
     setProfileError('');
+    setNotificationStatus('');
+    setNotificationError('');
     setProfileForm((current) => ({ ...current, [field]: value }));
   };
 
@@ -453,11 +465,18 @@ export default function SettingsPage() {
       return;
     }
 
+    if (!isGuest && profileForm.emailNotificationsEnabled && !profileForm.notificationEmail.trim() && !profileForm.email.trim()) {
+      setNotificationError('Bitte hinterlege eine Benachrichtigungs-E-Mail.');
+      return;
+    }
+
     setIsSavingProfile(true);
     try {
       const { data } = await api.put('/auth/me', {
         name: profileForm.name.trim(),
         email: profileForm.email.trim(),
+        notificationEmail: profileForm.notificationEmail.trim(),
+        emailNotificationsEnabled: profileForm.emailNotificationsEnabled,
         department: profileForm.department.trim(),
       });
 
@@ -469,15 +488,36 @@ export default function SettingsPage() {
       setProfileForm({
         name: data.user.name || '',
         email: data.user.email || '',
+        notificationEmail: data.user.notificationEmail || data.user.email || '',
+        emailNotificationsEnabled: Boolean(data.user.emailNotificationsEnabled),
+        emailDeliveryReady: Boolean(data.user.emailDeliveryReady),
         role: data.user.role || 'DEVELOPER',
         department: data.user.department || 'Development',
       });
       setIsGuest(Boolean(data.user.isGuest));
       setProfileStatus('Profil wurde gespeichert.');
+      setNotificationStatus('E-Mail-Einstellungen wurden gespeichert.');
     } catch (error) {
-      setProfileError(error.response?.data?.message || 'Profil konnte nicht gespeichert werden.');
+      const message = error.response?.data?.message || 'Profil konnte nicht gespeichert werden.';
+      setProfileError(message);
+      setNotificationError(message);
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleNotificationTestMail = async () => {
+    setNotificationStatus('');
+    setNotificationError('');
+    setIsSendingTestMail(true);
+
+    try {
+      const { data } = await api.post('/auth/me/notifications/test');
+      setNotificationStatus(data.message || 'Testmail wurde versendet.');
+    } catch (error) {
+      setNotificationError(error.response?.data?.message || 'Testmail konnte nicht versendet werden.');
+    } finally {
+      setIsSendingTestMail(false);
     }
   };
 
@@ -1000,9 +1040,106 @@ export default function SettingsPage() {
                 </FieldShell>
               </div>
 
+              <div className="mt-5 rounded-[26px] border border-slate-200 bg-[#fcfdff] p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-950">E-Mail-Benachrichtigungen</h3>
+                    <p className="mt-1 text-sm font-medium text-slate-500">
+                      Lege fest, ob du bei Zuweisungen und @Mentions Mails erhalten willst.
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${
+                      profileForm.emailDeliveryReady
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'bg-amber-50 text-amber-700'
+                    }`}
+                  >
+                    <Bell className="h-4 w-4" />
+                    {profileForm.emailDeliveryReady ? 'Server bereit' : 'Server noch nicht verbunden'}
+                  </span>
+                </div>
+
+                {notificationStatus ? (
+                  <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                    {notificationStatus}
+                  </div>
+                ) : null}
+
+                {notificationError ? (
+                  <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+                    {notificationError}
+                  </div>
+                ) : null}
+
+                <div className="mt-4 space-y-4">
+                  <SettingRow
+                    icon={Mail}
+                    label="Benachrichtigungsadresse"
+                    description="Diese Adresse wird fuer Task-Zuweisungen und Erwaehnungen verwendet."
+                  >
+                    <input
+                      type="email"
+                      value={profileForm.notificationEmail}
+                      disabled={isGuest}
+                      onChange={(event) => handleProfileChange('notificationEmail', event.target.value)}
+                      placeholder="name@firma.de"
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition disabled:bg-slate-100 disabled:text-slate-400 focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    icon={Bell}
+                    label="Benachrichtigungen aktivieren"
+                    description="Sende mir Mails, wenn mir ein Ticket zugewiesen wird oder ich in Kommentaren markiert werde."
+                  >
+                    <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                      <div>
+                        <p className="text-sm font-extrabold text-slate-700">
+                          {profileForm.emailNotificationsEnabled ? 'Aktiv' : 'Deaktiviert'}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">
+                          {profileForm.emailNotificationsEnabled
+                            ? 'Zuweisungen und Mentions senden eine E-Mail an dich.'
+                            : 'Es werden keine Task-Mails an dich versendet.'}
+                        </p>
+                      </div>
+                      <ToggleSwitch
+                        checked={profileForm.emailNotificationsEnabled}
+                        label="E-Mail-Benachrichtigungen aktivieren"
+                        onChange={(checked) => handleProfileChange('emailNotificationsEnabled', checked)}
+                      />
+                    </div>
+                  </SettingRow>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                    <div>
+                      <p className="text-sm font-extrabold text-slate-700">Testmail</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-500">
+                        Damit pruefst du direkt, ob Versand und Template bei dir ankommen.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleNotificationTestMail}
+                      disabled={
+                        isGuest ||
+                        isSendingTestMail ||
+                        !profileForm.emailDeliveryReady ||
+                        !profileForm.emailNotificationsEnabled
+                      }
+                      className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Mail className="h-4 w-4" />
+                      {isSendingTestMail ? 'Sende Testmail ...' : 'Testmail senden'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {isGuest ? (
                 <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
-                  Im Gastmodus bleibt die E-Mail fest, damit der Demo-Zugang weiter funktioniert.
+                  Im Gastmodus bleiben E-Mail und Benachrichtigungen fest, damit der Demo-Zugang weiter funktioniert.
                 </p>
               ) : null}
 
