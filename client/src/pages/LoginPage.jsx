@@ -49,35 +49,42 @@ export default function LoginPage() {
     const returnTo = params.get('returnTo') || redirectTo;
 
     if (ssoState === 'error') {
-      setError(message || 'SSO-Anmeldung fehlgeschlagen');
-      navigate('/login', { replace: true });
+      queueMicrotask(() => {
+        setError(message || 'SSO-Anmeldung fehlgeschlagen');
+        navigate('/login', { replace: true });
+      });
       return;
     }
 
     if (ssoState !== 'callback' || !code) return;
 
     let ignore = false;
-    setError('');
-    setSsoStatus('SSO-Anmeldung wird abgeschlossen ...');
-    setIsSubmitting(true);
 
-    api
-      .post('/auth/sso/exchange', { code })
-      .then(({ data }) => {
-        if (ignore) return;
-        login(data.token, data.user);
-        navigate(returnTo, { replace: true });
-      })
-      .catch((err) => {
-        if (!ignore) {
-          setError(err.response?.data?.message || 'SSO-Anmeldung konnte nicht abgeschlossen werden');
-          setSsoStatus('');
-          navigate('/login', { replace: true });
-        }
-      })
-      .finally(() => {
-        if (!ignore) setIsSubmitting(false);
-      });
+    queueMicrotask(() => {
+      if (ignore) return;
+
+      setError('');
+      setSsoStatus('SSO-Anmeldung wird abgeschlossen ...');
+      setIsSubmitting(true);
+
+      api
+        .post('/auth/sso/exchange', { code })
+        .then(({ data }) => {
+          if (ignore) return;
+          login(data.token, data.user);
+          navigate(returnTo, { replace: true });
+        })
+        .catch((err) => {
+          if (!ignore) {
+            setError(err.response?.data?.message || 'SSO-Anmeldung konnte nicht abgeschlossen werden');
+            setSsoStatus('');
+            navigate('/login', { replace: true });
+          }
+        })
+        .finally(() => {
+          if (!ignore) setIsSubmitting(false);
+        });
+    });
 
     return () => {
       ignore = true;
