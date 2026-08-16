@@ -45,6 +45,11 @@ model User {
   notificationEmail String?
   emailNotificationsEnabled Boolean @default(false)
   password     String
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret String?
+  twoFactorConfirmedAt DateTime?
+  twoFactorLastUsedStep Int?
+  twoFactorRecoveryCodes String[] @default([])
   role         UserRole    @default(DEVELOPER)
   department   String      @default("Development")
   accessRoleId String?

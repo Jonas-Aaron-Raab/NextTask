@@ -11,6 +11,10 @@ module.exports = async function auth(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded.id || (decoded.purpose && decoded.purpose !== 'access')) {
+      return res.status(401).json({ message: 'Login ist abgelaufen oder ungueltig' });
+    }
+
     req.user = decoded;
     next();
   } catch (error) {

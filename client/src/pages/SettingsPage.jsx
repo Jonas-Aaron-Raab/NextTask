@@ -16,10 +16,12 @@ import {
   Moon,
   Palette,
   Plus,
+  QrCode,
   RotateCcw,
   Rows3,
   Save,
   ShieldCheck,
+  ShieldOff,
   SlidersHorizontal,
   Sun,
   Trash2,
@@ -227,12 +229,21 @@ export default function SettingsPage() {
   const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
   const [createdAt, setCreatedAt] = useState('');
   const [isGuest, setIsGuest] = useState(Boolean(user?.isGuest));
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(Boolean(user?.twoFactorEnabled));
+  const [twoFactorSetup, setTwoFactorSetup] = useState(null);
+  const [twoFactorForm, setTwoFactorForm] = useState({
+    setupCode: '',
+    disablePassword: '',
+    disableCode: '',
+  });
   const [profileStatus, setProfileStatus] = useState('');
   const [profileError, setProfileError] = useState('');
   const [notificationStatus, setNotificationStatus] = useState('');
   const [notificationError, setNotificationError] = useState('');
   const [passwordStatus, setPasswordStatus] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [twoFactorStatus, setTwoFactorStatus] = useState('');
+  const [twoFactorError, setTwoFactorError] = useState('');
   const [appearanceForm, setAppearanceForm] = useState(() => getStoredAppearanceSettings());
   const [appearanceOpen, setAppearanceOpen] = useState(true);
   const [appearanceStatus, setAppearanceStatus] = useState('');
@@ -249,6 +260,9 @@ export default function SettingsPage() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [isSendingTestMail, setIsSendingTestMail] = useState(false);
+  const [isStartingTwoFactor, setIsStartingTwoFactor] = useState(false);
+  const [isConfirmingTwoFactor, setIsConfirmingTwoFactor] = useState(false);
+  const [isDisablingTwoFactor, setIsDisablingTwoFactor] = useState(false);
 
   const roleLabel = useMemo(
     () => roleOptions.find((option) => option.value === profileForm.role)?.label || profileForm.role,
@@ -278,6 +292,7 @@ export default function SettingsPage() {
         });
         setCreatedAt(data.user.createdAt || '');
         setIsGuest(Boolean(data.user.isGuest));
+        setTwoFactorEnabled(Boolean(data.user.twoFactorEnabled));
         updateUser(data.user);
       } catch (error) {
         if (!ignore) {
@@ -382,6 +397,12 @@ export default function SettingsPage() {
     setPasswordStatus('');
     setPasswordError('');
     setPasswordForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleTwoFactorChange = (field, value) => {
+    setTwoFactorStatus('');
+    setTwoFactorError('');
+    setTwoFactorForm((current) => ({ ...current, [field]: value }));
   };
 
   const handleAppearanceChange = (field, value) => {
@@ -558,6 +579,96 @@ export default function SettingsPage() {
       setPasswordError(error.response?.data?.message || 'Passwort konnte nicht geaendert werden.');
     } finally {
       setIsSavingPassword(false);
+    }
+  };
+
+  const handleTwoFactorSetupStart = async () => {
+    setTwoFactorStatus('');
+    setTwoFactorError('');
+
+    if (isGuest) {
+      setTwoFactorError('Im Gastmodus kann keine 2FA eingerichtet werden.');
+      return;
+    }
+
+    setIsStartingTwoFactor(true);
+    try {
+      const { data } = await api.post('/auth/me/2fa/setup');
+      setTwoFactorSetup({
+        qrCodeDataUrl: data.qrCodeDataUrl,
+        secret: data.secret,
+        recoveryCodes: [],
+      });
+      setTwoFactorForm((current) => ({ ...current, setupCode: '' }));
+      setTwoFactorStatus('Authenticator wurde vorbereitet.');
+    } catch (error) {
+      setTwoFactorError(error.response?.data?.message || '2FA-Einrichtung konnte nicht gestartet werden.');
+    } finally {
+      setIsStartingTwoFactor(false);
+    }
+  };
+
+  const handleTwoFactorConfirm = async () => {
+    setTwoFactorStatus('');
+    setTwoFactorError('');
+
+    if (!twoFactorForm.setupCode.trim()) {
+      setTwoFactorError('Bitte gib den Authenticator-Code ein.');
+      return;
+    }
+
+    setIsConfirmingTwoFactor(true);
+    try {
+      const { data } = await api.post('/auth/me/2fa/confirm', {
+        code: twoFactorForm.setupCode.trim(),
+      });
+      updateUser(data.user);
+      setTwoFactorEnabled(Boolean(data.user.twoFactorEnabled));
+      setTwoFactorSetup((current) => ({
+        ...(current || {}),
+        recoveryCodes: data.recoveryCodes || [],
+      }));
+      setTwoFactorForm({
+        setupCode: '',
+        disablePassword: '',
+        disableCode: '',
+      });
+      setTwoFactorStatus(data.message || '2FA wurde aktiviert.');
+    } catch (error) {
+      setTwoFactorError(error.response?.data?.message || '2FA konnte nicht aktiviert werden.');
+    } finally {
+      setIsConfirmingTwoFactor(false);
+    }
+  };
+
+  const handleTwoFactorDisable = async () => {
+    setTwoFactorStatus('');
+    setTwoFactorError('');
+
+    if (!twoFactorForm.disablePassword || !twoFactorForm.disableCode.trim()) {
+      setTwoFactorError('Passwort und 2FA-Code sind erforderlich.');
+      return;
+    }
+
+    setIsDisablingTwoFactor(true);
+    try {
+      const { data } = await api.post('/auth/me/2fa/disable', {
+        password: twoFactorForm.disablePassword,
+        code: twoFactorForm.disableCode.trim(),
+      });
+      updateUser(data.user);
+      setTwoFactorEnabled(Boolean(data.user.twoFactorEnabled));
+      setTwoFactorSetup(null);
+      setTwoFactorForm({
+        setupCode: '',
+        disablePassword: '',
+        disableCode: '',
+      });
+      setTwoFactorStatus(data.message || '2FA wurde deaktiviert.');
+    } catch (error) {
+      setTwoFactorError(error.response?.data?.message || '2FA konnte nicht deaktiviert werden.');
+    } finally {
+      setIsDisablingTwoFactor(false);
     }
   };
 
@@ -1155,6 +1266,7 @@ export default function SettingsPage() {
               </div>
             </form>
 
+            <div className="space-y-5">
             <form onSubmit={handlePasswordSubmit} className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
               <div className="border-b border-slate-200 pb-4">
                 <h2 className="text-lg font-extrabold text-slate-950">Passwort</h2>
@@ -1220,6 +1332,140 @@ export default function SettingsPage() {
                 {isSavingPassword ? 'Speichern ...' : 'Passwort aendern'}
               </button>
             </form>
+
+            <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-4">
+                <div>
+                  <h2 className="text-lg font-extrabold text-slate-950">Zwei-Faktor</h2>
+                  <p className="mt-1 text-sm font-medium text-slate-500">Authenticator-App fuer den Login.</p>
+                </div>
+                <span
+                  className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${
+                    twoFactorEnabled ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {twoFactorEnabled ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
+                  {twoFactorEnabled ? 'Aktiv' : 'Inaktiv'}
+                </span>
+              </div>
+
+              {twoFactorStatus ? (
+                <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                  {twoFactorStatus}
+                </div>
+              ) : null}
+
+              {twoFactorError ? (
+                <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+                  {twoFactorError}
+                </div>
+              ) : null}
+
+              {twoFactorSetup?.recoveryCodes?.length ? (
+                <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-sm font-extrabold text-amber-800">Recovery-Codes</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {twoFactorSetup.recoveryCodes.map((code) => (
+                      <code key={code} className="rounded-lg bg-white px-3 py-2 text-sm font-black text-slate-900">
+                        {code}
+                      </code>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {isGuest ? (
+                <p className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500">
+                  2FA ist nur fuer registrierte Accounts aktiv.
+                </p>
+              ) : null}
+
+              {!isGuest && !twoFactorEnabled ? (
+                <div className="mt-5 space-y-4">
+                  {!twoFactorSetup ? (
+                    <button
+                      type="button"
+                      onClick={handleTwoFactorSetupStart}
+                      disabled={isStartingTwoFactor}
+                      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-55"
+                    >
+                      <QrCode className="h-4 w-4" />
+                      {isStartingTwoFactor ? 'Bereite vor ...' : '2FA einrichten'}
+                    </button>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-[220px_minmax(0,1fr)]">
+                      <img
+                        src={twoFactorSetup.qrCodeDataUrl}
+                        alt="TOTP QR-Code"
+                        className="h-[220px] w-[220px] rounded-xl border border-slate-200 bg-white p-3"
+                      />
+                      <div className="space-y-4">
+                        <FieldShell label="Manueller Schluessel" icon={QrCode}>
+                          <input
+                            readOnly
+                            value={twoFactorSetup.secret || ''}
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 font-mono text-xs font-bold text-slate-700 outline-none"
+                          />
+                        </FieldShell>
+
+                        <FieldShell label="Authenticator-Code" icon={ShieldCheck}>
+                          <input
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            value={twoFactorForm.setupCode}
+                            onChange={(event) => handleTwoFactorChange('setupCode', event.target.value)}
+                            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
+                          />
+                        </FieldShell>
+
+                        <button
+                          type="button"
+                          onClick={handleTwoFactorConfirm}
+                          disabled={isConfirmingTwoFactor}
+                          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(184,71,88,0.22)] transition hover:bg-[#a23d4d] disabled:cursor-not-allowed disabled:opacity-65"
+                        >
+                          <ShieldCheck className="h-4 w-4" />
+                          {isConfirmingTwoFactor ? 'Pruefe ...' : '2FA bestaetigen'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
+              {!isGuest && twoFactorEnabled ? (
+                <div className="mt-5 space-y-4">
+                  <FieldShell label="Aktuelles Passwort" icon={KeyRound}>
+                    <input
+                      type="password"
+                      value={twoFactorForm.disablePassword}
+                      onChange={(event) => handleTwoFactorChange('disablePassword', event.target.value)}
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
+                    />
+                  </FieldShell>
+
+                  <FieldShell label="2FA-Code oder Recovery-Code" icon={ShieldCheck}>
+                    <input
+                      autoComplete="one-time-code"
+                      value={twoFactorForm.disableCode}
+                      onChange={(event) => handleTwoFactorChange('disableCode', event.target.value)}
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
+                    />
+                  </FieldShell>
+
+                  <button
+                    type="button"
+                    onClick={handleTwoFactorDisable}
+                    disabled={isDisablingTwoFactor}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-bold text-[#b84758] transition hover:border-rose-300 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-55"
+                  >
+                    <ShieldOff className="h-4 w-4" />
+                    {isDisablingTwoFactor ? 'Deaktiviere ...' : '2FA deaktivieren'}
+                  </button>
+                </div>
+              ) : null}
+            </section>
+            </div>
           </div>
         </div>
       </div>

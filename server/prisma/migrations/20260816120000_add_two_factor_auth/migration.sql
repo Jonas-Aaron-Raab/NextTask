@@ -1,0 +1,6 @@
+ALTER TABLE "User"
+ADD COLUMN "twoFactorEnabled" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN "twoFactorSecret" TEXT,
+ADD COLUMN "twoFactorConfirmedAt" TIMESTAMP(3),
+ADD COLUMN "twoFactorLastUsedStep" INTEGER,
+ADD COLUMN "twoFactorRecoveryCodes" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];
