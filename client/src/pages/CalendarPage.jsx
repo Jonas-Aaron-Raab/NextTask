@@ -76,6 +76,7 @@ const germanMonths = {
   November: '11',
   Dezember: '12',
 };
+const monthPreviewLimit = 2;
 
 function toDateKey(date) {
   return date.toISOString().slice(0, 10);
@@ -199,7 +200,7 @@ function normalizePriority(priority) {
 }
 
 function normalizeTask(task, index = 0) {
-  const dueDate = parseCalendarDate(task.dueDateValue || task.dueDate) || toDateKey(addDays(new Date(), index % 8));
+  const dueDate = parseCalendarDate(task.dueDateValue || task.dueDate);
   const projectName = task.project?.name || task.project || 'Ohne Projekt';
   const assigneeName = task.assignee?.name || task.assignee || task.assigneeName || mockPeople[index % mockPeople.length];
   return {
@@ -220,6 +221,26 @@ function normalizeTask(task, index = 0) {
     estimatedHours: task.estimatedHours ?? null,
     source: task.source || (task.project?.id ? 'api' : 'mock'),
   };
+}
+
+function getPriorityWeight(priority) {
+  const weights = {
+    URGENT: 0,
+    HIGH: 1,
+    MEDIUM: 2,
+    LOW: 3,
+  };
+  return weights[priority] ?? 4;
+}
+
+function compareCalendarTasks(firstTask, secondTask) {
+  const overdueDifference = Number(isOverdue(secondTask)) - Number(isOverdue(firstTask));
+  if (overdueDifference !== 0) return overdueDifference;
+
+  const priorityDifference = getPriorityWeight(firstTask.priority) - getPriorityWeight(secondTask.priority);
+  if (priorityDifference !== 0) return priorityDifference;
+
+  return firstTask.title.localeCompare(secondTask.title, 'de');
 }
 
 function applyTaskSchedule(task, dateKey) {
@@ -498,6 +519,8 @@ function MonthView({ cursorDate, tasksByDay, filtersOpen, onOpen, onDayClick, on
               const key = toDateKey(day);
               const isCurrentMonth = day.getMonth() === currentMonth;
               const dayTasks = isCurrentMonth ? tasksByDay[key] || [] : [];
+              const visiblePreviewTasks = dayTasks.slice(0, monthPreviewLimit);
+              const remainingTaskCount = Math.max(dayTasks.length - visiblePreviewTasks.length, 0);
 
               return (
                 <div
@@ -524,14 +547,34 @@ function MonthView({ cursorDate, tasksByDay, filtersOpen, onOpen, onDayClick, on
                     isCurrentMonth ? 'bg-white hover:bg-[#fff1f3]' : 'bg-[#fff7f8] text-slate-400'
                   }`}
                 >
-                  <p className={`mb-1 text-sm font-extrabold ${isCurrentMonth ? 'text-slate-950' : 'text-slate-400'}`}>
-                    {formatCompactDate(day)}
-                  </p>
+                  <div className="mb-1 flex items-start justify-between gap-2">
+                    <p className={`text-sm font-extrabold ${isCurrentMonth ? 'text-slate-950' : 'text-slate-400'}`}>
+                      {formatCompactDate(day)}
+                    </p>
+                    {isCurrentMonth && dayTasks.length ? (
+                      <span className="rounded-full bg-[#fff1f3] px-2 py-0.5 text-[10px] font-extrabold text-[#a23d4d]">
+                        {dayTasks.length}
+                      </span>
+                    ) : null}
+                  </div>
                   {isCurrentMonth ? (
-                    <div className="space-y-0.5 overflow-hidden">
-                      {dayTasks.map((task) => (
+                    <div className="space-y-1 overflow-hidden">
+                      {visiblePreviewTasks.map((task) => (
                         <CalendarTask key={task.id} task={task} onOpen={onOpen} onDragStart={onDragStart} />
                       ))}
+                      {remainingTaskCount ? (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onDayClick(key);
+                          }}
+                          className="flex w-full items-center justify-between rounded-md border border-dashed border-[#d89aa5] bg-[#fff7f8] px-2 py-1 text-[11px] font-extrabold text-[#a23d4d] transition hover:bg-[#fff1f3]"
+                        >
+                          <span>+{remainingTaskCount} weitere</span>
+                          <span>Liste</span>
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
@@ -630,6 +673,61 @@ function DayView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStart, onDr
             <div className="px-4 py-8 text-center text-sm font-semibold text-slate-400">Keine Aufgaben fuer diesen Tag geplant.</div>
           ) : null}
           </div>
+      </div>
+    </div>
+  );
+}
+
+function DayAgendaModal({ dateKey, tasks, onClose, onOpenTask, onCreateTask }) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/35 px-4 py-6 backdrop-blur-sm">
+      <div
+        className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.24)]"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#b84758]">Tagesansicht</p>
+            <h2 className="mt-2 text-2xl font-extrabold text-slate-950">{formatFullDate(dateKey)}</h2>
+            <p className="mt-1 text-sm font-semibold text-slate-500">
+              {tasks.length} faellige {tasks.length === 1 ? 'Aufgabe' : 'Aufgaben'} an diesem Tag
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onCreateTask(dateKey)}
+              className="h-10 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.2)] transition hover:bg-[#b84758]"
+            >
+              Aufgabe anlegen
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
+              aria-label="Tagesliste schliessen"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="max-h-[70vh] overflow-y-auto bg-[#fff7f8] p-5">
+          {tasks.length ? (
+            <div className="space-y-3">
+              {tasks.map((task) => (
+                <CalendarTask key={task.id} task={task} onOpen={onOpenTask} onDragStart={() => {}} expanded />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-10 text-center">
+              <p className="text-base font-bold text-slate-900">Keine faelligen Aufgaben</p>
+              <p className="mt-2 text-sm font-medium text-slate-500">
+                Fuer diesen Tag ist aktuell keine Ticket-Frist hinterlegt.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -769,6 +867,7 @@ export default function CalendarPage() {
   const [view, setView] = useState('month');
   const [cursorDate, setCursorDate] = useState(new Date());
   const [selectedTask, setSelectedTask] = useState(null);
+  const [selectedDayKey, setSelectedDayKey] = useState(null);
   const [createDate, setCreateDate] = useState(null);
   const [searchValue, setSearchValue] = useState('');
   const [draggedTaskId, setDraggedTaskId] = useState(null);
@@ -855,6 +954,7 @@ export default function CalendarPage() {
   const visibleTasks = useMemo(() => {
     const query = searchValue.trim().toLowerCase();
     return tasks.filter((task) => {
+      if (!task.dueDate) return false;
       if (filters.project !== 'all' && task.project !== filters.project) return false;
       if (filters.person !== 'all' && task.assignee !== filters.person) return false;
       if (filters.statusLabel !== 'all' && statusLabels[task.status] !== filters.statusLabel) return false;
@@ -872,10 +972,12 @@ export default function CalendarPage() {
       visibleTasks.reduce((result, task) => {
         result[task.dueDate] = result[task.dueDate] || [];
         result[task.dueDate].push(task);
+        result[task.dueDate].sort(compareCalendarTasks);
         return result;
       }, {}),
     [visibleTasks],
   );
+  const selectedDayTasks = selectedDayKey ? tasksByDay[selectedDayKey] || [] : [];
 
   const updateFilter = (field, value) => setFilters((current) => ({ ...current, [field]: value }));
 
@@ -931,6 +1033,7 @@ export default function CalendarPage() {
     });
     setTasks((current) => [nextTask, ...current]);
     setCreateDate(null);
+    setSelectedDayKey(form.dueDate);
 
     if (projectMatch?.projectId) {
       api
@@ -956,15 +1059,15 @@ export default function CalendarPage() {
 
   const renderView = () => {
     if (view === 'week') {
-      return <WeekView cursorDate={cursorDate} tasksByDay={tasksByDay} filtersOpen={filtersOpen} onOpen={setSelectedTask} onDayClick={setCreateDate} onDragStart={handleDragStart} onDrop={handleDrop} />;
+      return <WeekView cursorDate={cursorDate} tasksByDay={tasksByDay} filtersOpen={filtersOpen} onOpen={setSelectedTask} onDayClick={setSelectedDayKey} onDragStart={handleDragStart} onDrop={handleDrop} />;
     }
     if (view === 'day') {
-      return <DayView cursorDate={cursorDate} tasksByDay={tasksByDay} onOpen={setSelectedTask} onDayClick={setCreateDate} onDragStart={handleDragStart} onDrop={handleDrop} />;
+      return <DayView cursorDate={cursorDate} tasksByDay={tasksByDay} onOpen={setSelectedTask} onDayClick={setSelectedDayKey} onDragStart={handleDragStart} onDrop={handleDrop} />;
     }
     if (['project', 'team', 'mine', 'department'].includes(view)) {
       return <PlanningListView view={view} tasks={visibleTasks} onOpen={setSelectedTask} onDragStart={handleDragStart} />;
     }
-    return <MonthView cursorDate={cursorDate} tasksByDay={tasksByDay} filtersOpen={filtersOpen} onOpen={setSelectedTask} onDayClick={setCreateDate} onDragStart={handleDragStart} onDrop={handleDrop} />;
+    return <MonthView cursorDate={cursorDate} tasksByDay={tasksByDay} filtersOpen={filtersOpen} onOpen={setSelectedTask} onDayClick={setSelectedDayKey} onDragStart={handleDragStart} onDrop={handleDrop} />;
   };
 
   const handleDragStart = (event, taskId) => {
@@ -1029,6 +1132,23 @@ export default function CalendarPage() {
           onClose={() => setCreateDate(null)}
           onCreate={handleCreateTask}
         />
+      ) : null}
+
+      {selectedDayKey ? (
+        <div onMouseDown={() => setSelectedDayKey(null)} role="presentation">
+          <DayAgendaModal
+            dateKey={selectedDayKey}
+            tasks={selectedDayTasks}
+            onClose={() => setSelectedDayKey(null)}
+            onOpenTask={(task) => {
+              setSelectedTask(task);
+            }}
+            onCreateTask={(dateKey) => {
+              setSelectedDayKey(null);
+              setCreateDate(dateKey);
+            }}
+          />
+        </div>
       ) : null}
     </AppShell>
   );
