@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +9,8 @@ export default function LoginPage() {
   const [challengeToken, setChallengeToken] = useState('');
   const [pendingUser, setPendingUser] = useState(null);
   const [error, setError] = useState('');
+  const [ssoConfig, setSsoConfig] = useState({ enabled: false, displayName: 'SSO' });
+  const [ssoStatus, setSsoStatus] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,9 +24,79 @@ export default function LoginPage() {
     navigate(redirectTo, { replace: true });
   };
 
+  useEffect(() => {
+    let ignore = false;
+
+    api
+      .get('/auth/sso/config')
+      .then(({ data }) => {
+        if (!ignore) setSsoConfig(data);
+      })
+      .catch(() => {
+        if (!ignore) setSsoConfig({ enabled: false, displayName: 'SSO' });
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ssoState = params.get('sso');
+    const code = params.get('code');
+    const message = params.get('message');
+    const returnTo = params.get('returnTo') || redirectTo;
+
+    if (ssoState === 'error') {
+      setError(message || 'SSO-Anmeldung fehlgeschlagen');
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    if (ssoState !== 'callback' || !code) return;
+
+    let ignore = false;
+    setError('');
+    setSsoStatus('SSO-Anmeldung wird abgeschlossen ...');
+    setIsSubmitting(true);
+
+    api
+      .post('/auth/sso/exchange', { code })
+      .then(({ data }) => {
+        if (ignore) return;
+        login(data.token, data.user);
+        navigate(returnTo, { replace: true });
+      })
+      .catch((err) => {
+        if (!ignore) {
+          setError(err.response?.data?.message || 'SSO-Anmeldung konnte nicht abgeschlossen werden');
+          setSsoStatus('');
+          navigate('/login', { replace: true });
+        }
+      })
+      .finally(() => {
+        if (!ignore) setIsSubmitting(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [location.search, login, navigate, redirectTo]);
+
+  const handleSsoLogin = () => {
+    const apiBaseUrl = api.defaults.baseURL || 'http://localhost:5001/api';
+    const loginUrl = new URL(`${apiBaseUrl.replace(/\/+$/, '')}/auth/sso/login`);
+    loginUrl.searchParams.set('returnTo', redirectTo);
+    if (email.trim()) loginUrl.searchParams.set('login_hint', email.trim());
+
+    window.location.href = loginUrl.toString();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSsoStatus('');
 
     if (requiresTwoFactor) {
       if (!twoFactorCode.trim()) {
@@ -76,6 +148,7 @@ export default function LoginPage() {
     setPendingUser(null);
     setTwoFactorCode('');
     setError('');
+    setSsoStatus('');
   };
 
   return (
@@ -83,6 +156,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="w-full max-w-md rounded-2xl bg-white p-8 shadow">
         <h1 className="mb-6 text-2xl font-bold">{requiresTwoFactor ? 'Zwei-Faktor-Code' : 'NextTask Login'}</h1>
         {error && <p className="mb-4 text-red-500">{error}</p>}
+        {ssoStatus && <p className="mb-4 rounded border border-blue-100 bg-blue-50 p-3 text-sm font-semibold text-blue-700">{ssoStatus}</p>}
         {requiresTwoFactor ? (
           <>
             <p className="mb-4 rounded border border-slate-200 bg-slate-50 p-3 text-sm font-semibold text-slate-600">
@@ -117,6 +191,23 @@ export default function LoginPage() {
             >
               {isSubmitting ? 'Pruefe ...' : 'Einloggen'}
             </button>
+            {ssoConfig.enabled ? (
+              <>
+                <div className="my-5 flex items-center gap-3 text-xs font-bold uppercase tracking-wide text-slate-400">
+                  <span className="h-px flex-1 bg-slate-200" />
+                  oder
+                  <span className="h-px flex-1 bg-slate-200" />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSsoLogin}
+                  disabled={isSubmitting}
+                  className="w-full rounded border border-slate-300 bg-white p-3 font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Mit {ssoConfig.displayName || 'SSO'} anmelden
+                </button>
+              </>
+            ) : null}
             <p className="mt-4 text-sm">Noch keinen Account? <Link to="/register" className="text-blue-600">Registrieren</Link></p>
           </>
         )}
