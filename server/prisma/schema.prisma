@@ -45,6 +45,11 @@ model User {
   notificationEmail String?
   emailNotificationsEnabled Boolean @default(false)
   password     String
+  authProvider String      @default("LOCAL")
+  ssoProvider  String?
+  ssoSubject   String?
+  ssoEmail     String?
+  ssoLastLoginAt DateTime?
   twoFactorEnabled Boolean @default(false)
   twoFactorSecret String?
   twoFactorConfirmedAt DateTime?
@@ -61,6 +66,22 @@ model User {
   taskMarkers  TaskMarker[]
   auditLogs    AuditLog[]
   statusReports ProjectStatusReport[] @relation("StatusReportAuthor")
+  ssoLoginTickets SsoLoginTicket[]
+
+  @@unique([ssoProvider, ssoSubject])
+}
+
+model SsoLoginTicket {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([expiresAt])
+  @@index([userId, createdAt])
 }
 
 model AccessRole {

@@ -16,6 +16,15 @@ const {
   verifyRecoveryCode,
   verifyTotpCode,
 } = require('../utils/twoFactor');
+const {
+  buildFrontendRedirectUrl,
+  consumeSsoLoginTicket,
+  createAuthorizationUrl,
+  createSsoLoginTicket,
+  exchangeAuthorizationCode,
+  findOrCreateSsoUser,
+  getPublicSsoConfig,
+} = require('../utils/sso');
 const router = express.Router();
 
 const TWO_FACTOR_CHALLENGE_PURPOSE = 'two_factor_login';
@@ -67,6 +76,9 @@ function toPublicUser(user, extra = {}) {
     emailDeliveryReady: canSendEmails(),
     role: user.role,
     department: user.department,
+    authProvider: user.authProvider,
+    ssoProvider: user.ssoProvider,
+    ssoLastLoginAt: user.ssoLastLoginAt,
     twoFactorEnabled: Boolean(user.twoFactorEnabled),
     createdAt: user.createdAt,
     accessRoleId: user.accessRoleId,
@@ -317,6 +329,98 @@ router.post('/login/2fa', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: '2FA-Anmeldung konnte nicht abgeschlossen werden', error: error.message });
+  }
+});
+
+router.get('/sso/config', (req, res) => {
+  res.json(getPublicSsoConfig());
+});
+
+router.get('/sso/login', async (req, res) => {
+  try {
+    const authorizationUrl = await createAuthorizationUrl({
+      returnTo: req.query.returnTo,
+      loginHint: req.query.login_hint,
+    });
+
+    res.redirect(authorizationUrl);
+  } catch (error) {
+    res.status(400).json({ message: error.message || 'SSO-Anmeldung ist nicht verfuegbar' });
+  }
+});
+
+router.get('/sso/callback', async (req, res) => {
+  if (req.query.error) {
+    const errorMessage = req.query.error_description || req.query.error || 'SSO-Anmeldung wurde abgebrochen';
+    return res.redirect(buildFrontendRedirectUrl({ error: errorMessage }));
+  }
+
+  try {
+    const { code, state } = req.query;
+    if (isBlank(code) || isBlank(state)) {
+      throw new Error('SSO-Callback ist unvollstaendig');
+    }
+
+    const { profile, returnTo } = await exchangeAuthorizationCode({ code: String(code), state: String(state) });
+    const user = await findOrCreateSsoUser(req.prisma, profile);
+    const ticketCode = await createSsoLoginTicket(req.prisma, user.id);
+
+    await writeAuditLog(req, {
+      action: 'SSO_CALLBACK_ACCEPTED',
+      entityType: 'AUTH',
+      entityId: user.id,
+      entityLabel: user.name,
+      summary: `${user.name} wurde vom SSO bestaetigt.`,
+      severity: 'INFO',
+      user,
+      metadata: {
+        provider: 'oidc',
+        email: profile.email,
+        groups: profile.groups,
+      },
+    });
+
+    return res.redirect(buildFrontendRedirectUrl({ code: ticketCode, returnTo }));
+  } catch (error) {
+    await writeAuditLog(req, {
+      action: 'SSO_LOGIN_FAILED',
+      entityType: 'AUTH',
+      summary: 'SSO-Anmeldung ist fehlgeschlagen.',
+      severity: 'WARNING',
+      actor: { actorName: 'SSO' },
+      metadata: { reason: error.message },
+    });
+
+    return res.redirect(buildFrontendRedirectUrl({ error: error.message || 'SSO-Anmeldung ist fehlgeschlagen' }));
+  }
+});
+
+router.post('/sso/exchange', async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (isBlank(code)) {
+      return res.status(400).json({ message: 'SSO-Code ist erforderlich' });
+    }
+
+    const user = await consumeSsoLoginTicket(req.prisma, code);
+    const token = createToken(user);
+
+    await writeAuditLog(req, {
+      action: 'SSO_LOGIN_SUCCESS',
+      entityType: 'AUTH',
+      entityId: user.id,
+      entityLabel: user.name,
+      summary: `${user.name} hat sich per SSO angemeldet.`,
+      severity: 'INFO',
+      user,
+    });
+
+    res.json({
+      token,
+      user: toPublicUser(user),
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message || 'SSO-Anmeldung konnte nicht abgeschlossen werden' });
   }
 });
 
