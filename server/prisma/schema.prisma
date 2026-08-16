@@ -44,6 +44,13 @@ model User {
   email        String      @unique
   notificationEmail String?
   emailNotificationsEnabled Boolean @default(false)
+  calendarProvider String?
+  calendarEmail String?
+  calendarRefreshToken String?
+  calendarSyncEnabled Boolean @default(false)
+  calendarConnectedAt DateTime?
+  calendarLastSyncedAt DateTime?
+  calendarSyncError String?
   password     String
   authProvider String      @default("LOCAL")
   ssoProvider  String?
@@ -65,6 +72,7 @@ model User {
   comments     Comment[]
   taskMarkers  TaskMarker[]
   auditLogs    AuditLog[]
+  calendarSyncEvents CalendarSyncEvent[]
   statusReports ProjectStatusReport[] @relation("StatusReportAuthor")
   ssoLoginTickets SsoLoginTicket[]
 
@@ -229,6 +237,24 @@ model Task {
   project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   assignee    User?       @relation("AssignedTasks", fields: [assigneeId], references: [id])
   comments    Comment[]
+  calendarSyncEvents CalendarSyncEvent[]
+}
+
+model CalendarSyncEvent {
+  id               String   @id @default(cuid())
+  provider         String
+  externalCalendarId String
+  externalEventId  String
+  taskId           String
+  userId           String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  task             Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, userId, taskId])
+  @@index([taskId, provider])
+  @@index([userId, provider])
 }
 
 model Comment {

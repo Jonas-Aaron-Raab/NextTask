@@ -25,6 +25,7 @@ const {
   findOrCreateSsoUser,
   getPublicSsoConfig,
 } = require('../utils/sso');
+const { serializeCalendarConnection } = require('../utils/calendarIntegration');
 const router = express.Router();
 
 const TWO_FACTOR_CHALLENGE_PURPOSE = 'two_factor_login';
@@ -80,6 +81,7 @@ function toPublicUser(user, extra = {}) {
     ssoProvider: user.ssoProvider,
     ssoLastLoginAt: user.ssoLastLoginAt,
     twoFactorEnabled: Boolean(user.twoFactorEnabled),
+    ...serializeCalendarConnection(user),
     createdAt: user.createdAt,
     accessRoleId: user.accessRoleId,
     accessRole: serializeRole(user.accessRole),

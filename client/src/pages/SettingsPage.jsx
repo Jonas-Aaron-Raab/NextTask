@@ -1,4 +1,5 @@
 import { createElement, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   BadgeCheck,
   Bell,
@@ -102,6 +103,19 @@ function getInitials(value) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join('');
+}
+
+function getCalendarConnectionState(source = {}) {
+  return {
+    calendarSetupReady: Boolean(source?.calendarSetupReady),
+    calendarConnected: Boolean(source?.calendarConnected),
+    calendarProvider: source?.calendarProvider || null,
+    calendarEmail: source?.calendarEmail || '',
+    calendarSyncEnabled: Boolean(source?.calendarSyncEnabled),
+    calendarConnectedAt: source?.calendarConnectedAt || '',
+    calendarLastSyncedAt: source?.calendarLastSyncedAt || '',
+    calendarSyncError: source?.calendarSyncError || '',
+  };
 }
 
 function FieldShell({ label, icon: Icon, children }) {
@@ -215,6 +229,7 @@ function ColorWheelPicker({ value, label, onChange }) {
   );
 }
 export default function SettingsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, updateUser } = useAuth();
   const [searchValue, setSearchValue] = useState('');
   const [profileForm, setProfileForm] = useState({
@@ -244,6 +259,9 @@ export default function SettingsPage() {
   const [passwordError, setPasswordError] = useState('');
   const [twoFactorStatus, setTwoFactorStatus] = useState('');
   const [twoFactorError, setTwoFactorError] = useState('');
+  const [calendarConnection, setCalendarConnection] = useState(() => getCalendarConnectionState(user));
+  const [calendarStatus, setCalendarStatus] = useState('');
+  const [calendarError, setCalendarError] = useState('');
   const [appearanceForm, setAppearanceForm] = useState(() => getStoredAppearanceSettings());
   const [appearanceOpen, setAppearanceOpen] = useState(true);
   const [appearanceStatus, setAppearanceStatus] = useState('');
@@ -260,6 +278,9 @@ export default function SettingsPage() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [isSendingTestMail, setIsSendingTestMail] = useState(false);
+  const [isConnectingCalendar, setIsConnectingCalendar] = useState(false);
+  const [isSyncingCalendar, setIsSyncingCalendar] = useState(false);
+  const [isDisconnectingCalendar, setIsDisconnectingCalendar] = useState(false);
   const [isStartingTwoFactor, setIsStartingTwoFactor] = useState(false);
   const [isConfirmingTwoFactor, setIsConfirmingTwoFactor] = useState(false);
   const [isDisablingTwoFactor, setIsDisablingTwoFactor] = useState(false);
@@ -293,6 +314,7 @@ export default function SettingsPage() {
         setCreatedAt(data.user.createdAt || '');
         setIsGuest(Boolean(data.user.isGuest));
         setTwoFactorEnabled(Boolean(data.user.twoFactorEnabled));
+        setCalendarConnection(getCalendarConnectionState(data.user));
         updateUser(data.user);
       } catch (error) {
         if (!ignore) {
@@ -309,6 +331,25 @@ export default function SettingsPage() {
       ignore = true;
     };
   }, [updateUser]);
+
+  useEffect(() => {
+    const status = searchParams.get('calendar_status');
+    const message = searchParams.get('calendar_message');
+    if (!status && !message) return;
+
+    if (status === 'connected') {
+      setCalendarStatus(message || 'Kalender wurde verbunden.');
+      setCalendarError('');
+    } else if (status === 'error') {
+      setCalendarError(message || 'Kalender konnte nicht verbunden werden.');
+      setCalendarStatus('');
+    }
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('calendar_status');
+    nextParams.delete('calendar_message');
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     let ignore = false;
@@ -403,6 +444,61 @@ export default function SettingsPage() {
     setTwoFactorStatus('');
     setTwoFactorError('');
     setTwoFactorForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleCalendarConnect = async () => {
+    setCalendarStatus('');
+    setCalendarError('');
+
+    if (isGuest) {
+      setCalendarError('Im Gastmodus kann kein Kalender verbunden werden.');
+      return;
+    }
+
+    setIsConnectingCalendar(true);
+    try {
+      const { data } = await api.post('/calendar-integration/connect-url', {
+        returnTo: '/settings',
+      });
+      window.location.assign(data.authorizationUrl);
+    } catch (error) {
+      setCalendarError(error.response?.data?.message || 'Kalender-Verbindung konnte nicht gestartet werden.');
+      setIsConnectingCalendar(false);
+    }
+  };
+
+  const handleCalendarSync = async () => {
+    setCalendarStatus('');
+    setCalendarError('');
+    setIsSyncingCalendar(true);
+
+    try {
+      const { data } = await api.post('/calendar-integration/sync');
+      setCalendarConnection(getCalendarConnectionState(data.connection));
+      updateUser(data.connection);
+      setCalendarStatus(data.message || 'Kalender wurde synchronisiert.');
+    } catch (error) {
+      setCalendarError(error.response?.data?.message || 'Kalender-Sync konnte nicht gestartet werden.');
+    } finally {
+      setIsSyncingCalendar(false);
+    }
+  };
+
+  const handleCalendarDisconnect = async () => {
+    setCalendarStatus('');
+    setCalendarError('');
+    setIsDisconnectingCalendar(true);
+
+    try {
+      const { data } = await api.delete('/calendar-integration/disconnect');
+      setCalendarConnection(getCalendarConnectionState(data.connection));
+      updateUser(data.connection);
+      setCalendarStatus(data.message || 'Kalender-Verbindung wurde getrennt.');
+    } catch (error) {
+      setCalendarError(error.response?.data?.message || 'Kalender-Verbindung konnte nicht getrennt werden.');
+    } finally {
+      setIsDisconnectingCalendar(false);
+    }
   };
 
   const handleAppearanceChange = (field, value) => {
@@ -1244,6 +1340,110 @@ export default function SettingsPage() {
                       <Mail className="h-4 w-4" />
                       {isSendingTestMail ? 'Sende Testmail ...' : 'Testmail senden'}
                     </button>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-extrabold text-slate-700">Kalender verbinden</p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">
+                          Verbinde deinen persoenlichen Kalender, damit Ticket-Fristen automatisch als Termine auftauchen.
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${
+                          calendarConnection.calendarConnected
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : calendarConnection.calendarSetupReady
+                              ? 'bg-amber-50 text-amber-700'
+                              : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        <CalendarDays className="h-4 w-4" />
+                        {calendarConnection.calendarConnected
+                          ? 'Verbunden'
+                          : calendarConnection.calendarSetupReady
+                            ? 'Bereit zum Verbinden'
+                            : 'Server noch nicht konfiguriert'}
+                      </span>
+                    </div>
+
+                    {calendarStatus ? (
+                      <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                        {calendarStatus}
+                      </div>
+                    ) : null}
+
+                    {calendarError ? (
+                      <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+                        {calendarError}
+                      </div>
+                    ) : null}
+
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      <div className="rounded-xl border border-slate-200 bg-[#fcfdff] px-4 py-3">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Kalenderkonto</p>
+                        <p className="mt-1 text-sm font-extrabold text-slate-800">
+                          {calendarConnection.calendarConnected
+                            ? calendarConnection.calendarEmail || 'Persoenlicher Kalender'
+                            : 'Noch nicht verbunden'}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">
+                          Aktuell wird fuer den Connect-Flow Google/Gmail verwendet, die Funktion bleibt in NextTask aber bewusst allgemein.
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-[#fcfdff] px-4 py-3">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Letzte Synchronisierung</p>
+                        <p className="mt-1 text-sm font-extrabold text-slate-800">
+                          {calendarConnection.calendarLastSyncedAt
+                            ? formatAppearanceDate(calendarConnection.calendarLastSyncedAt, appearanceForm.dateFormat)
+                            : 'Noch kein Sync'}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">
+                          Synchronisiert werden aktuell nur Tickets mit echter Frist.
+                        </p>
+                      </div>
+                    </div>
+
+                    {calendarConnection.calendarSyncError ? (
+                      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
+                        Letzter Sync-Hinweis: {calendarConnection.calendarSyncError}
+                      </div>
+                    ) : null}
+
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={handleCalendarConnect}
+                        disabled={isGuest || !calendarConnection.calendarSetupReady || isConnectingCalendar}
+                        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white shadow-[0_10px_22px_rgba(184,71,88,0.18)] transition hover:bg-[#a23d4d] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                      >
+                        <CalendarDays className="h-4 w-4" />
+                        {isConnectingCalendar
+                          ? 'Verbinde ...'
+                          : calendarConnection.calendarConnected
+                            ? 'Neu verbinden'
+                            : 'Kalender verbinden'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCalendarSync}
+                        disabled={!calendarConnection.calendarConnected || isSyncingCalendar}
+                        className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        {isSyncingCalendar ? 'Synchronisiere ...' : 'Jetzt synchronisieren'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCalendarDisconnect}
+                        disabled={!calendarConnection.calendarConnected || isDisconnectingCalendar}
+                        className="inline-flex h-11 items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                      >
+                        <ShieldOff className="h-4 w-4" />
+                        {isDisconnectingCalendar ? 'Trenne ...' : 'Verbindung trennen'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

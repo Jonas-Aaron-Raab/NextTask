@@ -7,6 +7,7 @@ const {
   sendTaskAssignmentEmail,
   sendTaskMentionEmail,
 } = require('../utils/taskNotificationMailer');
+const { removeTaskCalendarSyncs, syncTaskCalendarEvent } = require('../utils/calendarIntegration');
 const router = express.Router();
 
 const statusMap = {
@@ -86,6 +87,14 @@ function getActor(req) {
     email: req.user?.email || null,
     role: req.user?.role || null,
   };
+}
+
+async function syncTaskCalendarSafely(req, taskId) {
+  try {
+    await syncTaskCalendarEvent(req.prisma, taskId);
+  } catch (error) {
+    console.error(`Calendar sync failed for task ${taskId}:`, error.message);
+  }
 }
 
 async function notifyTaskAssignment({ req, task, previousAssigneeId, reason }) {
@@ -220,6 +229,8 @@ router.post('/', auth, async (req, res) => {
       reason: 'created',
     });
 
+    await syncTaskCalendarSafely(req, createdTask.id);
+
     res.status(201).json(task);
   } catch (error) {
     res.status(500).json({
@@ -281,6 +292,8 @@ router.put('/:id', auth, async (req, res) => {
       previousAssigneeId: before?.assigneeId || null,
       reason: before?.assigneeId ? 'reassigned' : 'created',
     });
+
+    await syncTaskCalendarSafely(req, req.params.id);
 
     res.json(updated);
   } catch (error) {
@@ -359,6 +372,8 @@ router.patch('/:id/schedule', auth, async (req, res) => {
       reason: before?.assigneeId ? 'reassigned' : 'created',
     });
 
+    await syncTaskCalendarSafely(req, req.params.id);
+
     res.json(updated);
   } catch (error) {
     res.status(500).json({
@@ -371,6 +386,7 @@ router.patch('/:id/schedule', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
   try {
     const task = await req.prisma.task.findUnique({ where: { id: req.params.id } });
+    await removeTaskCalendarSyncs(req.prisma, req.params.id);
     await req.prisma.task.delete({ where: { id: req.params.id } });
 
     await writeAuditLog(req, {
