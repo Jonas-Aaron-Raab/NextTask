@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   FileText,
   User,
+  BadgeCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { canManageRoles } from '../data/bankOrganization';
@@ -29,6 +30,7 @@ const navigationItems = [
   { label: 'Abteilungen', path: '/departments', icon: Building2 },
   { label: 'Projekte', path: '/projects', icon: Folder },
   { label: 'Aufgaben', path: '/my-tasks', icon: CheckSquare },
+  { label: 'Freigaben', path: '/approvals', icon: BadgeCheck },
   { label: 'Kalender', path: '/calendar', icon: Calendar },
   { label: 'Reports', path: '/reports', icon: BarChart3 },
   { label: 'Dokumente', path: '/documents', icon: FileText },
