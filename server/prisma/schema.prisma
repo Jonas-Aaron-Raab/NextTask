@@ -38,6 +38,21 @@ enum AccessRoleKind {
   MEMBER
 }
 
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ApprovalEntityType {
+  TASK
+  PROJECT
+  STATUS_REPORT
+  DOCUMENT
+  OTHER
+}
+
 model User {
   id           String      @id @default(cuid())
   name         String
@@ -74,6 +89,8 @@ model User {
   auditLogs    AuditLog[]
   calendarSyncEvents CalendarSyncEvent[]
   statusReports ProjectStatusReport[] @relation("StatusReportAuthor")
+  approvalRequests ApprovalRequest[] @relation("ApprovalRequester")
+  approvalsToReview ApprovalRequest[] @relation("ApprovalApprover")
   ssoLoginTickets SsoLoginTicket[]
 
   @@unique([ssoProvider, ssoSubject])
@@ -215,6 +232,31 @@ model ProjectStatusReport {
 
   @@index([projectId, reportDate])
   @@index([authorId, createdAt])
+}
+
+model ApprovalRequest {
+  id          String             @id @default(cuid())
+  entityType  ApprovalEntityType
+  entityId    String
+  entityLabel String
+  title       String
+  description String?
+  status      ApprovalStatus     @default(PENDING)
+  evidence    String?
+  decisionNote String?
+  requestedAt DateTime           @default(now())
+  decidedAt   DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  requesterId String
+  requester   User               @relation("ApprovalRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  approverId  String?
+  approver    User?              @relation("ApprovalApprover", fields: [approverId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([status, requestedAt])
+  @@index([requesterId, requestedAt])
+  @@index([approverId, requestedAt])
 }
 
 model Task {

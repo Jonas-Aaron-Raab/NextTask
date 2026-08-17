@@ -8,6 +8,7 @@ const calendarIntegrationRoutes = require('./routes/calendarIntegration.routes')
 const calendarRoutes = require('./routes/calendar.routes');
 const projectRoutes = require('./routes/project.routes');
 const taskRoutes = require('./routes/task.routes');
+const approvalRoutes = require('./routes/approval.routes');
 const roleRoutes = require('./routes/role.routes');
 const taskMarkerRoutes = require('./routes/taskMarker.routes');
 const auditLogRoutes = require('./routes/auditLog.routes');
@@ -29,6 +30,7 @@ app.use('/api/calendar-integration', calendarIntegrationRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/approvals', approvalRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/task-markers', taskMarkerRoutes);
 app.use('/api/audit-logs', auditLogRoutes);

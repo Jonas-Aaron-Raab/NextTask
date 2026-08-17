@@ -2,6 +2,7 @@ const defaultPermissions = {
   viewDepartments: true,
   editProjects: false,
   editTasks: true,
+  approveRequests: false,
   viewReports: false,
   manageRoles: false,
 };
@@ -18,6 +19,7 @@ const defaultAccessRoles = [
       viewDepartments: true,
       editProjects: true,
       editTasks: true,
+      approveRequests: true,
       viewReports: true,
       manageRoles: true,
     },
@@ -34,6 +36,7 @@ const defaultAccessRoles = [
       viewDepartments: true,
       editProjects: true,
       editTasks: true,
+      approveRequests: true,
       viewReports: true,
       manageRoles: false,
     },
@@ -148,6 +151,16 @@ function userCanManageRoles(user) {
   return Boolean(user?.accessRole?.permissions?.manageRoles || user?.accessRole?.kind === 'ADMIN' || user?.role === 'ADMIN');
 }
 
+function userCanApproveRequests(user) {
+  return Boolean(
+    user?.accessRole?.permissions?.approveRequests ||
+      user?.accessRole?.kind === 'ADMIN' ||
+      user?.accessRole?.kind === 'GBL' ||
+      user?.role === 'ADMIN' ||
+      user?.role === 'PROJECT_MANAGER',
+  );
+}
+
 module.exports = {
   defaultAccessRoles,
   ensureDefaultAccessRoles,
@@ -155,5 +168,6 @@ module.exports = {
   normalizePermissions,
   serializeRole,
   serializeUser,
+  userCanApproveRequests,
   userCanManageRoles,
 };
