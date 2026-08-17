@@ -62,6 +62,24 @@ function MenuCard({ children, className = '' }) {
   );
 }
 
+function SparkasseMark({ className = '' }) {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true" className={className}>
+      <rect x="2" y="2" width="44" height="44" rx="10.5" fill="#e30613" />
+      <circle cx="24" cy="9.4" r="3.95" fill="#ffffff" />
+      <rect x="12.3" y="15.9" width="22.2" height="22.2" rx="6.6" fill="#ffffff" />
+      <path
+        d="M16.9 21.75h17.6a1.6 1.6 0 1 1 0 3.2H16.9a1.6 1.6 0 1 1 0-3.2Z"
+        fill="#e30613"
+      />
+      <path
+        d="M12.3 29.35h17.9a1.6 1.6 0 1 1 0 3.2H12.3a1.6 1.6 0 1 1 0-3.2Z"
+        fill="#e30613"
+      />
+    </svg>
+  );
+}
+
 export default function AppShell({
   activeItem = 'Dashboard',
   breadcrumb = ['Workspace', 'Web-Relaunch', 'Dashboard'],
@@ -143,8 +161,8 @@ export default function AppShell({
           }`}
         >
           <div className="flex h-[72px] items-center gap-3 px-5">
-            <span className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-[#d66b79] to-[#b84758] text-white shadow-[0_10px_24px_rgba(184,71,88,0.22)]">
-              <CheckSquare className="h-5 w-5" />
+            <span className="inline-flex h-10 w-10 flex-none items-center justify-center">
+              <SparkasseMark className="h-10 w-10" />
             </span>
             {!sidebarCollapsed ? (
               <span className="text-xl font-extrabold tracking-tight text-[#b84758]">Sparkasse</span>
