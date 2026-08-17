@@ -134,7 +134,7 @@ function FieldShell({ label, icon: Icon, children }) {
 
 function SegmentedControl({ options, value, onChange }) {
   return (
-    <div className="grid gap-2 sm:grid-cols-3">
+    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
       {options.map((option) => {
         const Icon = option.icon;
         const active = option.value === value;
@@ -144,14 +144,14 @@ function SegmentedControl({ options, value, onChange }) {
             key={option.value}
             type="button"
             onClick={() => onChange(option.value)}
-            className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-extrabold transition ${
+            className={`inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-center text-sm font-extrabold transition ${
               active
                 ? 'border-[#b84758] bg-[#fff1f3] text-[#b84758] shadow-[0_10px_22px_rgba(184,71,88,0.12)]'
                 : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
             }`}
           >
             <Icon className="h-4 w-4" />
-            {option.label}
+            <span className="break-words">{option.label}</span>
           </button>
         );
       })}
@@ -186,7 +186,7 @@ function SettingRow({ icon: Icon, label, description, children }) {
   const iconNode = createElement(Icon, { className: 'h-5 w-5' });
 
   return (
-    <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-[minmax(0,0.9fr)_minmax(280px,1.1fr)] md:items-center">
+    <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center">
       <div className="flex min-w-0 gap-3">
         <span className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white text-[#b84758] shadow-sm">
           {iconNode}
@@ -794,14 +794,14 @@ export default function SettingsPage() {
                   </p>
                 </div>
               </div>
-              <div className="grid gap-2 text-sm font-bold text-slate-500 sm:grid-cols-2">
-                <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <div className="grid w-full gap-2 text-sm font-bold text-slate-500 lg:w-auto lg:grid-cols-2">
+                <span className="inline-flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                   <Mail className="h-4 w-4 text-slate-400" />
-                  {profileForm.email || 'Keine E-Mail'}
+                  <span className="truncate">{profileForm.email || 'Keine E-Mail'}</span>
                 </span>
-                <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                <span className="inline-flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                   <BadgeCheck className="h-4 w-4 text-slate-400" />
-                  Seit {formatAppearanceDate(createdAt, appearanceForm.dateFormat)}
+                  <span className="truncate">Seit {formatAppearanceDate(createdAt, appearanceForm.dateFormat)}</span>
                 </span>
               </div>
             </div>
@@ -959,7 +959,7 @@ export default function SettingsPage() {
                     label="Sidebar"
                     description="Lege fest, ob die Seitenleiste beim Start offen bleibt."
                   >
-                    <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
                       <span className="text-sm font-extrabold text-slate-700">
                         {appearanceForm.sidebarDefault === 'expanded' ? 'Geoeffnet' : 'Eingeklappt'}
                       </span>
@@ -976,7 +976,7 @@ export default function SettingsPage() {
                     label="Animationen"
                     description="Reduziere Bewegungen, wenn du eine ruhigere Oberflaeche willst."
                   >
-                    <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
                       <span className="text-sm font-extrabold text-slate-700">
                         {appearanceForm.reduceMotion ? 'Reduziert' : 'Normal'}
                       </span>
@@ -1046,7 +1046,7 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={handleTaskMarkerAdd}
-                      className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#b84758] px-3 text-sm font-bold text-white shadow-[0_10px_22px_rgba(184,71,88,0.18)] transition hover:bg-[#a23d4d]"
+                      className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#b84758] px-3 text-sm font-bold text-white shadow-[0_10px_22px_rgba(184,71,88,0.18)] transition hover:bg-[#a23d4d] sm:w-auto"
                     >
                       <Plus className="h-4 w-4" />
                       Neue Markierung
@@ -1054,7 +1054,7 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={handleTaskMarkerReset}
-                      className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                      className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 sm:w-auto"
                     >
                       <RotateCcw className="h-4 w-4" />
                       Zuruecksetzen
@@ -1335,7 +1335,7 @@ export default function SettingsPage() {
                         !profileForm.emailDeliveryReady ||
                         !profileForm.emailNotificationsEnabled
                       }
-                      className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                     >
                       <Mail className="h-4 w-4" />
                       {isSendingTestMail ? 'Sende Testmail ...' : 'Testmail senden'}
@@ -1416,7 +1416,7 @@ export default function SettingsPage() {
                         type="button"
                         onClick={handleCalendarConnect}
                         disabled={isGuest || !calendarConnection.calendarSetupReady || isConnectingCalendar}
-                        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white shadow-[0_10px_22px_rgba(184,71,88,0.18)] transition hover:bg-[#a23d4d] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white shadow-[0_10px_22px_rgba(184,71,88,0.18)] transition hover:bg-[#a23d4d] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none sm:w-auto"
                       >
                         <CalendarDays className="h-4 w-4" />
                         {isConnectingCalendar
@@ -1429,7 +1429,7 @@ export default function SettingsPage() {
                         type="button"
                         onClick={handleCalendarSync}
                         disabled={!calendarConnection.calendarConnected || isSyncingCalendar}
-                        className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 sm:w-auto"
                       >
                         <RotateCcw className="h-4 w-4" />
                         {isSyncingCalendar ? 'Synchronisiere ...' : 'Jetzt synchronisieren'}
@@ -1438,7 +1438,7 @@ export default function SettingsPage() {
                         type="button"
                         onClick={handleCalendarDisconnect}
                         disabled={!calendarConnection.calendarConnected || isDisconnectingCalendar}
-                        className="inline-flex h-11 items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 sm:w-auto"
                       >
                         <ShieldOff className="h-4 w-4" />
                         {isDisconnectingCalendar ? 'Trenne ...' : 'Verbindung trennen'}
@@ -1458,7 +1458,7 @@ export default function SettingsPage() {
                 <button
                   type="submit"
                   disabled={isSavingProfile}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(184,71,88,0.22)] transition hover:bg-[#a23d4d] disabled:cursor-not-allowed disabled:opacity-65"
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(184,71,88,0.22)] transition hover:bg-[#a23d4d] disabled:cursor-not-allowed disabled:opacity-65 sm:w-auto"
                 >
                   <Save className="h-4 w-4" />
                   {isSavingProfile ? 'Speichern ...' : 'Profil speichern'}

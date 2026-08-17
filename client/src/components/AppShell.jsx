@@ -221,7 +221,7 @@ export default function AppShell({
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-auto min-h-[72px] flex-wrap items-center gap-4 border-b border-slate-200 bg-white px-4 py-3 lg:px-6">
+          <header className="flex h-auto min-h-[72px] flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:px-6">
             {!hideBreadcrumb ? (
               <div className="flex min-w-[220px] flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
                 {breadcrumb.map((crumb, index) => (
@@ -249,12 +249,18 @@ export default function AppShell({
               </div>
             ) : null}
 
-            <div className={`ml-auto flex items-center gap-3 ${searchPlacement === 'actions' ? 'w-full justify-end' : ''}`}>
+            <div
+              className={`ml-auto flex min-w-0 items-center gap-2 sm:gap-3 ${
+                searchPlacement === 'actions' ? 'w-full flex-wrap justify-end' : 'shrink-0'
+              }`}
+            >
               {searchPlacement === 'actions' && headerTitle ? (
-                <h1 className="mr-auto w-full max-w-[240px] text-left text-xl font-extrabold text-slate-950 lg:text-2xl">{headerTitle}</h1>
+                <h1 className="mr-auto min-w-0 flex-1 text-left text-xl font-extrabold text-slate-950 lg:text-2xl">
+                  {headerTitle}
+                </h1>
               ) : null}
               {searchPlacement === 'actions' ? (
-                <div className="relative w-full min-w-[280px] max-w-[560px]">
+                <div className="relative order-last w-full min-w-0 sm:order-none sm:max-w-[420px] lg:max-w-[560px] lg:flex-1">
                   <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                   <input
                     ref={searchInputRef}
@@ -269,14 +275,14 @@ export default function AppShell({
                 </div>
               ) : null}
               {createMenuItems.length ? (
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   type="button"
                   onClick={() => setCreateOpen((current) => !current)}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#e3b4bc] bg-[#fff7f8] px-4 text-sm font-bold text-[#a23d4d] shadow-[0_10px_22px_rgba(162,61,77,0.10)] transition hover:border-[#d89aa5] hover:bg-[#fff1f3]"
+                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#e3b4bc] bg-[#fff7f8] px-3 text-sm font-bold text-[#a23d4d] shadow-[0_10px_22px_rgba(162,61,77,0.10)] transition hover:border-[#d89aa5] hover:bg-[#fff1f3] sm:px-4"
                 >
                   <Plus className="h-4 w-4" />
-                  Erstellen
+                  <span className="hidden sm:inline">Erstellen</span>
                   <ChevronDown className="h-4 w-4" />
                 </button>
                 {createOpen ? (
@@ -296,7 +302,7 @@ export default function AppShell({
               </div>
               ) : null}
 
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   type="button"
                   onClick={() => setNotificationsOpen((current) => !current)}
@@ -318,20 +324,22 @@ export default function AppShell({
                 ) : null}
               </div>
 
-              <div className="relative">
+              <div className="relative min-w-0 max-w-full shrink">
                 <button
                   type="button"
                   onClick={() => setProfileOpen((current) => !current)}
-                  className="flex h-11 items-center gap-3 rounded-xl border border-slate-200 bg-white px-2.5 pr-3 text-left transition hover:bg-slate-50"
+                  className="flex h-11 min-w-0 max-w-full items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 pr-3 text-left transition hover:bg-slate-50 sm:gap-3"
                 >
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-amber-200 to-rose-300 text-xs font-extrabold text-slate-800">
                     {getInitials(user?.name)}
                   </span>
-                  <span className="hidden leading-tight sm:block">
-                    <span className="block text-sm font-bold text-slate-900">{user?.name || 'Gast'}</span>
-                    <span className="block text-xs font-semibold text-slate-400">{user?.department || 'Workspace'}</span>
+                  <span className="hidden min-w-0 leading-tight sm:block">
+                    <span className="block truncate text-sm font-bold text-slate-900">{user?.name || 'Gast'}</span>
+                    <span className="hidden truncate text-xs font-semibold text-slate-400 lg:block">
+                      {user?.department || 'Workspace'}
+                    </span>
                   </span>
-                  <ChevronDown className="h-4 w-4 text-slate-400" />
+                  <ChevronDown className="h-4 w-4 flex-none text-slate-400" />
                 </button>
                 {profileOpen ? (
                   <MenuCard>
