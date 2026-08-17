@@ -26,6 +26,7 @@ import {
   Paperclip,
   Pencil,
   Plus,
+  Send,
   ShieldCheck,
   Star,
   Tag,
@@ -1968,6 +1969,8 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, task
   const [personDraft, setPersonDraft] = useState(assignees[0] || '');
   const [attachmentType, setAttachmentType] = useState(attachmentTypeOptions[0]);
   const [attachmentSource, setAttachmentSource] = useState(attachmentSourceOptions[0]);
+  const [approvalRequestStatus, setApprovalRequestStatus] = useState('');
+  const [approvalRequestError, setApprovalRequestError] = useState('');
 
   if (!task) {
     return null;
@@ -2085,6 +2088,35 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, task
       { attachments: attachments.filter((attachment) => attachment.id !== attachmentId) },
       'Eine Evidenzdatei entfernt.',
     );
+  };
+  const handleApprovalRequest = async () => {
+    setApprovalRequestStatus('');
+    setApprovalRequestError('');
+    try {
+      await api.post('/approvals', {
+        entityType: 'OTHER',
+        entityId: task.id,
+        entityLabel: task.title,
+        title: `Freigabe: ${form.title.trim() || task.title}`,
+        description: form.approval.trim() || form.description.trim(),
+        evidence: form.evidence.trim(),
+      });
+      setApprovalRequestStatus('Freigabe wurde im Cockpit angefragt.');
+      updateTask(
+        {
+          compliance: {
+            classification: form.classification,
+            risk: form.risk,
+            controlId: form.controlId.trim() || task.id,
+            approval: form.approval.trim() || 'Freigabe angefragt',
+            evidence: form.evidence.trim(),
+          },
+        },
+        'Freigabe im Cockpit angefragt.',
+      );
+    } catch (requestError) {
+      setApprovalRequestError(requestError.response?.data?.message || 'Freigabe konnte nicht angefragt werden.');
+    }
   };
 
   return (
@@ -2494,6 +2526,17 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, task
                 className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
               />
             </label>
+
+            <button
+              type="button"
+              onClick={handleApprovalRequest}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)] transition hover:bg-[#b84758]"
+            >
+              <Send className="h-4 w-4" />
+              Freigabe anfragen
+            </button>
+            {approvalRequestStatus ? <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700">{approvalRequestStatus}</p> : null}
+            {approvalRequestError ? <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700">{approvalRequestError}</p> : null}
           </div>
         </DetailBlock>
 

@@ -27,6 +27,7 @@ const entityLabels = {
   TASK: 'Aufgabe',
   COMMENT: 'Kommentar',
   PROJECT: 'Projekt',
+  APPROVAL_REQUEST: 'Freigabe',
   TASK_MARKER_SETTINGS: 'Aufgabenfarben',
 };
 
@@ -53,6 +54,10 @@ const actionLabels = {
   ROLE_UPDATED: 'Rolle geaendert',
   ROLE_DELETED: 'Rolle geloescht',
   PROJECT_CREATED: 'Projekt erstellt',
+  APPROVAL_REQUESTED: 'Freigabe angefragt',
+  APPROVAL_APPROVED: 'Freigabe genehmigt',
+  APPROVAL_REJECTED: 'Freigabe abgelehnt',
+  APPROVAL_CANCELLED: 'Freigabe abgebrochen',
   TASK_CREATED: 'Aufgabe erstellt',
   TASK_UPDATED: 'Aufgabe geaendert',
   TASK_MOVED: 'Aufgabe verschoben',
@@ -62,7 +67,7 @@ const actionLabels = {
   TASK_MARKERS_UPDATED: 'Farbstreifen gespeichert',
 };
 
-const entityOptions = ['', 'AUTH', 'USER', 'ACCESS_ROLE', 'PROJECT', 'TASK', 'COMMENT', 'TASK_MARKER_SETTINGS'];
+const entityOptions = ['', 'AUTH', 'USER', 'ACCESS_ROLE', 'PROJECT', 'TASK', 'COMMENT', 'APPROVAL_REQUEST', 'TASK_MARKER_SETTINGS'];
 const severityOptions = ['', 'INFO', 'NOTICE', 'WARNING', 'CRITICAL'];
 const actionOptions = ['', ...Object.keys(actionLabels)];
 

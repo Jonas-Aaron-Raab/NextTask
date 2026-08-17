@@ -51,6 +51,7 @@ function createRole(kind = 'MEMBER') {
       viewDepartments: true,
       editProjects: kind !== 'MEMBER',
       editTasks: true,
+      approveRequests: kind !== 'MEMBER',
       viewReports: kind !== 'MEMBER',
       manageRoles: kind === 'ADMIN',
     },
