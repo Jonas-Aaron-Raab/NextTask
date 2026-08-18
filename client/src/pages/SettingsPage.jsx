@@ -8,7 +8,6 @@ import {
   ChevronDown,
   Check,
   CalendarDays,
-  Image,
   Flag,
   KeyRound,
   LayoutPanelLeft,
@@ -34,8 +33,6 @@ import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 import {
   applyAppearanceSettings,
-  applyAppearanceTheme,
-  boardBackgroundOptions,
   formatAppearanceDate,
   getStoredAppearanceSettings,
   storeAppearanceSettings,
@@ -74,7 +71,6 @@ const emptyPasswordForm = {
 const themeOptions = [
   { value: 'light', label: 'Hell', icon: Sun },
   { value: 'dark', label: 'Dunkel', icon: Moon },
-  { value: 'system', label: 'System', icon: Monitor },
 ];
 const densityOptions = [
   { value: 'comfortable', label: 'Komfortabel', icon: Rows3 },
@@ -90,11 +86,6 @@ const dateFormatOptions = [
   { value: 'numeric', label: '30.05.2026', icon: CalendarDays },
   { value: 'long', label: '30. Mai 2026', icon: CalendarDays },
 ];
-const fontSizeOptions = [
-  { value: 'normal', label: 'Normal', icon: Type },
-  { value: 'large', label: 'Gross', icon: Type },
-];
-
 function getInitials(value) {
   if (!value) return 'NT';
   return value
@@ -267,16 +258,11 @@ export default function SettingsPage() {
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(true);
   const [appearanceForm, setAppearanceForm] = useState(() => getStoredAppearanceSettings());
   const [appearanceOpen, setAppearanceOpen] = useState(true);
-  const [appearanceStatus, setAppearanceStatus] = useState('');
   const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
   const [taskMarkersOpen, setTaskMarkersOpen] = useState(false);
   const [taskMarkerStatus, setTaskMarkerStatus] = useState('');
   const [taskMarkerError, setTaskMarkerError] = useState('');
   const [isLoadingTaskMarkers, setIsLoadingTaskMarkers] = useState(false);
-  const [projects, setProjects] = useState([]);
-  const [selectedAppearanceProjectId, setSelectedAppearanceProjectId] = useState('');
-  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
-  const [projectsError, setProjectsError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
@@ -292,7 +278,6 @@ export default function SettingsPage() {
     () => roleOptions.find((option) => option.value === profileForm.role)?.label || profileForm.role,
     [profileForm.role],
   );
-  const selectedProjectBackground = appearanceForm.projectBackgrounds?.[selectedAppearanceProjectId] || boardBackgroundOptions[0].value;
   const profileFocusToken = location.state?.focusProfileAt;
   const searchSuggestions = useMemo(() => {
     const query = searchValue.trim().toLowerCase();
@@ -348,16 +333,6 @@ export default function SettingsPage() {
         meta: `${taskMarkers.length} Markierungen`,
         onSelect: () => setTaskMarkersOpen(true),
       },
-      ...projects.map((project) => ({
-        id: `settings-project-${project.id}`,
-        type: 'Projekt',
-        label: project.name,
-        meta: 'Board-Hintergrund',
-        onSelect: () => {
-          setAppearanceOpen(true);
-          setSelectedAppearanceProjectId(project.id);
-        },
-      })),
       ...taskMarkers.map((marker) => ({
         id: `settings-marker-${marker.id}`,
         type: 'Farbe',
@@ -368,7 +343,7 @@ export default function SettingsPage() {
     ];
 
     return sections.filter((item) => [item.label, item.meta, item.type].join(' ').toLowerCase().includes(query));
-  }, [appearanceForm.density, appearanceForm.theme, calendarConnection.calendarConnected, calendarConnection.calendarEmail, isGuest, profileForm.email, profileForm.name, profileForm.notificationEmail, projects, searchValue, taskMarkers, twoFactorEnabled]);
+  }, [appearanceForm.density, appearanceForm.theme, calendarConnection.calendarConnected, calendarConnection.calendarEmail, isGuest, profileForm.email, profileForm.name, profileForm.notificationEmail, searchValue, taskMarkers, twoFactorEnabled]);
 
   useEffect(() => {
     let ignore = false;
@@ -448,52 +423,8 @@ export default function SettingsPage() {
   }, [profileFocusToken, searchParams]);
 
   useEffect(() => {
-    let ignore = false;
-
-    async function loadProjects() {
-      setIsLoadingProjects(true);
-      setProjectsError('');
-
-      try {
-        const { data } = await api.get('/projects');
-        if (ignore) return;
-
-        setProjects(data);
-        setSelectedAppearanceProjectId((current) => current || data[0]?.id || '');
-      } catch (error) {
-        if (!ignore) {
-          setProjects([]);
-          setProjectsError(error.response?.data?.message || 'Projekte konnten nicht geladen werden.');
-        }
-      } finally {
-        if (!ignore) setIsLoadingProjects(false);
-      }
-    }
-
-    loadProjects();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  useEffect(() => {
     const storedAppearance = getStoredAppearanceSettings();
     applyAppearanceSettings(storedAppearance);
-
-    const mediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
-    const handleSystemThemeChange = () => {
-      const currentAppearance = getStoredAppearanceSettings();
-      if (currentAppearance.theme === 'system') {
-        applyAppearanceTheme('system');
-      }
-    };
-
-    mediaQuery?.addEventListener?.('change', handleSystemThemeChange);
-
-    return () => {
-      mediaQuery?.removeEventListener?.('change', handleSystemThemeChange);
-    };
   }, []);
 
   useEffect(() => {
@@ -598,23 +529,16 @@ export default function SettingsPage() {
   };
 
   const handleAppearanceChange = (field, value) => {
-    setAppearanceStatus('Layout wurde gespeichert.');
-    setAppearanceForm((current) => storeAppearanceSettings({ ...current, [field]: value }));
+    setAppearanceForm((current) => {
+      const next = { ...current, [field]: value };
+      applyAppearanceSettings(next);
+      return next;
+    });
   };
 
-  const handleProjectBackgroundChange = (value) => {
-    if (!selectedAppearanceProjectId) return;
-
-    setAppearanceStatus('Layout wurde gespeichert.');
-    setAppearanceForm((current) =>
-      storeAppearanceSettings({
-        ...current,
-        projectBackgrounds: {
-          ...(current.projectBackgrounds || {}),
-          [selectedAppearanceProjectId]: value,
-        },
-      }),
-    );
+  const saveAppearance = () => {
+    setAppearanceForm(storeAppearanceSettings(appearanceForm));
+    setAppearanceOpen(false);
   };
 
   const persistTaskMarkers = async (nextMarkers, message = 'Aufgabenfarben wurden gespeichert.') => {
@@ -896,12 +820,6 @@ export default function SettingsPage() {
                 </span>
               </span>
               <span className="inline-flex items-center gap-3">
-                {appearanceStatus ? (
-                  <span className="hidden items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 sm:inline-flex">
-                    <CheckCircle2 className="h-4 w-4" />
-                    {appearanceStatus}
-                  </span>
-                ) : null}
                 <ChevronDown className={`h-5 w-5 text-slate-400 transition ${appearanceOpen ? 'rotate-180' : ''}`} />
               </span>
             </button>
@@ -912,7 +830,7 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={Moon}
                     label="Darkmode"
-                    description="Wähle hell, dunkel oder automatisch nach deinem System."
+                    description="Wähle zwischen einer hellen und einer abgedunkelten Oberfläche."
                   >
                     <SegmentedControl
                       options={themeOptions}
@@ -934,67 +852,6 @@ export default function SettingsPage() {
                   </SettingRow>
 
                   <SettingRow
-                    icon={Image}
-                    label="Board-Hintergrund"
-                    description="Wähle für jedes Projekt einen eigenen Hintergrund."
-                  >
-                    <div className="space-y-3">
-                      <select
-                        value={selectedAppearanceProjectId}
-                        disabled={isLoadingProjects || !projects.length}
-                        onChange={(event) => setSelectedAppearanceProjectId(event.target.value)}
-                        className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition disabled:bg-slate-100 disabled:text-slate-400 focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
-                      >
-                        {isLoadingProjects ? (
-                          <option value="">Projekte werden geladen ...</option>
-                        ) : projects.length ? (
-                          projects.map((project) => (
-                            <option key={project.id} value={project.id}>
-                              {project.name}
-                            </option>
-                          ))
-                        ) : (
-                          <option value="">Kein Projekt vorhanden</option>
-                        )}
-                      </select>
-                      {projectsError ? (
-                        <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-700">
-                          {projectsError}
-                        </p>
-                      ) : null}
-                      {!isLoadingProjects && !projectsError && !projects.length ? (
-                        <p className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-500">
-                          Erstelle zuerst ein Projekt, dann kannst du hier einen Board-Hintergrund zuweisen.
-                        </p>
-                      ) : null}
-                      {selectedAppearanceProjectId ? (
-                        <div className="grid gap-2 sm:grid-cols-4">
-                          {boardBackgroundOptions.map((option) => {
-                            const active = option.value === selectedProjectBackground;
-
-                            return (
-                              <button
-                                key={option.value}
-                                type="button"
-                                onClick={() => handleProjectBackgroundChange(option.value)}
-                                className={`min-h-20 rounded-xl border p-2 text-left transition ${
-                                  active ? 'border-[#b84758] ring-4 ring-[#b84758]/10' : 'border-slate-200 hover:border-slate-300'
-                                }`}
-                              >
-                                <span
-                                  className="block h-9 rounded-lg"
-                                  style={{ backgroundImage: option.background }}
-                                />
-                                <span className="mt-2 block text-xs font-extrabold text-slate-700">{option.label}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ) : null}
-                    </div>
-                  </SettingRow>
-
-                  <SettingRow
                     icon={CalendarDays}
                     label="Datumsformat"
                     description="Bestimme, ob Datumswerte kurz oder ausgeschrieben erscheinen."
@@ -1009,13 +866,25 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={Type}
                     label="Schriftgröße"
-                    description="Nutze größere Schrift für bessere Lesbarkeit."
+                    description="Skaliere die gesamte Oberfläche nach deiner bevorzugten Lesbarkeit."
                   >
-                    <SegmentedControl
-                      options={fontSizeOptions}
-                      value={appearanceForm.fontSize}
-                      onChange={(value) => handleAppearanceChange('fontSize', value)}
-                    />
+                    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                      <div className="flex items-center justify-between gap-3 text-sm font-extrabold text-slate-700">
+                        <span>Klein</span>
+                        <output>{appearanceForm.fontScale}%</output>
+                        <span>Groß</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="90"
+                        max="125"
+                        step="1"
+                        value={appearanceForm.fontScale}
+                        onChange={(event) => handleAppearanceChange('fontScale', Number(event.target.value))}
+                        className="mt-3 w-full accent-[#b84758]"
+                        aria-label="Schriftgröße skalieren"
+                      />
+                    </div>
                   </SettingRow>
 
                   <SettingRow
@@ -1069,6 +938,16 @@ export default function SettingsPage() {
                       ))}
                     </select>
                   </SettingRow>
+                </div>
+                <div className="mt-5 flex justify-end border-t border-slate-200 pt-4">
+                  <button
+                    type="button"
+                    onClick={saveAppearance}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#b84758] px-5 text-sm font-bold text-white shadow-[0_10px_22px_rgba(184,71,88,0.18)] transition hover:bg-[#a23d4d]"
+                  >
+                    <Save className="h-4 w-4" />
+                    Darstellung speichern
+                  </button>
                 </div>
               </div>
             ) : null}
