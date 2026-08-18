@@ -40,10 +40,44 @@ const navigationItems = [
 ];
 
 const notifications = [
-  'Checkout Flow testen wurde in QA verschoben.',
-  'SEO Meta-Tags aktualisieren wurde dir zugewiesen.',
-  'Design System aktualisiert wurde abgeschlossen.',
+  {
+    id: 'checkout-qa',
+    label: 'Checkout Flow testen wurde in QA verschoben.',
+    path: '/my-tasks?taskId=my-task-5',
+  },
+  {
+    id: 'seo-assigned',
+    label: 'SEO Meta-Tags aktualisieren wurde dir zugewiesen.',
+    path: '/my-tasks?search=SEO%20Meta-Tags%20aktualisieren',
+  },
+  {
+    id: 'design-system-done',
+    label: 'Design System aktualisiert wurde abgeschlossen.',
+    path: '/my-tasks?taskId=my-task-4',
+  },
 ];
+const dismissedNotificationsStorageKey = 'nexttask:dismissed-notifications';
+
+function getStoredDismissedNotifications() {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const storedIds = JSON.parse(window.localStorage.getItem(dismissedNotificationsStorageKey) || '[]');
+    return Array.isArray(storedIds) ? storedIds.filter((id) => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function storeDismissedNotifications(ids) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.setItem(dismissedNotificationsStorageKey, JSON.stringify(ids));
+  } catch {
+    // Ignore unavailable local storage; the current session state still updates.
+  }
+}
 
 function getInitials(value) {
   if (!value) return 'NT';
@@ -168,8 +202,10 @@ export default function AppShell({
   const [profileOpen, setProfileOpen] = useState(false);
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState(getStoredDismissedNotifications);
   const [, setRoleNavigationVersion] = useState(0);
   const availableSearchSuggestions = Array.isArray(searchSuggestions) ? searchSuggestions : [];
+  const visibleNotifications = notifications.filter((notification) => !dismissedNotificationIds.includes(notification.id));
   const activeNavigation = navigationItems
     .filter((item) => !item.adminOnly || canManageRoles(user))
     .map((item) => ({
@@ -231,6 +267,18 @@ export default function AppShell({
     suggestion.onSelect?.(suggestion);
     if (suggestion.path) navigate(suggestion.path);
     setSearchOpen(false);
+  };
+
+  const handleNotificationSelect = (notification) => {
+    setNotificationsOpen(false);
+    setDismissedNotificationIds((current) => {
+      if (current.includes(notification.id)) return current;
+
+      const next = [...current, notification.id];
+      storeDismissedNotifications(next);
+      return next;
+    });
+    if (notification.path) navigate(notification.path, { state: { focusTaskAt: Date.now() } });
   };
 
   const handleLogout = () => {
@@ -339,7 +387,7 @@ export default function AppShell({
             ) : null}
 
             {searchPlacement === 'center' ? (
-              <div ref={searchContainerRef} className="mx-auto w-full min-w-0 flex-1 max-w-[920px]">
+              <div ref={searchContainerRef} className="w-full min-w-0 flex-1">
                 <SearchBox
                   inputRef={searchInputRef}
                   value={searchValue}
@@ -354,16 +402,16 @@ export default function AppShell({
 
             <div
               className={`ml-auto flex min-w-0 items-center gap-2 sm:gap-3 ${
-                searchPlacement === 'actions' ? 'w-full flex-wrap justify-end xl:flex-nowrap' : 'shrink-0'
+                searchPlacement === 'actions' ? 'w-full flex-wrap xl:flex-nowrap' : 'shrink-0'
               }`}
             >
               {searchPlacement === 'actions' && headerTitle ? (
-                <h1 className="mr-auto min-w-0 flex-1 text-left text-xl font-extrabold text-slate-950 lg:min-w-[180px] lg:max-w-[280px] lg:text-2xl">
+                <h1 className="min-w-0 shrink-0 truncate text-left text-xl font-extrabold text-slate-950 lg:max-w-[260px] lg:text-2xl">
                   {headerTitle}
                 </h1>
               ) : null}
               {searchPlacement === 'actions' ? (
-                <div ref={searchContainerRef} className="order-last w-full min-w-0 sm:order-none sm:min-w-[340px] lg:flex-1 xl:max-w-none">
+                <div ref={searchContainerRef} className="order-last w-full min-w-0 flex-1 sm:order-none sm:min-w-[320px]">
                   <SearchBox
                     inputRef={searchInputRef}
                     value={searchValue}
@@ -410,17 +458,30 @@ export default function AppShell({
                   className="relative inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50"
                 >
                   <Bell className="h-5 w-5" />
-                  <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
-                    3
-                  </span>
+                  {visibleNotifications.length ? (
+                    <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+                      {visibleNotifications.length}
+                    </span>
+                  ) : null}
                 </button>
                 {notificationsOpen ? (
                   <MenuCard className="w-72">
-                    {notifications.map((item) => (
-                      <p key={item} className="rounded-xl px-3 py-2 text-slate-600 hover:bg-slate-50">
-                        {item}
+                    {visibleNotifications.length ? (
+                      visibleNotifications.map((notification) => (
+                        <button
+                          key={notification.id}
+                          type="button"
+                          onClick={() => handleNotificationSelect(notification)}
+                          className="w-full rounded-xl px-3 py-2 text-left font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-950"
+                        >
+                          {notification.label}
+                        </button>
+                      ))
+                    ) : (
+                      <p className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-500">
+                        Keine neuen Mitteilungen.
                       </p>
-                    ))}
+                    )}
                   </MenuCard>
                 ) : null}
               </div>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   ArrowUpRight,
   CalendarDays,
@@ -1573,6 +1574,8 @@ function TaskDetailDrawer({
 }
 
 export default function MyTasksPage() {
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [tasks, setTasks] = useState(initialTasks);
   const [projects, setProjects] = useState(initialProjects);
   const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
@@ -1606,6 +1609,9 @@ export default function MyTasksPage() {
     department: 'Digitales Banking',
     owner: 'Elisabeth Bezverkha',
   });
+  const routeTaskId = searchParams.get('taskId');
+  const routeSearch = searchParams.get('search');
+  const taskFocusToken = location.state?.focusTaskAt;
 
   const normalizedSearch = searchValue.trim().toLowerCase();
   const visibleTasks = useMemo(
@@ -1705,6 +1711,26 @@ export default function MyTasksPage() {
     setAttachmentSource('SharePoint');
     setAttachmentType('Excel');
   };
+
+  useEffect(() => {
+    if (routeSearch) {
+      setSearchValue((current) => (current === routeSearch ? current : routeSearch));
+      return;
+    }
+
+    if (routeTaskId) {
+      setSearchValue('');
+    }
+  }, [routeSearch, routeTaskId]);
+
+  useEffect(() => {
+    if (!routeTaskId) return;
+
+    const task = tasks.find((item) => item.id === routeTaskId);
+    if (!task) return;
+
+    openTask(task);
+  }, [routeTaskId, taskFocusToken, tasks]);
 
   const searchSuggestions = normalizedSearch
     ? visibleTasks.map((task) => ({
