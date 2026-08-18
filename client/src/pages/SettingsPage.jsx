@@ -676,7 +676,7 @@ export default function SettingsPage() {
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('Die Passwort-Bestätigung stimmt nicht ueberein.');
+      setPasswordError('Die Passwort-Bestätigung stimmt nicht überein.');
       return;
     }
 
@@ -811,9 +811,6 @@ export default function SettingsPage() {
                   <span className="min-w-0">
                     <span className="block text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Darstellung</span>
                     <span className="mt-1 block text-lg font-extrabold text-slate-950">Layout & Darstellung</span>
-                    <span className="mt-1 block text-sm font-medium text-slate-500">
-                      Darkmode, Dichte und Startansicht für dein Arbeitsgefuehl.
-                  </span>
                 </span>
               </span>
               <span className="inline-flex items-center gap-3">
@@ -1264,9 +1261,6 @@ export default function SettingsPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h3 className="text-base font-extrabold text-slate-950">E-Mail-Benachrichtigungen</h3>
-                    <p className="mt-1 text-sm font-medium text-slate-500">
-                      Lege fest, ob du bei Zuweisungen und @Mentions Mails erhalten willst.
-                    </p>
                   </div>
                   <span
                     className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${
@@ -1296,7 +1290,6 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={Mail}
                     label="Benachrichtigungsadresse"
-                    description="Diese Adresse wird für Task-Zuweisungen und Erwähnungen verwendet."
                   >
                     <input
                       type="email"
@@ -1311,7 +1304,6 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={Bell}
                     label="Benachrichtigungen aktivieren"
-                    description="Sende mir Mails, wenn mir ein Ticket zugewiesen wird oder ich in Kommentaren markiert werde."
                   >
                     <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
                       <div>
@@ -1335,9 +1327,6 @@ export default function SettingsPage() {
                   <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
                     <div>
                       <p className="text-sm font-extrabold text-slate-700">Testmail</p>
-                      <p className="mt-1 text-xs font-semibold text-slate-500">
-                        Damit pruefst du direkt, ob Versand und Template bei dir ankommen.
-                      </p>
                     </div>
                     <button
                       type="button"
@@ -1359,9 +1348,6 @@ export default function SettingsPage() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-extrabold text-slate-700">Kalender verbinden</p>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">
-                          Verbinde deinen persoenlichen Kalender, damit Ticket-Fristen automatisch als Termine auftauchen.
-                        </p>
                       </div>
                       <span
                         className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${
@@ -1400,9 +1386,6 @@ export default function SettingsPage() {
                           {calendarConnection.calendarConnected
                             ? calendarConnection.calendarEmail || 'Persönlicher Kalender'
                             : 'Noch nicht verbunden'}
-                        </p>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">
-                          Aktuell wird für den Connect-Flow Google/Gmail verwendet, die Funktion bleibt in NextTask aber bewusst allgemein.
                         </p>
                       </div>
                       <div className="rounded-xl border border-slate-200 bg-[#fcfdff] px-4 py-3">
@@ -1567,11 +1550,10 @@ export default function SettingsPage() {
               </button>
             </form>
 
-            <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+            <section className="rounded-[24px] border border-slate-200 bg-[#fcfdff] p-4">
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-4">
                 <div>
                   <h2 className="text-lg font-extrabold text-slate-950">Zwei-Faktor</h2>
-                  <p className="mt-1 text-sm font-medium text-slate-500">Authenticator-App für den Login.</p>
                 </div>
                 <span
                   className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${
