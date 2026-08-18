@@ -448,7 +448,7 @@ export default function AppShell({
                       type="button"
                       onClick={() => {
                         setProfileOpen(false);
-                        navigate('/settings');
+                        navigate('/settings?section=profile', { state: { focusProfileAt: Date.now() } });
                       }}
                       className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50"
                     >

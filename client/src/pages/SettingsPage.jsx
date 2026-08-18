@@ -1,5 +1,5 @@
-import { createElement, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { createElement, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   BadgeCheck,
   Bell,
@@ -230,7 +230,9 @@ function ColorWheelPicker({ value, label, onChange }) {
 }
 export default function SettingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const { user, updateUser } = useAuth();
+  const profileSectionRef = useRef(null);
   const [searchValue, setSearchValue] = useState('');
   const [profileForm, setProfileForm] = useState({
     name: user?.name || '',
@@ -262,6 +264,7 @@ export default function SettingsPage() {
   const [calendarConnection, setCalendarConnection] = useState(() => getCalendarConnectionState(user));
   const [calendarStatus, setCalendarStatus] = useState('');
   const [calendarError, setCalendarError] = useState('');
+  const [profileSettingsOpen, setProfileSettingsOpen] = useState(true);
   const [appearanceForm, setAppearanceForm] = useState(() => getStoredAppearanceSettings());
   const [appearanceOpen, setAppearanceOpen] = useState(true);
   const [appearanceStatus, setAppearanceStatus] = useState('');
@@ -290,6 +293,7 @@ export default function SettingsPage() {
     [profileForm.role],
   );
   const selectedProjectBackground = appearanceForm.projectBackgrounds?.[selectedAppearanceProjectId] || boardBackgroundOptions[0].value;
+  const profileFocusToken = location.state?.focusProfileAt;
   const searchSuggestions = useMemo(() => {
     const query = searchValue.trim().toLowerCase();
     if (!query) return [];
@@ -300,30 +304,35 @@ export default function SettingsPage() {
         type: 'Profil',
         label: 'Profil',
         meta: `${profileForm.name || 'Benutzer'} - ${profileForm.email || 'keine E-Mail'}`,
+        onSelect: () => setProfileSettingsOpen(true),
       },
       {
         id: 'settings-mail',
         type: 'Mail',
         label: 'E-Mail-Benachrichtigungen',
         meta: profileForm.notificationEmail || profileForm.email || 'Keine Adresse hinterlegt',
+        onSelect: () => setProfileSettingsOpen(true),
       },
       {
         id: 'settings-password',
         type: 'Konto',
         label: 'Passwort aendern',
         meta: isGuest ? 'Im Gastmodus gesperrt' : 'Account-Sicherheit',
+        onSelect: () => setProfileSettingsOpen(true),
       },
       {
         id: 'settings-two-factor',
         type: '2FA',
         label: 'Zwei-Faktor-Authentifizierung',
         meta: twoFactorEnabled ? 'Aktiviert' : 'Nicht aktiviert',
+        onSelect: () => setProfileSettingsOpen(true),
       },
       {
         id: 'settings-calendar',
         type: 'Kalender',
         label: 'Kalender-Integration',
         meta: calendarConnection.calendarConnected ? calendarConnection.calendarEmail : 'Nicht verbunden',
+        onSelect: () => setProfileSettingsOpen(true),
       },
       {
         id: 'settings-appearance',
@@ -420,6 +429,23 @@ export default function SettingsPage() {
     nextParams.delete('calendar_message');
     setSearchParams(nextParams, { replace: true });
   }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (searchParams.get('section') !== 'profile' && !profileFocusToken) return;
+
+    let scrollFrame;
+    const openFrame = window.requestAnimationFrame(() => {
+      setProfileSettingsOpen(true);
+      scrollFrame = window.requestAnimationFrame(() => {
+        profileSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(openFrame);
+      if (scrollFrame) window.cancelAnimationFrame(scrollFrame);
+    };
+  }, [profileFocusToken, searchParams]);
 
   useEffect(() => {
     let ignore = false;
@@ -851,39 +877,6 @@ export default function SettingsPage() {
     >
       <div className="space-y-6 px-4 py-4 xl:px-6">
         <div className="space-y-5">
-          <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex min-w-0 items-center gap-4">
-                <span className="inline-flex h-16 w-16 flex-none items-center justify-center rounded-2xl bg-[#fff1f3] text-xl font-extrabold text-[#b84758]">
-                  {getInitials(profileForm.name)}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Profil</p>
-                  <h1 className="mt-1 text-2xl font-extrabold text-slate-950">{profileForm.name || 'Profil bearbeiten'}</h1>
-                  <p className="mt-1 text-sm font-medium text-slate-500">
-                    {roleLabel} in {profileForm.department || 'keiner Abteilung'}
-                  </p>
-                </div>
-              </div>
-              <div className="grid w-full gap-2 text-sm font-bold text-slate-500 lg:w-auto lg:grid-cols-2">
-                <span className="inline-flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                  <Mail className="h-4 w-4 text-slate-400" />
-                  <span className="truncate">{profileForm.email || 'Keine E-Mail'}</span>
-                </span>
-                <span className="inline-flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                  <BadgeCheck className="h-4 w-4 text-slate-400" />
-                  <span className="truncate">Seit {formatAppearanceDate(createdAt, appearanceForm.dateFormat)}</span>
-                </span>
-              </div>
-            </div>
-          </section>
-
-          {isLoading ? (
-            <div className="rounded-[30px] border border-slate-300 bg-white px-5 py-8 text-sm font-bold text-slate-500">
-              Profil wird geladen ...
-            </div>
-          ) : null}
-
           <section className="rounded-[30px] border border-slate-300 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
             <button
               type="button"
@@ -1255,7 +1248,75 @@ export default function SettingsPage() {
             ) : null}
           </section>
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+          <section
+            id="settings-profile"
+            ref={profileSectionRef}
+            className="scroll-mt-4 rounded-[30px] border border-slate-300 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.05)]"
+          >
+            <button
+              type="button"
+              onClick={() => setProfileSettingsOpen((current) => !current)}
+              className="flex w-full flex-wrap items-center justify-between gap-4 p-5 text-left"
+            >
+              <span className="flex min-w-0 items-center gap-4">
+                <span className="inline-flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-[#fff1f3] text-[#b84758]">
+                  <UserRound className="h-6 w-6" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Profil</span>
+                  <span className="mt-1 block text-lg font-extrabold text-slate-950">Profil & Sicherheit</span>
+                  <span className="mt-1 block text-sm font-medium text-slate-500">
+                    Persoenliche Daten, Passwort und Zwei-Faktor an einem Ort.
+                  </span>
+                </span>
+              </span>
+              <span className="inline-flex items-center gap-3">
+                {profileStatus ? (
+                  <span className="hidden items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 sm:inline-flex">
+                    <CheckCircle2 className="h-4 w-4" />
+                    {profileStatus}
+                  </span>
+                ) : null}
+                <ChevronDown className={`h-5 w-5 text-slate-400 transition ${profileSettingsOpen ? 'rotate-180' : ''}`} />
+              </span>
+            </button>
+
+            {profileSettingsOpen ? (
+              <div className="space-y-5 border-t border-slate-200 p-5">
+                <section className="rounded-[26px] border border-slate-200 bg-[#fcfdff] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-4">
+                      <span className="inline-flex h-16 w-16 flex-none items-center justify-center rounded-2xl bg-[#fff1f3] text-xl font-extrabold text-[#b84758]">
+                        {getInitials(profileForm.name)}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Aktives Profil</p>
+                        <h1 className="mt-1 text-2xl font-extrabold text-slate-950">{profileForm.name || 'Profil bearbeiten'}</h1>
+                        <p className="mt-1 text-sm font-medium text-slate-500">
+                          {roleLabel} in {profileForm.department || 'keiner Abteilung'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid w-full gap-2 text-sm font-bold text-slate-500 lg:w-auto lg:grid-cols-2">
+                      <span className="inline-flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                        <Mail className="h-4 w-4 text-slate-400" />
+                        <span className="truncate">{profileForm.email || 'Keine E-Mail'}</span>
+                      </span>
+                      <span className="inline-flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                        <BadgeCheck className="h-4 w-4 text-slate-400" />
+                        <span className="truncate">Seit {formatAppearanceDate(createdAt, appearanceForm.dateFormat)}</span>
+                      </span>
+                    </div>
+                  </div>
+                </section>
+
+                {isLoading ? (
+                  <div className="rounded-[26px] border border-slate-200 bg-white px-5 py-8 text-sm font-bold text-slate-500">
+                    Profil wird geladen ...
+                  </div>
+                ) : null}
+
+                <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
             <form onSubmit={handleProfileSubmit} className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-4">
                 <div>
@@ -1738,6 +1799,9 @@ export default function SettingsPage() {
             </section>
             </div>
           </div>
+              </div>
+            ) : null}
+          </section>
         </div>
       </div>
     </AppShell>
