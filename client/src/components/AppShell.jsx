@@ -27,7 +27,6 @@ import { getStoredAppearanceSettings } from '../utils/appearance';
 
 const navigationItems = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
-  { label: 'Abteilungen', path: '/departments', icon: Building2 },
   { label: 'Projekte', path: '/projects', icon: Folder },
   { label: 'Aufgaben', path: '/my-tasks', icon: CheckSquare },
   { label: 'Freigaben', path: '/approvals', icon: BadgeCheck },

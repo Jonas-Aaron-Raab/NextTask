@@ -338,7 +338,7 @@ export default function DashboardPage() {
       type: 'Bereich',
       label: department.name,
       meta: `${department.lead} - ${department.activeProjects} Projekte`,
-      path: '/departments',
+      path: '/projects',
     }));
 
     return [...taskSuggestions, ...projectSuggestions, ...departmentSuggestions];

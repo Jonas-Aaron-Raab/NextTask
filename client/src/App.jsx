@@ -2,7 +2,6 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import DashboardPage from './pages/DashboardPage';
 import AuditLogPage from './pages/AuditLogPage';
 import ApprovalsPage from './pages/ApprovalsPage';
-import DepartmentsPage from './pages/DepartmentsPage';
 import CalendarPage from './pages/CalendarPage';
 import DocumentsPage from './pages/DocumentsPage';
 import LoginPage from './pages/LoginPage';
@@ -44,7 +43,7 @@ function AppRoutes() {
       <Route path="/login" element={<PublicOnly><LoginPage /></PublicOnly>} />
       <Route path="/register" element={<PublicOnly><RegisterPage /></PublicOnly>} />
       <Route path="/" element={<RequireAuth><DashboardPage /></RequireAuth>} />
-      <Route path="/departments" element={<RequireAuth><DepartmentsPage /></RequireAuth>} />
+      <Route path="/departments" element={<Navigate to="/projects" replace />} />
       <Route path="/calendar" element={<RequireAuth><CalendarPage /></RequireAuth>} />
       <Route path="/documents" element={<RequireAuth><DocumentsPage /></RequireAuth>} />
       <Route path="/my-tasks" element={<RequireAuth><MyTasksPage /></RequireAuth>} />

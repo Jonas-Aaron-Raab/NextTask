@@ -40,6 +40,7 @@ import {
 import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
+import { bankDepartments, bankProjects } from '../data/bankOrganization';
 import {
   effortUnitOptions,
   formatEffort,
@@ -56,6 +57,40 @@ import {
   mergeProjectsWithDefaults,
   projectStorageKey,
 } from '../data/projectFixtures';
+
+const bankDepartmentFixtures = bankDepartments.map((department) => ({
+  ...department,
+  id: `bank-${department.id}`,
+  members: [department.lead],
+}));
+
+const bankProjectFixtures = bankProjects.map((project) => ({
+  id: `bank-${project.id}`,
+  departmentId: `bank-${project.departmentId}`,
+  name: project.name,
+  owner: project.owner,
+  visibility: 'Abteilung',
+  status: project.status,
+  dueDate: project.dueDate,
+  summary: project.goal,
+}));
+
+const bankBacklogFixtures = bankProjects.flatMap((project) =>
+  project.tasks.map((task, index) => ({
+    id: `bank-${task.id}`,
+    sourceTaskId: null,
+    projectId: `bank-${project.id}`,
+    title: task.title,
+    status: task.status === 'In Arbeit' ? 'progress' : task.status === 'Review' ? 'review' : 'todo',
+    priority: task.priority,
+    assignee: task.assignee,
+    dueDate: project.dueDate,
+    estimatedHours: 4 + index,
+    tags: [task.status, task.priority],
+    description: `${task.title} fuer ${project.name} bearbeiten und dokumentieren.`,
+    controlId: `BANK-${project.id.toUpperCase()}-${index + 1}`,
+  })),
+);
 
 const createMenuItems = ['Neue Abteilung', 'Neues Projekt'];
 
@@ -1174,7 +1209,7 @@ function DepartmentCard({ department, projectCount, effortHours, effortUnit, isA
     <button
       type="button"
       onClick={() => onOpen(department.id)}
-      className={`h-full min-h-[208px] rounded-[1.5rem] border p-3.5 text-left shadow-[0_10px_26px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 ${department.accent} ${
+      className={`h-full min-h-[208px] min-w-0 overflow-hidden rounded-[1.5rem] border p-3.5 text-left shadow-[0_10px_26px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 ${department.accent} ${
         isActive ? 'ring-4 ring-[#c95767]/12' : ''
       }`}
     >
@@ -1185,7 +1220,7 @@ function DepartmentCard({ department, projectCount, effortHours, effortUnit, isA
         <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${department.badgeTone}`}>{projectCount} Projekte</span>
       </div>
 
-      <h2 className="mt-3.5 text-[1.55rem] font-extrabold leading-tight text-slate-950">{department.name}</h2>
+      <h2 className="mt-3.5 break-all text-[1.55rem] font-extrabold leading-tight text-slate-950">{department.name}</h2>
 
       <div className="mt-3.5 grid gap-2 text-[11px] font-bold text-slate-500 sm:grid-cols-2">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5">
@@ -2144,9 +2179,13 @@ export default function ProjectsPage() {
       activationConstraint: { distance: 6 },
     }),
   );
-  const [departments, setDepartments] = useState(initialDepartments);
-  const [projects, setProjects] = useState(() => getStoredProjects());
-  const [backlogTasks, setBacklogTasks] = useState(initialBacklogTasks);
+  const [departments, setDepartments] = useState(() => [...initialDepartments, ...bankDepartmentFixtures]);
+  const [projects, setProjects] = useState(() => {
+    const storedProjects = getStoredProjects();
+    const storedIds = new Set(storedProjects.map((project) => project.id));
+    return [...storedProjects, ...bankProjectFixtures.filter((project) => !storedIds.has(project.id))];
+  });
+  const [backlogTasks, setBacklogTasks] = useState(() => [...initialBacklogTasks, ...bankBacklogFixtures]);
   const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
   const [selectedDepartmentId, setSelectedDepartmentId] = useState(initialDepartments[0].id);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
@@ -2722,35 +2761,34 @@ export default function ProjectsPage() {
             : 'space-y-6'
         }`}
       >
-        <div className="flex flex-wrap items-center justify-end gap-2 2xl:col-span-2">
-          <span className="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Zeit anzeigen als</span>
-          <div className="grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-white p-1">
-            {effortUnitOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setEffortUnit(option.value)}
-                className={`h-9 rounded-xl px-3 text-sm font-extrabold transition ${
-                  effortUnit === option.value
-                    ? 'bg-[#b84758] text-white shadow-[0_10px_22px_rgba(184,71,88,0.16)]'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {viewMode === 'projects' ? (
           <section className="rounded-3xl border border-slate-300 bg-white/70 p-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Abteilungen</p>
               </div>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">{visibleDepartments.length} Bereiche</span>
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <span className="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Zeit anzeigen als</span>
+                <div className="grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-white p-1">
+                  {effortUnitOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setEffortUnit(option.value)}
+                      className={`h-9 rounded-xl px-3 text-sm font-extrabold transition ${
+                        effortUnit === option.value
+                          ? 'bg-[#b84758] text-white shadow-[0_10px_22px_rgba(184,71,88,0.16)]'
+                          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">{visibleDepartments.length} Bereiche</span>
+              </div>
             </div>
-            <div className="mx-auto flex max-w-[820px] flex-wrap justify-center gap-3">
+            <div className="mx-auto flex max-w-[1120px] flex-wrap justify-center gap-3">
               {visibleDepartments.map((department) => (
                 <div key={department.id} className="w-full min-w-0 sm:w-[250px]">
                   <DepartmentCard
