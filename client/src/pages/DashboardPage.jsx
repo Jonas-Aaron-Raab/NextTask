@@ -6,7 +6,6 @@ import { useAuth } from '../context/AuthContext';
 import { initialTasks } from './MyTasksPage';
 import { initialBacklogTasks, initialDepartments, initialProjects } from './ProjectsPage';
 
-const createMenuItems = ['Neue Aufgabe', 'Neues Projekt', 'Neuer Report', 'Neues Dokument'];
 const dashboardSelectClass =
   'h-11 min-w-[220px] rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12';
 
@@ -346,7 +345,6 @@ export default function DashboardPage() {
       searchValue={searchValue}
       onSearch={setSearchValue}
       searchSuggestions={searchSuggestions}
-      createMenuItems={createMenuItems}
     >
       <div className="space-y-6 px-4 py-5 lg:px-6 lg:py-6">
         <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
