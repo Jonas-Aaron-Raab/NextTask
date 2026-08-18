@@ -260,8 +260,7 @@ export default function SettingsPage() {
   const [appearanceOpen, setAppearanceOpen] = useState(true);
   const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
   const [taskMarkersOpen, setTaskMarkersOpen] = useState(false);
-  const [taskMarkerStatus, setTaskMarkerStatus] = useState('');
-  const [taskMarkerError, setTaskMarkerError] = useState('');
+  const [expandedTaskMarkerIds, setExpandedTaskMarkerIds] = useState(() => new Set());
   const [isLoadingTaskMarkers, setIsLoadingTaskMarkers] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -440,7 +439,6 @@ export default function SettingsPage() {
       } catch (error) {
         if (!ignore) {
           setTaskMarkers(getStoredTaskMarkers());
-          setTaskMarkerError(error.response?.data?.message || 'Aufgabenfarben konnten nicht aus der Datenbank geladen werden.');
         }
       } finally {
         if (!ignore) setIsLoadingTaskMarkers(false);
@@ -541,50 +539,48 @@ export default function SettingsPage() {
     setAppearanceOpen(false);
   };
 
-  const persistTaskMarkers = async (nextMarkers, message = 'Aufgabenfarben wurden gespeichert.') => {
+  const persistTaskMarkers = async (nextMarkers) => {
     const locallyStoredMarkers = storeTaskMarkers(nextMarkers);
     setTaskMarkers(locallyStoredMarkers);
-    setTaskMarkerStatus('Speichert ...');
-    setTaskMarkerError('');
 
     try {
       const savedMarkers = await saveTaskMarkersToApi(locallyStoredMarkers);
       setTaskMarkers(savedMarkers);
-      setTaskMarkerStatus(message);
-    } catch (error) {
-      setTaskMarkerStatus('Lokal gespeichert.');
-      setTaskMarkerError(error.response?.data?.message || 'Datenbank-Speicherung ist fehlgeschlagen. Die Änderung bleibt lokal erhalten.');
+    } catch {
+      // Local storage remains the fallback when the API is unavailable.
     }
   };
 
+  const saveTaskMarkerDraft = () => {
+    persistTaskMarkers(taskMarkers);
+  };
+
   const handleTaskMarkerChange = (markerId, field, value) => {
-    persistTaskMarkers(
-      taskMarkers.map((marker) => {
+    setTaskMarkers((current) => current.map((marker) => {
         if (marker.id !== markerId) return marker;
         if (field === 'matchField') return { ...marker, matchField: value, matchValue: '' };
         return { ...marker, [field]: value };
-      }),
-    );
+      }));
   };
 
   const handleTaskMarkerAdd = () => {
-    persistTaskMarkers([...taskMarkers, createTaskMarker()], 'Neue Markierung wurde angelegt.');
+    const marker = createTaskMarker();
+    setTaskMarkers((current) => [...current, marker]);
+    setExpandedTaskMarkerIds((current) => new Set([...current, marker.id]));
   };
 
   const handleTaskMarkerRemove = (markerId) => {
     if (taskMarkers.length <= 1) {
-      setTaskMarkerStatus('Mindestens eine Markierung bleibt aktiv.');
       return;
     }
 
-    persistTaskMarkers(
-      taskMarkers.filter((marker) => marker.id !== markerId),
-      'Markierung wurde entfernt.',
-    );
+    setTaskMarkers((current) => current.filter((marker) => marker.id !== markerId));
   };
 
   const handleTaskMarkerReset = () => {
-    persistTaskMarkers(resetTaskMarkers(), 'Standardfarben wurden wiederhergestellt.');
+    const markers = resetTaskMarkers();
+    setTaskMarkers(markers);
+    setExpandedTaskMarkerIds(new Set());
   };
 
   const handleProfileSubmit = async (event) => {
@@ -966,18 +962,9 @@ export default function SettingsPage() {
                 <span className="min-w-0">
                   <span className="block text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Aufgabenfarben</span>
                   <span className="mt-1 block text-lg font-extrabold text-slate-950">Farbstreifen</span>
-                  <span className="mt-1 block text-sm font-medium text-slate-500">
-                    Bedeutungen, Farben und Zuordnung für Aufgaben-Markierungen.
-                  </span>
                 </span>
               </span>
               <span className="inline-flex items-center gap-3">
-                {taskMarkerStatus ? (
-                  <span className="hidden items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 sm:inline-flex">
-                    <CheckCircle2 className="h-4 w-4" />
-                    {taskMarkerStatus}
-                  </span>
-                ) : null}
                 <ChevronDown className={`h-5 w-5 text-slate-400 transition ${taskMarkersOpen ? 'rotate-180' : ''}`} />
               </span>
             </button>
@@ -1000,12 +987,9 @@ export default function SettingsPage() {
                       className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 sm:w-auto"
                     >
                       <RotateCcw className="h-4 w-4" />
-                      Zuruecksetzen
+                      Zurücksetzen
                     </button>
                   </div>
-                  {taskMarkerStatus ? (
-                    <span className="text-sm font-bold text-emerald-700 sm:hidden">{taskMarkerStatus}</span>
-                  ) : null}
                 </div>
 
                 {isLoadingTaskMarkers ? (
@@ -1013,23 +997,34 @@ export default function SettingsPage() {
                     Aufgabenfarben werden geladen ...
                   </p>
                 ) : null}
-                {taskMarkerError ? (
-                  <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700">
-                    {taskMarkerError}
-                  </p>
-                ) : null}
-
                 <div className="mt-4 space-y-3">
                   {taskMarkers.map((marker) => (
-                    <div key={marker.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="grid gap-4 lg:grid-cols-[128px_minmax(0,1fr)_auto]">
+                    <div key={marker.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedTaskMarkerIds((current) => {
+                          const next = new Set(current);
+                          if (next.has(marker.id)) next.delete(marker.id);
+                          else next.add(marker.id);
+                          return next;
+                        })}
+                        className="flex w-full items-center gap-3 text-left"
+                        aria-expanded={expandedTaskMarkerIds.has(marker.id)}
+                      >
+                        <span className="h-3 w-3 flex-none rounded-full" style={{ backgroundColor: marker.color }} />
+                        <span className="min-w-0 flex-1 truncate text-sm font-extrabold text-slate-800">{marker.label}</span>
+                        <span className="text-xs font-bold text-slate-500">{marker.matchValue || 'Keine Zuordnung'}</span>
+                        <ChevronDown className={`h-4 w-4 flex-none text-slate-400 transition ${expandedTaskMarkerIds.has(marker.id) ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {expandedTaskMarkerIds.has(marker.id) ? <div className="mt-3 grid gap-3 border-t border-slate-200 pt-3 lg:grid-cols-[96px_minmax(0,1fr)_auto]">
                         <div className="flex items-center gap-4 lg:block">
                           <ColorWheelPicker
                             value={marker.color}
-                            label={`Farbe für ${marker.label} waehlen`}
+                            label={`Farbe für ${marker.label} wählen`}
                             onChange={(value) => handleTaskMarkerChange(marker.id, 'color', value)}
                           />
-                          <span className="inline-flex h-12 w-12 flex-none rounded-xl border border-white shadow-sm lg:mt-3" style={{ backgroundColor: marker.color }} />
+                          <span className="inline-flex h-10 w-10 flex-none rounded-xl border border-white shadow-sm lg:mt-3" style={{ backgroundColor: marker.color }} />
                         </div>
 
                         <div className="grid gap-3 md:grid-cols-2">
@@ -1106,9 +1101,9 @@ export default function SettingsPage() {
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                      </div>
+                      </div> : null}
 
-                      <div className="mt-3 flex flex-wrap gap-2">
+                      {expandedTaskMarkerIds.has(marker.id) ? <div className="mt-3 flex flex-wrap gap-2">
                         {taskMarkerQuickColors.map((color) => (
                           <button
                             key={color}
@@ -1116,12 +1111,22 @@ export default function SettingsPage() {
                             onClick={() => handleTaskMarkerChange(marker.id, 'color', color)}
                             className={`h-7 w-7 rounded-full border-2 transition ${marker.color.toLowerCase() === color.toLowerCase() ? 'border-slate-900 ring-2 ring-slate-200' : 'border-white hover:scale-105'}`}
                             style={{ backgroundColor: color }}
-                            aria-label={`${color} auswaehlen`}
+                            aria-label={`${color} auswählen`}
                           />
                         ))}
-                      </div>
+                      </div> : null}
                     </div>
                   ))}
+                </div>
+                <div className="mt-4 flex justify-end border-t border-slate-200 pt-4">
+                  <button
+                    type="button"
+                    onClick={saveTaskMarkerDraft}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white shadow-[0_10px_22px_rgba(184,71,88,0.18)] transition hover:bg-[#a23d4d]"
+                  >
+                    <Save className="h-4 w-4" />
+                    Farben speichern
+                  </button>
                 </div>
               </div>
             ) : null}
