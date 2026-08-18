@@ -290,6 +290,76 @@ export default function SettingsPage() {
     [profileForm.role],
   );
   const selectedProjectBackground = appearanceForm.projectBackgrounds?.[selectedAppearanceProjectId] || boardBackgroundOptions[0].value;
+  const searchSuggestions = useMemo(() => {
+    const query = searchValue.trim().toLowerCase();
+    if (!query) return [];
+
+    const sections = [
+      {
+        id: 'settings-profile',
+        type: 'Profil',
+        label: 'Profil',
+        meta: `${profileForm.name || 'Benutzer'} - ${profileForm.email || 'keine E-Mail'}`,
+      },
+      {
+        id: 'settings-mail',
+        type: 'Mail',
+        label: 'E-Mail-Benachrichtigungen',
+        meta: profileForm.notificationEmail || profileForm.email || 'Keine Adresse hinterlegt',
+      },
+      {
+        id: 'settings-password',
+        type: 'Konto',
+        label: 'Passwort aendern',
+        meta: isGuest ? 'Im Gastmodus gesperrt' : 'Account-Sicherheit',
+      },
+      {
+        id: 'settings-two-factor',
+        type: '2FA',
+        label: 'Zwei-Faktor-Authentifizierung',
+        meta: twoFactorEnabled ? 'Aktiviert' : 'Nicht aktiviert',
+      },
+      {
+        id: 'settings-calendar',
+        type: 'Kalender',
+        label: 'Kalender-Integration',
+        meta: calendarConnection.calendarConnected ? calendarConnection.calendarEmail : 'Nicht verbunden',
+      },
+      {
+        id: 'settings-appearance',
+        type: 'Layout',
+        label: 'Darstellung',
+        meta: `Theme ${appearanceForm.theme} - Dichte ${appearanceForm.density}`,
+        onSelect: () => setAppearanceOpen(true),
+      },
+      {
+        id: 'settings-markers',
+        type: 'Farben',
+        label: 'Aufgabenfarben',
+        meta: `${taskMarkers.length} Markierungen`,
+        onSelect: () => setTaskMarkersOpen(true),
+      },
+      ...projects.map((project) => ({
+        id: `settings-project-${project.id}`,
+        type: 'Projekt',
+        label: project.name,
+        meta: 'Board-Hintergrund',
+        onSelect: () => {
+          setAppearanceOpen(true);
+          setSelectedAppearanceProjectId(project.id);
+        },
+      })),
+      ...taskMarkers.map((marker) => ({
+        id: `settings-marker-${marker.id}`,
+        type: 'Farbe',
+        label: marker.label,
+        meta: marker.description || marker.matchValue || 'Aufgabenmarkierung',
+        onSelect: () => setTaskMarkersOpen(true),
+      })),
+    ];
+
+    return sections.filter((item) => [item.label, item.meta, item.type].join(' ').toLowerCase().includes(query));
+  }, [appearanceForm.density, appearanceForm.theme, calendarConnection.calendarConnected, calendarConnection.calendarEmail, isGuest, profileForm.email, profileForm.name, profileForm.notificationEmail, projects, searchValue, taskMarkers, twoFactorEnabled]);
 
   useEffect(() => {
     let ignore = false;
@@ -777,6 +847,7 @@ export default function SettingsPage() {
       createMenuItems={[]}
       searchValue={searchValue}
       onSearch={setSearchValue}
+      searchSuggestions={searchSuggestions}
     >
       <div className="space-y-6 px-4 py-4 xl:px-6">
         <div className="space-y-5">

@@ -2945,6 +2945,40 @@ export default function ProjectsPage() {
     setSelectedBacklogTaskId(taskId);
   };
 
+  const searchSuggestions = normalizedSearch
+    ? [
+        ...visibleDepartments.map((department) => ({
+          id: `department-${department.id}`,
+          type: 'Bereich',
+          label: department.name,
+          meta: `${department.lead} - ${projects.filter((project) => project.departmentId === department.id).length} Projekte`,
+          onSelect: () => handleDepartmentOpen(department.id),
+        })),
+        ...visibleProjects.map((project) => ({
+          id: `project-${project.id}`,
+          type: 'Projekt',
+          label: project.name,
+          meta: `${selectedDepartment?.name || 'Abteilung'} - ${project.owner}`,
+          onSelect: () => handleProjectOpen(project.id),
+        })),
+        ...visibleBacklogTasks.map((task) => {
+          const project = projects.find((candidate) => candidate.id === task.projectId);
+          return {
+            id: `task-${task.id}`,
+            type: 'Aufgabe',
+            label: task.title,
+            meta: `${project?.name || 'Projekt'} - ${getAssigneeLabel(task.assignee)}`,
+            onSelect: () => {
+              if (project) setSelectedDepartmentId(project.departmentId);
+              setSelectedProjectId(task.projectId);
+              setViewMode('backlog');
+              setSelectedBacklogTaskId(task.id);
+            },
+          };
+        }),
+      ]
+    : [];
+
   const handleBacklogTaskSave = (taskId, updates) => {
     setBacklogTasks((current) =>
       current.map((task) => (task.id === taskId ? { ...task, ...updates } : task)),
@@ -3101,6 +3135,7 @@ export default function ProjectsPage() {
       onCreateAction={handleCreateAction}
       searchValue={searchValue}
       onSearch={setSearchValue}
+      searchSuggestions={searchSuggestions}
     >
       <div
         className={`px-4 py-4 xl:px-6 ${

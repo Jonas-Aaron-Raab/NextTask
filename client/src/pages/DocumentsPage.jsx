@@ -330,6 +330,44 @@ export default function DocumentsPage() {
     .filter((document) => document.status === 'In Pruefung' || document.status === 'Abgelaufen')
     .slice(0, 4);
 
+  const searchSuggestions = useMemo(() => {
+    const query = searchValue.trim().toLowerCase();
+    if (!query) return [];
+
+    const documentSuggestions = filteredDocuments.map((document) => ({
+      id: `document-${document.id}`,
+      type: 'Dokument',
+      label: document.title,
+      meta: `${document.project} - ${document.owner}`,
+      onSelect: () => {
+        setActiveSection('library');
+        setActiveDocumentId(document.id);
+      },
+    }));
+
+    const spaceSuggestions = knowledgeSpaces
+      .filter((space) => [space.title, space.description, space.lead].join(' ').toLowerCase().includes(query))
+      .map((space) => ({
+        id: `space-${space.id}`,
+        type: 'Wissen',
+        label: space.title,
+        meta: `${space.lead} - ${space.docsCount} Dokumente`,
+        onSelect: () => setActiveSection('spaces'),
+      }));
+
+    const templateSuggestions = templates
+      .filter((template) => template.toLowerCase().includes(query))
+      .map((template) => ({
+        id: `template-${template}`,
+        type: 'Vorlage',
+        label: template,
+        meta: 'Vorlagen & Nachweise',
+        onSelect: () => setActiveSection('templates'),
+      }));
+
+    return [...documentSuggestions, ...spaceSuggestions, ...templateSuggestions];
+  }, [filteredDocuments, searchValue]);
+
   const sectionCards = [
     {
       id: 'library',
@@ -373,6 +411,7 @@ export default function DocumentsPage() {
       headerTitle="Dokumente"
       searchValue={searchValue}
       onSearch={setSearchValue}
+      searchSuggestions={searchSuggestions}
       createMenuItems={createMenuItems}
     >
       <div className="space-y-6 px-4 py-4 xl:px-6">

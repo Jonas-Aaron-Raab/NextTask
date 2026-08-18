@@ -224,9 +224,19 @@ export default function AuditLogPage() {
 
   const criticalCount = (facets.CRITICAL || 0) + (facets.WARNING || 0);
   const actorCount = useMemo(() => new Set(logs.map((entry) => entry.actorEmail || entry.actorName)).size, [logs]);
+  const searchSuggestions = useMemo(() => {
+    if (!searchValue.trim()) return [];
+
+    return logs.map((entry) => ({
+      id: `audit-log-${entry.id}`,
+      type: 'Log',
+      label: entry.summary,
+      meta: `${actionLabels[entry.action] || entry.action} - ${entry.actorName} - ${formatDate(entry.createdAt)}`,
+    }));
+  }, [logs, searchValue]);
 
   return (
-    <AppShell activeItem="Audit-Log" hideBreadcrumb searchPlacement="actions" headerTitle="Audit-Log" searchValue={searchValue} onSearch={setSearchValue} createMenuItems={[]}>
+    <AppShell activeItem="Audit-Log" hideBreadcrumb searchPlacement="actions" headerTitle="Audit-Log" searchValue={searchValue} onSearch={setSearchValue} searchSuggestions={searchSuggestions} createMenuItems={[]}>
       <div className="space-y-5 px-4 py-4 xl:px-6">
         <section className="rounded-[28px] border border-slate-300 bg-white p-5 shadow-[0_18px_42px_rgba(15,23,42,0.06)]">
           <div className="flex flex-wrap items-start justify-between gap-4">

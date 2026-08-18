@@ -182,9 +182,9 @@ export default function DashboardPage() {
   }, [selectedDepartment]);
 
   const focusTasks = useMemo(() => {
-    const baseTasks = [...openTasks].sort(sortByUrgency).slice(0, 4);
+    const baseTasks = [...openTasks].sort(sortByUrgency);
 
-    if (!searchTerm) return baseTasks;
+    if (!searchTerm) return baseTasks.slice(0, 4);
 
     return baseTasks.filter((task) =>
       [task.title, task.project, task.note, task.assignee].join(' ').toLowerCase().includes(searchTerm),
@@ -196,9 +196,7 @@ export default function DashboardPage() {
 
     if (!searchTerm) return flagged.slice(0, 4);
 
-    return flagged
-      .filter((task) => [task.title, task.project, task.note].join(' ').toLowerCase().includes(searchTerm))
-      .slice(0, 4);
+    return flagged.filter((task) => [task.title, task.project, task.note].join(' ').toLowerCase().includes(searchTerm));
   }, [openTasks, searchTerm]);
 
   const departmentCards = useMemo(() => {
@@ -248,14 +246,46 @@ export default function DashboardPage() {
       path: '/projects',
     }));
 
-    const combined = [...taskDeadlines, ...projectDeadlines]
-      .sort((left, right) => left.sortValue - right.sortValue)
-      .slice(0, 5);
+    const combined = [...taskDeadlines, ...projectDeadlines].sort((left, right) => left.sortValue - right.sortValue);
 
-    if (!searchTerm) return combined;
+    if (!searchTerm) return combined.slice(0, 5);
 
     return combined.filter((item) => [item.title, item.meta, item.type].join(' ').toLowerCase().includes(searchTerm));
   }, [openTasks, searchTerm, visibleProjects]);
+
+  const searchSuggestions = useMemo(() => {
+    if (!searchTerm) return [];
+
+    const taskSuggestions = openTasks
+      .filter((task) => [task.title, task.project, task.note, task.assignee].join(' ').toLowerCase().includes(searchTerm))
+      .map((task) => ({
+        id: `task-${task.id}`,
+        type: 'Aufgabe',
+        label: task.title,
+        meta: `${task.project} - ${task.assignee || 'ohne Person'}`,
+        path: '/my-tasks',
+      }));
+
+    const projectSuggestions = visibleProjects
+      .filter((project) => [project.name, project.owner, project.status, project.goal].join(' ').toLowerCase().includes(searchTerm))
+      .map((project) => ({
+        id: `project-${project.id}`,
+        type: 'Projekt',
+        label: project.name,
+        meta: `${project.owner} - ${project.dueDate}`,
+        path: '/projects',
+      }));
+
+    const departmentSuggestions = departmentCards.map((department) => ({
+      id: `department-${department.id}`,
+      type: 'Bereich',
+      label: department.name,
+      meta: `${department.lead} - ${department.activeProjects} Projekte`,
+      path: '/departments',
+    }));
+
+    return [...taskSuggestions, ...projectSuggestions, ...departmentSuggestions];
+  }, [departmentCards, openTasks, searchTerm, visibleProjects]);
 
   const statusOverview = useMemo(() => {
     const total = personalOpenTasks.length || 1;
@@ -306,6 +336,7 @@ export default function DashboardPage() {
       headerTitle="Dashboard"
       searchValue={searchValue}
       onSearch={setSearchValue}
+      searchSuggestions={searchSuggestions}
       createMenuItems={createMenuItems}
     >
       <div className="space-y-6 px-4 py-5 lg:px-6 lg:py-6">

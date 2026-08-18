@@ -1706,6 +1706,16 @@ export default function MyTasksPage() {
     setAttachmentType('Excel');
   };
 
+  const searchSuggestions = normalizedSearch
+    ? visibleTasks.map((task) => ({
+        id: `task-${task.id}`,
+        type: 'Aufgabe',
+        label: task.title,
+        meta: `${task.project} - ${task.assignee || 'ohne Person'}`,
+        onSelect: () => openTask(task),
+      }))
+    : [];
+
   const closeTask = () => {
     setSelectedTaskId(null);
     setDetailForm(null);
@@ -1958,6 +1968,7 @@ export default function MyTasksPage() {
       onCreateAction={handleCreateAction}
       searchValue={searchValue}
       onSearch={setSearchValue}
+      searchSuggestions={searchSuggestions}
     >
       <div className="space-y-4 px-4 py-4 xl:px-6">
         <SummaryStrip

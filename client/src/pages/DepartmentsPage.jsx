@@ -179,6 +179,37 @@ export default function DepartmentsPage() {
     );
   }, [searchTerm, selectedDepartment]);
 
+  const searchSuggestions = useMemo(() => {
+    if (!searchTerm) return [];
+
+    const departmentSuggestions = filteredDepartments.map((department) => ({
+      id: `department-${department.id}`,
+      type: 'Bereich',
+      label: department.name,
+      meta: `${department.code} - ${department.lead}`,
+      onSelect: () => setSelectedDepartmentId(department.id),
+    }));
+
+    const projectSuggestions = visibleDepartments
+      .flatMap((department) =>
+        bankProjects
+          .filter((project) => project.departmentId === department.id)
+          .map((project) => ({ ...project, departmentName: department.name })),
+      )
+      .filter((project) =>
+        [project.name, project.owner, project.status, project.goal, ...project.tasks.map((task) => task.title)].join(' ').toLowerCase().includes(searchTerm),
+      )
+      .map((project) => ({
+        id: `project-${project.id}`,
+        type: 'Projekt',
+        label: project.name,
+        meta: `${project.departmentName} - ${project.owner}`,
+        onSelect: () => setSelectedDepartmentId(project.departmentId),
+      }));
+
+    return [...departmentSuggestions, ...projectSuggestions];
+  }, [filteredDepartments, searchTerm, visibleDepartments]);
+
   const visibleProjectCount = visibleDepartments.reduce(
     (sum, department) => sum + bankProjects.filter((project) => project.departmentId === department.id).length,
     0,
@@ -193,6 +224,7 @@ export default function DepartmentsPage() {
       headerTitle="Abteilungen"
       searchValue={searchValue}
       onSearch={setSearchValue}
+      searchSuggestions={searchSuggestions}
       createMenuItems={[]}
     >
       <div className="space-y-5 px-4 py-5 lg:px-6 lg:py-6">

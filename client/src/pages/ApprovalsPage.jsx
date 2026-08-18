@@ -430,6 +430,17 @@ export default function ApprovalsPage() {
     [approvals, facets],
   );
 
+  const searchSuggestions = useMemo(() => {
+    if (!searchValue.trim()) return [];
+
+    return approvals.map((approval) => ({
+      id: `approval-${approval.id}`,
+      type: 'Freigabe',
+      label: approval.title,
+      meta: `${entityTypeLabels[approval.entityType] || approval.entityType} - ${approval.entityLabel}`,
+    }));
+  }, [approvals, searchValue]);
+
   const updateForm = (patch) => setForm((current) => ({ ...current, ...patch }));
   const updateNote = (id, value) => setNotes((current) => ({ ...current, [id]: value }));
 
@@ -472,6 +483,7 @@ export default function ApprovalsPage() {
       headerTitle="Freigaben"
       searchValue={searchValue}
       onSearch={setSearchValue}
+      searchSuggestions={searchSuggestions}
       createMenuItems={[]}
     >
       <div className="space-y-5 px-4 py-5 lg:px-6 lg:py-6">

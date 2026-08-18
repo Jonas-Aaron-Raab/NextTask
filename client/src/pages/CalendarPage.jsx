@@ -1084,6 +1084,26 @@ export default function CalendarPage() {
     setSearchParams(nextParams, { replace: true });
   };
 
+  const searchSuggestions = useMemo(() => {
+    const query = searchValue.trim();
+    if (!query) return [];
+
+    return visibleTasks.map((task) => ({
+      id: `calendar-task-${task.id}`,
+      type: 'Termin',
+      label: task.title,
+      meta: `${task.project} - ${task.assignee || 'ohne Person'} - ${task.dueDate || 'ohne Datum'}`,
+      onSelect: () => {
+        setSelectedTask(task);
+        if (task.dueDate) {
+          setSelectedDayKey(task.dueDate);
+          setCursorDate(fromDateKey(task.dueDate));
+          setView('week');
+        }
+      },
+    }));
+  }, [searchValue, visibleTasks]);
+
   return (
     <AppShell
       activeItem="Kalender"
@@ -1092,6 +1112,7 @@ export default function CalendarPage() {
       headerTitle="Kalender"
       searchValue={searchValue}
       onSearch={setSearchValue}
+      searchSuggestions={searchSuggestions}
       createMenuItems={[]}
     >
       <div

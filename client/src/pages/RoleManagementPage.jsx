@@ -145,6 +145,31 @@ export default function RoleManagementPage() {
     );
   }, [accessConfig.roles, searchTerm]);
 
+  const searchSuggestions = useMemo(() => {
+    if (!searchTerm) return [];
+
+    const roleSuggestions = filteredRoles.map((role) => ({
+      id: `role-${role.id}`,
+      type: 'Rolle',
+      label: role.name,
+      meta: `${role.code} - ${getRoleScopeLabel(role)}`,
+      onSelect: () => setDraftRole(clone(role)),
+    }));
+
+    const userSuggestions = accessConfig.users
+      .filter((item) =>
+        [item.name, item.email, getUserDepartmentLabel(item.department)].join(' ').toLowerCase().includes(searchTerm),
+      )
+      .map((item) => ({
+        id: `user-${item.id}`,
+        type: 'User',
+        label: item.name,
+        meta: `${item.email} - ${getUserDepartmentLabel(item.department)}`,
+      }));
+
+    return [...roleSuggestions, ...userSuggestions];
+  }, [accessConfig.users, filteredRoles, searchTerm]);
+
   const updateDraft = (field, value) => {
     setStatus('');
     setError('');
@@ -262,7 +287,7 @@ export default function RoleManagementPage() {
 
   if (!roleManagerAllowed && !isLoading) {
     return (
-      <AppShell activeItem="Rollen" hideBreadcrumb searchPlacement="actions" headerTitle="Rollen" searchValue={searchValue} onSearch={setSearchValue} createMenuItems={[]}>
+      <AppShell activeItem="Rollen" hideBreadcrumb searchPlacement="actions" headerTitle="Rollen" searchValue={searchValue} onSearch={setSearchValue} searchSuggestions={searchSuggestions} createMenuItems={[]}>
         <div className="px-4 py-5 lg:px-6 lg:py-6">
           <section className="rounded-[30px] border border-slate-300 bg-white px-6 py-12 text-center shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
             <LockKeyhole className="mx-auto h-10 w-10 text-[#b84758]" />
@@ -277,7 +302,7 @@ export default function RoleManagementPage() {
   }
 
   return (
-    <AppShell activeItem="Rollen" hideBreadcrumb searchPlacement="actions" headerTitle="Rollen" searchValue={searchValue} onSearch={setSearchValue} createMenuItems={[]}>
+    <AppShell activeItem="Rollen" hideBreadcrumb searchPlacement="actions" headerTitle="Rollen" searchValue={searchValue} onSearch={setSearchValue} searchSuggestions={searchSuggestions} createMenuItems={[]}>
       <div className="space-y-5 px-4 py-5 lg:px-6 lg:py-6">
         <section className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
           <div className="flex flex-wrap items-start justify-between gap-4">

@@ -1164,6 +1164,31 @@ export default function ReportsPage() {
     } benoetigt aktuell besondere Aufmerksamkeit.`;
   }, [attentionProject, selectedDepartment, taskMetrics]);
 
+  const searchSuggestions = useMemo(() => {
+    const query = searchValue.trim().toLowerCase();
+    if (!query) return [];
+
+    const projectSuggestions = filteredProjects.map((project) => ({
+      id: `report-project-${project.id}`,
+      type: 'Projekt',
+      label: project.name,
+      meta: `${project.departmentName} - ${project.owner}`,
+      onSelect: () => setActiveProjectId(project.id),
+    }));
+
+    const timelineSuggestions = selectedTimelineEntries
+      .filter((entry) => [entry.title, entry.subtitle, entry.meta, entry.description].join(' ').toLowerCase().includes(query))
+      .map((entry) => ({
+        id: `timeline-${entry.id}`,
+        type: 'Termin',
+        label: entry.title,
+        meta: `${entry.subtitle} - ${entry.typeLabel}`,
+        onSelect: () => setSelectedTimelineEntryId(entry.id),
+      }));
+
+    return [...projectSuggestions, ...timelineSuggestions];
+  }, [filteredProjects, searchValue, selectedTimelineEntries]);
+
   return (
     <AppShell
       activeItem="Reports"
@@ -1172,6 +1197,7 @@ export default function ReportsPage() {
       headerTitle="Reports"
       searchValue={searchValue}
       onSearch={setSearchValue}
+      searchSuggestions={searchSuggestions}
     >
       <div className="space-y-6 px-4 py-4 xl:px-6">
         <section className="rounded-[30px] border border-slate-300 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
