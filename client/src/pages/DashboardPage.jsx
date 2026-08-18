@@ -4,6 +4,7 @@ import { ArrowRight, Building2, CalendarClock, CheckSquare, CircleAlert, LayoutD
 import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
+import { getEffectiveRoleForUser } from '../data/bankOrganization';
 import { effortUnitOptions, formatEffort, sumEffortHours } from '../utils/effort';
 import { initialTasks } from './MyTasksPage';
 import { initialBacklogTasks, initialDepartments, initialProjects } from './ProjectsPage';
@@ -157,6 +158,10 @@ function isAssignedToUser(task, user, currentAssignee) {
   return Boolean(currentAssignee && task.assignee === currentAssignee);
 }
 
+function canFilterDepartments(role) {
+  return ['GBL', 'GPL'].includes(role?.kind) || String(role?.code || '').startsWith('GBL') || String(role?.code || '').startsWith('GPL');
+}
+
 function getDaysUntilDue(task) {
   const dueTime = parseGermanDate(task.dueDateValue || task.dueDate);
   if (!Number.isFinite(dueTime)) return Number.POSITIVE_INFINITY;
@@ -192,6 +197,8 @@ export default function DashboardPage() {
   const [workloadUnit, setWorkloadUnit] = useState('hours');
   const [apiPersonalTasks, setApiPersonalTasks] = useState(null);
   const currentAssignee = user?.name || 'Teammitglied';
+  const effectiveRole = useMemo(() => getEffectiveRoleForUser(user), [user]);
+  const showDepartmentFilter = canFilterDepartments(effectiveRole);
 
   useEffect(() => {
     if (!user?.id) {
@@ -479,19 +486,18 @@ export default function DashboardPage() {
               </h2>
             </div>
 
-            <div className="flex flex-wrap items-end gap-3">
-              <label className="space-y-2">
-                <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">Abteilung</span>
-                <select value={selectedDepartment} onChange={(event) => setSelectedDepartment(event.target.value)} className={dashboardSelectClass}>
-                  {departmentOptions.map((option) => (
-                    <option key={option}>{option}</option>
-                  ))}
-                </select>
-              </label>
-              <span className="inline-flex h-11 items-center rounded-xl bg-[#fff5f7] px-4 text-sm font-bold text-[#b84758]">
-                {workload.displayValue} gebunden
-              </span>
-            </div>
+            {showDepartmentFilter ? (
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="space-y-2">
+                  <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">Abteilung</span>
+                  <select value={selectedDepartment} onChange={(event) => setSelectedDepartment(event.target.value)} className={dashboardSelectClass}>
+                    {departmentOptions.map((option) => (
+                      <option key={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-5 grid gap-5 xl:grid-cols-[220px_1fr]">
