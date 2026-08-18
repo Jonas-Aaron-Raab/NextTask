@@ -287,10 +287,10 @@ export default function AppShell({
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-[#111827]">
+      <div className="min-h-screen bg-[#e1e6ec] text-[#111827]">
       <div className="flex min-h-screen">
         <aside
-          className={`hidden flex-none border-r border-slate-200 bg-white transition-[width] duration-300 lg:flex lg:flex-col ${
+          className={`hidden flex-none border-r border-[#cfd6df] bg-[#e1e6ec] transition-[width] duration-300 lg:flex lg:flex-col ${
             sidebarCollapsed ? 'w-[84px]' : 'w-[240px]'
           }`}
         >
@@ -313,12 +313,12 @@ export default function AppShell({
                   onClick={() => handleNavigation(item)}
                   className={`flex h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold transition ${
                     item.active
-                      ? 'bg-[#fff1f3] text-[#b84758]'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      ? 'bg-[#fff1f3] text-[#a23d4d]'
+                      : 'text-[#4b5a6d] hover:bg-[#f0f3f6] hover:text-[#1f2937]'
                   } ${sidebarCollapsed ? 'justify-center' : ''}`}
                   title={sidebarCollapsed ? item.label : undefined}
                 >
-                  <Icon className={`h-5 w-5 flex-none ${item.active ? 'text-[#b84758]' : 'text-slate-400'}`} />
+                  <Icon className={`h-5 w-5 flex-none ${item.active ? 'text-[#e30613]' : 'text-[#718096]'}`} />
                   {!sidebarCollapsed ? <span>{item.label}</span> : null}
                 </button>
               );
@@ -329,7 +329,7 @@ export default function AppShell({
             <button
               type="button"
               onClick={() => setSidebarCollapsed((current) => !current)}
-              className={`flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 ${
+              className={`flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold text-[#718096] transition hover:bg-[#f0f3f6] hover:text-[#1f2937] ${
                 sidebarCollapsed ? 'justify-center' : ''
               }`}
             >
@@ -341,7 +341,7 @@ export default function AppShell({
               <button
                 type="button"
                 onClick={() => setWorkspaceOpen((current) => !current)}
-                className={`flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition hover:border-violet-200 ${
+                className={`flex w-full items-center gap-3 rounded-2xl border border-[#cfd6df] bg-white p-3 text-left shadow-[0_10px_30px_rgba(15,23,42,0.08)] transition hover:border-[#b8c2cf] ${
                   sidebarCollapsed ? 'justify-center' : ''
                 }`}
               >
@@ -351,10 +351,10 @@ export default function AppShell({
                 {!sidebarCollapsed ? (
                   <>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-xs font-semibold text-slate-400">Workspace</span>
-                      <span className="block truncate text-sm font-bold text-slate-900">Agentur Digital</span>
+                      <span className="block text-xs font-semibold text-[#8793a3]">Workspace</span>
+                      <span className="block truncate text-sm font-bold text-[#1f2937]">Agentur Digital</span>
                     </span>
-                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                    <ChevronDown className="h-4 w-4 text-[#718096]" />
                   </>
                 ) : null}
               </button>
@@ -373,7 +373,7 @@ export default function AppShell({
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-auto min-h-[72px] flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 lg:px-6">
+          <header className="flex h-auto min-h-[72px] flex-wrap items-center gap-3 border-b border-[#cfd6df] bg-[#e1e6ec] px-4 py-3 lg:px-6">
             {!hideBreadcrumb ? (
               <div className="flex min-w-[220px] flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
                 {breadcrumb.map((crumb, index) => (
@@ -496,7 +496,7 @@ export default function AppShell({
                   </span>
                   <span className="hidden min-w-0 leading-tight sm:block">
                     <span className="block truncate text-sm font-bold text-slate-900">{user?.name || 'Gast'}</span>
-                    <span className="hidden truncate text-xs font-semibold text-slate-400 lg:block">
+                    <span className="hidden truncate text-xs font-semibold text-[#aeb7c4] lg:block">
                       {user?.department || 'Workspace'}
                     </span>
                   </span>
@@ -540,7 +540,7 @@ export default function AppShell({
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 bg-[#f8fafc]">{children}</main>
+          <main className="min-w-0 flex-1 bg-[#e1e6ec]">{children}</main>
         </div>
       </div>
     </div>
