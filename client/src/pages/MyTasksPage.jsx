@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
+import { formatEffort, getEffortHoursFromInput, getEffortInputValue } from '../utils/effort';
 import { getStoredTaskMarkers, getTaskMarker } from '../utils/taskMarkers';
 
 const columns = [
@@ -76,6 +77,7 @@ export const initialTasks = [
     priority: 'hoch',
     dueDate: '16. Mai 2026',
     dueDateValue: '2026-05-16',
+    estimatedHours: 6,
     progress: 70,
     checklist: '7/10 erledigt',
     note: 'Feinschliff fuer Headline und Buttons fehlt noch.',
@@ -117,6 +119,7 @@ export const initialTasks = [
     priority: 'mittel',
     dueDate: '16. Mai 2026',
     dueDateValue: '2026-05-16',
+    estimatedHours: 4,
     progress: 45,
     checklist: '3/6 erledigt',
     note: 'Burger-Menue klappt noch nicht sauber zu.',
@@ -145,6 +148,7 @@ export const initialTasks = [
     priority: 'hoch',
     dueDate: '16. Mai 2026',
     dueDateValue: '2026-05-16',
+    estimatedHours: 5,
     progress: 40,
     checklist: '2/5 erledigt',
     note: 'Textbausteine und Compliance-Hinweis muessen heute noch final abgestimmt werden.',
@@ -180,6 +184,7 @@ export const initialTasks = [
     priority: 'hoch',
     dueDate: '17. Mai 2026',
     dueDateValue: '2026-05-17',
+    estimatedHours: 12,
     progress: 55,
     checklist: '5/9 erledigt',
     note: 'Abschnitt fuer Referenzen und KPIs noch offen.',
@@ -208,6 +213,7 @@ export const initialTasks = [
     priority: 'niedrig',
     dueDate: '18. Mai 2026',
     dueDateValue: '2026-05-18',
+    estimatedHours: 3,
     progress: 35,
     checklist: '2/5 erledigt',
     note: 'Neue Farblogik in Cards und Badges angleichen.',
@@ -236,6 +242,7 @@ export const initialTasks = [
     priority: 'hoch',
     dueDate: '17. Mai 2026',
     dueDateValue: '2026-05-17',
+    estimatedHours: 8,
     progress: 85,
     checklist: '6/7 erledigt',
     note: 'Wartet auf Rueckmeldung vom QA-Team.',
@@ -277,6 +284,7 @@ export const initialTasks = [
     priority: 'mittel',
     dueDate: '19. Mai 2026',
     dueDateValue: '2026-05-19',
+    estimatedHours: 5,
     progress: 80,
     checklist: '4/5 erledigt',
     note: 'Finale Freigabe von Marketing fehlt.',
@@ -305,6 +313,7 @@ export const initialTasks = [
     priority: 'mittel',
     dueDate: '20. Mai 2026',
     dueDateValue: '2026-05-20',
+    estimatedHours: 10,
     progress: 20,
     checklist: '1/5 erledigt',
     note: 'Blockiert durch fehlende Preise vom Vertrieb.',
@@ -340,6 +349,7 @@ export const initialTasks = [
     priority: 'niedrig',
     dueDate: '15. Mai 2026',
     dueDateValue: '2026-05-15',
+    estimatedHours: 4,
     progress: 100,
     checklist: '5/5 erledigt',
     note: 'Abgeschlossen und an Team uebergeben.',
@@ -603,6 +613,10 @@ function TaskCard({ task, onOpen }) {
           <span className="inline-flex items-center gap-1">
             <Paperclip className="h-3.5 w-3.5" />
             {task.attachments.length}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <Clock3 className="h-3.5 w-3.5" />
+            {formatEffort(task.estimatedHours, 'hours')}
           </span>
         </div>
       </div>
@@ -902,6 +916,30 @@ function CreateTaskModal({ projects, form, taskMarkers, onChange, onClose, onSub
             </label>
 
             <label className="block text-sm font-bold text-slate-700">
+              Aufwand in Stunden
+              <input
+                type="number"
+                min="0"
+                step="0.25"
+                value={getEffortInputValue(form.estimatedHours, 'hours')}
+                onChange={(event) => onChange('estimatedHours', getEffortHoursFromInput(event.target.value, 'hours'))}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              />
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Aufwand in Tagen
+              <input
+                type="number"
+                min="0"
+                step="0.25"
+                value={getEffortInputValue(form.estimatedHours, 'days')}
+                onChange={(event) => onChange('estimatedHours', getEffortHoursFromInput(event.target.value, 'days'))}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              />
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
               Zustaendig
               <select
                 value={form.assignee}
@@ -1177,6 +1215,7 @@ function TaskDetailDrawer({
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{task.assignee}</span>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{task.assignedBy.name}</span>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{task.dueDate}</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{formatEffort(task.estimatedHours, 'hours')}</span>
           </div>
         </div>
 
@@ -1237,6 +1276,30 @@ function TaskDetailDrawer({
                       type="date"
                       value={form.dueDateValue}
                       onChange={(event) => onFormChange('dueDateValue', event.target.value)}
+                      className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+                    />
+                  </label>
+
+                  <label className="block text-sm font-bold text-slate-700">
+                    Aufwand in Stunden
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.25"
+                      value={getEffortInputValue(form.estimatedHours, 'hours')}
+                      onChange={(event) => onFormChange('estimatedHours', getEffortHoursFromInput(event.target.value, 'hours'))}
+                      className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+                    />
+                  </label>
+
+                  <label className="block text-sm font-bold text-slate-700">
+                    Aufwand in Tagen
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.25"
+                      value={getEffortInputValue(form.estimatedHours, 'days')}
+                      onChange={(event) => onFormChange('estimatedHours', getEffortHoursFromInput(event.target.value, 'days'))}
                       className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
                     />
                   </label>
@@ -1599,6 +1662,7 @@ export default function MyTasksPage() {
     status: 'today',
     priority: 'mittel',
     dueDateValue: '2026-05-20',
+    estimatedHours: '4',
     assignee: 'Lisa Wagner',
     markerId: '',
   });
@@ -1696,6 +1760,7 @@ export default function MyTasksPage() {
       status: task.status,
       priority: task.priority,
       dueDateValue: task.dueDateValue || '',
+      estimatedHours: task.estimatedHours ?? '',
       assignee: task.assignee,
       description: task.description || '',
       classification: task.compliance.classification,
@@ -1771,6 +1836,7 @@ export default function MyTasksPage() {
       markerId: detailForm.markerId || undefined,
       dueDateValue: detailForm.dueDateValue,
       dueDate: formatDateLabel(detailForm.dueDateValue),
+      estimatedHours: detailForm.estimatedHours === '' ? null : Number(detailForm.estimatedHours),
       assignee: detailForm.assignee,
       description: detailForm.description.trim(),
       note: detailForm.description.trim() || task.note,
@@ -1895,6 +1961,7 @@ export default function MyTasksPage() {
         status: 'today',
         priority: 'mittel',
         dueDateValue: '2026-05-20',
+        estimatedHours: '4',
         assignee: 'Lisa Wagner',
       });
       setCreateMode('task');
@@ -1960,6 +2027,7 @@ export default function MyTasksPage() {
       markerId: createTaskForm.markerId || undefined,
       dueDate: dueDateLabel,
       dueDateValue: createTaskForm.dueDateValue,
+      estimatedHours: createTaskForm.estimatedHours === '' ? null : Number(createTaskForm.estimatedHours),
       progress: 0,
       checklist: '0/3 erledigt',
       note,

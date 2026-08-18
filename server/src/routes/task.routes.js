@@ -58,6 +58,14 @@ function parseDate(value) {
   return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
+function parseOptionalNumber(value) {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+
+  const parsed = Number(String(value).replace(',', '.'));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 async function getTaskNotificationContext(prisma, taskId) {
   return prisma.task.findUnique({
     where: { id: taskId },
@@ -204,7 +212,7 @@ router.post('/', auth, async (req, res) => {
         startDate: parseDate(startDate),
         dueDate: parseDate(dueDate),
         endDate: parseDate(endDate),
-        estimatedHours: estimatedHours ? Number(estimatedHours) : null,
+        estimatedHours: parseOptionalNumber(estimatedHours),
         department: department || null,
         markerId: markerId || null,
       },
@@ -267,7 +275,7 @@ router.put('/:id', auth, async (req, res) => {
         startDate: parseDate(startDate),
         dueDate: parseDate(dueDate),
         endDate: parseDate(endDate),
-        estimatedHours: estimatedHours === undefined ? undefined : Number(estimatedHours),
+        estimatedHours: parseOptionalNumber(estimatedHours),
         department,
         markerId: markerId === undefined ? undefined : markerId || null,
       },
@@ -345,7 +353,7 @@ router.patch('/:id/schedule', auth, async (req, res) => {
         dueDate: parseDate(dueDate),
         endDate: parseDate(endDate),
         assigneeId,
-        estimatedHours: estimatedHours === undefined ? undefined : Number(estimatedHours),
+        estimatedHours: parseOptionalNumber(estimatedHours),
       },
       include: {
         assignee: true,

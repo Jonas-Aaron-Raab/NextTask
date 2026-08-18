@@ -15,6 +15,7 @@ import {
   Building2,
   CalendarDays,
   CheckCircle2,
+  Clock3,
   FileText,
   Filter,
   FolderOpen,
@@ -39,6 +40,7 @@ import {
 import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
+import { formatEffort, getEffortHoursFromInput, getEffortInputValue, parseEffortHours, sumEffortHours } from '../utils/effort';
 import { getStoredTaskMarkers, getTaskMarker } from '../utils/taskMarkers';
 import { initialTasks as sourceTasks } from './MyTasksPage';
 
@@ -373,6 +375,7 @@ export const initialBacklogTasks = [
     priority: 'hoch',
     assignee: 'Lisa Wagner',
     dueDate: '18. Juni 2026',
+    estimatedHours: 6,
     tags: ['Mobile', 'UX'],
     description: 'Die neue Kontouebersicht soll auf den wichtigsten Smartphone-Breiten ohne horizontales Scrollen funktionieren.',
   },
@@ -385,6 +388,7 @@ export const initialBacklogTasks = [
     priority: 'mittel',
     assignee: 'Anna Becker',
     dueDate: '24. Juni 2026',
+    estimatedHours: 5,
     tags: ['Content', 'Freigabe'],
     description: 'Copy, Hinweistext und Fehlermeldungen fuer Kartenlimits in ein pruefbares Paket ueberfuehren.',
   },
@@ -397,6 +401,7 @@ export const initialBacklogTasks = [
     priority: 'mittel',
     assignee: '',
     dueDate: '27. Juni 2026',
+    estimatedHours: 8,
     tags: ['Mobile', 'Offen'],
     description: 'Fuer Umsatzdetails fehlt noch die fachliche Spezifikation der Push-Hinweise. Die Aufgabe ist noch keiner Person zugeordnet.',
   },
@@ -409,6 +414,7 @@ export const initialBacklogTasks = [
     priority: 'mittel',
     assignee: 'Elisabeth Bezverkha',
     dueDate: '02. Juli 2026',
+    estimatedHours: 7,
     tags: ['Dashboard'],
     description: 'Die wichtigsten Kennzahlen fuer persoenliche Tagesplanung festlegen und mit Beispielwerten abgleichen.',
   },
@@ -421,6 +427,7 @@ export const initialBacklogTasks = [
     priority: 'mittel',
     assignee: '',
     dueDate: '10. Juli 2026',
+    estimatedHours: 4,
     tags: ['Dashboard', 'Offen'],
     description: 'Die finale Reihenfolge der Dashboard-Widgets ist noch nicht vergeben und braucht eine fachliche Entscheidung.',
   },
@@ -433,6 +440,7 @@ export const initialBacklogTasks = [
     priority: 'hoch',
     assignee: 'Tom Becker',
     dueDate: '20. Juni 2026',
+    estimatedHours: 10,
     tags: ['Regression', 'Checkout'],
     description: 'Gastzahlung mit Kreditkarte, Sofortueberweisung und Abbruchpfad testen und dokumentieren.',
   },
@@ -445,6 +453,7 @@ export const initialBacklogTasks = [
     priority: 'niedrig',
     assignee: 'Elisabeth Bezverkha',
     dueDate: '28. Juni 2026',
+    estimatedHours: 3,
     tags: ['Devices'],
     description: 'Aktuelle iPad- und Android-Tablet-Kombinationen in die Testmatrix aufnehmen.',
   },
@@ -457,6 +466,7 @@ export const initialBacklogTasks = [
     priority: 'niedrig',
     assignee: '',
     dueDate: '03. Juli 2026',
+    estimatedHours: 4,
     tags: ['QA', 'Offen'],
     description: 'Fuer mehrere Altgeraete fehlen noch Testdaten. Die Aufgabe ist bewusst ohne Verantwortlichen angelegt.',
   },
@@ -469,6 +479,7 @@ export const initialBacklogTasks = [
     priority: 'mittel',
     assignee: 'Sarah Nguyen',
     dueDate: '04. August 2026',
+    estimatedHours: 6,
     tags: ['Copy', 'Kampagne'],
     description: 'Teaser, CTA und rechtlichen Hinweis als erste Review-Fassung vorbereiten.',
   },
@@ -481,6 +492,7 @@ export const initialBacklogTasks = [
     priority: 'mittel',
     assignee: '',
     dueDate: '09. August 2026',
+    estimatedHours: 5,
     tags: ['Assets', 'Offen'],
     description: 'Die Liste der benoetigten Kampagnenmotive ist noch nicht einer Person zugeordnet.',
   },
@@ -493,6 +505,7 @@ export const initialBacklogTasks = [
     priority: 'hoch',
     assignee: 'Anna Becker',
     dueDate: '01. Juli 2026',
+    estimatedHours: 9,
     tags: ['Compliance', 'Kontrolle'],
     description: 'Pflichtfelder, Nachweise und Vier-Augen-Pruefung fuer Abteilungsfreigaben strukturieren.',
   },
@@ -505,6 +518,7 @@ export const initialBacklogTasks = [
     priority: 'mittel',
     assignee: 'Nina Hoffmann',
     dueDate: '11. Juli 2026',
+    estimatedHours: 6,
     tags: ['Service', 'Vorlagen'],
     description: 'Bestehende Antwortvorlagen fuer Kartenrueckfragen auf Verstaendlichkeit und Freigabestand pruefen.',
   },
@@ -517,6 +531,7 @@ export const initialBacklogTasks = [
     priority: 'hoch',
     assignee: '',
     dueDate: '15. Juli 2026',
+    estimatedHours: 8,
     tags: ['Eskalation', 'Offen'],
     description: 'Fuer dringende Servicefaelle fehlen noch eindeutige Eskalationsregeln und eine verantwortliche Person.',
   },
@@ -529,6 +544,7 @@ export const initialBacklogTasks = [
     priority: 'niedrig',
     assignee: 'Elisabeth Bezverkha',
     dueDate: '24. Juli 2026',
+    estimatedHours: 4,
     tags: ['Feedback'],
     description: 'App-Bewertungen nach wiederkehrenden Themen clustern und fuer die Auswertung vorbereiten.',
   },
@@ -569,6 +585,11 @@ function getTaskCreatorName(task) {
   if (task.creatorName) return task.creatorName;
   const sourceTask = getSourceTask(task);
   return sourceTask?.assignedBy?.name || 'NextTask';
+}
+
+function getTaskEffortHours(task) {
+  const sourceTask = getSourceTask(task);
+  return parseEffortHours(task?.estimatedHours ?? sourceTask?.estimatedHours);
 }
 
 function getTaskDetailCollections(task) {
@@ -709,6 +730,7 @@ function mapApiTaskToBacklogTask(task) {
     priority: normalizeLiveTaskPriority(task.priority),
     assignee: task.assignee?.name || '',
     dueDate: task.dueDate ? toDisplayDate(String(task.dueDate).slice(0, 10)) : 'Kein Zieltermin',
+    estimatedHours: task.estimatedHours ?? null,
     tags: [task.priority, task.status].filter(Boolean),
     description: task.description || 'Keine Beschreibung hinterlegt.',
     markerId: task.markerId || '',
@@ -1953,6 +1975,7 @@ function createBacklogTaskForm(task) {
     priority: task.priority,
     markerId: task.markerId || '',
     dueDateValue: toDateInputValue(task.dueDate),
+    estimatedHours: getTaskEffortHours(task) || '',
     assignee: task.assignee,
     tags: task.tags.join(', '),
     classification: compliance.classification,
@@ -2004,6 +2027,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, task
       priority: form.priority,
       markerId: form.markerId || undefined,
       dueDate: toDisplayDate(form.dueDateValue) || task.dueDate,
+      estimatedHours: form.estimatedHours === '' ? null : Number(form.estimatedHours),
       assignee: form.assignee,
       tags: form.tags
         .split(',')
@@ -2221,6 +2245,30 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, task
                 type="date"
                 value={form.dueDateValue}
                 onChange={(event) => handleChange('dueDateValue', event.target.value)}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              />
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Aufwand in Stunden
+              <input
+                type="number"
+                min="0"
+                step="0.25"
+                value={getEffortInputValue(form.estimatedHours, 'hours')}
+                onChange={(event) => handleChange('estimatedHours', getEffortHoursFromInput(event.target.value, 'hours'))}
+                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+              />
+            </label>
+
+            <label className="block text-sm font-bold text-slate-700">
+              Aufwand in Tagen
+              <input
+                type="number"
+                min="0"
+                step="0.25"
+                value={getEffortInputValue(form.estimatedHours, 'days')}
+                onChange={(event) => handleChange('estimatedHours', getEffortHoursFromInput(event.target.value, 'days'))}
                 className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
               />
             </label>
