@@ -4,7 +4,7 @@ import { ArrowRight, Building2, CalendarClock, CheckSquare, CircleAlert, LayoutD
 import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
-import { getEffectiveRoleForUser } from '../data/bankOrganization';
+import { bankDepartments, getEffectiveRoleForUser } from '../data/bankOrganization';
 import { effortUnitOptions, formatEffort, sumEffortHours } from '../utils/effort';
 import { initialTasks } from './MyTasksPage';
 import { initialBacklogTasks, initialDepartments, initialProjects } from './ProjectsPage';
@@ -162,6 +162,41 @@ function canFilterDepartments(role) {
   return ['GBL', 'GPL'].includes(role?.kind) || String(role?.code || '').startsWith('GBL') || String(role?.code || '').startsWith('GPL');
 }
 
+function normalizeDepartmentName(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function departmentMatchesScope(departmentName, scope) {
+  if (scope === 'Alle Abteilungen') return true;
+
+  const department = normalizeDepartmentName(departmentName);
+  const normalizedScope = normalizeDepartmentName(scope);
+
+  return Boolean(department && normalizedScope && (department === normalizedScope || department.includes(normalizedScope) || normalizedScope.includes(department)));
+}
+
+function matchesDepartmentScope(departmentName, scopes) {
+  if (!scopes.length) return false;
+  return scopes.some((scope) => departmentMatchesScope(departmentName, scope));
+}
+
+function getUserDepartmentScopes(user, role) {
+  const scopes = [user?.department];
+  const roleDepartmentIds = new Set(role?.departmentIds || []);
+
+  bankDepartments.forEach((department) => {
+    if (!roleDepartmentIds.has(department.id)) return;
+    scopes.push(department.name, `${department.name} ${department.code}`, department.code);
+  });
+
+  return [...new Set(scopes.filter(Boolean))];
+}
+
 function getDaysUntilDue(task) {
   const dueTime = parseGermanDate(task.dueDateValue || task.dueDate);
   if (!Number.isFinite(dueTime)) return Number.POSITIVE_INFINITY;
@@ -195,31 +230,37 @@ export default function DashboardPage() {
   const [selectedDepartment, setSelectedDepartment] = useState('Alle Abteilungen');
   const [activeDashboardTab, setActiveDashboardTab] = useState('overview');
   const [workloadUnit, setWorkloadUnit] = useState('hours');
-  const [apiPersonalTasks, setApiPersonalTasks] = useState(null);
+  const [apiTasks, setApiTasks] = useState(null);
   const currentAssignee = user?.name || 'Teammitglied';
   const effectiveRole = useMemo(() => getEffectiveRoleForUser(user), [user]);
   const showDepartmentFilter = canFilterDepartments(effectiveRole);
+  const userDepartmentScopes = useMemo(() => getUserDepartmentScopes(user, effectiveRole), [effectiveRole, user]);
+  const activeDepartmentScopes = useMemo(
+    () => (showDepartmentFilter ? [selectedDepartment] : userDepartmentScopes),
+    [selectedDepartment, showDepartmentFilter, userDepartmentScopes],
+  );
+  const activeDepartmentLabel = showDepartmentFilter ? selectedDepartment : userDepartmentScopes[0] || 'Meine Abteilung';
 
   useEffect(() => {
     if (!user?.id) {
-      setApiPersonalTasks(null);
+      setApiTasks(null);
       return undefined;
     }
 
     let cancelled = false;
 
-    const loadPersonalTasks = async () => {
+    const loadDashboardTasks = async () => {
       try {
-        const { data } = await api.get('/calendar/tasks', { params: { mineOnly: true } });
+        const { data } = await api.get('/calendar/tasks');
         if (cancelled) return;
 
-        setApiPersonalTasks(Array.isArray(data) ? data.map(normalizeApiTaskForDashboard) : []);
+        setApiTasks(Array.isArray(data) ? data.map(normalizeApiTaskForDashboard) : []);
       } catch {
-        if (!cancelled) setApiPersonalTasks(null);
+        if (!cancelled) setApiTasks(null);
       }
     };
 
-    loadPersonalTasks();
+    loadDashboardTasks();
 
     return () => {
       cancelled = true;
@@ -227,6 +268,7 @@ export default function DashboardPage() {
   }, [user?.id]);
 
   const searchTerm = searchValue.trim().toLowerCase();
+  const dashboardTasks = apiTasks || initialTasks;
   const departmentByProjectName = useMemo(() => {
     return Object.fromEntries(
       initialProjects.map((project) => {
@@ -239,42 +281,35 @@ export default function DashboardPage() {
   const departmentOptions = useMemo(() => {
     const values = new Set(['Alle Abteilungen']);
     initialDepartments.forEach((department) => values.add(department.name));
-    initialTasks.forEach((task) => {
+    dashboardTasks.forEach((task) => {
       const name = getTaskDepartment(task, departmentByProjectName);
       if (name) values.add(name);
     });
     return [...values];
-  }, [departmentByProjectName]);
+  }, [dashboardTasks, departmentByProjectName]);
 
   const openTasks = useMemo(() => {
-    return initialTasks.filter((task) => {
+    return dashboardTasks.filter((task) => {
       if (task.status === 'done') return false;
-      if (selectedDepartment === 'Alle Abteilungen') return true;
       const departmentName = getTaskDepartment(task, departmentByProjectName);
-      return departmentName === selectedDepartment;
+      return matchesDepartmentScope(departmentName, activeDepartmentScopes);
     });
-  }, [departmentByProjectName, selectedDepartment]);
+  }, [activeDepartmentScopes, dashboardTasks, departmentByProjectName]);
 
   const personalOpenTasks = useMemo(() => {
-    const sourceTasks = apiPersonalTasks || openTasks;
-
-    return sourceTasks.filter((task) => {
+    return openTasks.filter((task) => {
       if (task.status === 'done') return false;
       if (!isAssignedToUser(task, user, currentAssignee)) return false;
-      if (selectedDepartment === 'Alle Abteilungen') return true;
-
-      const departmentName = getTaskDepartment(task, departmentByProjectName);
-      return departmentName === selectedDepartment;
+      return true;
     });
-  }, [apiPersonalTasks, currentAssignee, departmentByProjectName, openTasks, selectedDepartment, user]);
+  }, [currentAssignee, openTasks, user]);
 
   const visibleProjects = useMemo(() => {
     return initialProjects.filter((project) => {
-      if (selectedDepartment === 'Alle Abteilungen') return true;
       const department = initialDepartments.find((item) => item.id === project.departmentId);
-      return department?.name === selectedDepartment;
+      return matchesDepartmentScope(department?.name, activeDepartmentScopes);
     });
-  }, [selectedDepartment]);
+  }, [activeDepartmentScopes]);
 
   const focusTasks = useMemo(() => {
     const baseTasks = [...openTasks].sort(sortByUrgency);
@@ -310,15 +345,14 @@ export default function DashboardPage() {
       };
     });
 
-    const scopedCards =
-      selectedDepartment === 'Alle Abteilungen' ? cards : cards.filter((department) => department.name === selectedDepartment);
+    const scopedCards = cards.filter((department) => matchesDepartmentScope(department.name, activeDepartmentScopes));
 
     if (!searchTerm) return scopedCards;
 
     return scopedCards.filter((department) =>
       [department.name, department.lead, department.description].join(' ').toLowerCase().includes(searchTerm),
     );
-  }, [searchTerm, selectedDepartment, visibleProjects]);
+  }, [activeDepartmentScopes, searchTerm, visibleProjects]);
 
   const upcomingItems = useMemo(() => {
     const taskDeadlines = openTasks.map((task) => ({
@@ -482,7 +516,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Uebersicht</p>
               <h2 className="mt-2 text-[1.9rem] font-black tracking-tight text-slate-950">
-                {selectedDepartment === 'Alle Abteilungen' ? 'Aktueller Workspace-Stand' : selectedDepartment}
+                {activeDepartmentLabel === 'Alle Abteilungen' ? 'Aktueller Workspace-Stand' : activeDepartmentLabel}
               </h2>
             </div>
 
