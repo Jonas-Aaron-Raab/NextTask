@@ -54,7 +54,7 @@ async function requireRoleManager(req, res, next) {
   });
 
   if (!userCanManageRoles(currentUser)) {
-    return res.status(403).json({ message: 'Keine Berechtigung fuer die Rollenverwaltung' });
+    return res.status(403).json({ message: 'Keine Berechtigung für die Rollenverwaltung' });
   }
 
   req.currentUser = currentUser;
@@ -157,7 +157,7 @@ router.delete('/:id', auth, requireRoleManager, async (req, res) => {
     }
 
     if (role.system) {
-      return res.status(400).json({ message: 'Systemrollen koennen nicht geloescht werden' });
+      return res.status(400).json({ message: 'Systemrollen können nicht gelöscht werden' });
     }
 
     const fallbackRole = await req.prisma.accessRole.findUnique({ where: { code: 'A' } });
@@ -172,15 +172,15 @@ router.delete('/:id', auth, requireRoleManager, async (req, res) => {
       entityType: 'ACCESS_ROLE',
       entityId: role.id,
       entityLabel: role.name,
-      summary: `Rolle ${role.name} wurde geloescht.`,
+      summary: `Rolle ${role.name} wurde gelöscht.`,
       severity: 'CRITICAL',
       before: pickFields(role, auditRoleFields),
       metadata: { fallbackRoleId: fallbackRole?.id || null },
     });
 
-    res.json({ message: 'Rolle wurde geloescht' });
+    res.json({ message: 'Rolle wurde gelöscht' });
   } catch (error) {
-    res.status(500).json({ message: 'Rolle konnte nicht geloescht werden', error: error.message });
+    res.status(500).json({ message: 'Rolle konnte nicht gelöscht werden', error: error.message });
   }
 });
 

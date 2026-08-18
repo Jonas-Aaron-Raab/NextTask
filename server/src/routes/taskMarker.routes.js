@@ -6,29 +6,29 @@ const router = express.Router();
 
 const defaultTaskMarkers = [
   {
-    label: 'Hohe Prioritaet',
-    description: 'Aufgaben mit hoher Prioritaet.',
+    label: 'Hohe Priorität',
+    description: 'Aufgaben mit hoher Priorität.',
     color: '#ef4444',
     matchField: 'priority',
     matchValue: 'hoch',
   },
   {
-    label: 'Mittlere Prioritaet',
-    description: 'Aufgaben mit mittlerer Prioritaet.',
+    label: 'Mittlere Priorität',
+    description: 'Aufgaben mit mittlerer Priorität.',
     color: '#f59e0b',
     matchField: 'priority',
     matchValue: 'mittel',
   },
   {
-    label: 'Niedrige Prioritaet',
-    description: 'Aufgaben mit niedriger Prioritaet.',
+    label: 'Niedrige Priorität',
+    description: 'Aufgaben mit niedriger Priorität.',
     color: '#10b981',
     matchField: 'priority',
     matchValue: 'niedrig',
   },
   {
     label: 'Review',
-    description: 'Aufgaben, die auf Rueckmeldung oder Abnahme warten.',
+    description: 'Aufgaben, die auf Rückmeldung oder Abnahme warten.',
     color: '#8b5cf6',
     matchField: 'status',
     matchValue: 'review',

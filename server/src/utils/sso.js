@@ -110,7 +110,7 @@ function sha256(value) {
 
 function getStateEncryptionKey() {
   if (!process.env.JWT_SECRET) {
-    throw new Error('JWT_SECRET ist fuer SSO erforderlich');
+    throw new Error('JWT_SECRET ist für SSO erforderlich');
   }
 
   return crypto.createHash('sha256').update(`${process.env.JWT_SECRET}:sso-state`).digest();
@@ -298,11 +298,11 @@ async function verifyIdToken({ idToken, discovery, config, expectedNonce }) {
   });
 
   if (claims.nonce !== expectedNonce) {
-    throw new Error('OIDC Nonce stimmt nicht ueberein');
+    throw new Error('OIDC Nonce stimmt nicht überein');
   }
 
   if (Array.isArray(claims.aud) && claims.aud.length > 1 && claims.azp && claims.azp !== config.clientId) {
-    throw new Error('OIDC Authorized Party stimmt nicht ueberein');
+    throw new Error('OIDC Authorized Party stimmt nicht überein');
   }
 
   return claims;
@@ -378,7 +378,7 @@ function assertAllowedEmailDomain(email, allowedDomains) {
 
   const domain = String(email).split('@')[1]?.toLowerCase();
   if (!domain || !allowedDomains.includes(domain)) {
-    throw new Error('Diese E-Mail-Domain ist nicht fuer SSO freigegeben');
+    throw new Error('Diese E-Mail-Domain ist nicht für SSO freigegeben');
   }
 }
 
@@ -443,7 +443,7 @@ async function findOrCreateSsoUser(prisma, profile) {
   }
 
   if (!config.autoCreateUsers) {
-    throw new Error('Fuer diesen SSO-Nutzer existiert noch kein NextTask-Account');
+    throw new Error('Für diesen SSO-Nutzer existiert noch kein NextTask-Account');
   }
 
   const randomPassword = await bcrypt.hash(`sso:${crypto.randomBytes(32).toString('hex')}`, 10);

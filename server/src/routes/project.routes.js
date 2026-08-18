@@ -268,7 +268,7 @@ router.put('/:id/reporting', auth, async (req, res) => {
       entityType: 'PROJECT',
       entityId: project.id,
       entityLabel: project.name,
-      summary: `Berichtsdaten fuer Projekt ${project.name} wurden aktualisiert.`,
+      summary: `Berichtsdaten für Projekt ${project.name} wurden aktualisiert.`,
       severity: 'NOTICE',
       before: pickFields(currentProject, ['id', 'businessArea', 'projectGoal', 'plannedStart', 'plannedEnd', 'plannedBudget', 'plannedEffortPt']),
       after: pickFields(project, ['id', 'businessArea', 'projectGoal', 'plannedStart', 'plannedEnd', 'plannedBudget', 'plannedEffortPt']),
@@ -325,7 +325,7 @@ router.post('/:id/status-reports', auth, async (req, res) => {
       entityType: 'PROJECT_STATUS_REPORT',
       entityId: statusReport.id,
       entityLabel: project.name,
-      summary: `Statusbericht fuer Projekt ${project.name} wurde erstellt.`,
+      summary: `Statusbericht für Projekt ${project.name} wurde erstellt.`,
       severity: 'NOTICE',
       after: pickFields(statusReport, ['id', 'projectId', 'reportDate', 'reportingPeriod', 'progress', 'goalStatus', 'scheduleStatus', 'resourceStatus', 'budgetStatus']),
     });

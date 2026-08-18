@@ -13,7 +13,7 @@ async function requireAuditAccess(req, res, next) {
   });
 
   if (!userCanManageRoles(currentUser)) {
-    return res.status(403).json({ message: 'Keine Berechtigung fuer das Audit-Log' });
+    return res.status(403).json({ message: 'Keine Berechtigung für das Audit-Log' });
   }
 
   req.currentUser = currentUser;

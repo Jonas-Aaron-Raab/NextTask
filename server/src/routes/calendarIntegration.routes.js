@@ -65,7 +65,7 @@ router.get('/callback', async (req, res) => {
     });
 
     if (!tokenPayload.refresh_token) {
-      throw new Error('Google hat kein Refresh-Token geliefert. Bitte Verbindung erneut bestaetigen.');
+      throw new Error('Google hat kein Refresh-Token geliefert. Bitte Verbindung erneut bestätigen.');
     }
 
     const profile = await getGoogleUserProfile(tokenPayload.access_token);

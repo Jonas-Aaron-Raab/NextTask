@@ -363,7 +363,7 @@ router.patch('/:id/schedule', auth, async (req, res) => {
       entityType: 'TASK',
       entityId: updated.id,
       entityLabel: updated.title,
-      summary: `Zeitplanung fuer Aufgabe ${updated.title} wurde geaendert.`,
+      summary: `Zeitplanung für Aufgabe ${updated.title} wurde geändert.`,
       severity: 'NOTICE',
       before: summarizeChanges(pickFields(before, ['startDate', 'dueDate', 'endDate', 'assigneeId', 'estimatedHours']), pickFields(updated, ['startDate', 'dueDate', 'endDate', 'assigneeId', 'estimatedHours'])),
       after: pickFields(updated, ['startDate', 'dueDate', 'endDate', 'assigneeId', 'estimatedHours']),
@@ -399,16 +399,16 @@ router.delete('/:id', auth, async (req, res) => {
       entityType: 'TASK',
       entityId: req.params.id,
       entityLabel: task?.title || req.params.id,
-      summary: `Aufgabe ${task?.title || req.params.id} wurde geloescht.`,
+      summary: `Aufgabe ${task?.title || req.params.id} wurde gelöscht.`,
       severity: 'WARNING',
       before: pickFields(task, auditTaskFields),
       metadata: { projectId: task?.projectId || null },
     });
 
-    res.json({ message: 'Task geloescht' });
+    res.json({ message: 'Task gelöscht' });
   } catch (error) {
     res.status(500).json({
-      message: 'Fehler beim Loeschen',
+      message: 'Fehler beim Löschen',
       error: error.message,
     });
   }

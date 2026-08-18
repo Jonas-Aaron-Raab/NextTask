@@ -164,7 +164,7 @@ function renderEmailShell({ intro, headline, recipientName, task, projectName, h
                   </td>
                   <td style="padding:0 0 0 12px;vertical-align:top;">
                     <div style="padding:16px;border-radius:18px;background:#ffffff;border:1px solid #edf2f7;">
-                      <div style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;font-weight:700;color:#94a3b8;">Prioritaet</div>
+                      <div style="font-size:12px;letter-spacing:0.16em;text-transform:uppercase;font-weight:700;color:#94a3b8;">Priorität</div>
                       <div style="margin-top:6px;font-size:16px;font-weight:700;color:#0f172a;">${escapeHtml(priority)}</div>
                     </div>
                   </td>
@@ -202,7 +202,7 @@ async function sendTaskAssignmentEmail({ recipient, task, project, actor, reason
   const resolvedRecipient = getNotificationRecipient(recipient);
   if (!resolvedRecipient?.email || resolvedRecipient.id === actor?.id) return false;
 
-  const subjectPrefix = reason === 'reassigned' ? 'Ticket neu zugewiesen' : 'Neues Ticket fuer dich';
+  const subjectPrefix = reason === 'reassigned' ? 'Ticket neu zugewiesen' : 'Neues Ticket für dich';
   const html = renderEmailShell({
     intro: reason === 'reassigned' ? 'Neue Zuweisung' : 'Ticket-Zuweisung',
     headline: reason === 'reassigned' ? 'Ein Ticket wurde dir neu zugewiesen' : 'Dir wurde ein Ticket zugewiesen',
@@ -213,8 +213,8 @@ async function sendTaskAssignmentEmail({ recipient, task, project, actor, reason
     highlightValue: actor?.name || actor?.email || 'NextTask',
     body:
       reason === 'reassigned'
-        ? 'du bist jetzt fuer dieses Ticket verantwortlich. In der Uebersicht unten siehst du sofort Projekt, Status, Prioritaet und Faelligkeit.'
-        : 'du wurdest fuer dieses Ticket eingetragen. In der Uebersicht unten siehst du sofort Projekt, Status, Prioritaet und Faelligkeit.',
+        ? 'du bist jetzt für dieses Ticket verantwortlich. In der Uebersicht unten siehst du sofort Projekt, Status, Priorität und Faelligkeit.'
+        : 'du wurdest für dieses Ticket eingetragen. In der Uebersicht unten siehst du sofort Projekt, Status, Priorität und Faelligkeit.',
     ctaLabel: 'Ticket ansehen',
   });
 
@@ -224,7 +224,7 @@ async function sendTaskAssignmentEmail({ recipient, task, project, actor, reason
     `Zugewiesen von: ${actor?.name || actor?.email || 'NextTask'}`,
     `Faelligkeit: ${formatDate(task?.dueDate)}`,
     `Status: ${statusLabels[task?.status] || task?.status || 'Offen'}`,
-    `Prioritaet: ${priorityLabels[task?.priority] || task?.priority || 'Mittel'}`,
+    `Priorität: ${priorityLabels[task?.priority] || task?.priority || 'Mittel'}`,
     '',
     task?.description || 'Keine Beschreibung vorhanden.',
     '',

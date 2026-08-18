@@ -364,7 +364,7 @@ async function decideApproval(req, res, status) {
 
     const canDecide = before.approverId === currentUser.id || userCanApproveRequests(currentUser);
     if (!canDecide) {
-      return res.status(403).json({ message: 'Keine Berechtigung fuer diese Freigabe' });
+      return res.status(403).json({ message: 'Keine Berechtigung für diese Freigabe' });
     }
 
     const updated = await req.prisma.approvalRequest.update({
@@ -413,12 +413,12 @@ router.patch('/:id/cancel', auth, async (req, res) => {
     });
     if (!before) return res.status(404).json({ message: 'Freigabe wurde nicht gefunden' });
     if (before.status !== 'PENDING') {
-      return res.status(400).json({ message: 'Nur offene Freigaben koennen abgebrochen werden' });
+      return res.status(400).json({ message: 'Nur offene Freigaben können abgebrochen werden' });
     }
 
     const canCancel = before.requesterId === currentUser.id || before.approverId === currentUser.id || userCanApproveRequests(currentUser);
     if (!canCancel) {
-      return res.status(403).json({ message: 'Keine Berechtigung fuer diese Freigabe' });
+      return res.status(403).json({ message: 'Keine Berechtigung für diese Freigabe' });
     }
 
     const updated = await req.prisma.approvalRequest.update({

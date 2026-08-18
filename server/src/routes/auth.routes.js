@@ -193,7 +193,7 @@ router.post('/login', async (req, res) => {
         action: 'LOGIN_FAILED',
         entityType: 'AUTH',
         entityLabel: trimmedEmail,
-        summary: `Fehlgeschlagener Login fuer ${trimmedEmail}: Benutzer nicht gefunden.`,
+        summary: `Fehlgeschlagener Login für ${trimmedEmail}: Benutzer nicht gefunden.`,
         severity: 'WARNING',
         actor: { actorName: trimmedEmail, actorEmail: trimmedEmail },
       });
@@ -207,7 +207,7 @@ router.post('/login', async (req, res) => {
         entityType: 'AUTH',
         entityId: user.id,
         entityLabel: user.name,
-        summary: `Fehlgeschlagener Login fuer ${user.email}: falsches Passwort.`,
+        summary: `Fehlgeschlagener Login für ${user.email}: falsches Passwort.`,
         severity: 'WARNING',
         user,
       });
@@ -278,7 +278,7 @@ router.post('/login/2fa', async (req, res) => {
     });
 
     if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
-      return res.status(400).json({ message: '2FA ist fuer diesen Account nicht aktiv' });
+      return res.status(400).json({ message: '2FA ist für diesen Account nicht aktiv' });
     }
 
     const verification = await verifySecondFactor(user, code, { enforceReplay: true });
@@ -288,7 +288,7 @@ router.post('/login/2fa', async (req, res) => {
         entityType: 'AUTH',
         entityId: user.id,
         entityLabel: user.name,
-        summary: `Fehlgeschlagener 2FA-Login fuer ${user.email}.`,
+        summary: `Fehlgeschlagener 2FA-Login für ${user.email}.`,
         severity: 'WARNING',
         user,
       });
@@ -538,7 +538,7 @@ router.post('/me/2fa/confirm', auth, async (req, res) => {
         entityType: 'AUTH',
         entityId: user.id,
         entityLabel: user.name,
-        summary: `${user.name} konnte die 2FA-Einrichtung nicht bestaetigen.`,
+        summary: `${user.name} konnte die 2FA-Einrichtung nicht bestätigen.`,
         severity: 'WARNING',
         user,
       });
@@ -582,7 +582,7 @@ router.post('/me/2fa/confirm', auth, async (req, res) => {
 router.post('/me/2fa/disable', auth, async (req, res) => {
   try {
     if (req.user.isGuest) {
-      return res.status(400).json({ message: 'Im Gastmodus kann keine 2FA geaendert werden' });
+      return res.status(400).json({ message: 'Im Gastmodus kann keine 2FA geändert werden' });
     }
 
     const { password, code } = req.body;
@@ -685,7 +685,7 @@ router.put('/me', auth, async (req, res) => {
     const notificationsEnabled = req.user.isGuest ? false : Boolean(emailNotificationsEnabled);
 
     if (notificationsEnabled && isBlank(nextNotificationEmail) && isBlank(nextEmail)) {
-      return res.status(400).json({ message: 'Bitte hinterlege eine E-Mail fuer Benachrichtigungen.' });
+      return res.status(400).json({ message: 'Bitte hinterlege eine E-Mail für Benachrichtigungen.' });
     }
 
     const user = await req.prisma.user.update({
@@ -707,7 +707,7 @@ router.put('/me', auth, async (req, res) => {
       entityType: 'USER',
       entityId: user.id,
       entityLabel: user.name,
-      summary: `${user.name} hat Profildaten geaendert.`,
+      summary: `${user.name} hat Profildaten geändert.`,
       severity: 'NOTICE',
       before: summarizeChanges(
         pickFields(currentUser, ['name', 'email', 'notificationEmail', 'emailNotificationsEnabled', 'department']),
@@ -725,7 +725,7 @@ router.put('/me', auth, async (req, res) => {
 router.put('/me/password', auth, async (req, res) => {
   try {
     if (req.user.isGuest) {
-      return res.status(400).json({ message: 'Im Gastmodus kann kein Passwort geaendert werden' });
+      return res.status(400).json({ message: 'Im Gastmodus kann kein Passwort geändert werden' });
     }
 
     const { currentPassword, newPassword } = req.body;
@@ -758,13 +758,13 @@ router.put('/me/password', auth, async (req, res) => {
       entityType: 'USER',
       entityId: user.id,
       entityLabel: user.name,
-      summary: `${user.name} hat das Passwort geaendert.`,
+      summary: `${user.name} hat das Passwort geändert.`,
       severity: 'WARNING',
     });
 
-    res.json({ message: 'Passwort wurde geaendert' });
+    res.json({ message: 'Passwort wurde geändert' });
   } catch (error) {
-    res.status(500).json({ message: 'Passwort konnte nicht geaendert werden', error: error.message });
+    res.status(500).json({ message: 'Passwort konnte nicht geändert werden', error: error.message });
   }
 });
 

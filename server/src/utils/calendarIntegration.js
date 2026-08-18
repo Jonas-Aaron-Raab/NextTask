@@ -180,7 +180,7 @@ async function googleCalendarRequest({ path, accessToken, method = 'GET', body, 
 function formatGoogleAllDayDate(value) {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) {
-    throw new Error('Ungueltiges Faelligkeitsdatum fuer Kalender-Sync.');
+    throw new Error('Ungueltiges Faelligkeitsdatum für Kalender-Sync.');
   }
 
   return date.toISOString().slice(0, 10);
@@ -224,7 +224,7 @@ function buildCalendarEventResource(task) {
   const description = [
     `Projekt: ${task.project?.name || 'Ohne Projekt'}`,
     `Status: ${formatStatusLabel(task.status)}`,
-    `Prioritaet: ${formatPriorityLabel(task.priority)}`,
+    `Priorität: ${formatPriorityLabel(task.priority)}`,
     '',
     task.description || 'Keine Beschreibung hinterlegt.',
     '',
@@ -266,7 +266,7 @@ async function updateCalendarSyncError(prisma, userId, message) {
 
 async function getGoogleAccessTokenForUser(user) {
   if (!user?.calendarRefreshToken) {
-    throw new Error('Kalender ist fuer diesen Benutzer nicht verbunden.');
+    throw new Error('Kalender ist für diesen Benutzer nicht verbunden.');
   }
 
   return refreshGoogleAccessToken(decryptSecret(user.calendarRefreshToken));
@@ -457,11 +457,11 @@ async function syncUserCalendarTasks(prisma, userId) {
   });
 
   if (!user || !hasCalendarConnection(user)) {
-    throw new Error('Kalender ist fuer diesen Benutzer nicht verbunden.');
+    throw new Error('Kalender ist für diesen Benutzer nicht verbunden.');
   }
 
   if (!user.calendarSyncEnabled) {
-    throw new Error('Kalender-Sync ist fuer diesen Benutzer deaktiviert.');
+    throw new Error('Kalender-Sync ist für diesen Benutzer deaktiviert.');
   }
 
   const [assignedTasks, syncRecords] = await Promise.all([
