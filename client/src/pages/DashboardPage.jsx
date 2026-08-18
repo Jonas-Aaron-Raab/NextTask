@@ -19,6 +19,12 @@ const priorityWeight = {
   niedrig: 1,
 };
 
+const priorityStyles = {
+  hoch: 'bg-red-50 text-red-700',
+  mittel: 'bg-amber-50 text-amber-700',
+  niedrig: 'bg-emerald-50 text-emerald-700',
+};
+
 const statusMeta = {
   today: { label: 'Heute', tone: 'bg-[#c97a11]', track: 'bg-[#f7ead8]' },
   'in-progress': { label: 'In Arbeit', tone: 'bg-[#4875c8]', track: 'bg-[#e6eefc]' },
@@ -30,7 +36,7 @@ const departmentByAssignee = {
   'Lisa Wagner': 'Digitales Banking',
   'Markus Klein': 'Digitale Vertriebskanaele',
   'Anna Becker': 'Produkt und Compliance',
-  'Tom Becker': 'Qualitaetssicherung',
+  'Tom Becker': 'Qualitätssicherung',
   'Sarah Nguyen': 'Marketing und Content',
   'Elisabeth Bezverkha': 'Digitales Banking',
   'Nina Hoffmann': 'Kundenservice',
@@ -38,10 +44,10 @@ const departmentByAssignee = {
 
 const statusOrder = ['today', 'in-progress', 'review', 'blocked'];
 const deadlineMeta = [
-  { key: 'overdue', label: 'Ueberfaellig', tone: 'bg-[#b84758]', track: 'bg-[#fdecef]' },
+  { key: 'overdue', label: 'Überfällig', tone: 'bg-[#b84758]', track: 'bg-[#fdecef]' },
   { key: 'today', label: 'Heute', tone: 'bg-[#c97a11]', track: 'bg-[#f7ead8]' },
   { key: 'soon', label: 'Kurz davor', tone: 'bg-[#4875c8]', track: 'bg-[#e6eefc]' },
-  { key: 'later', label: 'Spaeter', tone: 'bg-slate-400', track: 'bg-slate-100' },
+  { key: 'later', label: 'Später', tone: 'bg-slate-400', track: 'bg-slate-100' },
 ];
 
 function sortByUrgency(left, right) {
@@ -58,6 +64,29 @@ function getTaskDepartment(task, departmentByProjectName) {
   return task.department || departmentByProjectName[task.project] || departmentByAssignee[task.assignee] || 'Ohne Abteilung';
 }
 
+function formatDashboardDate(dateValue) {
+  if (!dateValue) return 'Ohne Frist';
+  return new Intl.DateTimeFormat('de-DE', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(`${dateValue}T00:00:00`));
+}
+
+function getDynamicFallbackTasks() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return dashboardFallbackTasks.map((task) => {
+    const offsetByStatus = { blocked: -2, today: 0, review: 1, 'in-progress': 2 };
+    const dueDate = new Date(today);
+    dueDate.setDate(today.getDate() + (offsetByStatus[task.status] || 0));
+    const dueDateValue = dueDate.toISOString().slice(0, 10);
+
+    return { ...task, dueDateValue, dueDate: formatDashboardDate(dueDateValue) };
+  });
+}
+
 function normalizeApiTaskForDashboard(task) {
   const dueDateValue = toTaskDateValue(task.dueDate || task.endDate || task.startDate);
   const projectName = task.project?.name || task.project || 'Ohne Projekt';
@@ -69,7 +98,7 @@ function normalizeApiTaskForDashboard(task) {
     status: toDashboardStatus(task.status),
     project: projectName,
     priority: toDashboardPriority(task.priority),
-    dueDate: dueDateValue || 'Ohne Frist',
+    dueDate: formatDashboardDate(dueDateValue),
     dueDateValue,
     estimatedHours: task.estimatedHours ?? null,
     note: task.description || task.note || '',
@@ -142,6 +171,24 @@ function getDeadlineBucket(task) {
   return 'later';
 }
 
+function getDeadlineLabel(task) {
+  const daysUntilDue = getDaysUntilDue(task);
+  if (daysUntilDue === 0) return 'Heute';
+  return `${Math.abs(daysUntilDue)} ${Math.abs(daysUntilDue) === 1 ? 'Tag' : 'Tage'} überfällig`;
+}
+
+function getFocusDeadlineLabel(task) {
+  const daysUntilDue = getDaysUntilDue(task);
+  if (daysUntilDue === 0) return 'Heute fällig';
+  return `${Math.abs(daysUntilDue)} ${Math.abs(daysUntilDue) === 1 ? 'Tag' : 'Tage'} überfällig`;
+}
+
+function getUpcomingDeadlineLabel(task) {
+  const daysUntilDue = getDaysUntilDue(task);
+  if (daysUntilDue === 1) return 'Morgen';
+  return `In ${daysUntilDue} Tagen`;
+}
+
 function SectionHeader({ title, action }) {
   return (
     <div className="flex items-center justify-between gap-4">
@@ -196,7 +243,7 @@ export default function DashboardPage() {
   }, [user?.id]);
 
   const searchTerm = searchValue.trim().toLowerCase();
-  const dashboardTasks = apiTasks?.length ? apiTasks : currentAssignee === 'Mara Stein' ? dashboardFallbackTasks : [];
+  const dashboardTasks = apiTasks?.length ? apiTasks : currentAssignee === 'Mara Stein' ? getDynamicFallbackTasks() : [];
   const departmentByProjectName = useMemo(() => {
     return Object.fromEntries(
       initialProjects.map((project) => {
@@ -240,7 +287,9 @@ export default function DashboardPage() {
   }, [activeDepartmentScopes]);
 
   const focusTasks = useMemo(() => {
-    const baseTasks = [...openTasks].sort(sortByUrgency);
+    const baseTasks = openTasks
+      .filter((task) => getDaysUntilDue(task) <= 0)
+      .sort(sortByUrgency);
 
     if (!searchTerm) return baseTasks.slice(0, 4);
 
@@ -283,32 +332,25 @@ export default function DashboardPage() {
   }, [activeDepartmentScopes, searchTerm, visibleProjects]);
 
   const upcomingItems = useMemo(() => {
-    const taskDeadlines = openTasks.map((task) => ({
-      id: task.id,
-      title: task.title,
-      meta: task.project,
-      dueLabel: task.dueDate,
-      sortValue: taskDateTimestamp(task.dueDateValue || task.dueDate),
-      type: 'Aufgabe',
-      path: '/my-tasks',
-    }));
-
-    const projectDeadlines = visibleProjects.map((project) => ({
-      id: project.id,
-      title: project.name,
-      meta: project.owner,
-      dueLabel: project.dueDate,
-      sortValue: taskDateTimestamp(project.dueDate),
-      type: 'Projekt',
-      path: '/projects',
-    }));
-
-    const combined = [...taskDeadlines, ...projectDeadlines].sort((left, right) => left.sortValue - right.sortValue);
-
-    if (!searchTerm) return combined.slice(0, 5);
-
-    return combined.filter((item) => [item.title, item.meta, item.type].join(' ').toLowerCase().includes(searchTerm));
-  }, [openTasks, searchTerm, visibleProjects]);
+    return openTasks
+      .filter((task) => {
+        const daysUntilDue = getDaysUntilDue(task);
+        return daysUntilDue >= 1 && daysUntilDue <= 7;
+      })
+      .map((task) => ({
+        id: task.id,
+        title: task.title,
+        meta: task.project,
+        dueLabel: getUpcomingDeadlineLabel(task),
+        sortValue: taskDateTimestamp(task.dueDateValue || task.dueDate),
+        type: 'Aufgabe',
+        task,
+        path: `/my-tasks?taskId=${encodeURIComponent(task.id)}`,
+      }))
+      .sort((left, right) => left.sortValue - right.sortValue)
+      .filter((item) => !searchTerm || [item.title, item.meta, item.type].join(' ').toLowerCase().includes(searchTerm))
+      .slice(0, 5);
+  }, [openTasks, searchTerm]);
 
   const searchSuggestions = useMemo(() => {
     if (!searchTerm) return [];
@@ -383,7 +425,7 @@ export default function DashboardPage() {
   }, [personalOpenTasks, workloadUnit]);
 
   const dashboardTabs = [
-    { id: 'overview', label: 'Uebersicht', icon: LayoutDashboard },
+    { id: 'overview', label: 'Übersicht', icon: LayoutDashboard },
     { id: 'focus', label: 'Heute im Fokus', count: focusTasks.length, icon: CheckSquare },
     { id: 'attention', label: 'Aufmerksamkeit', count: attentionItems.length, icon: CircleAlert },
     { id: 'departments', label: 'Abteilungen', count: departmentCards.length, icon: Building2 },
@@ -441,7 +483,7 @@ export default function DashboardPage() {
         <section className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Uebersicht</p>
+              <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Übersicht</p>
               <h2 className="mt-2 text-[1.9rem] font-black tracking-tight text-slate-950">
                 {activeDepartmentLabel === 'Alle Abteilungen' ? 'Aktueller Workspace-Stand' : activeDepartmentLabel}
               </h2>
@@ -549,26 +591,25 @@ export default function DashboardPage() {
                 <button
                   key={task.id}
                   type="button"
-                  onClick={() => navigate('/my-tasks')}
+                  onClick={() => navigate(`/my-tasks?taskId=${encodeURIComponent(task.id)}`, { state: { dashboardTask: task } })}
                   className="flex w-full items-start justify-between gap-4 rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4 text-left transition hover:border-[#eab7c2] hover:bg-white"
                 >
                   <div className="min-w-0">
                     <p className="text-[1rem] font-bold text-slate-950">{task.title}</p>
                     <p className="mt-1 text-sm font-semibold text-slate-400">{task.project}</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">{task.note}</p>
                   </div>
                   <div className="flex flex-none flex-col items-end gap-2">
-                    <span className="rounded-full bg-[#fff5f7] px-3 py-1 text-xs font-semibold text-[#b84758]">
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${priorityStyles[task.priority] || priorityStyles.mittel}`}>
                       {task.priority}
                     </span>
-                    <span className="text-sm font-semibold text-slate-500">{task.dueDate}</span>
+                    <span className="text-sm font-semibold text-slate-500">{getFocusDeadlineLabel(task)}</span>
                   </div>
                 </button>
               ))}
 
               {!focusTasks.length ? (
                 <div className="rounded-[22px] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm font-medium text-slate-400">
-                  Keine Fokus-Aufgaben fuer den aktuellen Suchbegriff gefunden.
+                  Keine Fokus-Aufgaben für den aktuellen Suchbegriff gefunden.
                 </div>
               ) : null}
             </div>
@@ -577,13 +618,13 @@ export default function DashboardPage() {
 
             {activeDashboardTab === 'attention' ? (
               <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
-            <SectionHeader title="Aufmerksamkeit noetig" />
+            <SectionHeader title="Aufmerksamkeit nötig" />
             <div className="mt-5 space-y-3">
               {attentionItems.map((task) => (
                 <button
                   key={task.id}
                   type="button"
-                  onClick={() => navigate('/my-tasks')}
+                  onClick={() => navigate(`/my-tasks?taskId=${encodeURIComponent(task.id)}`, { state: { dashboardTask: task } })}
                   className="flex w-full items-start gap-3 rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4 text-left transition hover:border-[#eab7c2] hover:bg-white"
                 >
                   <span className="mt-0.5 inline-flex h-10 w-10 flex-none items-center justify-center rounded-2xl bg-[#fff1f3] text-[#b84758]">
@@ -592,8 +633,10 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <p className="text-[1rem] font-bold text-slate-950">{task.title}</p>
                     <p className="mt-1 text-sm font-semibold text-slate-400">{task.project}</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">{task.note}</p>
                   </div>
+                  <span className={`ml-auto rounded-full px-3 py-1 text-xs font-semibold ${priorityStyles[task.priority] || priorityStyles.mittel}`}>
+                    {task.priority}
+                  </span>
                 </button>
               ))}
 
@@ -649,7 +692,7 @@ export default function DashboardPage() {
                   <div className="mt-4 flex items-center justify-between text-sm font-semibold text-slate-500">
                     <span>{department.reviewCount} in Review</span>
                     <span className="inline-flex items-center gap-1 text-[#b84758]">
-                      Bereich oeffnen
+                      Bereich öffnen
                       <ArrowRight className="h-4 w-4" />
                     </span>
                   </div>
@@ -667,20 +710,17 @@ export default function DashboardPage() {
 
             {activeDashboardTab === 'deadlines' ? (
               <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
-            <SectionHeader title="Naechste Fristen" />
+            <SectionHeader title="Nächste Fristen" />
             <div className="mt-5 space-y-3">
               {upcomingItems.map((item) => (
                 <button
                   key={`${item.type}-${item.id}`}
                   type="button"
-                  onClick={() => navigate(item.path)}
+                  onClick={() => navigate(item.path, { state: { dashboardTask: item.task } })}
                   className="flex w-full items-center justify-between gap-4 rounded-[22px] border border-slate-200 bg-[#fcfcfd] px-4 py-4 text-left transition hover:border-[#eab7c2] hover:bg-white"
                 >
                   <div className="min-w-0">
                     <p className="text-[1rem] font-bold text-slate-950">{item.title}</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-400">
-                      {item.type} - {item.meta}
-                    </p>
                   </div>
                   <div className="flex flex-none items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-600">
                     <CalendarClock className="h-4 w-4" />

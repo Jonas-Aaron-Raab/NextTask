@@ -21,7 +21,8 @@ import {
   X,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
-import { initialTasks, taskProjects as initialProjects } from '../data/taskFixtures';
+import api from '../api/axios';
+import { dashboardFallbackTasks, initialTasks, taskProjects as initialProjects } from '../data/taskFixtures';
 import { formatEffort, getEffortHoursFromInput, getEffortInputValue } from '../utils/effort';
 import { getStoredTaskMarkers, getTaskMarker } from '../utils/taskMarkers';
 
@@ -60,7 +61,7 @@ const teamProfiles = {
   'Tom Becker': {
     email: 'tom.becker@sparkasse-nexttask.de',
     role: 'QA Manager',
-    department: 'Qualitaetssicherung',
+    department: 'Qualitätssicherung',
   },
   'Sarah Nguyen': {
     email: 'sarah.nguyen@sparkasse-nexttask.de',
@@ -74,7 +75,7 @@ const controlFeed = [
     taskId: 'my-task-5',
     title: 'Vier-Augen-Freigabe offen',
     meta: 'CTRL-PAY-771 - Shop Optimierung',
-    note: 'Vor Abschluss fehlt noch die QA- und Product-Owner-Freigabe fuer den Checkout-Testlauf.',
+    note: 'Vor Abschluss fehlt noch die QA- und Product-Owner-Freigabe für den Checkout-Testlauf.',
   },
   {
     taskId: 'my-task-7',
@@ -86,7 +87,7 @@ const controlFeed = [
     taskId: 'my-task-1',
     title: 'Evidenznachweis nachreichen',
     meta: 'CTRL-WEB-204 - Website Relaunch',
-    note: 'Word-Freigabe und Screenshot-Nachweis muessen revisionssicher am Ticket verknuepft werden.',
+    note: 'Word-Freigabe und Screenshot-Nachweis müssen revisionssicher am Ticket verknüpft werden.',
   },
 ];
 
@@ -136,7 +137,7 @@ const performancePresets = {
     label: 'Monat',
     progress: 79,
     caption: 'Monatstrend',
-    summary: 'Leistung stabil ueber Teamziel',
+    summary: 'Leistung stabil über Teamziel',
     metrics: [
       { type: 'done', value: '37' },
       { type: 'progress', value: '9' },
@@ -148,7 +149,7 @@ const performancePresets = {
     label: 'Jahr',
     progress: 81,
     caption: 'Jahreswert',
-    summary: 'Audit-faehige Tickets sauber dokumentiert',
+    summary: 'Audit-fähige Tickets sauber dokumentiert',
     metrics: [
       { type: 'done', value: '412' },
       { type: 'progress', value: '88' },
@@ -167,6 +168,83 @@ function formatDateLabel(value) {
   }).format(new Date(`${value}T00:00:00`));
 }
 
+const apiStatusMap = {
+  OPEN: 'today',
+  IN_PROGRESS: 'in-progress',
+  QA: 'review',
+  BLOCKED: 'blocked',
+  DONE: 'done',
+};
+
+const apiPriorityMap = {
+  LOW: 'niedrig',
+  MEDIUM: 'mittel',
+  HIGH: 'hoch',
+  URGENT: 'hoch',
+};
+
+function normalizeApiTaskForMyTasks(task) {
+  const dueDateValue = task.dueDate || task.endDate || task.startDate
+    ? String(task.dueDate || task.endDate || task.startDate).slice(0, 10)
+    : '';
+  const project = task.project?.name || task.project || 'Ohne Projekt';
+  const assignee = task.assignee?.name || task.assigneeName || '';
+
+  return {
+    id: task.id,
+    source: 'backend',
+    title: task.title,
+    project,
+    status: apiStatusMap[task.status] || 'today',
+    priority: apiPriorityMap[task.priority] || 'mittel',
+    dueDateValue,
+    dueDate: dueDateValue ? formatDateLabel(dueDateValue) : 'Ohne Frist',
+    estimatedHours: task.estimatedHours ?? 0,
+    checklist: task.checklist || '0/0 erledigt',
+    progress: task.progress ?? 0,
+    assignee,
+    description: task.description || '',
+    note: '',
+    compliance: {
+      classification: 'Intern',
+      risk: 'Niedrig',
+      controlId: task.project?.key ? `${task.project.key}-${String(task.id).slice(-4)}` : task.id,
+      approval: 'Noch keine Freigabe hinterlegt',
+      evidence: 'Noch kein Evidenznachweis hinterlegt',
+    },
+    markerId: task.markerId || '',
+    tags: [task.status, task.priority].filter(Boolean),
+    linkedPeople: assignee ? [assignee] : [],
+    attachments: [],
+    comments: [],
+    auditTrail: [`${formatDateLabel(new Date().toISOString().slice(0, 10))}: Aufgabe aus dem Backend geladen.`],
+    assignedBy: { name: 'NextTask', initials: 'NT', tone: 'from-slate-200 to-slate-300' },
+  };
+}
+
+function normalizeFallbackTaskForMyTasks(task) {
+  return {
+    ...task,
+    source: task.source || 'local',
+    compliance: task.compliance || {
+      classification: 'Intern',
+      risk: 'Niedrig',
+      controlId: task.id,
+      approval: 'Noch keine Freigabe hinterlegt',
+      evidence: 'Noch kein Evidenznachweis hinterlegt',
+    },
+    description: task.description || task.note || '',
+    checklist: task.checklist || '0/0 erledigt',
+    progress: task.progress ?? 0,
+    attachments: task.attachments || [],
+    comments: task.comments || [],
+    linkedPeople: task.linkedPeople || [],
+    tags: task.tags || [],
+    auditTrail: task.auditTrail || [],
+    assignedBy: task.assignedBy || { name: 'NextTask', initials: 'NT', tone: 'from-slate-200 to-slate-300' },
+  };
+}
+
 function getInitials(name) {
   return name
     .split(' ')
@@ -177,6 +255,7 @@ function getInitials(name) {
 }
 
 function parseChecklistStats(checklist) {
+  if (typeof checklist !== 'string') return { completed: '0', total: '0' };
   const match = checklist.match(/(\d+)\/(\d+)/);
   if (!match) return { completed: '0', total: '0' };
   return { completed: match[1], total: match[2] };
@@ -421,9 +500,9 @@ function SummaryStrip({ stats, controlCount, performanceValue, onOpenStat, onOpe
         onClick={onOpenPerformance}
         className="rounded-2xl border border-slate-300 bg-white p-4 text-left shadow-[0_12px_32px_rgba(136,54,66,0.07)] transition hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-[0_16px_34px_rgba(136,54,66,0.12)]"
       >
-        <p className="text-[13px] font-bold text-slate-900">Leistungsueberblick</p>
+        <p className="text-[13px] font-bold text-slate-900">Leistungsüberblick</p>
         <p className="mt-2 text-[30px] font-extrabold leading-none text-slate-950">{performanceValue}%</p>
-        <p className="mt-1 text-[11px] font-semibold text-[#8b5860]">heutiger Fortschritt</p>
+        <p className="mt-1 text-[11px] font-semibold text-[#8b5860]">erledigte Aufgaben</p>
       </button>
     </div>
   );
@@ -482,7 +561,7 @@ function ControlsPopup({ items, tasks, onClose, onOpenTask }) {
                   }}
                   className="mt-3 rounded-xl bg-slate-900 px-3 py-2 text-sm font-bold text-white transition hover:bg-slate-800"
                 >
-                  Ticket oeffnen
+                  Ticket öffnen
                 </button>
               ) : null}
             </div>
@@ -629,7 +708,7 @@ function CreateTaskModal({ projects, form, taskMarkers, onChange, onClose, onSub
             </label>
 
             <label className="block text-sm font-bold text-slate-700">
-              Zustaendig
+              Zuständig
               <select
                 value={form.assignee}
                 onChange={(event) => onChange('assignee', event.target.value)}
@@ -666,7 +745,7 @@ function CreateTaskModal({ projects, form, taskMarkers, onChange, onClose, onSub
 
 function CreateProjectModal({ form, onChange, onClose, onSubmit }) {
   return (
-    <PopupShell title="Neues Projekt" subtitle="Lege ein eigenes Projekt oder ein Projekt fuer deine Abteilung strukturiert an." onClose={onClose} maxWidth="max-w-3xl">
+    <PopupShell title="Neues Projekt" subtitle="Lege ein eigenes Projekt oder ein Projekt für deine Abteilung strukturiert an." onClose={onClose} maxWidth="max-w-3xl">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
         <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <label className="block text-sm font-bold text-slate-700">
@@ -697,7 +776,7 @@ function CreateProjectModal({ form, onChange, onClose, onSubmit }) {
               onChange={(event) => onChange('scope', event.target.value)}
               className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
             >
-              <option value="persoenlich">Persoenlich</option>
+              <option value="persönlich">Persönlich</option>
               <option value="abteilung">Abteilung</option>
             </select>
           </label>
@@ -994,7 +1073,7 @@ function TaskDetailDrawer({
                   </label>
 
                   <label className="block text-sm font-bold text-slate-700">
-                    Zustaendige Person
+                    Zuständige Person
                     <select
                       value={form.assignee}
                       onChange={(event) => onFormChange('assignee', event.target.value)}
@@ -1054,7 +1133,7 @@ function TaskDetailDrawer({
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm font-medium text-slate-500">Noch keine Evidenzdatei verknuepft.</p>
+                    <p className="text-sm font-medium text-slate-500">Noch keine Evidenzdatei verknüpft.</p>
                   )}
                 </div>
 
@@ -1084,7 +1163,7 @@ function TaskDetailDrawer({
                   </select>
 
                   <label className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)]">
-                    Datei verknuepfen
+                    Datei verknüpfen
                     <input
                       type="file"
                       multiple
@@ -1130,7 +1209,7 @@ function TaskDetailDrawer({
                   <input
                     value={commentDraft}
                     onChange={(event) => onCommentChange(event.target.value)}
-                    placeholder="Kommentar oder Rueckfrage eingeben"
+                    placeholder="Kommentar oder Rückfrage eingeben"
                     className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
                   />
                   <button
@@ -1358,13 +1437,14 @@ export default function MyTasksPage() {
   const [createProjectForm, setCreateProjectForm] = useState({
     name: '',
     description: '',
-    scope: 'persoenlich',
+    scope: 'persönlich',
     department: 'Digitales Banking',
     owner: 'Elisabeth Bezverkha',
   });
   const routeTaskId = searchParams.get('taskId');
   const routeSearch = searchParams.get('search');
   const taskFocusToken = location.state?.focusTaskAt;
+  const routedDashboardTask = location.state?.dashboardTask;
 
   const normalizedSearch = searchValue.trim().toLowerCase();
   const visibleTasks = useMemo(
@@ -1382,6 +1462,11 @@ export default function MyTasksPage() {
     () => columnOrder.map((columnId) => columns.find((column) => column.id === columnId)).filter(Boolean),
     [columnOrder],
   );
+  const completionRate = useMemo(() => {
+    if (!tasks.length) return 0;
+    const completedTasks = tasks.filter((task) => task.status === 'done').length;
+    return Math.round((completedTasks / tasks.length) * 100);
+  }, [tasks]);
 
   const statGroups = [
     {
@@ -1396,9 +1481,9 @@ export default function MyTasksPage() {
     },
     {
       id: 'today',
-      title: 'Heute faellig',
+      title: 'Heute fällig',
       value: tasks.filter((task) => task.status === 'today').length,
-      subtitle: 'sofort pruefen',
+      subtitle: 'sofort prüfen',
       icon: CalendarDays,
       iconTone: 'bg-white/85 text-[#c26a34]',
       cardTone: 'border-slate-300 bg-[#fff7ee]',
@@ -1418,7 +1503,7 @@ export default function MyTasksPage() {
       id: 'blocked',
       title: 'Blockiert',
       value: tasks.filter((task) => task.status === 'blocked').length,
-      subtitle: 'muss geloest werden',
+      subtitle: 'muss gelöst werden',
       icon: CircleAlert,
       iconTone: 'bg-white/85 text-[#c24452]',
       cardTone: 'border-slate-300 bg-[#fff1f4]',
@@ -1452,11 +1537,11 @@ export default function MyTasksPage() {
       estimatedHours: task.estimatedHours ?? '',
       assignee: task.assignee,
       description: task.description || '',
-      classification: task.compliance.classification,
-      risk: task.compliance.risk,
-      controlId: task.compliance.controlId,
-      approval: task.compliance.approval,
-      evidence: task.compliance.evidence,
+      classification: task.compliance?.classification || 'Intern',
+      risk: task.compliance?.risk || 'Niedrig',
+      controlId: task.compliance?.controlId || task.id,
+      approval: task.compliance?.approval || 'Noch keine Freigabe hinterlegt',
+      evidence: task.compliance?.evidence || 'Noch kein Evidenznachweis hinterlegt',
       markerId: task.markerId || '',
     });
     setCommentDraft('');
@@ -1476,6 +1561,47 @@ export default function MyTasksPage() {
       setSearchValue('');
     }
   }, [routeSearch, routeTaskId]);
+
+  useEffect(() => {
+    if (!routeTaskId) return undefined;
+
+    const existingTask = tasks.find((task) => task.id === routeTaskId);
+
+    if (routedDashboardTask?.id === routeTaskId) {
+      if (!existingTask) {
+        setTasks((current) => [normalizeFallbackTaskForMyTasks(routedDashboardTask), ...current]);
+      }
+      return undefined;
+    }
+
+    if (existingTask) return undefined;
+
+    const fallbackTask = dashboardFallbackTasks.find((task) => task.id === routeTaskId);
+    if (fallbackTask) {
+      setTasks((current) => [normalizeFallbackTaskForMyTasks(fallbackTask), ...current]);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    api
+      .get('/calendar/tasks', { params: { taskId: routeTaskId } })
+      .then(({ data }) => {
+        const apiTask = Array.isArray(data) ? data[0] : null;
+        if (cancelled || !apiTask) return;
+
+        setTasks((current) =>
+          current.some((task) => task.id === apiTask.id)
+            ? current.map((task) => (task.id === apiTask.id ? normalizeApiTaskForMyTasks(apiTask) : task))
+            : [normalizeApiTaskForMyTasks(apiTask), ...current],
+        );
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [routeTaskId, routedDashboardTask, tasks]);
 
   useEffect(() => {
     if (!routeTaskId) return;
@@ -1617,7 +1743,7 @@ export default function MyTasksPage() {
           owner: 'Elisabeth Bezverkha',
         })),
       ],
-      auditTrail: [`${formatDateLabel('2026-05-16')}: ${nextFiles.length} Datei(en) als Evidenz verknuepft.`, ...task.auditTrail],
+      auditTrail: [`${formatDateLabel('2026-05-16')}: ${nextFiles.length} Datei(en) als Evidenz verknüpft.`, ...task.auditTrail],
     }));
   };
 
@@ -1660,7 +1786,7 @@ export default function MyTasksPage() {
       setCreateProjectForm({
         name: '',
         description: '',
-        scope: 'persoenlich',
+        scope: 'persönlich',
         department: 'Digitales Banking',
         owner: 'Elisabeth Bezverkha',
       });
@@ -1757,7 +1883,7 @@ export default function MyTasksPage() {
         <SummaryStrip
           stats={statGroups}
           controlCount={controlFeed.length}
-          performanceValue={performancePresets.day.progress}
+          performanceValue={completionRate}
           onOpenStat={(stat) => setActivePopup({ type: 'stat', statId: stat.id })}
           onOpenControls={() => setActivePopup({ type: 'controls' })}
           onOpenPerformance={() => setActivePopup({ type: 'performance' })}
@@ -1803,7 +1929,7 @@ export default function MyTasksPage() {
       ) : null}
       {activePopup?.type === 'performance' ? (
         <PopupShell
-          title="Leistungsueberblick"
+          title="Leistungsüberblick"
           subtitle="Tag, Woche, Monat und Jahr direkt vergleichen"
           onClose={() => setActivePopup(null)}
           maxWidth="max-w-2xl"
