@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Building2, CalendarClock, CheckSquare, CircleAlert, LayoutDashboard } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
+import { effortUnitOptions, formatEffort, sumEffortHours } from '../utils/effort';
 import { initialTasks } from './MyTasksPage';
 import { initialBacklogTasks, initialDepartments, initialProjects } from './ProjectsPage';
 
@@ -20,17 +21,6 @@ const statusMeta = {
   'in-progress': { label: 'In Arbeit', tone: 'bg-[#4875c8]', track: 'bg-[#e6eefc]' },
   review: { label: 'Review', tone: 'bg-[#7c59dc]', track: 'bg-[#efe9ff]' },
   blocked: { label: 'Blockiert', tone: 'bg-[#b84758]', track: 'bg-[#fdecef]' },
-};
-
-const defaultTaskLimit = 5;
-const taskLimitsByPerson = {
-  'Lisa Wagner': 6,
-  'Markus Klein': 5,
-  'Anna Becker': 5,
-  'Tom Becker': 6,
-  'Sarah Nguyen': 5,
-  'Elisabeth Bezverkha': 4,
-  'Nina Hoffmann': 5,
 };
 
 const departmentByAssignee = {
@@ -97,10 +87,6 @@ function sortByUrgency(left, right) {
   return left.title.localeCompare(right.title, 'de');
 }
 
-function getTaskLimit(person) {
-  return taskLimitsByPerson[person] || defaultTaskLimit;
-}
-
 function getTaskDepartment(task, departmentByProjectName) {
   return task.department || departmentByProjectName[task.project] || departmentByAssignee[task.assignee] || 'Ohne Abteilung';
 }
@@ -137,6 +123,7 @@ export default function DashboardPage() {
   const [searchValue, setSearchValue] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('Alle Abteilungen');
   const [activeDashboardTab, setActiveDashboardTab] = useState('overview');
+  const [workloadUnit, setWorkloadUnit] = useState('hours');
   const assigneeNames = useMemo(() => [...new Set(initialTasks.map((task) => task.assignee).filter(Boolean))], []);
   const currentAssignee = assigneeNames.includes(user?.name) ? user.name : assigneeNames[0] || user?.name || 'Teammitglied';
 
@@ -288,45 +275,42 @@ export default function DashboardPage() {
   }, [departmentCards, openTasks, searchTerm, visibleProjects]);
 
   const statusOverview = useMemo(() => {
-    const total = personalOpenTasks.length || 1;
+    const totalHours = sumEffortHours(personalOpenTasks) || 1;
     const counts = statusOrder.map((key) => ({
       key,
       ...statusMeta[key],
-      value: personalOpenTasks.filter((task) => task.status === key).length,
+      value: sumEffortHours(personalOpenTasks.filter((task) => task.status === key)),
     }));
 
     return counts.map((item) => ({
       ...item,
-      percent: Math.round((item.value / total) * 100),
+      displayValue: formatEffort(item.value, workloadUnit),
+      percent: Math.round((item.value / totalHours) * 100),
     }));
-  }, [personalOpenTasks]);
+  }, [personalOpenTasks, workloadUnit]);
 
   const workload = useMemo(() => {
-    const limit = getTaskLimit(currentAssignee);
-    const assignedCount = personalOpenTasks.length;
-    const freeSlots = Math.max(limit - assignedCount, 0);
-    const percent = limit ? Math.min(Math.round((assignedCount / limit) * 100), 100) : 0;
+    const assignedHours = sumEffortHours(personalOpenTasks);
 
     return {
-      assignedCount,
-      freeSlots,
-      limit,
-      percent,
-      label: percent >= 85 ? 'hoch' : percent >= 55 ? 'normal' : 'ruhig',
+      assignedHours,
+      displayValue: formatEffort(assignedHours, workloadUnit),
+      secondaryValue: formatEffort(assignedHours, workloadUnit === 'hours' ? 'days' : 'hours'),
     };
-  }, [currentAssignee, personalOpenTasks]);
+  }, [personalOpenTasks, workloadUnit]);
 
   const deadlineOverview = useMemo(() => {
-    const total = personalOpenTasks.length || 1;
+    const totalHours = sumEffortHours(personalOpenTasks) || 1;
     return deadlineMeta.map((item) => {
-      const value = personalOpenTasks.filter((task) => getDeadlineBucket(task) === item.key).length;
+      const value = sumEffortHours(personalOpenTasks.filter((task) => getDeadlineBucket(task) === item.key));
       return {
         ...item,
         value,
-        percent: Math.round((value / total) * 100),
+        displayValue: formatEffort(value, workloadUnit),
+        percent: Math.round((value / totalHours) * 100),
       };
     });
-  }, [personalOpenTasks]);
+  }, [personalOpenTasks, workloadUnit]);
 
   const dashboardTabs = [
     { id: 'overview', label: 'Uebersicht', icon: LayoutDashboard },
@@ -404,7 +388,7 @@ export default function DashboardPage() {
                 </select>
               </label>
               <span className="inline-flex h-11 items-center rounded-xl bg-[#fff5f7] px-4 text-sm font-bold text-[#b84758]">
-                {workload.percent}% Auslastung
+                {workload.displayValue} gebunden
               </span>
             </div>
           </div>
@@ -414,36 +398,32 @@ export default function DashboardPage() {
               <p className="text-[0.72rem] font-bold uppercase tracking-[0.24em] text-slate-400">Meine Auslastung</p>
               <div className="mt-5 flex flex-col items-center text-center">
                 <div
-                  className="relative flex h-36 w-36 items-center justify-center rounded-full"
-                  style={{
-                    background: `conic-gradient(#b84758 ${workload.percent * 3.6}deg, #f7dfe4 0deg)`,
-                  }}
-                  aria-label={`${workload.assignedCount} von ${workload.limit} Aufgaben belegt`}
+                  className="relative flex h-36 w-36 items-center justify-center rounded-full border-[18px] border-[#b84758] bg-white shadow-inner"
+                  aria-label={`${workload.displayValue} gebundene Zeit`}
                 >
-                  <div className="flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full bg-white shadow-inner">
-                    <p className="text-3xl font-black tracking-tight text-slate-950">
-                      {workload.assignedCount}/{workload.limit}
-                    </p>
-                    <p className="text-xs font-bold text-slate-400">Aufgabenlimit</p>
+                  <div className="flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full bg-white">
+                    <p className="text-2xl font-black tracking-tight text-slate-950">{workload.displayValue}</p>
+                    <p className="text-xs font-bold text-slate-400">beansprucht</p>
                   </div>
                 </div>
-                <p className="mt-4 text-lg font-black text-slate-950">{workload.percent}% ausgelastet</p>
+                <p className="mt-4 text-lg font-black text-slate-950">{workload.secondaryValue}</p>
                 <p className="mt-1 text-sm font-semibold text-slate-500">{currentAssignee}</p>
               </div>
-              <div className="mt-5 grid grid-cols-2 gap-2 text-left">
-                <div className="rounded-2xl bg-white px-3 py-3">
-                  <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-slate-400">zugeteilt</p>
-                  <p className="mt-1 text-lg font-black text-slate-950">{workload.assignedCount}</p>
-                </div>
-                <div className="rounded-2xl bg-white px-3 py-3">
-                  <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-slate-400">frei</p>
-                  <p className="mt-1 text-lg font-black text-slate-950">{workload.freeSlots}</p>
-                </div>
-              </div>
-              <div className="mt-4 flex justify-between text-xs font-semibold text-slate-400">
-                <span className={workload.label === 'ruhig' ? 'text-emerald-600' : ''}>ruhig</span>
-                <span className={workload.label === 'normal' ? 'text-amber-600' : ''}>normal</span>
-                <span className={workload.label === 'hoch' ? 'text-[#b84758]' : ''}>hoch</span>
+              <div className="mt-5 grid grid-cols-2 gap-2 rounded-2xl bg-white p-1">
+                {effortUnitOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setWorkloadUnit(option.value)}
+                    className={`h-10 rounded-xl text-sm font-extrabold transition ${
+                      workloadUnit === option.value
+                        ? 'bg-[#b84758] text-white shadow-[0_10px_22px_rgba(184,71,88,0.18)]'
+                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -456,12 +436,12 @@ export default function DashboardPage() {
                       <div key={item.key} className="space-y-2">
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-bold text-slate-700">{item.label}</p>
-                          <span className="text-sm font-semibold text-slate-500">{item.value}</span>
+                          <span className="text-sm font-semibold text-slate-500">{item.displayValue}</span>
                         </div>
                         <div className={`h-3 overflow-hidden rounded-full ${item.track}`}>
                           <div className={`h-full rounded-full ${item.tone}`} style={{ width: `${item.percent}%` }} />
                         </div>
-                        <p className="text-xs font-semibold text-slate-400">{item.percent}% deiner offenen Aufgaben</p>
+                        <p className="text-xs font-semibold text-slate-400">{item.percent}% deiner offenen Zeit</p>
                       </div>
                     ))}
                   </div>
@@ -474,12 +454,12 @@ export default function DashboardPage() {
                       <div key={item.key} className="space-y-2">
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-sm font-bold text-slate-700">{item.label}</p>
-                          <span className="text-sm font-semibold text-slate-500">{item.value}</span>
+                          <span className="text-sm font-semibold text-slate-500">{item.displayValue}</span>
                         </div>
                         <div className={`h-3 overflow-hidden rounded-full ${item.track}`}>
                           <div className={`h-full rounded-full ${item.tone}`} style={{ width: `${item.percent}%` }} />
                         </div>
-                        <p className="text-xs font-semibold text-slate-400">{item.percent}% deiner offenen Aufgaben</p>
+                        <p className="text-xs font-semibold text-slate-400">{item.percent}% deiner offenen Zeit</p>
                       </div>
                     ))}
                   </div>
