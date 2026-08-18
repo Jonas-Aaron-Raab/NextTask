@@ -256,6 +256,7 @@ export default function SettingsPage() {
   const [calendarStatus, setCalendarStatus] = useState('');
   const [calendarError, setCalendarError] = useState('');
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(true);
+  const [securitySettingsOpen, setSecuritySettingsOpen] = useState(true);
   const [appearanceForm, setAppearanceForm] = useState(() => getStoredAppearanceSettings());
   const [appearanceOpen, setAppearanceOpen] = useState(true);
   const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
@@ -1148,10 +1149,7 @@ export default function SettingsPage() {
                 </span>
                 <span className="min-w-0">
                   <span className="block text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Profil</span>
-                  <span className="mt-1 block text-lg font-extrabold text-slate-950">Profil & Sicherheit</span>
-                  <span className="mt-1 block text-sm font-medium text-slate-500">
-                    Persönliche Daten, Passwort und Zwei-Faktor an einem Ort.
-                  </span>
+                  <span className="mt-1 block text-lg font-extrabold text-slate-950">Profil</span>
                 </span>
               </span>
               <span className="inline-flex items-center gap-3">
@@ -1200,12 +1198,11 @@ export default function SettingsPage() {
                   </div>
                 ) : null}
 
-                <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+                <div className="grid gap-5">
             <form onSubmit={handleProfileSubmit} className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-4">
                 <div>
                   <h2 className="text-lg font-extrabold text-slate-950">Persönliche Daten</h2>
-                  <p className="mt-1 text-sm font-medium text-slate-500">Diese Daten werden in Aufgaben, Kommentaren und im Workspace angezeigt.</p>
                 </div>
                 {profileStatus ? (
                   <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700">
@@ -1415,9 +1412,6 @@ export default function SettingsPage() {
                             ? formatAppearanceDate(calendarConnection.calendarLastSyncedAt, appearanceForm.dateFormat)
                             : 'Noch kein Sync'}
                         </p>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">
-                          Synchronisiert werden aktuell nur Tickets mit echter Frist.
-                        </p>
                       </div>
                     </div>
 
@@ -1481,12 +1475,36 @@ export default function SettingsPage() {
                 </button>
               </div>
             </form>
+                </div>
+              </div>
+            ) : null}
+          </section>
 
-            <div className="space-y-5">
-            <form onSubmit={handlePasswordSubmit} className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+          <section
+            id="settings-security"
+            className="scroll-mt-4 rounded-[30px] border border-slate-300 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.05)]"
+          >
+            <button
+              type="button"
+              onClick={() => setSecuritySettingsOpen((current) => !current)}
+              className="flex w-full flex-wrap items-center justify-between gap-4 p-5 text-left"
+            >
+              <span className="flex min-w-0 items-center gap-4">
+                <span className="inline-flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-[#fff1f3] text-[#b84758]">
+                  <ShieldCheck className="h-6 w-6" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Sicherheit</span>
+                  <span className="mt-1 block text-lg font-extrabold text-slate-950">Sicherheit</span>
+                </span>
+              </span>
+              <ChevronDown className={`h-5 w-5 text-slate-400 transition ${securitySettingsOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {securitySettingsOpen ? (
+              <div className="space-y-5 border-t border-slate-200 p-5">
+            <form onSubmit={handlePasswordSubmit} className="rounded-[24px] border border-slate-200 bg-[#fcfdff] p-4">
               <div className="border-b border-slate-200 pb-4">
                 <h2 className="text-lg font-extrabold text-slate-950">Passwort</h2>
-                <p className="mt-1 text-sm font-medium text-slate-500">Ändere dein Passwort für den direkten Login.</p>
               </div>
 
               {passwordStatus ? (
@@ -1681,11 +1699,9 @@ export default function SettingsPage() {
                 </div>
               ) : null}
             </section>
-            </div>
-          </div>
-              </div>
-            ) : null}
-          </section>
+                </div>
+              ) : null}
+            </section>
         </div>
       </div>
     </AppShell>
