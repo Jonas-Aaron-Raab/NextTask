@@ -119,7 +119,7 @@ export default function LoginPage() {
         });
         completeLogin(data);
       } catch (err) {
-        setError(err.response?.data?.message || '2FA-Code konnte nicht geprueft werden');
+        setError(err.response?.data?.message || '2FA-Code konnte nicht geprüft werden');
       } finally {
         setIsSubmitting(false);
       }
@@ -182,7 +182,7 @@ export default function LoginPage() {
               disabled={isSubmitting}
               className="w-full rounded bg-blue-600 p-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? 'Pruefe ...' : 'Code bestaetigen'}
+              {isSubmitting ? 'Prüfe ...' : 'Code bestätigen'}
             </button>
             <button type="button" onClick={handleResetLogin} className="mt-3 w-full rounded border p-3 font-semibold text-slate-700">
               Zurueck
@@ -196,7 +196,7 @@ export default function LoginPage() {
               disabled={isSubmitting}
               className="w-full rounded bg-blue-600 p-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? 'Pruefe ...' : 'Einloggen'}
+              {isSubmitting ? 'Prüfe ...' : 'Einloggen'}
             </button>
             {ssoConfig.enabled ? (
               <>

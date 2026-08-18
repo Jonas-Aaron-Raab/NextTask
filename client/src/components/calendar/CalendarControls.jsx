@@ -22,7 +22,7 @@ export function CalendarTask({ task, onOpen, onDragStart, expanded = false }) {
       className={`w-full min-w-0 rounded-md border text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
         overdue ? 'border-red-300 bg-red-50 text-red-700' : statusColors[task.status]
       } ${expanded ? 'px-2.5 py-2' : 'px-1.5 py-1 text-[11px] font-semibold leading-tight'}`}
-      title={overdue ? `Ueberfaellig - ${marker.label}` : marker.label}
+      title={overdue ? `Überfällig - ${marker.label}` : marker.label}
       style={{ borderLeftWidth: expanded ? 4 : 3, borderLeftColor: overdue ? '#dc2626' : marker.color }}
     >
       {expanded ? (
@@ -31,7 +31,7 @@ export function CalendarTask({ task, onOpen, onDragStart, expanded = false }) {
           <span className="mt-2 grid gap-1 text-xs font-semibold text-slate-600 sm:grid-cols-2">
             <span>Projekt: {task.project}</span>
             <span>Person: {task.assignee}</span>
-            <span>Status: {overdue ? 'Ueberfaellig' : statusLabels[task.status]}</span>
+            <span>Status: {overdue ? 'Überfällig' : statusLabels[task.status]}</span>
             <span>Prioritaet: {priorityLabels[task.priority]}</span>
           </span>
         </span>
@@ -72,7 +72,7 @@ export function CalendarFilterPanel({ filters, filterOptions, onFilterChange }) 
         <FilterSelect label="Projekt" value={filters.project} options={filterOptions.projects} onChange={(value) => onFilterChange('project', value)} />
         <FilterSelect label="Person" value={filters.person} options={filterOptions.people} onChange={(value) => onFilterChange('person', value)} />
         <FilterSelect label="Status" value={filters.status} options={Object.values(statusLabels)} onChange={(value) => onFilterChange('statusLabel', value)} />
-        <FilterSelect label="Prioritaet" value={filters.priorityLabel} options={Object.values(priorityLabels)} onChange={(value) => onFilterChange('priorityLabel', value)} />
+        <FilterSelect label="Priorität" value={filters.priorityLabel} options={Object.values(priorityLabels)} onChange={(value) => onFilterChange('priorityLabel', value)} />
         <FilterSelect label="Abteilung" value={filters.department} options={filterOptions.departments} onChange={(value) => onFilterChange('department', value)} />
         <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
           <input

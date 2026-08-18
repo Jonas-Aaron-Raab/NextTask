@@ -19,7 +19,7 @@ export const bankDepartments = [
     businessArea: 'OR',
     lead: 'Nils Berger',
     memberCount: 12,
-    description: 'Interne Services, Einkauf, Gebaeudemanagement und administrative Prozesse.',
+    description: 'Interne Services, Einkauf, Gebäudemanagement und administrative Prozesse.',
     accent: 'border-slate-300 bg-[#f6fbf4]',
     badgeTone: 'bg-[#ecf8e8] text-[#3d7b47]',
   },
@@ -44,11 +44,11 @@ export const bankProjects = [
     owner: 'Mara Stein',
     status: 'In Arbeit',
     dueDate: '18. September 2026',
-    goal: 'Bestehende Kernbank-Schnittstellen stabilisieren und fuer neue digitale Services vorbereiten.',
+    goal: 'Bestehende Kernbank-Schnittstellen stabilisieren und für neue digitale Services vorbereiten.',
     tasks: [
       { id: 'or-it-1-a', title: 'Schnittstelleninventar mit Fachbereichen abgleichen', assignee: 'Jonas Weber', status: 'In Arbeit', priority: 'hoch' },
-      { id: 'or-it-1-b', title: 'API-Gateway Routing fuer Kontoservices dokumentieren', assignee: 'Mara Stein', status: 'Review', priority: 'mittel' },
-      { id: 'or-it-1-c', title: 'Monitoring fuer Antwortzeiten und Fehlerquoten einrichten', assignee: 'Sven Kraus', status: 'Offen', priority: 'hoch' },
+      { id: 'or-it-1-b', title: 'API-Gateway Routing für Kontoservices dokumentieren', assignee: 'Mara Stein', status: 'Review', priority: 'mittel' },
+      { id: 'or-it-1-c', title: 'Monitoring für Antwortzeiten und Fehlerquoten einrichten', assignee: 'Sven Kraus', status: 'Offen', priority: 'hoch' },
     ],
   },
   {
@@ -58,11 +58,11 @@ export const bankProjects = [
     owner: 'Sven Kraus',
     status: 'In Planung',
     dueDate: '30. Oktober 2026',
-    goal: 'Technische Mindeststandards fuer Endgeraete, Server und Admin-Zugaenge bankweit vereinheitlichen.',
+    goal: 'Technische Mindeststandards für Endgeräte, Server und Admin-Zugänge bankweit vereinheitlichen.',
     tasks: [
-      { id: 'or-it-2-a', title: 'Adminrechte fuer produktive Systeme rezertifizieren', assignee: 'Sven Kraus', status: 'Offen', priority: 'hoch' },
+      { id: 'or-it-2-a', title: 'Adminrechte für produktive Systeme rezertifizieren', assignee: 'Sven Kraus', status: 'Offen', priority: 'hoch' },
       { id: 'or-it-2-b', title: 'Patchfenster mit Interne Dienste abstimmen', assignee: 'Mara Stein', status: 'Offen', priority: 'mittel' },
-      { id: 'or-it-2-c', title: 'Notfallhandbuch fuer kritische Services aktualisieren', assignee: 'Jonas Weber', status: 'In Arbeit', priority: 'mittel' },
+      { id: 'or-it-2-c', title: 'Notfallhandbuch für kritische Services aktualisieren', assignee: 'Jonas Weber', status: 'In Arbeit', priority: 'mittel' },
     ],
   },
   {
@@ -74,9 +74,9 @@ export const bankProjects = [
     dueDate: '12. September 2026',
     goal: 'Interne Eingangspost digital vorsortieren, verteilen und nachvollziehbar bearbeiten.',
     tasks: [
-      { id: 'or-id-1-a', title: 'Eingangsregeln fuer Vertragsunterlagen definieren', assignee: 'Nils Berger', status: 'In Arbeit', priority: 'hoch' },
-      { id: 'or-id-1-b', title: 'SLA-Dashboard fuer Bearbeitungszeiten vorbereiten', assignee: 'Tara Klein', status: 'Offen', priority: 'mittel' },
-      { id: 'or-id-1-c', title: 'Pilotgruppe fuer Filialpost festlegen', assignee: 'Mara Stein', status: 'Review', priority: 'mittel' },
+      { id: 'or-id-1-a', title: 'Eingangsregeln für Vertragsunterlagen definieren', assignee: 'Nils Berger', status: 'In Arbeit', priority: 'hoch' },
+      { id: 'or-id-1-b', title: 'SLA-Dashboard für Bearbeitungszeiten vorbereiten', assignee: 'Tara Klein', status: 'Offen', priority: 'mittel' },
+      { id: 'or-id-1-c', title: 'Pilotgruppe für Filialpost festlegen', assignee: 'Mara Stein', status: 'Review', priority: 'mittel' },
     ],
   },
   {
@@ -86,11 +86,11 @@ export const bankProjects = [
     owner: 'Tara Klein',
     status: 'Konzept',
     dueDate: '08. November 2026',
-    goal: 'Standardbeschaffungen ueber einfache Antraege und transparente Freigaben abbilden.',
+    goal: 'Standardbeschaffungen über einfache Anträge und transparente Freigaben abbilden.',
     tasks: [
-      { id: 'or-id-2-a', title: 'Katalog fuer Standardartikel strukturieren', assignee: 'Tara Klein', status: 'Offen', priority: 'mittel' },
-      { id: 'or-id-2-b', title: 'Freigabegrenzen mit Organisationsentwicklung klaeren', assignee: 'Lea Hofmann', status: 'Offen', priority: 'hoch' },
-      { id: 'or-id-2-c', title: 'Formularfelder fuer Bestellanforderungen testen', assignee: 'Nils Berger', status: 'Offen', priority: 'niedrig' },
+      { id: 'or-id-2-a', title: 'Katalog für Standardartikel strukturieren', assignee: 'Tara Klein', status: 'Offen', priority: 'mittel' },
+      { id: 'or-id-2-b', title: 'Freigabegrenzen mit Organisationsentwicklung klären', assignee: 'Lea Hofmann', status: 'Offen', priority: 'hoch' },
+      { id: 'or-id-2-c', title: 'Formularfelder für Bestellanforderungen testen', assignee: 'Nils Berger', status: 'Offen', priority: 'niedrig' },
     ],
   },
   {
@@ -100,11 +100,11 @@ export const bankProjects = [
     owner: 'Lea Hofmann',
     status: 'In Arbeit',
     dueDate: '25. September 2026',
-    goal: 'Kernprozesse im Aktivgeschaeft erfassen, Verantwortungen klaeren und Medienbrueche sichtbar machen.',
+    goal: 'Kernprozesse im Aktivgeschaeft erfassen, Verantwortungen klären und Medienbrüche sichtbar machen.',
     tasks: [
       { id: 'or-oe-1-a', title: 'Workshop-Termine mit Marktfolge koordinieren', assignee: 'Lea Hofmann', status: 'In Arbeit', priority: 'hoch' },
-      { id: 'or-oe-1-b', title: 'Ist-Prozess fuer Kreditentscheidung modellieren', assignee: 'Oskar Neumann', status: 'Offen', priority: 'hoch' },
-      { id: 'or-oe-1-c', title: 'Massnahmenliste aus Prozessinterviews verdichten', assignee: 'Oskar Neumann', status: 'Review', priority: 'mittel' },
+      { id: 'or-oe-1-b', title: 'Ist-Prozess für Kreditentscheidung modellieren', assignee: 'Oskar Neumann', status: 'Offen', priority: 'hoch' },
+      { id: 'or-oe-1-c', title: 'Maßnahmenliste aus Prozessinterviews verdichten', assignee: 'Oskar Neumann', status: 'Review', priority: 'mittel' },
     ],
   },
   {
@@ -114,18 +114,18 @@ export const bankProjects = [
     owner: 'Oskar Neumann',
     status: 'In Planung',
     dueDate: '14. Oktober 2026',
-    goal: 'Gemeinsame Ziele fuer den Geschaeftsbereich OR messbar machen und monatlich steuerbar halten.',
+    goal: 'Gemeinsame Ziele für den Geschäftsbereich OR messbar machen und monatlich steuerbar halten.',
     tasks: [
-      { id: 'or-oe-2-a', title: 'Zielstruktur fuer OR-IT, OR-ID und OR-OE entwerfen', assignee: 'Oskar Neumann', status: 'Offen', priority: 'hoch' },
+      { id: 'or-oe-2-a', title: 'Zielstruktur für OR-IT, OR-ID und OR-OE entwerfen', assignee: 'Oskar Neumann', status: 'Offen', priority: 'hoch' },
       { id: 'or-oe-2-b', title: 'Kennzahlen aus Projektlisten ableiten', assignee: 'Lea Hofmann', status: 'Offen', priority: 'mittel' },
-      { id: 'or-oe-2-c', title: 'Monatsreview-Vorlage fuer Bereichsleitung erstellen', assignee: 'Mara Stein', status: 'Offen', priority: 'mittel' },
+      { id: 'or-oe-2-c', title: 'Monatsreview-Vorlage für Bereichsleitung erstellen', assignee: 'Mara Stein', status: 'Offen', priority: 'mittel' },
     ],
   },
 ];
 
 export const roleKinds = [
   { value: 'ADMIN', label: 'Admin', shortLabel: 'A' },
-  { value: 'GBL', label: 'Geschaeftsbereichsleiter', shortLabel: 'GBL' },
+  { value: 'GBL', label: 'Geschäftsbereichsleiter', shortLabel: 'GBL' },
   { value: 'MEMBER', label: 'Mitarbeiter', shortLabel: 'M' },
 ];
 
@@ -162,7 +162,7 @@ export const defaultBankRoles = [
     name: 'GBL Organisation',
     code: 'GBL-OR',
     kind: 'GBL',
-    description: 'Sieht alle Abteilungen im Geschaeftsbereich OR.',
+    description: 'Sieht alle Abteilungen im Geschäftsbereich OR.',
     businessAreas: ['OR'],
     departmentIds: [],
     permissions: {
@@ -291,8 +291,8 @@ export function getRoleKindLabel(kind) {
 
 export function getRoleScopeLabel(role) {
   if (!role) return 'Keine Rolle';
-  if (role.kind === 'ADMIN') return 'Alle Geschaeftsbereiche und Abteilungen';
-  if (role.kind === 'GBL') return `Geschaeftsbereich ${role.businessAreas?.join(', ') || 'ohne Zuordnung'}`;
+  if (role.kind === 'ADMIN') return 'Alle Geschäftsbereiche und Abteilungen';
+  if (role.kind === 'GBL') return `Geschäftsbereich ${role.businessAreas?.join(', ') || 'ohne Zuordnung'}`;
   if (role.kind === 'MEMBER') {
     return (role.departmentIds || []).map(getDepartmentLabel).join(', ') || 'Keine Abteilung zugeordnet';
   }

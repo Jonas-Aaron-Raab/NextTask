@@ -34,7 +34,7 @@ const taskDepartmentMap = {
   'Website Relaunch': 'Digitales Banking',
   'Sales Deck': 'Digitales Banking',
   'NextTask UI': 'Digitales Banking',
-  'Shop Optimierung': 'Qualitaetssicherung',
+  'Shop Optimierung': 'Qualitätssicherung',
   'Content Sprint': 'Marketing und Content',
   'Sparkasse Kampagne': 'Marketing und Content',
   'CRM Automation': 'Kundenservice',
@@ -310,7 +310,7 @@ export default function ReportsPage() {
         progress,
         signal,
         openTasks: backlog.filter((task) => task.status !== 'done').length || (project.status === 'Konzept' ? 5 : 3),
-        milestone: `${project.dueDate} - naechster Meilenstein`,
+        milestone: `${project.dueDate} - nächster Meilenstein`,
       };
     });
   }, [departmentById, reportProjects]);
@@ -444,9 +444,9 @@ export default function ReportsPage() {
       scheduleStatus: selectedReportProject.scheduleStatus || selectedReportProject.signal.label,
       resourceStatus: selectedReportProject.resourceStatus || selectedReportProject.signal.label,
       budgetStatus: selectedReportProject.budgetStatus || selectedReportProject.signal.label,
-      reportNotes: selectedReportProject.reportNotes || 'Keine Erlaeuterung gepflegt.',
+      reportNotes: selectedReportProject.reportNotes || 'Keine Erläuterung gepflegt.',
       collaborationQuality: selectedReportProject.collaborationQuality || 'Noch keine Bewertung gepflegt.',
-      nextSteps: selectedReportProject.nextSteps || 'Naechste Schritte pruefen und im Projekt pflegen.',
+      nextSteps: selectedReportProject.nextSteps || 'Nächste Schritte prüfen und im Projekt pflegen.',
       milestones: selectedReportProject.milestones?.length ? selectedReportProject.milestones : fallbackMilestones,
       risks: selectedReportProject.risks?.length ? selectedReportProject.risks : fallbackRisks,
       budgetLines,
@@ -464,7 +464,7 @@ export default function ReportsPage() {
         track: '#ecf3ff',
       },
       { label: 'Offen', value: taskMetrics.open, color: '#b76c12', track: '#fff6e8' },
-      { label: 'Ueberfaellig', value: taskMetrics.blocked, color: '#b84758', track: '#fff0f2' },
+      { label: 'Überfällig', value: taskMetrics.blocked, color: '#b84758', track: '#fff0f2' },
     ];
     const total = values.reduce((sum, item) => sum + item.value, 0) || 1;
 
@@ -563,7 +563,7 @@ export default function ReportsPage() {
         title: 'Projektstart',
         subtitle: selectedTimelineProject.name,
         meta: `${formatLongDate(selectedTimelineProject.startTime)} • Kickoff`,
-        description: 'Kickoff und Start des ausgewaehlten Projekts.',
+        description: 'Kickoff und Start des ausgewählten Projekts.',
         tone: { tone: 'bg-[#fff4e7] text-[#c26a34]', bar: '#c26a34' },
         shortLabel: 'Start',
         typeLabel: 'Projektstart',
@@ -576,7 +576,7 @@ export default function ReportsPage() {
         title: 'Projektdeadline',
         subtitle: selectedTimelineProject.owner,
         meta: `${formatLongDate(selectedTimelineProject.endTime)} • Zieltermin`,
-        description: 'Geplante Deadline fuer das ausgewaehlte Projekt.',
+        description: 'Geplante Deadline für das ausgewaehlte Projekt.',
         tone: { tone: 'bg-[#fff0f2] text-[#b84758]', bar: '#b84758' },
         shortLabel: 'Ziel',
         typeLabel: 'Projektdeadline',

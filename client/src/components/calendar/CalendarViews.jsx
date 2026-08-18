@@ -190,7 +190,7 @@ export function DayView({ cursorDate, tasksByDay, onOpen, onDayClick, onDragStar
             </div>
           ))}
           {!tasks.length ? (
-            <div className="px-4 py-8 text-center text-sm font-semibold text-slate-400">Keine Aufgaben fuer diesen Tag geplant.</div>
+            <div className="px-4 py-8 text-center text-sm font-semibold text-slate-400">Keine Aufgaben für diesen Tag geplant.</div>
           ) : null}
           </div>
       </div>
@@ -210,7 +210,7 @@ export function DayAgendaModal({ dateKey, tasks, onClose, onOpenTask, onCreateTa
             <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#b84758]">Tagesansicht</p>
             <h2 className="mt-2 text-2xl font-extrabold text-slate-950">{formatFullDate(dateKey)}</h2>
             <p className="mt-1 text-sm font-semibold text-slate-500">
-              {tasks.length} faellige {tasks.length === 1 ? 'Aufgabe' : 'Aufgaben'} an diesem Tag
+              {tasks.length} fällige {tasks.length === 1 ? 'Aufgabe' : 'Aufgaben'} an diesem Tag
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -243,7 +243,7 @@ export function DayAgendaModal({ dateKey, tasks, onClose, onOpenTask, onCreateTa
             <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-10 text-center">
               <p className="text-base font-bold text-slate-900">Keine faelligen Aufgaben</p>
               <p className="mt-2 text-sm font-medium text-slate-500">
-                Fuer diesen Tag ist aktuell keine Ticket-Frist hinterlegt.
+                Für diesen Tag ist aktuell keine Ticket-Frist hinterlegt.
               </p>
             </div>
           )}

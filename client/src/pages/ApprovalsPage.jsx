@@ -284,7 +284,7 @@ function CreateApprovalModal({ form, context, onChange, onClose, onSubmit, isSav
             <input
               value={form.title}
               onChange={(event) => onChange({ title: event.target.value })}
-              placeholder="Wofuer wird eine Freigabe benoetigt?"
+              placeholder="Wofür wird eine Freigabe benötigt?"
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
             />
           </label>

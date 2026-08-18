@@ -232,9 +232,9 @@ export default function DepartmentsPage() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Bankorganisation</p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Abteilungen im Geschaeftsbereich OR</h1>
+              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Abteilungen im Geschäftsbereich OR</h1>
               <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-500">
-                Die Sicht wird aus deiner Rolle berechnet: Admin sieht alles, GBL sieht seinen Geschaeftsbereich, Mitarbeiter sehen ihre zugeordneten Abteilungen.
+                Die Sicht wird aus deiner Rolle berechnet: Admin sieht alles, GBL sieht seinen Geschäftsbereich, Mitarbeiter sehen ihre zugeordneten Abteilungen.
               </p>
             </div>
 

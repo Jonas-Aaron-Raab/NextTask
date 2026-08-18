@@ -16,7 +16,7 @@ import AppShell from '../components/AppShell';
 const severityMeta = {
   INFO: { label: 'Info', tone: 'bg-slate-100 text-slate-600 border-slate-200', icon: CheckCircle2 },
   NOTICE: { label: 'Hinweis', tone: 'bg-blue-50 text-blue-700 border-blue-100', icon: FileClock },
-  WARNING: { label: 'Pruefpflichtig', tone: 'bg-amber-50 text-amber-700 border-amber-100', icon: AlertTriangle },
+  WARNING: { label: 'Prüfpflichtig', tone: 'bg-amber-50 text-amber-700 border-amber-100', icon: AlertTriangle },
   CRITICAL: { label: 'Kritisch', tone: 'bg-rose-50 text-[#b84758] border-rose-100', icon: ShieldAlert },
 };
 
@@ -38,31 +38,31 @@ const actionLabels = {
   TWO_FACTOR_LOGIN_FAILED: '2FA fehlgeschlagen',
   TWO_FACTOR_RECOVERY_CODE_USED: 'Recovery-Code genutzt',
   TWO_FACTOR_SETUP_STARTED: '2FA-Einrichtung',
-  TWO_FACTOR_SETUP_FAILED: '2FA-Bestaetigung fehlgeschlagen',
+  TWO_FACTOR_SETUP_FAILED: '2FA-Bestätigung fehlgeschlagen',
   TWO_FACTOR_ENABLED: '2FA aktiviert',
   TWO_FACTOR_DISABLE_FAILED: '2FA-Deaktivierung fehlgeschlagen',
   TWO_FACTOR_DISABLED: '2FA deaktiviert',
-  SSO_CALLBACK_ACCEPTED: 'SSO bestaetigt',
+  SSO_CALLBACK_ACCEPTED: 'SSO bestätigt',
   SSO_LOGIN_SUCCESS: 'SSO Login erfolgreich',
   SSO_LOGIN_FAILED: 'SSO Login fehlgeschlagen',
   USER_REGISTERED: 'Registrierung',
   USER_CREATED: 'Benutzer erstellt',
   USER_ROLE_ASSIGNED: 'Rolle zugewiesen',
-  PROFILE_UPDATED: 'Profil geaendert',
-  PASSWORD_CHANGED: 'Passwort geaendert',
+  PROFILE_UPDATED: 'Profil geändert',
+  PASSWORD_CHANGED: 'Passwort geändert',
   ROLE_CREATED: 'Rolle erstellt',
-  ROLE_UPDATED: 'Rolle geaendert',
-  ROLE_DELETED: 'Rolle geloescht',
+  ROLE_UPDATED: 'Rolle geändert',
+  ROLE_DELETED: 'Rolle gelöscht',
   PROJECT_CREATED: 'Projekt erstellt',
   APPROVAL_REQUESTED: 'Freigabe angefragt',
   APPROVAL_APPROVED: 'Freigabe genehmigt',
   APPROVAL_REJECTED: 'Freigabe abgelehnt',
   APPROVAL_CANCELLED: 'Freigabe abgebrochen',
   TASK_CREATED: 'Aufgabe erstellt',
-  TASK_UPDATED: 'Aufgabe geaendert',
+  TASK_UPDATED: 'Aufgabe geändert',
   TASK_MOVED: 'Aufgabe verschoben',
   TASK_SCHEDULED: 'Terminplanung',
-  TASK_DELETED: 'Aufgabe geloescht',
+  TASK_DELETED: 'Aufgabe gelöscht',
   COMMENT_CREATED: 'Kommentar erstellt',
   TASK_MARKERS_UPDATED: 'Farbstreifen gespeichert',
 };
@@ -160,7 +160,7 @@ function AuditLogEntry({ entry }) {
         </div>
         <details className="rounded-xl border border-slate-200 bg-slate-50">
           <summary className="cursor-pointer px-3 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">
-            Aenderungsdetails
+            Änderungsdetails
           </summary>
           <div className="grid gap-3 border-t border-slate-200 p-3 xl:grid-cols-2">
             <div>
@@ -244,7 +244,7 @@ export default function AuditLogPage() {
               <p className="text-sm font-extrabold uppercase tracking-[0.22em] text-[#b84758]">Revision</p>
               <h1 className="mt-2 text-2xl font-black text-slate-950">Audit-Log</h1>
               <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500">
-                Nachvollziehbare Protokollierung fuer sicherheitsrelevante Aktionen, Rollen, Aufgaben und Stammdaten.
+                Nachvollziehbare Protokollierung für sicherheitsrelevante Aktionen, Rollen, Aufgaben und Stammdaten.
               </p>
             </div>
             <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">
@@ -255,8 +255,8 @@ export default function AuditLogPage() {
         </section>
 
         <div className="grid gap-3 md:grid-cols-3">
-          <StatCard icon={FileClock} label="Eintraege" value={total} tone="bg-slate-100 text-slate-600" />
-          <StatCard icon={ShieldAlert} label="Prueffaelle" value={criticalCount} tone="bg-rose-50 text-[#b84758]" />
+          <StatCard icon={FileClock} label="Einträge" value={total} tone="bg-slate-100 text-slate-600" />
+          <StatCard icon={ShieldAlert} label="Prüffälle" value={criticalCount} tone="bg-rose-50 text-[#b84758]" />
           <StatCard icon={UserRound} label="Akteure" value={actorCount} tone="bg-blue-50 text-blue-700" />
         </div>
 
@@ -280,10 +280,10 @@ export default function AuditLogPage() {
                 </option>
               ))}
             </FilterSelect>
-            <FilterSelect label="Kritikalitaet" value={severity} onChange={setSeverity}>
+            <FilterSelect label="Kritikalität" value={severity} onChange={setSeverity}>
               {severityOptions.map((option) => (
                 <option key={option || 'all'} value={option}>
-                  {option ? severityMeta[option]?.label || option : 'Alle Kritikalitaeten'}
+                  {option ? severityMeta[option]?.label || option : 'Alle Kritikalitäten'}
                 </option>
               ))}
             </FilterSelect>
@@ -301,7 +301,7 @@ export default function AuditLogPage() {
           {!isLoading && !logs.length ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
               <Search className="mx-auto h-8 w-8 text-slate-300" />
-              <p className="mt-3 text-base font-black text-slate-900">Keine Audit-Eintraege gefunden</p>
+              <p className="mt-3 text-base font-black text-slate-900">Keine Audit-Einträge gefunden</p>
               <p className="mt-1 text-sm font-semibold text-slate-500">Passe die Filter an oder fuehre eine neue Aktion aus.</p>
             </div>
           ) : null}

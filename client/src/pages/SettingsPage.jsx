@@ -52,7 +52,7 @@ import {
 } from '../utils/taskMarkers';
 
 const taskMarkerPriorityOptions = [
-  { value: '', label: 'Keine Prioritaet' },
+  { value: '', label: 'Keine Priorität' },
   { value: 'hoch', label: 'Hoch' },
   { value: 'mittel', label: 'Mittel' },
   { value: 'niedrig', label: 'Niedrig' },
@@ -316,7 +316,7 @@ export default function SettingsPage() {
       {
         id: 'settings-password',
         type: 'Konto',
-        label: 'Passwort aendern',
+        label: 'Passwort ändern',
         meta: isGuest ? 'Im Gastmodus gesperrt' : 'Account-Sicherheit',
         onSelect: () => setProfileSettingsOpen(true),
       },
@@ -629,7 +629,7 @@ export default function SettingsPage() {
       setTaskMarkerStatus(message);
     } catch (error) {
       setTaskMarkerStatus('Lokal gespeichert.');
-      setTaskMarkerError(error.response?.data?.message || 'Datenbank-Speicherung ist fehlgeschlagen. Die Aenderung bleibt lokal erhalten.');
+      setTaskMarkerError(error.response?.data?.message || 'Datenbank-Speicherung ist fehlgeschlagen. Die Änderung bleibt lokal erhalten.');
     }
   };
 
@@ -740,7 +740,7 @@ export default function SettingsPage() {
     setPasswordError('');
 
     if (isGuest) {
-      setPasswordError('Im Gastmodus kann kein Passwort geaendert werden.');
+      setPasswordError('Im Gastmodus kann kein Passwort geändert werden.');
       return;
     }
 
@@ -755,7 +755,7 @@ export default function SettingsPage() {
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('Die Passwort-Bestaetigung stimmt nicht ueberein.');
+      setPasswordError('Die Passwort-Bestätigung stimmt nicht ueberein.');
       return;
     }
 
@@ -766,9 +766,9 @@ export default function SettingsPage() {
         newPassword: passwordForm.newPassword,
       });
       setPasswordForm(emptyPasswordForm);
-      setPasswordStatus('Passwort wurde geaendert.');
+      setPasswordStatus('Passwort wurde geändert.');
     } catch (error) {
-      setPasswordError(error.response?.data?.message || 'Passwort konnte nicht geaendert werden.');
+      setPasswordError(error.response?.data?.message || 'Passwort konnte nicht geändert werden.');
     } finally {
       setIsSavingPassword(false);
     }
@@ -891,7 +891,7 @@ export default function SettingsPage() {
                     <span className="block text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Darstellung</span>
                     <span className="mt-1 block text-lg font-extrabold text-slate-950">Layout & Darstellung</span>
                     <span className="mt-1 block text-sm font-medium text-slate-500">
-                      Darkmode, Dichte und Startansicht fuer dein Arbeitsgefuehl.
+                      Darkmode, Dichte und Startansicht für dein Arbeitsgefuehl.
                   </span>
                 </span>
               </span>
@@ -912,7 +912,7 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={Moon}
                     label="Darkmode"
-                    description="Waehle hell, dunkel oder automatisch nach deinem System."
+                    description="Wähle hell, dunkel oder automatisch nach deinem System."
                   >
                     <SegmentedControl
                       options={themeOptions}
@@ -924,7 +924,7 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={Rows3}
                     label="Layout-Dichte"
-                    description="Mehr Luft fuer Planung oder kompakter fuer viele Aufgaben."
+                    description="Mehr Luft für Planung oder kompakter für viele Aufgaben."
                   >
                     <SegmentedControl
                       options={densityOptions}
@@ -936,7 +936,7 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={Image}
                     label="Board-Hintergrund"
-                    description="Waehle fuer jedes Projekt einen eigenen Hintergrund."
+                    description="Wähle für jedes Projekt einen eigenen Hintergrund."
                   >
                     <div className="space-y-3">
                       <select
@@ -1008,8 +1008,8 @@ export default function SettingsPage() {
 
                   <SettingRow
                     icon={Type}
-                    label="Schriftgroesse"
-                    description="Nutze groessere Schrift fuer bessere Lesbarkeit."
+                    label="Schriftgröße"
+                    description="Nutze größere Schrift für bessere Lesbarkeit."
                   >
                     <SegmentedControl
                       options={fontSizeOptions}
@@ -1025,11 +1025,11 @@ export default function SettingsPage() {
                   >
                     <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
                       <span className="text-sm font-extrabold text-slate-700">
-                        {appearanceForm.sidebarDefault === 'expanded' ? 'Geoeffnet' : 'Eingeklappt'}
+                        {appearanceForm.sidebarDefault === 'expanded' ? 'Geöffnet' : 'Eingeklappt'}
                       </span>
                       <ToggleSwitch
                         checked={appearanceForm.sidebarDefault === 'expanded'}
-                        label="Sidebar beim Start geoeffnet"
+                        label="Sidebar beim Start geöffnet"
                         onChange={(checked) => handleAppearanceChange('sidebarDefault', checked ? 'expanded' : 'collapsed')}
                       />
                     </div>
@@ -1038,7 +1038,7 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={SlidersHorizontal}
                     label="Animationen"
-                    description="Reduziere Bewegungen, wenn du eine ruhigere Oberflaeche willst."
+                    description="Reduziere Bewegungen, wenn du eine ruhigere Oberfläche willst."
                   >
                     <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
                       <span className="text-sm font-extrabold text-slate-700">
@@ -1055,7 +1055,7 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={Monitor}
                     label="Startansicht"
-                    description="Die Ansicht, die spaeter nach dem Login zuerst geoeffnet wird."
+                    description="Die Ansicht, die später nach dem Login zuerst geöffnet wird."
                   >
                     <select
                       value={appearanceForm.startView}
@@ -1088,7 +1088,7 @@ export default function SettingsPage() {
                   <span className="block text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Aufgabenfarben</span>
                   <span className="mt-1 block text-lg font-extrabold text-slate-950">Farbstreifen</span>
                   <span className="mt-1 block text-sm font-medium text-slate-500">
-                    Bedeutungen, Farben und Zuordnung fuer Aufgaben-Markierungen.
+                    Bedeutungen, Farben und Zuordnung für Aufgaben-Markierungen.
                   </span>
                 </span>
               </span>
@@ -1147,7 +1147,7 @@ export default function SettingsPage() {
                         <div className="flex items-center gap-4 lg:block">
                           <ColorWheelPicker
                             value={marker.color}
-                            label={`Farbe fuer ${marker.label} waehlen`}
+                            label={`Farbe für ${marker.label} waehlen`}
                             onChange={(value) => handleTaskMarkerChange(marker.id, 'color', value)}
                           />
                           <span className="inline-flex h-12 w-12 flex-none rounded-xl border border-white shadow-sm lg:mt-3" style={{ backgroundColor: marker.color }} />
@@ -1210,7 +1210,7 @@ export default function SettingsPage() {
                                       ? 'Projektname'
                                       : marker.matchField === 'tag'
                                         ? 'Tag'
-                                        : 'Keine Zuordnung ausgewaehlt'
+                                        : 'Keine Zuordnung ausgewählt'
                                 }
                                 className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10 disabled:bg-slate-100 disabled:text-slate-400"
                               />
@@ -1266,7 +1266,7 @@ export default function SettingsPage() {
                   <span className="block text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Profil</span>
                   <span className="mt-1 block text-lg font-extrabold text-slate-950">Profil & Sicherheit</span>
                   <span className="mt-1 block text-sm font-medium text-slate-500">
-                    Persoenliche Daten, Passwort und Zwei-Faktor an einem Ort.
+                    Persönliche Daten, Passwort und Zwei-Faktor an einem Ort.
                   </span>
                 </span>
               </span>
@@ -1320,7 +1320,7 @@ export default function SettingsPage() {
             <form onSubmit={handleProfileSubmit} className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-4">
                 <div>
-                  <h2 className="text-lg font-extrabold text-slate-950">Persoenliche Daten</h2>
+                  <h2 className="text-lg font-extrabold text-slate-950">Persönliche Daten</h2>
                   <p className="mt-1 text-sm font-medium text-slate-500">Diese Daten werden in Aufgaben, Kommentaren und im Workspace angezeigt.</p>
                 </div>
                 {profileStatus ? (
@@ -1415,7 +1415,7 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={Mail}
                     label="Benachrichtigungsadresse"
-                    description="Diese Adresse wird fuer Task-Zuweisungen und Erwaehnungen verwendet."
+                    description="Diese Adresse wird für Task-Zuweisungen und Erwähnungen verwendet."
                   >
                     <input
                       type="email"
@@ -1517,11 +1517,11 @@ export default function SettingsPage() {
                         <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Kalenderkonto</p>
                         <p className="mt-1 text-sm font-extrabold text-slate-800">
                           {calendarConnection.calendarConnected
-                            ? calendarConnection.calendarEmail || 'Persoenlicher Kalender'
+                            ? calendarConnection.calendarEmail || 'Persönlicher Kalender'
                             : 'Noch nicht verbunden'}
                         </p>
                         <p className="mt-1 text-xs font-semibold text-slate-500">
-                          Aktuell wird fuer den Connect-Flow Google/Gmail verwendet, die Funktion bleibt in NextTask aber bewusst allgemein.
+                          Aktuell wird für den Connect-Flow Google/Gmail verwendet, die Funktion bleibt in NextTask aber bewusst allgemein.
                         </p>
                       </div>
                       <div className="rounded-xl border border-slate-200 bg-[#fcfdff] px-4 py-3">
@@ -1602,7 +1602,7 @@ export default function SettingsPage() {
             <form onSubmit={handlePasswordSubmit} className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
               <div className="border-b border-slate-200 pb-4">
                 <h2 className="text-lg font-extrabold text-slate-950">Passwort</h2>
-                <p className="mt-1 text-sm font-medium text-slate-500">Aendere dein Passwort fuer den direkten Login.</p>
+                <p className="mt-1 text-sm font-medium text-slate-500">Ändere dein Passwort für den direkten Login.</p>
               </div>
 
               {passwordStatus ? (
@@ -1638,7 +1638,7 @@ export default function SettingsPage() {
                   />
                 </FieldShell>
 
-                <FieldShell label="Neues Passwort bestaetigen" icon={KeyRound}>
+                <FieldShell label="Neues Passwort bestätigen" icon={KeyRound}>
                   <input
                     type="password"
                     value={passwordForm.confirmPassword}
@@ -1651,7 +1651,7 @@ export default function SettingsPage() {
 
               {isGuest ? (
                 <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500">
-                  Passwortwechsel ist nur fuer registrierte Accounts aktiv.
+                  Passwortwechsel ist nur für registrierte Accounts aktiv.
                 </p>
               ) : null}
 
@@ -1661,7 +1661,7 @@ export default function SettingsPage() {
                 className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-55"
               >
                 <KeyRound className="h-4 w-4" />
-                {isSavingPassword ? 'Speichern ...' : 'Passwort aendern'}
+                {isSavingPassword ? 'Speichern ...' : 'Passwort ändern'}
               </button>
             </form>
 
@@ -1669,7 +1669,7 @@ export default function SettingsPage() {
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-4">
                 <div>
                   <h2 className="text-lg font-extrabold text-slate-950">Zwei-Faktor</h2>
-                  <p className="mt-1 text-sm font-medium text-slate-500">Authenticator-App fuer den Login.</p>
+                  <p className="mt-1 text-sm font-medium text-slate-500">Authenticator-App für den Login.</p>
                 </div>
                 <span
                   className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold ${
@@ -1708,7 +1708,7 @@ export default function SettingsPage() {
 
               {isGuest ? (
                 <p className="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-500">
-                  2FA ist nur fuer registrierte Accounts aktiv.
+                  2FA ist nur für registrierte Accounts aktiv.
                 </p>
               ) : null}
 
@@ -1732,7 +1732,7 @@ export default function SettingsPage() {
                         className="h-[220px] w-[220px] rounded-xl border border-slate-200 bg-white p-3"
                       />
                       <div className="space-y-4">
-                        <FieldShell label="Manueller Schluessel" icon={QrCode}>
+                        <FieldShell label="Manueller Schlüssel" icon={QrCode}>
                           <input
                             readOnly
                             value={twoFactorSetup.secret || ''}
@@ -1757,7 +1757,7 @@ export default function SettingsPage() {
                           className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(184,71,88,0.22)] transition hover:bg-[#a23d4d] disabled:cursor-not-allowed disabled:opacity-65"
                         >
                           <ShieldCheck className="h-4 w-4" />
-                          {isConfirmingTwoFactor ? 'Pruefe ...' : '2FA bestaetigen'}
+                          {isConfirmingTwoFactor ? 'Prüfe ...' : '2FA bestätigen'}
                         </button>
                       </div>
                     </div>

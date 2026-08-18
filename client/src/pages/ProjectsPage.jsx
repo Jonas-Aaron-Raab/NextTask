@@ -87,7 +87,7 @@ const bankBacklogFixtures = bankProjects.flatMap((project) =>
     dueDate: project.dueDate,
     estimatedHours: 4 + index,
     tags: [task.status, task.priority],
-    description: `${task.title} fuer ${project.name} bearbeiten und dokumentieren.`,
+    description: `${task.title} für ${project.name} bearbeiten und dokumentieren.`,
     controlId: `BANK-${project.id.toUpperCase()}-${index + 1}`,
   })),
 );
@@ -267,7 +267,7 @@ function createLiveDepartment({ id, name, members }) {
     lead: 'NextTask',
     members,
     memberCount: members.length || 1,
-    description: 'Projektansicht fuer live geladene Tickets aus dem Backend.',
+    description: 'Projektansicht für live geladene Tickets aus dem Backend.',
     accent: 'border-slate-300 bg-[#f7f8ff]',
     badgeTone: 'bg-[#eef2ff] text-[#4f46e5]',
   };
@@ -394,7 +394,7 @@ const emptyProjectForm = {
   owner: 'Elisabeth Bezverkha',
   deputyLead: '',
   projectSponsor: '',
-  visibility: 'Persoenlich',
+  visibility: 'Persönlich',
   status: 'In Planung',
   plannedStart: '2026-06-01',
   dueDate: '2026-07-15',
@@ -606,7 +606,7 @@ function createProjectPayload(projectForm, departments) {
     deputyLead: projectForm.deputyLead.trim(),
     projectSponsor: projectForm.projectSponsor.trim(),
     visibility: projectForm.visibility,
-    status: projectForm.visibility === 'Persoenlich' ? 'Eigene Planung' : 'Abteilungsprojekt',
+    status: projectForm.visibility === 'Persönlich' ? 'Eigene Planung' : 'Abteilungsprojekt',
     dueDate: formattedPlannedEnd || 'Noch offen',
     summary: projectForm.summary.trim() || 'Neu angelegtes Projekt ohne weitere Beschreibung.',
     businessArea: targetDepartment?.name || '',
@@ -705,7 +705,7 @@ function projectToForm(project, fallbackDepartmentId) {
     owner: project.owner || 'Elisabeth Bezverkha',
     deputyLead: project.deputyLead || '',
     projectSponsor: project.projectSponsor || '',
-    visibility: project.visibility || 'Persoenlich',
+    visibility: project.visibility || 'Persönlich',
     status: project.status || 'In Planung',
     plannedStart: project.plannedStartInput || toProjectDateInputValue(project.plannedStart),
     dueDate: project.plannedEndInput || toProjectDateInputValue(project.plannedEnd || project.dueDate),
@@ -767,7 +767,7 @@ function PopupShell({ title, subtitle, onClose, children, maxWidth = 'max-w-2xl'
 
 function CreateDepartmentModal({ form, onChange, onClose, onSubmit }) {
   return (
-    <PopupShell title="Neue Abteilung" subtitle="Lege einen neuen Bereich an, in dem spaeter eigene Projekte organisiert werden." maxWidth="max-w-3xl" onClose={onClose}>
+    <PopupShell title="Neue Abteilung" subtitle="Lege einen neuen Bereich an, in dem später eigene Projekte organisiert werden." maxWidth="max-w-3xl" onClose={onClose}>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
         <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <label className="block text-sm font-bold text-slate-700">
@@ -830,7 +830,7 @@ function CreateProjectModal({
   onClose,
   onSubmit,
   title = 'Neues Projekt',
-  subtitle = 'Lege Stammdaten an, die spaeter direkt fuer Statusberichte genutzt werden.',
+  subtitle = 'Lege Stammdaten an, die später direkt für Statusberichte genutzt werden.',
   submitLabel = 'Projekt anlegen',
 }) {
   const [activeTab, setActiveTab] = useState('basis');
@@ -852,9 +852,9 @@ function CreateProjectModal({
     interfaceRows: createInterfaceRow,
   };
   const statusOptions = ['Gruen', 'Gelb', 'Rot'];
-  const milestoneStatusOptions = ['Offen', 'In Arbeit', 'Erreicht', 'Gefaehrdet', 'Verschoben'];
+  const milestoneStatusOptions = ['Offen', 'In Arbeit', 'Erreicht', 'Gefährdet', 'Verschoben'];
   const trendOptions = ['Steigend', 'Stabil', 'Fallend', 'Neu'];
-  const interfaceStatusOptions = ['Offen', 'In Klaerung', 'Abgestimmt', 'Blockiert'];
+  const interfaceStatusOptions = ['Offen', 'In Klärung', 'Abgestimmt', 'Blockiert'];
 
   const rowsFor = (field) => ensureRows(form[field], rowFactories[field]);
   const updateRow = (field, rowId, key, value) => {
@@ -931,7 +931,7 @@ function CreateProjectModal({
               <label className="block text-sm font-bold text-slate-700">
                 Projektart
                 <select value={form.visibility} onChange={(event) => onChange('visibility', event.target.value)} className={inputClass}>
-                  <option value="Persoenlich">Persoenlich</option>
+                  <option value="Persönlich">Persönlich</option>
                   <option value="Abteilung">Abteilung</option>
                 </select>
               </label>
@@ -982,7 +982,7 @@ function CreateProjectModal({
 
             <label className="block text-sm font-bold text-slate-700">
               Projektziel
-              <textarea value={form.projectGoal} onChange={(event) => onChange('projectGoal', event.target.value)} rows={4} placeholder="Kurz formuliertes Ziel fuer Statusberichte" className={textareaClass} />
+              <textarea value={form.projectGoal} onChange={(event) => onChange('projectGoal', event.target.value)} rows={4} placeholder="Kurz formuliertes Ziel für Statusberichte" className={textareaClass} />
             </label>
 
             <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
@@ -1012,11 +1012,11 @@ function CreateProjectModal({
                 <textarea value={form.collaborationQuality} onChange={(event) => onChange('collaborationQuality', event.target.value)} rows={5} className={textareaClass} />
               </label>
               <label className="block text-sm font-bold text-slate-700">
-                Erlaeuterungen / Massnahmen
+                Erläuterungen / Maßnahmen
                 <textarea value={form.reportNotes} onChange={(event) => onChange('reportNotes', event.target.value)} rows={5} className={textareaClass} />
               </label>
               <label className="block text-sm font-bold text-slate-700">
-                Naechste Schritte
+                Nächste Schritte
                 <textarea value={form.nextSteps} onChange={(event) => onChange('nextSteps', event.target.value)} rows={5} className={textareaClass} />
               </label>
             </div>
@@ -1076,7 +1076,7 @@ function CreateProjectModal({
               {rowsFor('riskRows').map((row) => (
                 <div key={row.id} className="rounded-2xl border border-white bg-white p-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
                   <div className="grid gap-3 xl:grid-cols-[100px_minmax(220px,1.2fr)_120px_120px_150px_140px_44px]">
-                    <input value={row.code} onChange={(event) => updateRow('riskRows', row.id, 'code', event.target.value)} placeholder="Kuerzel" className={compactInputClass} />
+                    <input value={row.code} onChange={(event) => updateRow('riskRows', row.id, 'code', event.target.value)} placeholder="Kürzel" className={compactInputClass} />
                     <input value={row.title} onChange={(event) => updateRow('riskRows', row.id, 'title', event.target.value)} placeholder="Bezeichnung" className={compactInputClass} />
                     <input type="number" min="0" value={row.impact} onChange={(event) => updateRow('riskRows', row.id, 'impact', event.target.value)} placeholder="Tragweite" className={compactInputClass} />
                     <input type="number" min="0" value={row.probability} onChange={(event) => updateRow('riskRows', row.id, 'probability', event.target.value)} placeholder="Wahrscheinlichkeit" className={compactInputClass} />
@@ -1309,7 +1309,7 @@ function ProjectReportOverview({ project }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Berichtsbasis</p>
-          <p className="mt-1 text-sm font-semibold text-slate-600">Stammdaten fuer Statusbericht, Ressourcen, Budget, Risiken und Meilensteine.</p>
+          <p className="mt-1 text-sm font-semibold text-slate-600">Stammdaten für Statusbericht, Ressourcen, Budget, Risiken und Meilensteine.</p>
         </div>
         <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500">{project.reportCycle || 'MONTHLY'}</span>
       </div>
@@ -1334,11 +1334,11 @@ function ProjectReportOverview({ project }) {
         </div>
         <div className="rounded-2xl border border-white bg-white p-3">
           <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Meilensteine</p>
-          <p className="mt-2 text-sm font-bold text-slate-700">{project.milestones?.length || 0} Eintraege</p>
+          <p className="mt-2 text-sm font-bold text-slate-700">{project.milestones?.length || 0} Einträge</p>
         </div>
         <div className="rounded-2xl border border-white bg-white p-3">
           <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Risiken</p>
-          <p className="mt-2 text-sm font-bold text-slate-700">{project.risks?.length || 0} Eintraege</p>
+          <p className="mt-2 text-sm font-bold text-slate-700">{project.risks?.length || 0} Einträge</p>
         </div>
       </div>
 
@@ -1647,7 +1647,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
           },
         ],
       },
-      'Kommentar hinzugefuegt.',
+      'Kommentar hinzugefügt.',
     );
   };
   const handleMentionInsert = (person) => {
@@ -1669,7 +1669,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
           })),
         ],
       },
-      `${nextFiles.length} Datei(en) als Evidenz verknuepft.`,
+      `${nextFiles.length} Datei(en) als Evidenz verknüpft.`,
     );
   };
   const handleAttachmentRemove = (attachmentId) => {
@@ -1731,7 +1731,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
                 onClick={handleSave}
                 className="h-10 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)] transition hover:bg-[#b84758]"
               >
-                Aenderungen speichern
+                Änderungen speichern
               </button>
               <button
                 type="button"
@@ -1839,7 +1839,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
             </label>
 
             <label className="block text-sm font-bold text-slate-700">
-              Zustaendige Person
+              Zuständige Person
               <select
                 value={form.assignee}
                 onChange={(event) => handleChange('assignee', event.target.value)}
@@ -2000,7 +2000,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
                 </div>
               ))
             ) : (
-              <p className="text-sm font-medium text-slate-500">Noch keine Evidenzdatei verknuepft.</p>
+              <p className="text-sm font-medium text-slate-500">Noch keine Evidenzdatei verknüpft.</p>
             )}
           </div>
 
@@ -2028,7 +2028,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
               ))}
             </select>
             <label className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)]">
-              Datei verknuepfen
+              Datei verknüpfen
               <input
                 type="file"
                 multiple
@@ -2074,7 +2074,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
             <input
               value={commentDraft}
               onChange={(event) => setCommentDraft(event.target.value)}
-              placeholder="Kommentar oder Rueckfrage eingeben"
+              placeholder="Kommentar oder Rückfrage eingeben"
               className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
             />
             <button type="button" onClick={handleCommentSubmit} className="h-11 rounded-xl bg-slate-900 px-4 text-sm font-bold text-white">
@@ -2505,7 +2505,7 @@ export default function ProjectsPage() {
       name: trimmedName,
       lead: departmentForm.lead.trim() || 'Elisabeth Bezverkha',
       memberCount: Number.parseInt(departmentForm.memberCount, 10) || 4,
-      description: departmentForm.description.trim() || 'Neue Abteilung fuer strukturierte Projekte und Zusammenarbeit.',
+      description: departmentForm.description.trim() || 'Neue Abteilung für strukturierte Projekte und Zusammenarbeit.',
       accent: 'border-slate-300 bg-[#fff4f6]',
       badgeTone: 'bg-[#fff0f2] text-[#b84758]',
       members: [departmentForm.lead.trim() || 'Elisabeth Bezverkha'],
@@ -2919,7 +2919,7 @@ export default function ProjectsPage() {
                   <p className="text-sm font-bold text-slate-500">
                     {formatEffort(sumTaskEffortHours(visibleBacklogTasks), effortUnit)} im Backlog
                     <span className="ml-2 text-xs font-semibold text-slate-400">
-                      Favoriten fuer {favoriteUserLabel} stehen oben.
+                      Favoriten für {favoriteUserLabel} stehen oben.
                     </span>
                   </p>
                   <div ref={filterMenuRef} className="relative flex flex-wrap items-center justify-end gap-2">
@@ -3099,7 +3099,7 @@ export default function ProjectsPage() {
                   <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center">
                     <ListChecks className="mx-auto h-8 w-8 text-[#b84758]" />
                     <p className="mt-4 text-base font-bold text-slate-900">Noch keine Aufgaben im Backlog</p>
-                    <p className="mt-2 text-sm font-medium text-slate-500">Fuer dieses Projekt wurden noch keine Backlog-Aufgaben angelegt.</p>
+                    <p className="mt-2 text-sm font-medium text-slate-500">Für dieses Projekt wurden noch keine Backlog-Aufgaben angelegt.</p>
                   </div>
                 ) : null}
               </div>
@@ -3113,7 +3113,7 @@ export default function ProjectsPage() {
               </div>
               <p className="mt-4 text-base font-bold text-slate-900">Noch keine Projekte in diesem Bereich</p>
               <p className="mt-2 text-sm font-medium text-slate-500">
-                Lege ueber `Erstellen` ein neues Projekt an oder waehle eine andere Abteilung aus.
+                Lege über `Erstellen` ein neues Projekt an oder waehle eine andere Abteilung aus.
               </p>
             </div>
           ) : null}
@@ -3173,8 +3173,8 @@ export default function ProjectsPage() {
           }}
           onSubmit={handleProjectEditSubmit}
           title="Projekt bearbeiten"
-          subtitle="Passe Stammdaten und Berichtsbasis fuer den naechsten Statusbericht an."
-          submitLabel="Aenderungen speichern"
+          subtitle="Passe Stammdaten und Berichtsbasis für den nächsten Statusbericht an."
+          submitLabel="Änderungen speichern"
         />
       ) : null}
 

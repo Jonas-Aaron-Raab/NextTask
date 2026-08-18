@@ -226,7 +226,7 @@ function getReportHtml(report) {
       <div class="section-title">Allgemeine Projektinformation</div>
       <table class="kv-table">
         <tbody>
-          <tr><th>Statusbericht zum:</th><td>${e(report.reportDate)}</td><th>Naechster Termin:</th><td>${e(report.nextMilestoneDate)}</td></tr>
+          <tr><th>Statusbericht zum:</th><td>${e(report.reportDate)}</td><th>Nächster Termin:</th><td>${e(report.nextMilestoneDate)}</td></tr>
           <tr><th>Zuletzt bearbeitet am:</th><td>${e(report.reportDate)}</td><th>von:</th><td>${e(report.owner)}</td></tr>
           <tr><th>Beginn (Plan):</th><td>${e(report.plannedStart)}</td><th>Ende (Plan):</th><td>${e(report.plannedEnd)}</td></tr>
           <tr><th>Projektleiter:</th><td>${e(report.owner)}</td><th>Stellvertreter:</th><td>${e(report.deputyLead)}</td></tr>
@@ -249,23 +249,23 @@ function getReportHtml(report) {
     </div>
 
     <div class="section">
-      <div class="section-title">Erlaeuterungen und Massnahmen</div>
+      <div class="section-title">Erläuterungen und Maßnahmen</div>
       <table class="explain-table">
         <tbody>
           <tr><th>Projektfortschritt:</th><td>${e(report.reportNotes)}</td></tr>
           <tr><th>Prognose Zielerreichung:</th><td>${e(report.projectGoal)}</td></tr>
-          <tr><th>Termineinhaltung:</th><td>${e(report.scheduleStatus === 'Gelb' ? 'Die Termine werden beobachtet und die naechsten Meilensteine priorisiert.' : 'Die Termine liegen im Plan.')}</td></tr>
+          <tr><th>Termineinhaltung:</th><td>${e(report.scheduleStatus === 'Gelb' ? 'Die Termine werden beobachtet und die nächsten Meilensteine priorisiert.' : 'Die Termine liegen im Plan.')}</td></tr>
           <tr><th>Ressourceneinhaltung:</th><td>${e(report.resourceStatus === 'Rot' ? 'Die Ressourcenlage ist kritisch.' : 'Die Ressourcen stehen aktuell zur Verfuegung.')}</td></tr>
           <tr><th>Budgeteinhaltung:</th><td>${e(report.budgetStatus === 'Gelb' ? 'Das Budget wird beobachtet und mit den Kostenpositionen abgeglichen.' : 'Das Budget liegt im geplanten Rahmen.')}</td></tr>
-          <tr><th>Veraenderungen in den<br>Risiken:</th><td>${e(report.risks.length ? 'Die aufgefuehrten Risiken werden im Projekt verfolgt.' : 'Die Risikobetrachtung hat sich nicht geaendert.')}</td></tr>
-          <tr><th>Veraenderungen in den<br>Schnittstellen:</th><td>${e(report.interfaces.length ? 'Die Schnittstellen werden gemaess Statusliste nachverfolgt.' : 'In den externen und internen Schnittstellen hat sich keine Veraenderung ergeben.')}</td></tr>
-          <tr><th>Qualitaet der<br>Zusammenarbeit:</th><td>${e(report.collaborationQuality)}</td></tr>
+          <tr><th>Veränderungen in den<br>Risiken:</th><td>${e(report.risks.length ? 'Die aufgeführten Risiken werden im Projekt verfolgt.' : 'Die Risikobetrachtung hat sich nicht geändert.')}</td></tr>
+          <tr><th>Veränderungen in den<br>Schnittstellen:</th><td>${e(report.interfaces.length ? 'Die Schnittstellen werden gemäß Statusliste nachverfolgt.' : 'In den externen und internen Schnittstellen hat sich keine Veränderung ergeben.')}</td></tr>
+          <tr><th>Qualität der<br>Zusammenarbeit:</th><td>${e(report.collaborationQuality)}</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="section">
-      <div class="section-title">Uebersicht Meilensteine und naechste Schritte</div>
+      <div class="section-title">Übersicht Meilensteine und nächste Schritte</div>
       <table class="data-table milestone-table"><thead><tr><th>Meilenstein</th><th>Plan-<br>Termin</th><th>Neuer<br>Termin</th><th>Status</th><th>Fortsch<br>ritt</th><th>Statusnotiz</th></tr></thead></table>
     </div>
     ${footer(1)}
@@ -276,19 +276,19 @@ function getReportHtml(report) {
     <table class="data-table milestone-table"><tbody>${milestoneRows}</tbody></table>
 
     <div class="section" style="margin-top: 15mm;">
-      <div class="section-title">Naechste Schritte</div>
+      <div class="section-title">Nächste Schritte</div>
       <div>${e(report.nextSteps)}</div>
     </div>
 
     <div class="section" style="margin-top: 8mm;">
-      <div class="section-title">Uebersicht Ressourcen und Budget</div>
+      <div class="section-title">Übersicht Ressourcen und Budget</div>
       <div class="section-title" style="margin-top: 6mm;">Ressourcen</div>
       <div class="resource-block">
         <div><span class="resource-label">Plan-Aufwand:</span>${e(formatReportNumber(report.plannedEffortPt, ' PT'))}</div>
         <div><span class="resource-label">Ist-Aufwand:</span>${e(formatReportNumber(report.actualEffortPt, ' PT'))}</div>
         <div><span class="resource-label">Differenz (Plan-Ist):</span>${e(formatReportNumber(report.effortDifferencePt, ' PT'))}</div>
       </div>
-      <table class="data-table risk-table"><thead><tr><th>Kuerz<br>el</th><th>Bezeichnung</th><th>Tragweite</th><th>Wahrsche<br>inlichkeit</th><th>Risikoklasse</th><th></th><th>Tendenz</th></tr></thead><tbody>${riskRows}<tr><td colspan="4"><strong>Gesamt-Klassifizierung</strong></td><td><strong>${e(report.risks[0] ? riskClass(report.risks[0]) : 'Keine')}</strong></td><td class="icon-cell">${report.risks[0] ? riskClassIcon(report.risks[0]) : ''}</td><td></td></tr></tbody></table>
+      <table class="data-table risk-table"><thead><tr><th>Kürz<br>el</th><th>Bezeichnung</th><th>Tragweite</th><th>Wahrsche<br>inlichkeit</th><th>Risikoklasse</th><th></th><th>Tendenz</th></tr></thead><tbody>${riskRows}<tr><td colspan="4"><strong>Gesamt-Klassifizierung</strong></td><td><strong>${e(report.risks[0] ? riskClass(report.risks[0]) : 'Keine')}</strong></td><td class="icon-cell">${report.risks[0] ? riskClassIcon(report.risks[0]) : ''}</td><td></td></tr></tbody></table>
     </div>
     ${footer(2)}
   </section>

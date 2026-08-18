@@ -23,7 +23,7 @@ import { initialTasks } from '../data/taskFixtures';
 const createMenuItems = ['Neue Seite', 'Neues Dokument', 'Neue Vorlage', 'Upload Nachweis'];
 
 const typeOptions = ['Alle Typen', 'Richtlinie', 'Kontrollnachweis', 'Projektunterlage', 'Vorlage', 'Prozessdokument'];
-const statusOptions = ['Alle Stati', 'Entwurf', 'In Pruefung', 'Freigegeben', 'Abgelaufen'];
+const statusOptions = ['Alle Stati', 'Entwurf', 'In Prüfung', 'Freigegeben', 'Abgelaufen'];
 const documentSelectClass =
   'h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12';
 
@@ -34,21 +34,21 @@ const documents = [
     department: 'Digitales Banking',
     project: 'Mobile Banking Relaunch',
     type: 'Projektunterlage',
-    status: 'In Pruefung',
+    status: 'In Prüfung',
     classification: 'Vertraulich',
     owner: 'Lisa Wagner',
     version: 'v2.3',
     reviewDate: '12. Juni 2026',
     retention: '31.12.2027',
-    summary: 'Fachkonzept fuer Kontoansicht, Karten-Services und digitale Self-Services.',
-    linkedTasks: ['Hero-Text und CTA fuer Startseite finalisieren', 'Responsive Navigation auf iPhone Breakpoints pruefen'],
+    summary: 'Fachkonzept für Kontoansicht, Karten-Services und digitale Self-Services.',
+    linkedTasks: ['Hero-Text und CTA für Startseite finalisieren', 'Responsive Navigation auf iPhone Breakpoints prüfen'],
     controls: ['CTRL-WEB-204', 'CTRL-UI-118'],
     auditTrail: ['29. Mai 2026: Version 2.3 hochgeladen', '28. Mai 2026: Datenschutz-Hinweise angepasst'],
   },
   {
     id: 'doc-2',
     title: 'QA Freigabeprotokoll Checkout',
-    department: 'Qualitaetssicherung',
+    department: 'Qualitätssicherung',
     project: 'Checkout Testprogramm',
     type: 'Kontrollnachweis',
     status: 'Freigegeben',
@@ -57,10 +57,10 @@ const documents = [
     version: 'v1.8',
     reviewDate: '04. Juni 2026',
     retention: '31.12.2028',
-    summary: 'Revisionssichere Sammeldokumentation fuer Testlauf, Befunde und Freigaben.',
+    summary: 'Revisionssichere Sammeldokumentation für Testlauf, Befunde und Freigaben.',
     linkedTasks: ['Checkout-Testlauf dokumentieren und an QA geben'],
     controls: ['CTRL-QA-332', 'CTRL-PAY-771'],
-    auditTrail: ['30. Mai 2026: Freigabe durch QA erteilt', '29. Mai 2026: Defect-Liste angehaengt'],
+    auditTrail: ['30. Mai 2026: Freigabe durch QA erteilt', '29. Mai 2026: Defect-Liste angehängt'],
   },
   {
     id: 'doc-3',
@@ -74,8 +74,8 @@ const documents = [
     version: 'v0.9',
     reviewDate: '18. Juni 2026',
     retention: '31.12.2026',
-    summary: 'Briefing fuer Landingpages, Anzeigenbausteine und Freigabeprozess der Kampagne.',
-    linkedTasks: ['Sparkassen-Landingpage Teaser fuer Startseite abstimmen'],
+    summary: 'Briefing für Landingpages, Anzeigenbausteine und Freigabeprozess der Kampagne.',
+    linkedTasks: ['Sparkassen-Landingpage Teaser für Startseite abstimmen'],
     controls: ['CTRL-SPK-301'],
     auditTrail: ['30. Mai 2026: Copy-Entwurf aktualisiert', '27. Mai 2026: Bildsprache mit Marken-Team abgestimmt'],
   },
@@ -85,16 +85,16 @@ const documents = [
     department: 'Produkt und Compliance',
     project: 'Freigabe-Cockpit',
     type: 'Kontrollnachweis',
-    status: 'In Pruefung',
+    status: 'In Prüfung',
     classification: 'Streng vertraulich',
     owner: 'Anna Becker',
     version: 'v1.4',
     reviewDate: '07. Juni 2026',
     retention: '31.12.2029',
-    summary: 'Kontrollmatrix fuer Freigaben, Evidenz und regulatorische Nachweise je Fachbereich.',
-    linkedTasks: ['Texte fuer Pricing-Seite abstimmen'],
+    summary: 'Kontrollmatrix für Freigaben, Evidenz und regulatorische Nachweise je Fachbereich.',
+    linkedTasks: ['Texte für Pricing-Seite abstimmen'],
     controls: ['CTRL-PRC-551', 'CTRL-WEB-204'],
-    auditTrail: ['30. Mai 2026: Kontroll-ID nachgezogen', '28. Mai 2026: Vier-Augen-Pruefung gestartet'],
+    auditTrail: ['30. Mai 2026: Kontroll-ID nachgezogen', '28. Mai 2026: Vier-Augen-Prüfung gestartet'],
   },
   {
     id: 'doc-5',
@@ -108,8 +108,8 @@ const documents = [
     version: 'v3.1',
     reviewDate: '22. Juni 2026',
     retention: '31.12.2027',
-    summary: 'Leitfaden fuer Rueckfragen, Eskalationspfade und SLA-Handling im Service.',
-    linkedTasks: ['Onboarding-Mails in deutsch ueberarbeiten'],
+    summary: 'Leitfaden für Rückfragen, Eskalationspfade und SLA-Handling im Service.',
+    linkedTasks: ['Onboarding-Mails in deutsch überarbeiten'],
     controls: ['CTRL-SRV-110'],
     auditTrail: ['30. Mai 2026: SLA-Hinweise aktualisiert', '25. Mai 2026: Leitfaden freigegeben'],
   },
@@ -125,10 +125,10 @@ const documents = [
     version: 'v2.0',
     reviewDate: '14. Juni 2026',
     retention: '31.12.2030',
-    summary: 'Standardisierte Vorlage fuer DSFA, Fachfreigabe und technische Kontrollpunkte.',
+    summary: 'Standardisierte Vorlage für DSFA, Fachfreigabe und technische Kontrollpunkte.',
     linkedTasks: [],
     controls: ['CTRL-DSFA-019'],
-    auditTrail: ['27. Mai 2026: Vorlage freigegeben', '22. Mai 2026: Felder fuer Datenkategorien erweitert'],
+    auditTrail: ['27. Mai 2026: Vorlage freigegeben', '22. Mai 2026: Felder für Datenkategorien erweitert'],
   },
 ];
 
@@ -149,9 +149,9 @@ const knowledgeSpaces = initialDepartments.map((department, index) => ({
 
 const templates = [
   'Vorlage Datenschutz-Folgenbewertung',
-  'Kontrollnachweis fuer Freigaben',
+  'Kontrollnachweis für Freigaben',
   'Projektsteckbrief Sparkasse',
-  'Audit-Protokoll fuer Revision',
+  'Audit-Protokoll für Revision',
 ];
 
 function classificationTone(value) {
@@ -163,7 +163,7 @@ function classificationTone(value) {
 
 function statusTone(value) {
   if (value === 'Freigegeben') return 'bg-[#eefaf4] text-[#1f7a4f]';
-  if (value === 'In Pruefung') return 'bg-[#fff6e8] text-[#b76c12]';
+  if (value === 'In Prüfung') return 'bg-[#fff6e8] text-[#b76c12]';
   if (value === 'Abgelaufen') return 'bg-[#fff0f2] text-[#b84758]';
   return 'bg-[#edf4ff] text-[#4875c8]';
 }
@@ -230,7 +230,7 @@ function DocumentModal({ document, onClose }) {
                   ))
                 ) : (
                   <div className="rounded-2xl bg-white px-3 py-2.5 text-sm font-semibold text-slate-400">
-                    Noch keine Aufgaben verknuepft.
+                    Noch keine Aufgaben verknüpft.
                   </div>
                 )}
               </div>
@@ -257,7 +257,7 @@ function DocumentModal({ document, onClose }) {
                   ['Projekt', document.project],
                   ['Verantwortung', document.owner],
                   ['Version', document.version],
-                  ['Naechste Pruefung', document.reviewDate],
+                  ['Nächste Prüfung', document.reviewDate],
                   ['Aufbewahrung', document.retention],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-2xl bg-white p-3">
@@ -324,10 +324,10 @@ export default function DocumentsPage() {
 
   const policyCount = documents.filter((document) => document.type === 'Richtlinie' || document.type === 'Prozessdokument').length;
   const evidenceCount = documents.filter((document) => document.type === 'Kontrollnachweis').length;
-  const reviewCount = documents.filter((document) => document.status === 'In Pruefung').length;
+  const reviewCount = documents.filter((document) => document.status === 'In Prüfung').length;
   const confidentialCount = documents.filter((document) => document.classification !== 'Intern').length;
   const reviewDocuments = documents
-    .filter((document) => document.status === 'In Pruefung' || document.status === 'Abgelaufen')
+    .filter((document) => document.status === 'In Prüfung' || document.status === 'Abgelaufen')
     .slice(0, 4);
 
   const searchSuggestions = useMemo(() => {
@@ -372,7 +372,7 @@ export default function DocumentsPage() {
     {
       id: 'library',
       title: 'Dokumentenbibliothek',
-      description: 'Alle Dokumente durchsuchen und oeffnen',
+      description: 'Alle Dokumente durchsuchen und öffnen',
       count: filteredDocuments.length,
       icon: FileText,
       tone: 'bg-[#fff7f8] text-[#b84758]',
@@ -387,7 +387,7 @@ export default function DocumentsPage() {
     },
     {
       id: 'reviews',
-      title: 'Pruefung & Fristen',
+      title: 'Prüfung & Fristen',
       description: 'Offene Reviews und Fristen',
       count: reviewDocuments.length,
       icon: Clock3,
@@ -443,12 +443,12 @@ export default function DocumentsPage() {
             {
               label: 'Freigegebene Dokumente',
               value: documents.filter((document) => document.status === 'Freigegeben').length,
-              detail: 'revisionssicher verfuegbar',
+              detail: 'revisionssicher verfügbar',
               icon: CheckCircle2,
               tone: 'bg-[#eefaf4] text-[#1f7a4f]',
             },
             {
-              label: 'Dokumente in Pruefung',
+              label: 'Dokumente in Prüfung',
               value: reviewCount,
               detail: 'offene Freigaben und Reviews',
               icon: Clock3,
@@ -457,7 +457,7 @@ export default function DocumentsPage() {
             {
               label: 'Kontrollnachweise',
               value: evidenceCount,
-              detail: `${visibleProjects} Projekte verknuepft`,
+              detail: `${visibleProjects} Projekte verknüpft`,
               icon: ShieldCheck,
               tone: 'bg-[#fff0f2] text-[#b84758]',
             },
@@ -558,7 +558,7 @@ export default function DocumentsPage() {
                           ['Abteilung', document.department],
                           ['Projekt', document.project],
                           ['Version', document.version],
-                          ['Naechste Pruefung', document.reviewDate],
+                          ['Nächste Prüfung', document.reviewDate],
                         ].map(([label, value]) => (
                           <div key={label} className="rounded-2xl bg-white p-3">
                             <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-400">{label}</p>
@@ -601,7 +601,7 @@ export default function DocumentsPage() {
             {activeSection === 'reviews' ? (
               <article>
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-xl font-extrabold tracking-tight text-slate-950">Pruefung & Fristen</h2>
+                  <h2 className="text-xl font-extrabold tracking-tight text-slate-950">Prüfung & Fristen</h2>
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#fff6e8] text-[#b76c12]">
                     <Clock3 className="h-4.5 w-4.5" />
                   </span>

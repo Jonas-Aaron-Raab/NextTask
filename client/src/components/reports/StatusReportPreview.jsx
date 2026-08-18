@@ -71,7 +71,7 @@ export default function StatusReportPreview({ report, onClose, getReportHtml }) 
               ['GBL', report.projectSponsor],
               ['Beginn Plan', report.plannedStart],
               ['Ende Plan', report.plannedEnd],
-              ['Naechster Termin', report.nextMilestoneDate],
+              ['Nächster Termin', report.nextMilestoneDate],
               ['Fortschritt', `${report.progress}%`],
               ['Planaufwand', formatReportNumber(report.plannedEffortPt, ' PT')],
               ['Ist-Aufwand', formatReportNumber(report.actualEffortPt, ' PT')],
@@ -90,7 +90,7 @@ export default function StatusReportPreview({ report, onClose, getReportHtml }) 
           </div>
 
           <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4">
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-400">Erlaeuterungen und Massnahmen</p>
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-400">Erläuterungen und Maßnahmen</p>
             <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">{report.reportNotes}</p>
           </div>
 
@@ -110,7 +110,7 @@ export default function StatusReportPreview({ report, onClose, getReportHtml }) 
 
           <div className="mt-5 grid gap-5 xl:grid-cols-2">
             <ReportTable title="Meilensteine" columns={['Titel', 'Plan', 'Neu', 'Status', '%']} rows={report.milestones.map((item) => [item.title, item.planDate || '-', item.newDate || '-', item.status, `${item.progress}%`])} />
-            <ReportTable title="Risiken" columns={['Kuerzel', 'Risiko', 'Klasse', 'Tendenz']} rows={report.risks.map((item) => [item.code, item.title, item.riskClass || '-', item.trend || '-'])} />
+            <ReportTable title="Risiken" columns={['Kürzel', 'Risiko', 'Klasse', 'Tendenz']} rows={report.risks.map((item) => [item.code, item.title, item.riskClass || '-', item.trend || '-'])} />
           </div>
           <div className="mt-5">
             <ReportTable title="Schnittstellen" columns={['Schnittstelle', 'Status', 'Kommentar']} rows={report.interfaces.map((item) => [item.name, item.status, item.comment || '-'])} />
@@ -137,7 +137,7 @@ function ReportTable({ title, columns, rows }) {
             {rows.length ? rows.map((row, rowIndex) => (
               <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={`${rowIndex}-${cellIndex}`} className="border-b border-slate-100 px-3 py-2">{cell}</td>)}</tr>
             )) : (
-              <tr><td className="px-3 py-4 text-slate-400" colSpan={columns.length}>Keine Eintraege gepflegt.</td></tr>
+              <tr><td className="px-3 py-4 text-slate-400" colSpan={columns.length}>Keine Einträge gepflegt.</td></tr>
             )}
           </tbody>
         </table>

@@ -30,12 +30,12 @@ export function DetailPanel({ task, onClose }) {
 
       <div className="mt-4 space-y-3">
         <div className={`rounded-md border px-3 py-2 text-sm font-bold ${isOverdue(task) ? 'border-red-200 bg-red-50 text-red-700' : statusColors[task.status]}`}>
-          {isOverdue(task) ? 'Ueberfaellig' : statusLabels[task.status]}
+          {isOverdue(task) ? 'Überfällig' : statusLabels[task.status]}
         </div>
         <InfoRow icon={CalendarDays} label="Deadline" value={formatFullDate(task.dueDate)} />
         <InfoRow icon={Users} label="Verantwortlich" value={task.assignee} />
         <InfoRow icon={FolderKanban} label="Projekt" value={task.project} />
-        <InfoRow icon={Flag} label="Prioritaet" value={priorityLabels[task.priority]} />
+        <InfoRow icon={Flag} label="Priorität" value={priorityLabels[task.priority]} />
       </div>
 
       <p className="mt-5 text-sm font-medium leading-6 text-slate-600">{task.description || 'Keine Beschreibung hinterlegt.'}</p>

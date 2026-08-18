@@ -99,7 +99,7 @@ export default function ReportsContent(props) {
                   </button>
                 </div>
               ) : (
-                <p className="text-sm font-semibold text-slate-500">Kein Projekt fuer einen Statusbericht verfuegbar.</p>
+                <p className="text-sm font-semibold text-slate-500">Kein Projekt für einen Statusbericht verfuegbar.</p>
               )}
             </div>
           </div>
@@ -230,7 +230,7 @@ export default function ReportsContent(props) {
               </p>
             </div>
             <label className="w-full max-w-[320px] space-y-2">
-              <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">Projekt fuer Zeitachse</span>
+              <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">Projekt für Zeitachse</span>
               <select
                 value={selectedTimelineProjectId}
                 onChange={(event) => setSelectedTimelineProjectId(event.target.value)}
@@ -251,7 +251,7 @@ export default function ReportsContent(props) {
               <div className="max-w-md">
                 <p className="text-lg font-extrabold text-slate-950">Bitte zuerst ein Projekt auswaehlen</p>
                 <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
-                  Danach wird die Zeitachse nur fuer dieses Projekt angezeigt, damit der Verlauf deutlich und nicht ueberladen ist.
+                  Danach wird die Zeitachse nur für dieses Projekt angezeigt, damit der Verlauf deutlich und nicht überladen ist.
                 </p>
               </div>
             </div>
@@ -273,7 +273,7 @@ export default function ReportsContent(props) {
 
                 <div className="rounded-[22px] border border-slate-200 bg-[#fcfdff] p-4">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Naechster Meilenstein</p>
+                    <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Nächster Meilenstein</p>
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#edf4ff] text-[#4875c8]">
                       <Clock3 className="h-4 w-4" />
                     </span>
@@ -296,7 +296,7 @@ export default function ReportsContent(props) {
                     </span>
                   </div>
                   <p className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950">{selectedTimelineStats?.activeCount || 0}</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-500">Gerade in Bearbeitung im ausgewaehlten Projekt.</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-500">Gerade in Bearbeitung im ausgewählten Projekt.</p>
                 </div>
 
                 <div className="rounded-[22px] border border-slate-200 bg-[#fcfdff] p-4">
@@ -536,7 +536,7 @@ export default function ReportsContent(props) {
                 </p>
               </div>
               <div className="min-h-[150px] rounded-[22px] bg-[#f8fafc] p-4">
-                <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Ueberfaellig</p>
+                <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Überfällig</p>
                 <p className="mt-2 text-lg font-extrabold text-slate-950">{taskMetrics.blocked} Aufgaben kritisch oder blockiert</p>
               </div>
               <div className="min-h-[150px] rounded-[22px] bg-[#f8fafc] p-4">

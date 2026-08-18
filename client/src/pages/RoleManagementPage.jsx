@@ -246,9 +246,9 @@ export default function RoleManagementPage() {
     setError('');
     try {
       await api.delete(`/roles/${draftRole.id}`);
-      await refreshConfig('Rolle wurde geloescht.');
+      await refreshConfig('Rolle wurde gelöscht.');
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Rolle konnte nicht geloescht werden.');
+      setError(requestError.response?.data?.message || 'Rolle konnte nicht gelöscht werden.');
     }
   };
 
@@ -414,7 +414,7 @@ export default function RoleManagementPage() {
 
                   {draftRole.kind === 'GBL' ? (
                     <label className="mt-4 block text-sm font-bold text-slate-700">
-                      Geschaeftsbereiche
+                      Geschäftsbereiche
                       <input value={draftRole.businessAreasText ?? draftRole.businessAreas?.join(', ') ?? 'OR'} onChange={(event) => updateDraft('businessAreasText', event.target.value)} placeholder="OR, PK, FK" className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10" />
                     </label>
                   ) : null}
