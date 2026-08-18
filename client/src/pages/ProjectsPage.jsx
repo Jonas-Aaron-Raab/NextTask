@@ -40,7 +40,13 @@ import {
 import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
-import { formatEffort, getEffortHoursFromInput, getEffortInputValue, parseEffortHours, sumEffortHours } from '../utils/effort';
+import {
+  effortUnitOptions,
+  formatEffort,
+  getEffortHoursFromInput,
+  getEffortInputValue,
+  parseEffortHours,
+} from '../utils/effort';
 import { getStoredTaskMarkers, getTaskMarker } from '../utils/taskMarkers';
 import { initialTasks as sourceTasks } from './MyTasksPage';
 
@@ -354,16 +360,6 @@ const priorityMeta = {
 
 const attachmentTypeOptions = ['Word', 'Excel', 'PDF', 'Screenshot', 'Notiz'];
 const attachmentSourceOptions = ['OneDrive', 'SharePoint', 'DMS', 'Upload'];
-const defaultWorkloadLimit = 5;
-const workloadLimits = {
-  'Lisa Wagner': 6,
-  'Markus Klein': 5,
-  'Anna Becker': 5,
-  'Tom Becker': 6,
-  'Sarah Nguyen': 5,
-  'Elisabeth Bezverkha': 4,
-  'Nina Hoffmann': 5,
-};
 
 export const initialBacklogTasks = [
   {
@@ -592,6 +588,10 @@ function getTaskEffortHours(task) {
   return parseEffortHours(task?.estimatedHours ?? sourceTask?.estimatedHours);
 }
 
+function sumTaskEffortHours(tasks) {
+  return tasks.reduce((sum, task) => sum + getTaskEffortHours(task), 0);
+}
+
 function getTaskDetailCollections(task) {
   const sourceTask = getSourceTask(task);
   return {
@@ -624,16 +624,6 @@ function getFavoriteReturnIndexes(task) {
 
 function isFavoriteForUser(task, userKey) {
   return Boolean(userKey && getTaskFavorites(task).includes(userKey));
-}
-
-function getWorkloadLimit(person) {
-  return workloadLimits[person] || defaultWorkloadLimit;
-}
-
-function getWorkloadTone(remaining, percent) {
-  if (remaining <= 0) return 'border-rose-200 bg-rose-50 text-rose-700';
-  if (percent >= 75) return 'border-amber-200 bg-amber-50 text-amber-700';
-  return 'border-emerald-200 bg-emerald-50 text-emerald-700';
 }
 
 function toDateInputValue(displayDate) {
@@ -1646,7 +1636,9 @@ function CreateProjectModal({
       </div>
     </PopupShell>
   );
-}function DepartmentCard({ department, projectCount, backlogCount, isActive, onOpen }) {
+}
+
+function DepartmentCard({ department, projectCount, effortHours, effortUnit, isActive, onOpen }) {
   return (
     <button
       type="button"
@@ -1674,15 +1666,15 @@ function CreateProjectModal({
           <span className="truncate">{department.lead}</span>
         </span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 sm:col-span-2">
-          <ListChecks className="h-3.5 w-3.5" />
-          {backlogCount} Aufgaben
+          <Clock3 className="h-3.5 w-3.5" />
+          {formatEffort(effortHours, effortUnit)}
         </span>
       </div>
     </button>
   );
 }
 
-function ProjectCard({ project, backlogCount, onOpen }) {
+function ProjectCard({ project, effortHours, effortUnit, onOpen }) {
   return (
     <button
       type="button"
@@ -1704,8 +1696,8 @@ function ProjectCard({ project, backlogCount, onOpen }) {
         </span>
         <span className="rounded-full bg-slate-100 px-2.5 py-1">{project.owner}</span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff0f2] px-2.5 py-1 text-[#b84758]">
-          <ListChecks className="h-3.5 w-3.5" />
-          {backlogCount} Aufgaben
+          <Clock3 className="h-3.5 w-3.5" />
+          {formatEffort(effortHours, effortUnit)}
         </span>
       </div>
 
@@ -1788,7 +1780,7 @@ function ProjectReportOverview({ project }) {
   );
 }
 
-function BacklogTaskRow({ task, project, isActive, isFavorite, onOpen, onToggleFavorite, dragDisabled }) {
+function BacklogTaskRow({ task, project, effortUnit, isActive, isFavorite, onOpen, onToggleFavorite, dragDisabled }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
     disabled: dragDisabled,
@@ -1813,7 +1805,7 @@ function BacklogTaskRow({ task, project, isActive, isFavorite, onOpen, onToggleF
         transform: CSS.Transform.toString(transform),
         transition,
       }}
-      className={`relative grid w-full grid-cols-[36px_36px_minmax(0,1fr)_36px] items-center gap-3 overflow-hidden border-t border-slate-100 py-3 pl-5 pr-4 text-left text-sm transition hover:bg-[#fff1f3] lg:grid-cols-[36px_36px_minmax(94px,0.6fr)_minmax(0,2.4fr)_72px_120px_88px_minmax(130px,0.9fr)_36px] ${
+      className={`relative grid w-full grid-cols-[36px_36px_minmax(0,1fr)_36px] items-center gap-3 overflow-hidden border-t border-slate-100 py-3 pl-5 pr-4 text-left text-sm transition hover:bg-[#fff1f3] lg:grid-cols-[36px_36px_minmax(94px,0.6fr)_minmax(0,2.4fr)_72px_120px_88px_92px_minmax(130px,0.9fr)_36px] ${
         isActive ? 'bg-[#fff1f3]' : 'bg-white'
       } ${isDragging ? 'relative z-10 opacity-70 shadow-[0_18px_34px_rgba(15,23,42,0.16)]' : ''}`}
       title={marker.label}
@@ -1870,6 +1862,10 @@ function BacklogTaskRow({ task, project, isActive, isFavorite, onOpen, onToggleF
       <span className={`hidden w-max rounded-full px-2.5 py-1 text-xs font-bold lg:inline-flex ${priorityMeta[task.priority] || priorityMeta.mittel}`}>
         {task.priority}
       </span>
+      <span className="hidden w-max items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 lg:inline-flex">
+        <Clock3 className="h-3.5 w-3.5" />
+        {formatEffort(getTaskEffortHours(task), effortUnit)}
+      </span>
       <span className="hidden min-w-0 items-center gap-2 text-xs font-bold text-slate-600 lg:inline-flex">
         <UserRound className="h-3.5 w-3.5 flex-none text-slate-400" />
         <span className="whitespace-normal break-words">{getAssigneeLabel(task.assignee)}</span>
@@ -1881,8 +1877,9 @@ function BacklogTaskRow({ task, project, isActive, isFavorite, onOpen, onToggleF
   );
 }
 
-function BacklogProjectGroup({ project, tasks, selectedTaskId, favoriteUserKey, onOpenTask, onToggleFavorite, dragDisabled }) {
-  const completed = tasks.filter((task) => task.status === 'done').length;
+function BacklogProjectGroup({ project, tasks, effortUnit, selectedTaskId, favoriteUserKey, onOpenTask, onToggleFavorite, dragDisabled }) {
+  const openEffortHours = sumTaskEffortHours(tasks.filter((task) => task.status !== 'done'));
+  const completedEffortHours = sumTaskEffortHours(tasks.filter((task) => task.status === 'done'));
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
@@ -1890,16 +1887,16 @@ function BacklogProjectGroup({ project, tasks, selectedTaskId, favoriteUserKey, 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-base font-extrabold text-slate-950">{project.name}</h3>
-            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">{tasks.length} Aufgaben</span>
+            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-slate-500">{formatEffort(openEffortHours, effortUnit)} offen</span>
           </div>
           <p className="mt-1 text-xs font-semibold text-slate-500">{project.summary}</p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-bold text-slate-500">
-          <span className="rounded-full bg-white px-2.5 py-1">{completed} erledigt</span>
+          <span className="rounded-full bg-white px-2.5 py-1">{formatEffort(completedEffortHours, effortUnit)} erledigt</span>
         </div>
       </div>
 
-      <div className="hidden w-full grid-cols-[36px_36px_minmax(94px,0.6fr)_minmax(0,2.4fr)_72px_120px_88px_minmax(130px,0.9fr)_36px] gap-3 bg-[#fff1f3] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#b84758] lg:grid">
+      <div className="hidden w-full grid-cols-[36px_36px_minmax(94px,0.6fr)_minmax(0,2.4fr)_72px_120px_88px_92px_minmax(130px,0.9fr)_36px] gap-3 bg-[#fff1f3] px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#b84758] lg:grid">
         <span />
         <span />
         <span>Key</span>
@@ -1907,6 +1904,7 @@ function BacklogProjectGroup({ project, tasks, selectedTaskId, favoriteUserKey, 
         <span>Erstellt</span>
         <span>Status</span>
         <span>Prio</span>
+        <span>Aufwand</span>
         <span>Verantwortlich</span>
         <span />
       </div>
@@ -1918,6 +1916,7 @@ function BacklogProjectGroup({ project, tasks, selectedTaskId, favoriteUserKey, 
               key={task.id}
               task={task}
               project={project}
+              effortUnit={effortUnit}
               isActive={selectedTaskId === task.id}
               isFavorite={isFavoriteForUser(task, favoriteUserKey)}
               onOpen={onOpenTask}
@@ -1985,7 +1984,7 @@ function createBacklogTaskForm(task) {
   };
 }
 
-function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, taskMarkers, onSave, onClose }) {
+function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effortUnit, taskMarkers, onSave, onClose }) {
   const [form, setForm] = useState(() => (task ? createBacklogTaskForm(task) : null));
   const [commentDraft, setCommentDraft] = useState('');
   const [tagDraft, setTagDraft] = useState('');
@@ -2283,17 +2282,16 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, task
                 <option value="">Ohne Verantwortlichen</option>
                 {assignees.map((assignee) => {
                   const workload = assigneeWorkloads.get(assignee);
-                  const disabled = workload?.remaining <= 0 && assignee !== form.assignee;
                   return (
-                    <option key={assignee} value={assignee} disabled={disabled}>
-                      {assignee} ({workload?.activeCount || 0}/{workload?.limit || getWorkloadLimit(assignee)}, {workload?.remaining || 0} frei)
+                    <option key={assignee} value={assignee}>
+                      {assignee} ({workload?.displayValue || formatEffort(0, effortUnit)} gebunden)
                     </option>
                   );
                 })}
               </select>
               {selectedAssigneeWorkload ? (
                 <span className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-bold ${selectedAssigneeWorkload.tone}`}>
-                  {selectedAssigneeWorkload.remaining} von {selectedAssigneeWorkload.limit} Aufgaben frei
+                  {selectedAssigneeWorkload.displayValue} aktuell gebunden
                 </span>
               ) : null}
             </label>
@@ -2627,6 +2625,7 @@ export default function ProjectsPage() {
   const [activeBacklogFilters, setActiveBacklogFilters] = useState([]);
   const [draftBacklogFilters, setDraftBacklogFilters] = useState([]);
   const [searchValue, setSearchValue] = useState('');
+  const [effortUnit, setEffortUnit] = useState('hours');
   const [createMode, setCreateMode] = useState(null);
   const [editingProjectId, setEditingProjectId] = useState(null);
   const [departmentForm, setDepartmentForm] = useState(emptyDepartmentForm);
@@ -2702,23 +2701,23 @@ export default function ProjectsPage() {
 
     return new Map(
       Array.from(people).map((person) => {
-        const limit = getWorkloadLimit(person);
-        const activeCount = workloadTasks.filter((task) => task.assignee === person && task.status !== 'done').length;
-        const remaining = Math.max(limit - activeCount, 0);
-        const percent = Math.min(Math.round((activeCount / limit) * 100), 100);
+        const effortHours = sumTaskEffortHours(workloadTasks.filter((task) => task.assignee === person && task.status !== 'done'));
         return [
           person,
           {
-            activeCount,
-            limit,
-            remaining,
-            percent,
-            tone: getWorkloadTone(remaining, percent),
+            effortHours,
+            displayValue: formatEffort(effortHours, effortUnit),
+            tone:
+              effortHours >= 32
+                ? 'border-rose-200 bg-rose-50 text-rose-700'
+                : effortHours >= 16
+                  ? 'border-amber-200 bg-amber-50 text-amber-700'
+                  : 'border-emerald-200 bg-emerald-50 text-emerald-700',
           },
         ];
       }),
     );
-  }, [backlogTasks, departmentMembers, selectedProject]);
+  }, [backlogTasks, departmentMembers, effortUnit, selectedProject]);
 
   const visibleBacklogTasks = useMemo(
     () => {
@@ -3192,6 +3191,26 @@ export default function ProjectsPage() {
             : 'space-y-6'
         }`}
       >
+        <div className="flex flex-wrap items-center justify-end gap-2 2xl:col-span-2">
+          <span className="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Zeit anzeigen als</span>
+          <div className="grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-white p-1">
+            {effortUnitOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setEffortUnit(option.value)}
+                className={`h-9 rounded-xl px-3 text-sm font-extrabold transition ${
+                  effortUnit === option.value
+                    ? 'bg-[#b84758] text-white shadow-[0_10px_22px_rgba(184,71,88,0.16)]'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {viewMode === 'projects' ? (
           <section className="rounded-3xl border border-slate-300 bg-white/70 p-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -3206,10 +3225,14 @@ export default function ProjectsPage() {
                   <DepartmentCard
                     department={department}
                     projectCount={projects.filter((project) => project.departmentId === department.id).length}
-                    backlogCount={backlogTasks.filter((task) => {
-                      const project = projects.find((candidate) => candidate.id === task.projectId);
-                      return project?.departmentId === department.id;
-                    }).length}
+                    effortHours={sumTaskEffortHours(
+                      backlogTasks
+                        .filter((task) => {
+                          const project = projects.find((candidate) => candidate.id === task.projectId);
+                          return project?.departmentId === department.id && task.status !== 'done';
+                        }),
+                    )}
+                    effortUnit={effortUnit}
                     isActive={selectedDepartment?.id === department.id}
                     onOpen={handleDepartmentOpen}
                   />
@@ -3277,9 +3300,9 @@ export default function ProjectsPage() {
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Auslastungsgrenzen</p>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-slate-400">Zeitbindung</p>
                   <p className="mt-1 text-sm font-semibold text-slate-600">
-                    Aktive Aufgaben je Person in diesem Projekt und verbleibende Kapazitaet.
+                    Voraussichtlich gebundene Zeit je Person in diesem Projekt.
                   </p>
                 </div>
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500">{departmentMembers.length} Personen</span>
@@ -3292,15 +3315,10 @@ export default function ProjectsPage() {
                       <div className="flex items-center justify-between gap-3">
                         <p className="truncate text-sm font-extrabold text-slate-900">{person}</p>
                         <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${workload?.tone}`}>
-                          {workload?.remaining || 0} frei
+                          {workload?.displayValue || formatEffort(0, effortUnit)}
                         </span>
                       </div>
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div className="h-full rounded-full bg-[#c95767]" style={{ width: `${workload?.percent || 0}%` }} />
-                      </div>
-                      <p className="mt-2 text-xs font-bold text-slate-500">
-                        {workload?.activeCount || 0} / {workload?.limit || getWorkloadLimit(person)} Aufgaben belegt
-                      </p>
+                      <p className="mt-2 text-xs font-bold text-slate-500">aktuell gebunden</p>
                     </div>
                   );
                 })}
@@ -3311,12 +3329,13 @@ export default function ProjectsPage() {
           {viewMode === 'projects' ? (
             <div className={`${viewMode === 'backlog' ? 'mt-5' : ''} grid gap-3 md:grid-cols-2`}>
               {visibleProjects.map((project) => {
-                const projectBacklogCount = backlogTasks.filter((task) => task.projectId === project.id).length;
+                const projectEffortHours = sumTaskEffortHours(backlogTasks.filter((task) => task.projectId === project.id && task.status !== 'done'));
                 return (
                   <ProjectCard
                     key={project.id}
                     project={project}
-                    backlogCount={projectBacklogCount}
+                    effortHours={projectEffortHours}
+                    effortUnit={effortUnit}
                     onOpen={handleProjectOpen}
                   />
                 );
@@ -3329,7 +3348,7 @@ export default function ProjectsPage() {
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm font-bold text-slate-500">
-                    {visibleBacklogTasks.length} Aufgaben im Backlog
+                    {formatEffort(sumTaskEffortHours(visibleBacklogTasks), effortUnit)} im Backlog
                     <span className="ml-2 text-xs font-semibold text-slate-400">
                       Favoriten fuer {favoriteUserLabel} stehen oben.
                     </span>
@@ -3496,6 +3515,7 @@ export default function ProjectsPage() {
                         key={project.id}
                         project={project}
                         tasks={projectTasks}
+                        effortUnit={effortUnit}
                         selectedTaskId={selectedBacklogTask?.id}
                         favoriteUserKey={favoriteUserKey}
                         onOpenTask={handleBacklogTaskOpen}
@@ -3543,6 +3563,7 @@ export default function ProjectsPage() {
             projects={visibleProjects}
             assignees={departmentMembers}
             assigneeWorkloads={assigneeWorkloads}
+            effortUnit={effortUnit}
             taskMarkers={taskMarkers}
             onSave={handleBacklogTaskSave}
             onClose={handleBacklogTaskClose}
