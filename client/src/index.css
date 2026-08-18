@@ -64,6 +64,24 @@ textarea {
   background: #0f172a;
 }
 
+:root.dark aside {
+  background: #1b2432;
+  border-color: #334155;
+}
+
+:root.dark aside button {
+  color: #cbd5e1;
+}
+
+:root.dark header {
+  background: #172131;
+  border-color: #334155;
+}
+
+:root.dark main {
+  background: #0f172a;
+}
+
 :root.dark .bg-white {
   background-color: #111827;
 }
@@ -77,12 +95,49 @@ textarea {
   background-color: #1f2937;
 }
 
+:root.dark .bg-white\/85 {
+  background-color: rgba(17, 24, 39, 0.92);
+}
+
+:root.dark .bg-white\/70 {
+  background-color: #111827;
+}
+
+:root.dark main [class*="bg-blue-50"],
+:root.dark main [class*="bg-violet-50"],
+:root.dark main [class*="bg-emerald-50"],
+:root.dark main [class*="bg-rose-50"],
+:root.dark main [class*="bg-amber-50"],
+:root.dark main [class*="bg-sky-50"],
+:root.dark main [class*="bg-purple-50"],
+:root.dark main [class*="bg-[#f"],
+:root.dark main [class*="bg-[#e"],
+:root.dark main [class*="bg-[#d"] {
+  background-color: #1b2636 !important;
+  color: #e2e8f0 !important;
+}
+
+:root.dark main [class*="text-blue-700"],
+:root.dark main [class*="text-violet-700"],
+:root.dark main [class*="text-emerald-700"],
+:root.dark main [class*="text-rose-700"],
+:root.dark main [class*="text-amber-700"],
+:root.dark main [class*="text-\[#4f46e5\]"],
+:root.dark main [class*="text-\[#b84758\]"] {
+  color: #f1f5f9 !important;
+}
+
+:root.dark main [class*="text-[#"] {
+  color: #e2e8f0 !important;
+}
+
 :root.dark .bg-\[\#fff1f3\],
 :root.dark .bg-\[\#fff7f8\] {
   background-color: #3a1721;
 }
 
 :root.dark .border-slate-200,
+:root.dark .border-slate-300,
 :root.dark .border-\[\#e5e7eb\] {
   border-color: #334155;
 }
@@ -115,12 +170,44 @@ textarea {
   color: #94a3b8;
 }
 
-:root[data-layout-density="compact"] main {
-  --nt-density-scale: 0.92;
+:root[data-layout-density="compact"] main .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1rem;
 }
 
-:root[data-font-size="large"] {
-  font-size: 18px;
+:root[data-layout-density="compact"] main .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.65rem;
+}
+
+:root[data-layout-density="compact"] main [class~="gap-3"] {
+  gap: 0.5rem;
+}
+
+:root[data-layout-density="compact"] main [class~="gap-4"] {
+  gap: 0.75rem;
+}
+
+:root[data-layout-density="compact"] main [class~="p-4"] {
+  padding: 0.75rem;
+}
+
+:root[data-layout-density="compact"] main [class~="p-5"] {
+  padding: 1rem;
+}
+
+:root[data-layout-density="comfortable"] main .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 2rem;
+}
+
+:root[data-layout-density="comfortable"] main .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1.25rem;
+}
+
+:root[data-layout-density="comfortable"] main [class~="gap-3"] {
+  gap: 1rem;
+}
+
+:root[data-layout-density="comfortable"] main [class~="gap-4"] {
+  gap: 1.25rem;
 }
 
 :root[data-reduce-motion="true"] * {
