@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, CalendarClock, CircleAlert } from 'lucide-react';
+import { ArrowRight, Building2, CalendarClock, CheckSquare, CircleAlert, LayoutDashboard } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 import { initialTasks } from './MyTasksPage';
@@ -137,6 +137,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [searchValue, setSearchValue] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('Alle Abteilungen');
+  const [activeDashboardTab, setActiveDashboardTab] = useState('overview');
   const assigneeNames = useMemo(() => [...new Set(initialTasks.map((task) => task.assignee).filter(Boolean))], []);
   const currentAssignee = assigneeNames.includes(user?.name) ? user.name : assigneeNames[0] || user?.name || 'Teammitglied';
 
@@ -328,6 +329,14 @@ export default function DashboardPage() {
     });
   }, [personalOpenTasks]);
 
+  const dashboardTabs = [
+    { id: 'overview', label: 'Uebersicht', icon: LayoutDashboard },
+    { id: 'focus', label: 'Heute im Fokus', count: focusTasks.length, icon: CheckSquare },
+    { id: 'attention', label: 'Aufmerksamkeit', count: attentionItems.length, icon: CircleAlert },
+    { id: 'departments', label: 'Abteilungen', count: departmentCards.length, icon: Building2 },
+    { id: 'deadlines', label: 'Fristen', count: upcomingItems.length, icon: CalendarClock },
+  ];
+
   return (
     <AppShell
       activeItem="Dashboard"
@@ -340,6 +349,44 @@ export default function DashboardPage() {
       createMenuItems={createMenuItems}
     >
       <div className="space-y-6 px-4 py-5 lg:px-6 lg:py-6">
+        <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Arbeitsbereiche</p>
+              <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">Dashboard-Reiter</h2>
+            </div>
+
+            <div role="tablist" aria-label="Dashboard-Reiter" className="flex w-full flex-wrap gap-2 lg:w-auto">
+              {dashboardTabs.map((tab) => {
+                const Icon = tab.icon;
+                const active = activeDashboardTab === tab.id;
+
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setActiveDashboardTab(tab.id)}
+                    className={`inline-flex h-11 min-w-0 items-center gap-2 rounded-xl border px-3 text-sm font-extrabold transition ${
+                      active
+                        ? 'border-[#d89aa5] bg-[#fff1f3] text-[#a23d4d]'
+                        : 'border-slate-200 bg-[#fcfcfd] text-slate-600 hover:border-slate-300 hover:bg-white'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 flex-none" />
+                    <span className="truncate">{tab.label}</span>
+                    {tab.count !== undefined ? (
+                      <span className="rounded-full bg-white px-2 py-0.5 text-xs font-black text-slate-500">{tab.count}</span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {activeDashboardTab === 'overview' ? (
         <section className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -347,7 +394,6 @@ export default function DashboardPage() {
               <h2 className="mt-2 text-[1.9rem] font-black tracking-tight text-slate-950">
                 {selectedDepartment === 'Alle Abteilungen' ? 'Aktueller Workspace-Stand' : selectedDepartment}
               </h2>
-              <p className="mt-2 text-sm font-semibold text-slate-500">Live-Stand fuer Aufgaben, Projekte und anstehende Fristen.</p>
             </div>
 
             <div className="flex flex-wrap items-end gap-3">
@@ -445,10 +491,13 @@ export default function DashboardPage() {
           </div>
 
         </section>
+        ) : null}
 
-        <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-          <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
-            <SectionHeader title="Heute im Fokus" action={`${focusTasks.length} Eintraege`} />
+        {['focus', 'attention'].includes(activeDashboardTab) ? (
+          <section className="grid gap-4">
+            {activeDashboardTab === 'focus' ? (
+              <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+            <SectionHeader title="Heute im Fokus" />
             <div className="mt-5 space-y-3">
               {focusTasks.map((task) => (
                 <button
@@ -477,10 +526,12 @@ export default function DashboardPage() {
                 </div>
               ) : null}
             </div>
-          </article>
+              </article>
+            ) : null}
 
-          <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
-            <SectionHeader title="Aufmerksamkeit noetig" action={`${attentionItems.length} Themen`} />
+            {activeDashboardTab === 'attention' ? (
+              <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+            <SectionHeader title="Aufmerksamkeit noetig" />
             <div className="mt-5 space-y-3">
               {attentionItems.map((task) => (
                 <button
@@ -506,12 +557,16 @@ export default function DashboardPage() {
                 </div>
               ) : null}
             </div>
-          </article>
-        </section>
+              </article>
+            ) : null}
+          </section>
+        ) : null}
 
-        <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-          <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
-            <SectionHeader title="Abteilungen im Blick" action={`${departmentCards.length} Bereiche`} />
+        {['departments', 'deadlines'].includes(activeDashboardTab) ? (
+          <section className="grid gap-4">
+            {activeDashboardTab === 'departments' ? (
+              <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+            <SectionHeader title="Abteilungen im Blick" />
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {departmentCards.map((department) => (
                 <button
@@ -561,10 +616,12 @@ export default function DashboardPage() {
                 </div>
               ) : null}
             </div>
-          </article>
+              </article>
+            ) : null}
 
-          <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
-            <SectionHeader title="Naechste Fristen" action={`${upcomingItems.length} Termine`} />
+            {activeDashboardTab === 'deadlines' ? (
+              <article className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+            <SectionHeader title="Naechste Fristen" />
             <div className="mt-5 space-y-3">
               {upcomingItems.map((item) => (
                 <button
@@ -576,7 +633,7 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <p className="text-[1rem] font-bold text-slate-950">{item.title}</p>
                     <p className="mt-1 text-sm font-semibold text-slate-400">
-                      {item.type} · {item.meta}
+                      {item.type} - {item.meta}
                     </p>
                   </div>
                   <div className="flex flex-none items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-600">
@@ -592,8 +649,10 @@ export default function DashboardPage() {
                 </div>
               ) : null}
             </div>
-          </article>
-        </section>
+              </article>
+            ) : null}
+          </section>
+        ) : null}
       </div>
     </AppShell>
   );
