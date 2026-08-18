@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import api from '../api/axios';
 import AppShell from '../components/AppShell';
+import { useAuth } from '../context/AuthContext';
 import { getTaskMarker } from '../utils/taskMarkers';
 import { initialTasks } from './MyTasksPage';
 import {
@@ -863,6 +864,7 @@ function CreateTaskModal({ date, projects, people, onClose, onCreate }) {
 
 export default function CalendarPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
   const [tasks, setTasks] = useState(() => getFallbackCalendarTasks());
   const [view, setView] = useState('month');
   const [cursorDate, setCursorDate] = useState(new Date());
@@ -882,6 +884,7 @@ export default function CalendarPage() {
     overdueOnly: false,
   });
   const focusedTaskId = searchParams.get('taskId');
+  const currentUserName = user?.name || '';
 
   useEffect(() => {
     const range = getRange(view, cursorDate);
@@ -960,12 +963,12 @@ export default function CalendarPage() {
       if (filters.statusLabel !== 'all' && statusLabels[task.status] !== filters.statusLabel) return false;
       if (filters.priorityLabel !== 'all' && priorityLabels[task.priority] !== filters.priorityLabel) return false;
       if (filters.department !== 'all' && task.department !== filters.department) return false;
-      if (filters.mineOnly && task.assignee !== 'Lisa Wagner') return false;
+      if (filters.mineOnly && (!currentUserName || task.assignee !== currentUserName)) return false;
       if (filters.overdueOnly && !isOverdue(task)) return false;
       if (query && !`${task.title} ${task.project} ${task.assignee} ${task.description}`.toLowerCase().includes(query)) return false;
       return true;
     });
-  }, [filters, searchValue, tasks]);
+  }, [currentUserName, filters, searchValue, tasks]);
 
   const tasksByDay = useMemo(
     () =>

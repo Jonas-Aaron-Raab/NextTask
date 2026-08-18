@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Building2, CalendarClock, CheckSquare, CircleAlert, LayoutDashboard } from 'lucide-react';
+import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 import { effortUnitOptions, formatEffort, sumEffortHours } from '../utils/effort';
@@ -91,6 +92,71 @@ function getTaskDepartment(task, departmentByProjectName) {
   return task.department || departmentByProjectName[task.project] || departmentByAssignee[task.assignee] || 'Ohne Abteilung';
 }
 
+function normalizeDashboardStatus(status) {
+  const map = {
+    OPEN: 'today',
+    IN_PROGRESS: 'in-progress',
+    QA: 'review',
+    BLOCKED: 'blocked',
+    DONE: 'done',
+    today: 'today',
+    'in-progress': 'in-progress',
+    review: 'review',
+    blocked: 'blocked',
+    done: 'done',
+  };
+
+  return map[status] || 'today';
+}
+
+function normalizeDashboardPriority(priority) {
+  const map = {
+    LOW: 'niedrig',
+    MEDIUM: 'mittel',
+    HIGH: 'hoch',
+    URGENT: 'hoch',
+    niedrig: 'niedrig',
+    mittel: 'mittel',
+    hoch: 'hoch',
+  };
+
+  return map[priority] || 'mittel';
+}
+
+function toDateValue(value) {
+  if (!value) return '';
+  const textValue = String(value);
+  return /^\d{4}-\d{2}-\d{2}/.test(textValue) ? textValue.slice(0, 10) : textValue;
+}
+
+function normalizeApiTaskForDashboard(task) {
+  const dueDateValue = toDateValue(task.dueDate || task.endDate || task.startDate);
+  const projectName = task.project?.name || task.project || 'Ohne Projekt';
+  const assignee = task.assignee?.name || task.assigneeName || task.assignee || '';
+
+  return {
+    id: task.id,
+    title: task.title,
+    status: normalizeDashboardStatus(task.status),
+    project: projectName,
+    priority: normalizeDashboardPriority(task.priority),
+    dueDate: dueDateValue || 'Ohne Frist',
+    dueDateValue,
+    estimatedHours: task.estimatedHours ?? null,
+    note: task.description || task.note || '',
+    assigneeId: task.assignee?.id || task.assigneeId || '',
+    assigneeEmail: task.assignee?.email || '',
+    assignee,
+    department: task.department || task.assignee?.department || '',
+  };
+}
+
+function isAssignedToUser(task, user, currentAssignee) {
+  if (user?.id && task.assigneeId === user.id) return true;
+  if (user?.email && task.assigneeEmail === user.email) return true;
+  return Boolean(currentAssignee && task.assignee === currentAssignee);
+}
+
 function getDaysUntilDue(task) {
   const dueTime = parseGermanDate(task.dueDateValue || task.dueDate);
   if (!Number.isFinite(dueTime)) return Number.POSITIVE_INFINITY;
@@ -124,8 +190,34 @@ export default function DashboardPage() {
   const [selectedDepartment, setSelectedDepartment] = useState('Alle Abteilungen');
   const [activeDashboardTab, setActiveDashboardTab] = useState('overview');
   const [workloadUnit, setWorkloadUnit] = useState('hours');
-  const assigneeNames = useMemo(() => [...new Set(initialTasks.map((task) => task.assignee).filter(Boolean))], []);
-  const currentAssignee = assigneeNames.includes(user?.name) ? user.name : assigneeNames[0] || user?.name || 'Teammitglied';
+  const [apiPersonalTasks, setApiPersonalTasks] = useState(null);
+  const currentAssignee = user?.name || 'Teammitglied';
+
+  useEffect(() => {
+    if (!user?.id) {
+      setApiPersonalTasks(null);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const loadPersonalTasks = async () => {
+      try {
+        const { data } = await api.get('/calendar/tasks', { params: { mineOnly: true } });
+        if (cancelled) return;
+
+        setApiPersonalTasks(Array.isArray(data) ? data.map(normalizeApiTaskForDashboard) : []);
+      } catch {
+        if (!cancelled) setApiPersonalTasks(null);
+      }
+    };
+
+    loadPersonalTasks();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const searchTerm = searchValue.trim().toLowerCase();
   const departmentByProjectName = useMemo(() => {
@@ -157,8 +249,17 @@ export default function DashboardPage() {
   }, [departmentByProjectName, selectedDepartment]);
 
   const personalOpenTasks = useMemo(() => {
-    return openTasks.filter((task) => task.assignee === currentAssignee);
-  }, [currentAssignee, openTasks]);
+    const sourceTasks = apiPersonalTasks || openTasks;
+
+    return sourceTasks.filter((task) => {
+      if (task.status === 'done') return false;
+      if (!isAssignedToUser(task, user, currentAssignee)) return false;
+      if (selectedDepartment === 'Alle Abteilungen') return true;
+
+      const departmentName = getTaskDepartment(task, departmentByProjectName);
+      return departmentName === selectedDepartment;
+    });
+  }, [apiPersonalTasks, currentAssignee, departmentByProjectName, openTasks, selectedDepartment, user]);
 
   const visibleProjects = useMemo(() => {
     return initialProjects.filter((project) => {
