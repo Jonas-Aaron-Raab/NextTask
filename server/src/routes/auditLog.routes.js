@@ -1,6 +1,7 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const { userCanManageRoles } = require('../utils/accessRoles');
+const { parseDate } = require('../utils/date');
 
 const router = express.Router();
 const allowedSeverities = new Set(['INFO', 'NOTICE', 'WARNING', 'CRITICAL']);
@@ -17,12 +18,6 @@ async function requireAuditAccess(req, res, next) {
 
   req.currentUser = currentUser;
   next();
-}
-
-function parseDate(value) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function serializeLog(entry) {

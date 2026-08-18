@@ -6,8 +6,9 @@ import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 import { bankDepartments, getEffectiveRoleForUser } from '../data/bankOrganization';
 import { effortUnitOptions, formatEffort, sumEffortHours } from '../utils/effort';
-import { initialTasks } from './MyTasksPage';
-import { initialBacklogTasks, initialDepartments, initialProjects } from './ProjectsPage';
+import { taskDateTimestamp, toDashboardPriority, toDashboardStatus, toTaskDateValue } from '../utils/task';
+import { dashboardFallbackTasks } from '../data/taskFixtures';
+import { initialBacklogTasks, initialDepartments, initialProjects } from '../data/projectFixtures';
 
 const dashboardSelectClass =
   'h-11 min-w-[220px] rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12';
@@ -43,47 +44,11 @@ const deadlineMeta = [
   { key: 'later', label: 'Spaeter', tone: 'bg-slate-400', track: 'bg-slate-100' },
 ];
 
-function parseGermanDate(value) {
-  if (!value) return Number.POSITIVE_INFINITY;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return new Date(value).getTime();
-  }
-
-  const months = {
-    januar: 0,
-    februar: 1,
-    maerz: 2,
-    april: 3,
-    mai: 4,
-    juni: 5,
-    juli: 6,
-    august: 7,
-    september: 8,
-    oktober: 9,
-    november: 10,
-    dezember: 11,
-  };
-
-  const normalized = value
-    .toLowerCase()
-    .replace('märz', 'maerz')
-    .replace(/\./g, '')
-    .trim();
-  const [day, monthName, year] = normalized.split(/\s+/);
-  const monthIndex = months[monthName];
-
-  if (!day || monthIndex === undefined || !year) {
-    return Number.POSITIVE_INFINITY;
-  }
-
-  return new Date(Number(year), monthIndex, Number(day)).getTime();
-}
-
 function sortByUrgency(left, right) {
   const priorityDelta = (priorityWeight[right.priority] || 0) - (priorityWeight[left.priority] || 0);
   if (priorityDelta !== 0) return priorityDelta;
 
-  const dateDelta = parseGermanDate(left.dueDateValue || left.dueDate) - parseGermanDate(right.dueDateValue || right.dueDate);
+  const dateDelta = taskDateTimestamp(left.dueDateValue || left.dueDate) - taskDateTimestamp(right.dueDateValue || right.dueDate);
   if (dateDelta !== 0) return dateDelta;
 
   return left.title.localeCompare(right.title, 'de');
@@ -93,54 +58,17 @@ function getTaskDepartment(task, departmentByProjectName) {
   return task.department || departmentByProjectName[task.project] || departmentByAssignee[task.assignee] || 'Ohne Abteilung';
 }
 
-function normalizeDashboardStatus(status) {
-  const map = {
-    OPEN: 'today',
-    IN_PROGRESS: 'in-progress',
-    QA: 'review',
-    BLOCKED: 'blocked',
-    DONE: 'done',
-    today: 'today',
-    'in-progress': 'in-progress',
-    review: 'review',
-    blocked: 'blocked',
-    done: 'done',
-  };
-
-  return map[status] || 'today';
-}
-
-function normalizeDashboardPriority(priority) {
-  const map = {
-    LOW: 'niedrig',
-    MEDIUM: 'mittel',
-    HIGH: 'hoch',
-    URGENT: 'hoch',
-    niedrig: 'niedrig',
-    mittel: 'mittel',
-    hoch: 'hoch',
-  };
-
-  return map[priority] || 'mittel';
-}
-
-function toDateValue(value) {
-  if (!value) return '';
-  const textValue = String(value);
-  return /^\d{4}-\d{2}-\d{2}/.test(textValue) ? textValue.slice(0, 10) : textValue;
-}
-
 function normalizeApiTaskForDashboard(task) {
-  const dueDateValue = toDateValue(task.dueDate || task.endDate || task.startDate);
+  const dueDateValue = toTaskDateValue(task.dueDate || task.endDate || task.startDate);
   const projectName = task.project?.name || task.project || 'Ohne Projekt';
   const assignee = task.assignee?.name || task.assigneeName || task.assignee || '';
 
   return {
     id: task.id,
     title: task.title,
-    status: normalizeDashboardStatus(task.status),
+    status: toDashboardStatus(task.status),
     project: projectName,
-    priority: normalizeDashboardPriority(task.priority),
+    priority: toDashboardPriority(task.priority),
     dueDate: dueDateValue || 'Ohne Frist',
     dueDateValue,
     estimatedHours: task.estimatedHours ?? null,
@@ -198,7 +126,7 @@ function getUserDepartmentScopes(user, role) {
 }
 
 function getDaysUntilDue(task) {
-  const dueTime = parseGermanDate(task.dueDateValue || task.dueDate);
+  const dueTime = taskDateTimestamp(task.dueDateValue || task.dueDate);
   if (!Number.isFinite(dueTime)) return Number.POSITIVE_INFINITY;
 
   const today = new Date();
@@ -268,7 +196,7 @@ export default function DashboardPage() {
   }, [user?.id]);
 
   const searchTerm = searchValue.trim().toLowerCase();
-  const dashboardTasks = apiTasks || initialTasks;
+  const dashboardTasks = apiTasks?.length ? apiTasks : currentAssignee === 'Mara Stein' ? dashboardFallbackTasks : [];
   const departmentByProjectName = useMemo(() => {
     return Object.fromEntries(
       initialProjects.map((project) => {
@@ -360,7 +288,7 @@ export default function DashboardPage() {
       title: task.title,
       meta: task.project,
       dueLabel: task.dueDate,
-      sortValue: parseGermanDate(task.dueDateValue || task.dueDate),
+      sortValue: taskDateTimestamp(task.dueDateValue || task.dueDate),
       type: 'Aufgabe',
       path: '/my-tasks',
     }));
@@ -370,7 +298,7 @@ export default function DashboardPage() {
       title: project.name,
       meta: project.owner,
       dueLabel: project.dueDate,
-      sortValue: parseGermanDate(project.dueDate),
+      sortValue: taskDateTimestamp(project.dueDate),
       type: 'Projekt',
       path: '/projects',
     }));
@@ -477,10 +405,9 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Arbeitsbereiche</p>
-              <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">Dashboard-Reiter</h2>
             </div>
 
-            <div role="tablist" aria-label="Dashboard-Reiter" className="flex w-full flex-wrap gap-2 lg:w-auto">
+            <div role="tablist" aria-label="Arbeitsbereiche" className="flex w-full flex-wrap gap-2 lg:w-auto">
               {dashboardTabs.map((tab) => {
                 const Icon = tab.icon;
                 const active = activeDashboardTab === tab.id;

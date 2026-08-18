@@ -17,8 +17,8 @@ import {
   X,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
-import { initialDepartments, initialProjects } from './ProjectsPage';
-import { initialTasks } from './MyTasksPage';
+import { initialDepartments, initialProjects } from '../data/projectFixtures';
+import { initialTasks } from '../data/taskFixtures';
 
 const createMenuItems = ['Neue Seite', 'Neues Dokument', 'Neue Vorlage', 'Upload Nachweis'];
 

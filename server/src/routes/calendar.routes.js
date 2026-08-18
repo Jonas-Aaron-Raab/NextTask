@@ -1,15 +1,10 @@
 const express = require('express');
 const auth = require('../middleware/auth');
+const { parseDate } = require('../utils/date');
 
 const router = express.Router();
 
 const elevatedRoles = new Set(['ADMIN', 'PROJECT_MANAGER']);
-
-function parseDate(value) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
 
 function toBoolean(value) {
   return value === true || value === 'true';

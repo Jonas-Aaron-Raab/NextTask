@@ -8,7 +8,10 @@ const {
   sendTaskMentionEmail,
 } = require('../utils/taskNotificationMailer');
 const { removeTaskCalendarSyncs, syncTaskCalendarEvent } = require('../utils/calendarIntegration');
+const { parseDate } = require('../utils/date');
 const router = express.Router();
+
+const parseTaskDate = (value) => parseDate(value, undefined);
 
 const statusMap = {
   today: 'OPEN',
@@ -50,12 +53,6 @@ function normalizeStatus(status) {
 function normalizePriority(priority) {
   const value = String(priority || 'MEDIUM').toUpperCase();
   return ['LOW', 'MEDIUM', 'HIGH', 'URGENT'].includes(value) ? value : 'MEDIUM';
-}
-
-function parseDate(value) {
-  if (!value) return undefined;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? undefined : date;
 }
 
 function parseOptionalNumber(value) {
@@ -209,9 +206,9 @@ router.post('/', auth, async (req, res) => {
         projectId,
         assigneeId: assigneeId || null,
         order: lastTask ? lastTask.order + 1 : 0,
-        startDate: parseDate(startDate),
-        dueDate: parseDate(dueDate),
-        endDate: parseDate(endDate),
+        startDate: parseTaskDate(startDate),
+        dueDate: parseTaskDate(dueDate),
+        endDate: parseTaskDate(endDate),
         estimatedHours: parseOptionalNumber(estimatedHours),
         department: department || null,
         markerId: markerId || null,
@@ -272,9 +269,9 @@ router.put('/:id', auth, async (req, res) => {
         status: status ? normalizeStatus(status) : undefined,
         priority: priority ? normalizePriority(priority) : undefined,
         assigneeId,
-        startDate: parseDate(startDate),
-        dueDate: parseDate(dueDate),
-        endDate: parseDate(endDate),
+        startDate: parseTaskDate(startDate),
+        dueDate: parseTaskDate(dueDate),
+        endDate: parseTaskDate(endDate),
         estimatedHours: parseOptionalNumber(estimatedHours),
         department,
         markerId: markerId === undefined ? undefined : markerId || null,
@@ -349,9 +346,9 @@ router.patch('/:id/schedule', auth, async (req, res) => {
     const updated = await req.prisma.task.update({
       where: { id: req.params.id },
       data: {
-        startDate: parseDate(startDate),
-        dueDate: parseDate(dueDate),
-        endDate: parseDate(endDate),
+        startDate: parseTaskDate(startDate),
+        dueDate: parseTaskDate(dueDate),
+        endDate: parseTaskDate(endDate),
         assigneeId,
         estimatedHours: parseOptionalNumber(estimatedHours),
       },
