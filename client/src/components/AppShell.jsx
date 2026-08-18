@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   BarChart3,
   Bell,
-  Building2,
   Calendar,
   CheckSquare,
   ChevronDown,
@@ -199,7 +198,6 @@ export default function AppShell({
   const [createOpen, setCreateOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [dismissedNotificationIds, setDismissedNotificationIds] = useState(getStoredDismissedNotifications);
   const [, setRoleNavigationVersion] = useState(0);
@@ -325,7 +323,7 @@ export default function AppShell({
             })}
           </nav>
 
-          <div className="space-y-3 px-3 pb-4">
+          <div className="px-3 pb-4">
             <button
               type="button"
               onClick={() => setSidebarCollapsed((current) => !current)}
@@ -336,39 +334,6 @@ export default function AppShell({
               {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
               {!sidebarCollapsed ? <span>Sidebar einklappen</span> : null}
             </button>
-
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setWorkspaceOpen((current) => !current)}
-                className={`flex w-full items-center gap-3 rounded-2xl border border-[#cfd6df] bg-white p-3 text-left shadow-[0_10px_30px_rgba(15,23,42,0.08)] transition hover:border-[#b8c2cf] ${
-                  sidebarCollapsed ? 'justify-center' : ''
-                }`}
-              >
-                <span className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-[#f0edff] text-[#6d5df6]">
-                  <Building2 className="h-5 w-5" />
-                </span>
-                {!sidebarCollapsed ? (
-                  <>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-xs font-semibold text-[#8793a3]">Workspace</span>
-                      <span className="block truncate text-sm font-bold text-[#1f2937]">Agentur Digital</span>
-                    </span>
-                    <ChevronDown className="h-4 w-4 text-[#718096]" />
-                  </>
-                ) : null}
-              </button>
-              {workspaceOpen && !sidebarCollapsed ? (
-                <MenuCard className="left-0 right-auto bottom-full top-auto mb-3 mt-0">
-                  <button type="button" className="w-full rounded-xl px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50">
-                    Workspace wechseln
-                  </button>
-                  <button type="button" className="w-full rounded-xl px-3 py-2 text-left font-semibold text-slate-700 hover:bg-slate-50">
-                    Workspace verwalten
-                  </button>
-                </MenuCard>
-              ) : null}
-            </div>
           </div>
         </aside>
 
