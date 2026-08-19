@@ -262,6 +262,39 @@ function getInitials(name) {
     .toUpperCase();
 }
 
+function buildAssignedBy(name = 'Elisabeth Bezverkha') {
+  return {
+    name,
+    initials: getInitials(name),
+    tone: 'from-rose-200 to-orange-200',
+  };
+}
+
+function buildCreateTaskForm(projectName, creatorName = 'Elisabeth Bezverkha') {
+  return {
+    title: '',
+    description: '',
+    project: projectName,
+    status: 'today',
+    priority: 'mittel',
+    dueDateValue: '2026-08-20',
+    estimatedHours: '4',
+    assignee: 'Lisa Wagner',
+    markerId: '',
+    classification: 'Intern',
+    risk: 'Niedrig',
+    controlId: `CTRL-NEW-${String(Date.now()).slice(-4)}`,
+    approval: 'Noch kein Freigabeprozess definiert',
+    evidence: 'Noch keine Evidenz hinterlegt',
+    tags: ['Neu'],
+    linkedPeople: [],
+    attachments: [],
+    comments: [],
+    auditTrail: [],
+    assignedBy: buildAssignedBy(creatorName),
+  };
+}
+
 function TaskFilterField({ label, value, onChange, children }) {
   return (
     <label className="min-w-[170px] flex-1 space-y-1.5">
@@ -619,143 +652,71 @@ function TaskMarkerField({ value, markers, onChange }) {
     </label>
   );
 }
-function CreateTaskModal({ projects, form, taskMarkers, onChange, onClose, onSubmit }) {
+function CreateTaskModal({
+  projects,
+  form,
+  taskMarkers,
+  commentDraft,
+  tagDraft,
+  personDraft,
+  attachmentSource,
+  attachmentType,
+  onChange,
+  onClose,
+  onSubmit,
+  onCommentChange,
+  onCommentSubmit,
+  onInsertMention,
+  onTagDraftChange,
+  onTagAdd,
+  onTagRemove,
+  onPersonDraftChange,
+  onPersonAdd,
+  onPersonRemove,
+  onAttachmentSourceChange,
+  onAttachmentTypeChange,
+  onAttachmentFilesAdd,
+  onAttachmentRemove,
+}) {
   return (
-    <PopupShell title="Neue Aufgabe" subtitle="Lege eine neue Aufgabe mit Status, Projekt und Verantwortlichkeiten an." onClose={onClose} maxWidth="max-w-3xl">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <label className="block text-sm font-bold text-slate-700">
-            Aufgabentitel
-            <input
-              value={form.title}
-              onChange={(event) => onChange('title', event.target.value)}
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-            />
-          </label>
-
-          <label className="block text-sm font-bold text-slate-700">
-            Kurzbeschreibung
-            <textarea
-              value={form.description}
-              onChange={(event) => onChange('description', event.target.value)}
-              rows={5}
-              className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-            />
-          </label>
-        </section>
-
-        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <label className="block text-sm font-bold text-slate-700">
-            Projekt
-            <select
-              value={form.project}
-              onChange={(event) => onChange('project', event.target.value)}
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-            >
-              {projects.map((project) => (
-                <option key={project.id} value={project.name}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-bold text-slate-700">
-              Status
-              <select
-                value={form.status}
-                onChange={(event) => onChange('status', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-              >
-                {columns.filter((column) => column.id !== 'done').map((column) => (
-                  <option key={column.id} value={column.id}>
-                    {column.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block text-sm font-bold text-slate-700">
-              Prioritaet
-              <select
-                value={form.priority}
-                onChange={(event) => onChange('priority', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-              >
-                <option value="hoch">Hoch</option>
-                <option value="mittel">Mittel</option>
-                <option value="niedrig">Niedrig</option>
-              </select>
-            </label>
-
-            <label className="block text-sm font-bold text-slate-700">
-              Faelligkeit
-              <input
-                type="date"
-                value={form.dueDateValue}
-                onChange={(event) => onChange('dueDateValue', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-              />
-            </label>
-
-            <label className="block text-sm font-bold text-slate-700">
-              Aufwand in Stunden
-              <input
-                type="number"
-                min="0"
-                step="0.25"
-                value={getEffortInputValue(form.estimatedHours, 'hours')}
-                onChange={(event) => onChange('estimatedHours', getEffortHoursFromInput(event.target.value, 'hours'))}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-              />
-            </label>
-
-            <label className="block text-sm font-bold text-slate-700">
-              Aufwand in Tagen
-              <input
-                type="number"
-                min="0"
-                step="0.25"
-                value={getEffortInputValue(form.estimatedHours, 'days')}
-                onChange={(event) => onChange('estimatedHours', getEffortHoursFromInput(event.target.value, 'days'))}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-              />
-            </label>
-
-            <label className="block text-sm font-bold text-slate-700">
-              Zuständig
-              <select
-                value={form.assignee}
-                onChange={(event) => onChange('assignee', event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-              >
-                {teamMembers.map((member) => (
-                  <option key={member} value={member}>
-                    {member}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <TaskMarkerField
-              value={form.markerId || ''}
-              markers={taskMarkers}
-              onChange={(value) => onChange('markerId', value)}
-            />
-          </div>
-        </section>
-      </div>
-
-      <div className="mt-5 flex justify-end gap-3">
-        <button type="button" onClick={onClose} className="h-11 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
-          Abbrechen
-        </button>
-        <button type="button" onClick={onSubmit} className="h-11 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)]">
-          Aufgabe anlegen
-        </button>
-      </div>
-    </PopupShell>
+    <TaskEditorModal
+      mode="create"
+      resetKey="create-task"
+      form={form}
+      projects={projects}
+      tags={form.tags || []}
+      linkedPeople={form.linkedPeople || []}
+      attachments={form.attachments || []}
+      comments={form.comments || []}
+      auditTrail={form.auditTrail || []}
+      assignedByName={form.assignedBy?.name}
+      headerEyebrow="Aufgabe erstellen"
+      headerTitle={form.title?.trim() || 'Neue Aufgabe'}
+      headerSubtitle="Lege eine neue Aufgabe mit Status, Projekt und Verantwortlichkeiten an."
+      commentDraft={commentDraft}
+      tagDraft={tagDraft}
+      personDraft={personDraft}
+      attachmentSource={attachmentSource}
+      attachmentType={attachmentType}
+      onClose={onClose}
+      onFormChange={onChange}
+      onCommentChange={onCommentChange}
+      onCommentSubmit={onCommentSubmit}
+      onInsertMention={onInsertMention}
+      onTagDraftChange={onTagDraftChange}
+      onTagAdd={onTagAdd}
+      onTagRemove={onTagRemove}
+      onPersonDraftChange={onPersonDraftChange}
+      onPersonAdd={onPersonAdd}
+      onPersonRemove={onPersonRemove}
+      onAttachmentSourceChange={onAttachmentSourceChange}
+      onAttachmentTypeChange={onAttachmentTypeChange}
+      onAttachmentFilesAdd={onAttachmentFilesAdd}
+      onAttachmentRemove={onAttachmentRemove}
+      onSubmit={onSubmit}
+      submitLabel="Aufgabe anlegen"
+      taskMarkers={taskMarkers}
+    />
   );
 }
 
@@ -974,9 +935,20 @@ function TaskEditorTabList({ activeTab, onChange }) {
   );
 }
 
-function TaskDetailDrawer({
-  task,
+function TaskEditorModal({
+  mode = 'detail',
+  resetKey,
   form,
+  projects,
+  tags,
+  linkedPeople,
+  attachments,
+  comments,
+  auditTrail,
+  assignedByName,
+  headerEyebrow,
+  headerTitle,
+  headerSubtitle,
   commentDraft,
   tagDraft,
   personDraft,
@@ -997,16 +969,24 @@ function TaskDetailDrawer({
   onAttachmentTypeChange,
   onAttachmentFilesAdd,
   onAttachmentRemove,
-  onSave,
+  onSubmit,
+  submitLabel,
   taskMarkers,
 }) {
-  if (!task || !form) return null;
+  if (!form) return null;
 
   const [activeTab, setActiveTab] = useState('core');
+  const projectOptions = [...new Set([...projects.map((project) => project.name), form.project].filter(Boolean))];
+  const displayAssignedBy = assignedByName || form.assignedBy?.name || 'Noch offen';
+  const displayDueDate = form.dueDateValue ? formatDateLabel(form.dueDateValue) : 'Ohne Frist';
+  const displayEffort =
+    form.estimatedHours === '' || form.estimatedHours === null || form.estimatedHours === undefined
+      ? 'Kein Aufwand'
+      : formatEffort(Number(form.estimatedHours), 'hours');
 
   useEffect(() => {
     setActiveTab('core');
-  }, [task.id]);
+  }, [resetKey]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm">
@@ -1014,16 +994,17 @@ function TaskDetailDrawer({
         <div className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-6 py-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#c95767]">Ticket Details</p>
-              <h2 className="mt-1 text-xl font-extrabold text-slate-950">{task.title}</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#c95767]">{headerEyebrow}</p>
+              <h2 className="mt-1 text-xl font-extrabold text-slate-950">{headerTitle}</h2>
+              {headerSubtitle ? <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500">{headerSubtitle}</p> : null}
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
-                <span>{task.project}</span>
+                <span>{form.project || 'Ohne Projekt'}</span>
                 <span className="text-slate-300">-</span>
-                <span>{task.assignee}</span>
+                <span>{form.assignee || 'Keine Person'}</span>
                 <span className="text-slate-300">-</span>
-                <span>{statusLabels[task.status]}</span>
+                <span>{statusLabels[form.status] || 'Offen'}</span>
                 <span className="text-slate-300">-</span>
-                <span>{task.assignedBy.name}</span>
+                <span>{displayAssignedBy}</span>
               </div>
             </div>
             <button
@@ -1037,12 +1018,12 @@ function TaskDetailDrawer({
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full bg-[#fff3f4] px-3 py-1 text-xs font-bold text-[#b84758]">{statusLabels[task.status]}</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{task.project}</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{task.assignee}</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{task.assignedBy.name}</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{task.dueDate}</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{formatEffort(task.estimatedHours, 'hours')}</span>
+            <span className="rounded-full bg-[#fff3f4] px-3 py-1 text-xs font-bold text-[#b84758]">{statusLabels[form.status] || 'Offen'}</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{form.project || 'Ohne Projekt'}</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{form.assignee || 'Keine Person'}</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{displayAssignedBy}</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{displayDueDate}</span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{displayEffort}</span>
           </div>
 
           <TaskEditorTabList activeTab={activeTab} onChange={setActiveTab} />
@@ -1064,11 +1045,17 @@ function TaskDetailDrawer({
 
                   <label className="block text-sm font-bold text-slate-700">
                     Projekt
-                    <input
+                    <select
                       value={form.project}
                       onChange={(event) => onFormChange('project', event.target.value)}
-                      className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-                    />
+                      className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+                    >
+                      {projectOptions.map((projectName) => (
+                        <option key={projectName} value={projectName}>
+                          {projectName}
+                        </option>
+                      ))}
+                    </select>
                   </label>
 
                   <label className="block text-sm font-bold text-slate-700">
@@ -1179,8 +1166,8 @@ function TaskDetailDrawer({
                 }
               >
                 <div className="space-y-3">
-                  {task.attachments.length ? (
-                    task.attachments.map((attachment) => (
+                  {attachments.length ? (
+                    attachments.map((attachment) => (
                       <div key={attachment.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-3 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
                         <div className="min-w-0">
                           <p className="truncate text-sm font-bold text-slate-900">{attachment.name}</p>
@@ -1246,8 +1233,8 @@ function TaskDetailDrawer({
             {activeTab === 'comments' ? (
               <DetailBlock title="Kommentare und Mentions" icon={MessageSquareMore}>
                 <div className="space-y-3">
-                  {task.comments.length ? (
-                    task.comments.map((comment) => (
+                  {comments.length ? (
+                    comments.map((comment) => (
                       <div key={comment.id} className="rounded-2xl bg-white p-3 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-sm font-bold text-slate-900">{comment.author}</span>
@@ -1296,7 +1283,7 @@ function TaskDetailDrawer({
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Tags</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {task.tags.map((tag) => (
+                      {tags.map((tag) => (
                         <span
                           key={tag}
                           className="inline-flex items-center gap-1 rounded-full border border-rose-100 bg-rose-50 px-3 py-1 text-xs font-bold text-[#b64454]"
@@ -1334,7 +1321,7 @@ function TaskDetailDrawer({
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Verlinkte Mitarbeitende</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {task.linkedPeople.map((person) => (
+                      {linkedPeople.map((person) => (
                         <span
                           key={person}
                           className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-700"
@@ -1441,11 +1428,17 @@ function TaskDetailDrawer({
             {activeTab === 'audit' ? (
               <DetailBlock title="Audit-Spur" icon={History}>
                 <div className="space-y-2">
-                  {task.auditTrail.map((entry) => (
-                    <div key={entry} className="rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
-                      {entry}
+                  {auditTrail.length ? (
+                    auditTrail.map((entry) => (
+                      <div key={entry} className="rounded-xl bg-white px-3 py-2 text-sm font-medium text-slate-600 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
+                        {entry}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-xl bg-white px-3 py-3 text-sm font-medium text-slate-500 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
+                      {mode === 'create' ? 'Die Audit-Spur startet automatisch nach dem Anlegen der Aufgabe.' : 'Noch keine Audit-Einträge vorhanden.'}
                     </div>
-                  ))}
+                  )}
                 </div>
               </DetailBlock>
             ) : null}
@@ -1463,10 +1456,10 @@ function TaskDetailDrawer({
             </button>
             <button
               type="button"
-              onClick={onSave}
+              onClick={onSubmit}
               className="h-11 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)]"
             >
-              Details speichern
+              {submitLabel}
             </button>
           </div>
         </div>
@@ -1498,17 +1491,7 @@ export default function MyTasksPage() {
   const [attachmentSource, setAttachmentSource] = useState('SharePoint');
   const [attachmentType, setAttachmentType] = useState('Excel');
   const [performancePeriod, setPerformancePeriod] = useState('day');
-  const [createTaskForm, setCreateTaskForm] = useState({
-    title: '',
-    description: '',
-    project: initialProjects[0]?.name || '',
-    status: 'today',
-    priority: 'mittel',
-    dueDateValue: '2026-05-20',
-    estimatedHours: '4',
-    assignee: 'Lisa Wagner',
-    markerId: '',
-  });
+  const [createTaskForm, setCreateTaskForm] = useState(() => buildCreateTaskForm(initialProjects[0]?.name || ''));
   const [createProjectForm, setCreateProjectForm] = useState({
     name: '',
     description: '',
@@ -1865,16 +1848,12 @@ export default function MyTasksPage() {
 
   const handleCreateAction = (item) => {
     if (item === 'Neue Aufgabe') {
-      setCreateTaskForm({
-        title: '',
-        description: '',
-        project: projects[0]?.name || '',
-        status: 'today',
-        priority: 'mittel',
-        dueDateValue: '2026-05-20',
-        estimatedHours: '4',
-        assignee: 'Lisa Wagner',
-      });
+      setCreateTaskForm(buildCreateTaskForm(projects[0]?.name || '', currentUserName));
+      setCommentDraft('');
+      setTagDraft('');
+      setPersonDraft(teamMembers[0]);
+      setAttachmentSource('SharePoint');
+      setAttachmentType('Excel');
       setCreateMode('task');
     }
 
@@ -1892,6 +1871,97 @@ export default function MyTasksPage() {
 
   const handleCreateTaskFormChange = (field, value) => {
     setCreateTaskForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleCreateCommentSubmit = () => {
+    if (!commentDraft.trim()) return;
+    setCreateTaskForm((current) => ({
+      ...current,
+      comments: [
+        ...(current.comments || []),
+        { id: `comment-${Date.now()}`, author: currentUserName, time: 'gerade eben', text: commentDraft.trim() },
+      ],
+      auditTrail: [`${formatDateLabel('2026-08-19')}: Kommentar zur neuen Aufgabe ergänzt.`, ...(current.auditTrail || [])],
+    }));
+    setCommentDraft('');
+  };
+
+  const handleCreateInsertMention = (member) => {
+    setCommentDraft((current) => `${current}${current ? ' ' : ''}@${member} `);
+  };
+
+  const handleCreateTagAdd = () => {
+    const nextTag = tagDraft.trim();
+    if (!nextTag) return;
+
+    setCreateTaskForm((current) =>
+      (current.tags || []).includes(nextTag)
+        ? current
+        : {
+            ...current,
+            tags: [...(current.tags || []), nextTag],
+            auditTrail: [`${formatDateLabel('2026-08-19')}: Tag "${nextTag}" vorgemerkt.`, ...(current.auditTrail || [])],
+          },
+    );
+    setTagDraft('');
+  };
+
+  const handleCreateTagRemove = (tagToRemove) => {
+    setCreateTaskForm((current) => ({
+      ...current,
+      tags: (current.tags || []).filter((tag) => tag !== tagToRemove),
+      auditTrail: [`${formatDateLabel('2026-08-19')}: Tag "${tagToRemove}" entfernt.`, ...(current.auditTrail || [])],
+    }));
+  };
+
+  const handleCreatePersonAdd = () => {
+    if (!personDraft) return;
+
+    setCreateTaskForm((current) =>
+      (current.linkedPeople || []).includes(personDraft)
+        ? current
+        : {
+            ...current,
+            linkedPeople: [...(current.linkedPeople || []), personDraft],
+            auditTrail: [`${formatDateLabel('2026-08-19')}: Mitarbeitende Person "${personDraft}" verlinkt.`, ...(current.auditTrail || [])],
+          },
+    );
+  };
+
+  const handleCreatePersonRemove = (personToRemove) => {
+    setCreateTaskForm((current) => ({
+      ...current,
+      linkedPeople: (current.linkedPeople || []).filter((person) => person !== personToRemove),
+      auditTrail: [`${formatDateLabel('2026-08-19')}: Mitarbeitende Person "${personToRemove}" entfernt.`, ...(current.auditTrail || [])],
+    }));
+  };
+
+  const handleCreateAttachmentFilesAdd = (files) => {
+    const nextFiles = Array.from(files || []);
+    if (!nextFiles.length) return;
+
+    setCreateTaskForm((current) => ({
+      ...current,
+      attachments: [
+        ...(current.attachments || []),
+        ...nextFiles.map((file) => ({
+          id: `attachment-${file.name}-${Date.now()}`,
+          name: file.name,
+          type: attachmentType,
+          source: attachmentSource,
+          owner: currentUserName,
+        })),
+      ],
+      auditTrail: [`${formatDateLabel('2026-08-19')}: ${nextFiles.length} Datei(en) vorgemerkt.`, ...(current.auditTrail || [])],
+    }));
+  };
+
+  const handleCreateAttachmentRemove = (attachmentId) => {
+    setCreateTaskForm((current) => ({
+      ...current,
+      attachments: (current.attachments || []).filter((attachment) => attachment.id !== attachmentId),
+      auditTrail: [`${formatDateLabel('2026-08-19')}: Eine vorgemerkte Datei entfernt.`, ...(current.auditTrail || [])],
+    }));
   };
 
   const handleCreateProjectFormChange = (field, value) => {
@@ -1944,19 +2014,19 @@ export default function MyTasksPage() {
       note,
       description: note,
       assignee: createTaskForm.assignee,
-      assignedBy: { name: 'Elisabeth Bezverkha', initials: 'EB', tone: 'from-rose-200 to-orange-200' },
-      tags: ['Neu'],
-      linkedPeople: [],
-      attachments: [],
-      comments: [],
+      assignedBy: createTaskForm.assignedBy || buildAssignedBy(currentUserName),
+      tags: createTaskForm.tags?.length ? createTaskForm.tags : ['Neu'],
+      linkedPeople: createTaskForm.linkedPeople || [],
+      attachments: createTaskForm.attachments || [],
+      comments: createTaskForm.comments || [],
       compliance: {
-        classification: 'Intern',
-        risk: 'Niedrig',
-        controlId: `CTRL-NEW-${String(Date.now()).slice(-4)}`,
-        approval: 'Noch kein Freigabeprozess definiert',
-        evidence: 'Noch keine Evidenz hinterlegt',
+        classification: createTaskForm.classification || 'Intern',
+        risk: createTaskForm.risk || 'Niedrig',
+        controlId: createTaskForm.controlId?.trim() || `CTRL-NEW-${String(Date.now()).slice(-4)}`,
+        approval: createTaskForm.approval?.trim() || 'Noch kein Freigabeprozess definiert',
+        evidence: createTaskForm.evidence?.trim() || 'Noch keine Evidenz hinterlegt',
       },
-      auditTrail: [`${formatDateLabel('2026-05-16')}: Aufgabe neu erstellt.`],
+      auditTrail: [`${formatDateLabel('2026-08-19')}: Aufgabe neu erstellt.`, ...(createTaskForm.auditTrail || [])],
     };
 
     setTasks((current) => [nextTask, ...current]);
@@ -2094,9 +2164,27 @@ export default function MyTasksPage() {
           projects={projects}
           form={createTaskForm}
           taskMarkers={taskMarkers}
+          commentDraft={commentDraft}
+          tagDraft={tagDraft}
+          personDraft={personDraft}
+          attachmentSource={attachmentSource}
+          attachmentType={attachmentType}
           onChange={handleCreateTaskFormChange}
           onClose={() => setCreateMode(null)}
           onSubmit={handleCreateTaskSubmit}
+          onCommentChange={setCommentDraft}
+          onCommentSubmit={handleCreateCommentSubmit}
+          onInsertMention={handleCreateInsertMention}
+          onTagDraftChange={setTagDraft}
+          onTagAdd={handleCreateTagAdd}
+          onTagRemove={handleCreateTagRemove}
+          onPersonDraftChange={setPersonDraft}
+          onPersonAdd={handleCreatePersonAdd}
+          onPersonRemove={handleCreatePersonRemove}
+          onAttachmentSourceChange={setAttachmentSource}
+          onAttachmentTypeChange={setAttachmentType}
+          onAttachmentFilesAdd={handleCreateAttachmentFilesAdd}
+          onAttachmentRemove={handleCreateAttachmentRemove}
         />
       ) : null}
       {createMode === 'project' ? (
@@ -2107,9 +2195,19 @@ export default function MyTasksPage() {
           onSubmit={handleCreateProjectSubmit}
         />
       ) : null}
-      <TaskDetailDrawer
-        task={selectedTask}
+      <TaskEditorModal
+        mode="detail"
+        resetKey={selectedTask?.id}
         form={detailForm}
+        projects={projects}
+        tags={selectedTask?.tags || []}
+        linkedPeople={selectedTask?.linkedPeople || []}
+        attachments={selectedTask?.attachments || []}
+        comments={selectedTask?.comments || []}
+        auditTrail={selectedTask?.auditTrail || []}
+        assignedByName={selectedTask?.assignedBy?.name}
+        headerEyebrow="Ticket Details"
+        headerTitle={selectedTask?.title || 'Ticket'}
         commentDraft={commentDraft}
         tagDraft={tagDraft}
         personDraft={personDraft}
@@ -2130,7 +2228,8 @@ export default function MyTasksPage() {
         onAttachmentTypeChange={setAttachmentType}
         onAttachmentFilesAdd={handleAttachmentFilesAdd}
         onAttachmentRemove={handleAttachmentRemove}
-        onSave={handleSave}
+        onSubmit={handleSave}
+        submitLabel="Details speichern"
         taskMarkers={taskMarkers}
       />
     </AppShell>
