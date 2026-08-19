@@ -883,7 +883,7 @@ export function CreateProjectModal({
 
   return (
     <PopupShell title={title} subtitle={subtitle} maxWidth="max-w-5xl" onClose={onClose}>
-      <div className="mb-5 grid grid-cols-1 gap-2 border-b border-slate-200 pb-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-5 flex flex-nowrap gap-2 overflow-x-auto border-b border-slate-200 pb-4">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -892,7 +892,7 @@ export function CreateProjectModal({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`inline-flex h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 text-sm font-extrabold transition ${
+              className={`inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3 text-sm font-extrabold transition ${
                 isActive
                   ? 'bg-[#fff1f3] text-[#a23d4d] shadow-[0_8px_18px_rgba(136,54,66,0.08)]'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
@@ -905,7 +905,7 @@ export function CreateProjectModal({
         })}
       </div>
 
-      <div className="max-h-[calc(100vh-17rem)] overflow-y-auto pr-1">
+      <div className="max-h-[calc(100vh-17rem)] overflow-y-auto pr-1 [&>section]:h-[520px] [&>section]:overflow-y-auto">
         {activeTab === 'basis' ? (
           <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="flex items-center gap-2">
