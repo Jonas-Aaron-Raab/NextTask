@@ -989,9 +989,9 @@ function TaskEditorModal({
   }, [resetKey]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm">
-      <div className="h-[min(90vh,920px)] w-full max-w-[1180px] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
-        <div className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-6 py-5 backdrop-blur">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/35 p-4 backdrop-blur-sm">
+      <div className="flex max-h-[90vh] w-full max-w-[1180px] min-h-0 flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
+        <div className="flex-none border-b border-slate-200 bg-white px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#c95767]">{headerEyebrow}</p>
@@ -1029,7 +1029,7 @@ function TaskEditorModal({
           <TaskEditorTabList activeTab={activeTab} onChange={setActiveTab} />
         </div>
 
-        <div className="h-[calc(100%-145px)] overflow-y-auto px-6 py-6">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
           <div className="space-y-5">
             {activeTab === 'core' ? (
               <DetailBlock title="Kerninfos" icon={FileText}>
