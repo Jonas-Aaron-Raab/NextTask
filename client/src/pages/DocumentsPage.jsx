@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
   BookOpen,
-  Clock3,
   Eye,
   FileSpreadsheet,
   FileText,
@@ -167,8 +166,8 @@ function statusTone(value) {
 
 function DocumentFilterField({ label, value, onChange, children }) {
   return (
-    <label className="min-w-[180px] flex-1 space-y-2">
-      <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">{label}</span>
+    <label className="min-w-[170px] flex-1 space-y-1.5">
+      <span className="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">{label}</span>
       <select value={value} onChange={onChange} className={documentSelectClass}>
         {children}
       </select>
@@ -310,10 +309,6 @@ export default function DocumentsPage() {
   }, [searchValue, selectedDepartment, selectedStatus, selectedType]);
 
   const policyCount = documents.filter((document) => document.type === 'Richtlinie' || document.type === 'Prozessdokument').length;
-  const reviewDocuments = documents
-    .filter((document) => document.status === 'In Prüfung' || document.status === 'Abgelaufen')
-    .slice(0, 4);
-
   const searchSuggestions = useMemo(() => {
     const query = searchValue.trim().toLowerCase();
     if (!query) return [];
@@ -370,14 +365,6 @@ export default function DocumentsPage() {
       tone: 'bg-[#edf4ff] text-[#4875c8]',
     },
     {
-      id: 'reviews',
-      title: 'Prüfung & Fristen',
-      description: 'Offene Reviews und Fristen',
-      count: reviewDocuments.length,
-      icon: Clock3,
-      tone: 'bg-[#fff6e8] text-[#b76c12]',
-    },
-    {
       id: 'templates',
       title: 'Vorlagen & Nachweise',
       description: 'Standardvorlagen und Uploads',
@@ -399,9 +386,9 @@ export default function DocumentsPage() {
       createMenuItems={createMenuItems}
     >
       <div className="space-y-6 px-4 py-4 xl:px-6">
-        <section className="rounded-[30px] border border-slate-300 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-          <div className="rounded-[24px] border border-slate-200 bg-[#f8fafc] p-4">
-            <div className="flex flex-wrap items-end gap-3 xl:flex-nowrap">
+        <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+          <div className="rounded-[20px] border border-slate-200 bg-[#f8fafc] p-2.5">
+            <div className="flex flex-wrap items-end gap-2.5 xl:flex-nowrap">
               <DocumentFilterField label="Abteilung" value={selectedDepartment} onChange={(event) => setSelectedDepartment(event.target.value)}>
                 <option>Alle Abteilungen</option>
                 {initialDepartments.map((department) => (
@@ -420,10 +407,8 @@ export default function DocumentsPage() {
               </DocumentFilterField>
             </div>
           </div>
-        </section>
 
-        <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-          <div className="grid gap-3 xl:grid-cols-4">
+          <div className="mt-4 grid gap-3 xl:grid-cols-3">
             {sectionCards.map((section) => {
               const Icon = section.icon;
 
@@ -526,29 +511,6 @@ export default function DocumentsPage() {
                         <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600">{space.docsCount}</span>
                       </div>
                       <p className="mt-4 text-sm font-semibold text-slate-500">Lead: {space.lead}</p>
-                    </div>
-                  ))}
-                </div>
-              </article>
-            ) : null}
-
-            {activeSection === 'reviews' ? (
-              <article>
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-xl font-extrabold tracking-tight text-slate-950">Prüfung & Fristen</h2>
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#fff6e8] text-[#b76c12]">
-                    <Clock3 className="h-4.5 w-4.5" />
-                  </span>
-                </div>
-
-                <div className="mt-5 grid gap-3 xl:grid-cols-2">
-                  {reviewDocuments.map((document) => (
-                    <div key={document.id} className="rounded-[22px] border border-slate-200 bg-[#fcfdff] p-4">
-                      <p className="text-sm font-extrabold text-slate-950">{document.title}</p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <span className={`rounded-full px-3 py-1 text-xs font-bold ${statusTone(document.status)}`}>{document.status}</span>
-                        <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600">{document.reviewDate}</span>
-                      </div>
                     </div>
                   ))}
                 </div>
