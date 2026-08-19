@@ -21,7 +21,6 @@ import {
   BadgeCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { canManageRoles } from '../data/bankOrganization';
 import { getStoredAppearanceSettings } from '../utils/appearance';
 
 const navigationItems = [
@@ -32,8 +31,8 @@ const navigationItems = [
   { label: 'Dokumente', path: '/documents', icon: FileText },
   { label: 'Reports', path: '/reports', icon: BarChart3 },
   { label: 'Freigaben', path: '/approvals', icon: BadgeCheck },
-  { label: 'Rollen', path: '/roles', icon: ShieldCheck, adminOnly: true },
-  { label: 'Audit-Log', path: '/audit-log', icon: History, adminOnly: true },
+  { label: 'Rollen', path: '/roles', icon: ShieldCheck },
+  { label: 'Audit-Log', path: '/audit-log', icon: History },
   { label: 'Einstellungen', path: '/settings', icon: Settings },
 ];
 
@@ -203,12 +202,10 @@ export default function AppShell({
   const [, setRoleNavigationVersion] = useState(0);
   const availableSearchSuggestions = Array.isArray(searchSuggestions) ? searchSuggestions : [];
   const visibleNotifications = notifications.filter((notification) => !dismissedNotificationIds.includes(notification.id));
-  const activeNavigation = navigationItems
-    .filter((item) => !item.adminOnly || canManageRoles(user))
-    .map((item) => ({
-      ...item,
-      active: item.label === activeItem,
-    }));
+  const activeNavigation = navigationItems.map((item) => ({
+    ...item,
+    active: item.label === activeItem,
+  }));
 
   useEffect(() => {
     const handleKeyDown = (event) => {
