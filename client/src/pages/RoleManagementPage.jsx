@@ -314,23 +314,7 @@ export default function RoleManagementPage() {
             <div>
               <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Adminbereich</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Rollen bearbeiten und vergeben</h1>
-              <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-500">
-                Diese Liste kommt jetzt aus der Datenbank. Jeder Benutzer hier ist ein echter Account aus der User-Tabelle.
-              </p>
             </div>
-          </div>
-
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-extrabold text-slate-700">
-              <ShieldCheck className="h-4 w-4 text-[#b84758]" />
-              {isLoading ? 'Rollen werden geladen ...' : `Du arbeitest als ${currentRole?.name || 'Admin'}`}
-            </span>
-            {status ? <span className="inline-flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-extrabold text-emerald-700"><Check className="h-4 w-4" />{status}</span> : null}
-            {error ? <span className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-extrabold text-rose-700">{error}</span> : null}
-            <button type="button" onClick={handleReset} className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
-              <RotateCcw className="h-4 w-4" />
-              Aus DB neu laden
-            </button>
           </div>
         </section>
 
