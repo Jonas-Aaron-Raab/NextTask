@@ -937,6 +937,43 @@ function DetailBlock({ title, icon: Icon, children, action }) {
   );
 }
 
+const taskEditorTabs = [
+  { id: 'core', label: 'Kerninfos', icon: FileText },
+  { id: 'description', label: 'Beschreibung', icon: FileText },
+  { id: 'files', label: 'Dateien', icon: Paperclip },
+  { id: 'comments', label: 'Kommentare', icon: MessageSquareMore },
+  { id: 'organization', label: 'Organisation', icon: Tag },
+  { id: 'banking', label: 'Banking Ready', icon: ShieldCheck },
+  { id: 'audit', label: 'Audit-Spur', icon: History },
+];
+
+function TaskEditorTabList({ activeTab, onChange }) {
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {taskEditorTabs.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
+
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onChange(tab.id)}
+            className={`inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition ${
+              isActive
+                ? 'border-[#d99faa] bg-[#fff1f3] text-[#b84758]'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
+            }`}
+          >
+            <Icon className="h-4 w-4" />
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function TaskDetailDrawer({
   task,
   form,
@@ -964,6 +1001,12 @@ function TaskDetailDrawer({
   taskMarkers,
 }) {
   if (!task || !form) return null;
+
+  const [activeTab, setActiveTab] = useState('core');
+
+  useEffect(() => {
+    setActiveTab('core');
+  }, [task.id]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm">
@@ -1001,11 +1044,13 @@ function TaskDetailDrawer({
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{task.dueDate}</span>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{formatEffort(task.estimatedHours, 'hours')}</span>
           </div>
+
+          <TaskEditorTabList activeTab={activeTab} onChange={setActiveTab} />
         </div>
 
         <div className="h-[calc(100%-145px)] overflow-y-auto px-6 py-6">
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(330px,0.75fr)]">
-            <div className="space-y-5">
+          <div className="space-y-5">
+            {activeTab === 'core' ? (
               <DetailBlock title="Kerninfos" icon={FileText}>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block text-sm font-bold text-slate-700">
@@ -1110,7 +1155,9 @@ function TaskDetailDrawer({
                   />
                 </div>
               </DetailBlock>
+            ) : null}
 
+            {activeTab === 'description' ? (
               <DetailBlock title="Beschreibung" icon={FileText}>
                 <textarea
                   value={form.description}
@@ -1119,7 +1166,9 @@ function TaskDetailDrawer({
                   className="w-full resize-none rounded-xl border border-slate-200 px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
                 />
               </DetailBlock>
+            ) : null}
 
+            {activeTab === 'files' ? (
               <DetailBlock
                 title="Dateien und Evidenz"
                 icon={Paperclip}
@@ -1192,7 +1241,9 @@ function TaskDetailDrawer({
                   </label>
                 </div>
               </DetailBlock>
+            ) : null}
 
+            {activeTab === 'comments' ? (
               <DetailBlock title="Kommentare und Mentions" icon={MessageSquareMore}>
                 <div className="space-y-3">
                   {task.comments.length ? (
@@ -1237,9 +1288,9 @@ function TaskDetailDrawer({
                   </button>
                 </div>
               </DetailBlock>
-            </div>
+            ) : null}
 
-            <div className="space-y-5">
+            {activeTab === 'organization' ? (
               <DetailBlock title="Organisation" icon={Tag}>
                 <div className="grid gap-5">
                   <div>
@@ -1325,7 +1376,9 @@ function TaskDetailDrawer({
                   </div>
                 </div>
               </DetailBlock>
+            ) : null}
 
+            {activeTab === 'banking' ? (
               <DetailBlock title="Banking Ready" icon={ShieldCheck}>
                 <div className="grid gap-3">
                   <label className="block text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
@@ -1383,7 +1436,9 @@ function TaskDetailDrawer({
                   </label>
                 </div>
               </DetailBlock>
+            ) : null}
 
+            {activeTab === 'audit' ? (
               <DetailBlock title="Audit-Spur" icon={History}>
                 <div className="space-y-2">
                   {task.auditTrail.map((entry) => (
@@ -1393,7 +1448,7 @@ function TaskDetailDrawer({
                   ))}
                 </div>
               </DetailBlock>
-            </div>
+            ) : null}
           </div>
         </div>
 
