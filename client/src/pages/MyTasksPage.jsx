@@ -23,6 +23,7 @@ import {
   X,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
+import { CreateProjectModal as ProjectsCreateProjectModal } from './ProjectsPage';
 import api from '../api/axios';
 import { dashboardFallbackTasks, initialTasks, taskProjects as initialProjects } from '../data/taskFixtures';
 import { formatEffort, getEffortHoursFromInput, getEffortInputValue } from '../utils/effort';
@@ -329,6 +330,50 @@ function buildCreateTaskForm(projectName, creatorName = 'Elisabeth Bezverkha') {
     auditTrail: [],
     assignedBy: buildAssignedBy(creatorName),
     parentTaskId: '',
+  };
+}
+
+function buildCreateProjectForm(departmentId = '') {
+  return {
+    name: '',
+    departmentId,
+    owner: 'Elisabeth Bezverkha',
+    deputyLead: '',
+    projectSponsor: '',
+    visibility: 'Persönlich',
+    status: 'In Planung',
+    plannedStart: '2026-06-01',
+    dueDate: '2026-07-15',
+    summary: '',
+    projectGoal: '',
+    plannedEffortPt: '',
+    plannedBudget: '',
+    keyInterfaces: '',
+    initialMilestones: '',
+    initialRisks: '',
+    budgetCategories: 'Interne Personalkosten\nExterne Dienstleister',
+    reportProgress: '0',
+    overallStatus: 'Gruen',
+    goalStatus: 'Gruen',
+    scheduleStatus: 'Gruen',
+    resourceStatus: 'Gruen',
+    budgetStatus: 'Gruen',
+    collaborationQuality: '',
+    reportNotes: '',
+    nextSteps: '',
+    reportVersion: 'v1',
+    actualEffortPt: '',
+    milestoneRows: [{ id: `milestone-${Date.now()}`, title: '', planDate: '', newDate: '', status: 'Offen', progress: '0', statusNote: '' }],
+    riskRows: [{ id: `risk-${Date.now()}`, code: '', title: '', impact: '', probability: '', riskClass: '', trend: 'Stabil', description: '', measure: '' }],
+    budgetRows: [
+      { id: `budget-${Date.now()}-1`, category: 'Interne Personalkosten', plannedAmount: '', actualAmount: '' },
+      { id: `budget-${Date.now()}-2`, category: 'Externe Dienstleister', plannedAmount: '', actualAmount: '' },
+    ],
+    interfaceRows: [{ id: `interface-${Date.now()}`, name: '', status: 'Offen', comment: '' }],
+    projectResponsibleApproval: '',
+    gblApproval: '',
+    projectLeadApproval: '',
+    approvalDate: '',
   };
 }
 
@@ -763,76 +808,6 @@ function CreateTaskModal({
       submitLabel="Aufgabe anlegen"
       taskMarkers={taskMarkers}
     />
-  );
-}
-
-function CreateProjectModal({ form, onChange, onClose, onSubmit }) {
-  return (
-    <PopupShell title="Neues Projekt" subtitle="Lege ein eigenes Projekt oder ein Projekt für deine Abteilung strukturiert an." onClose={onClose} maxWidth="max-w-3xl">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <label className="block text-sm font-bold text-slate-700">
-            Projektname
-            <input
-              value={form.name}
-              onChange={(event) => onChange('name', event.target.value)}
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-            />
-          </label>
-
-          <label className="block text-sm font-bold text-slate-700">
-            Beschreibung
-            <textarea
-              value={form.description}
-              onChange={(event) => onChange('description', event.target.value)}
-              rows={5}
-              className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-            />
-          </label>
-        </section>
-
-        <section className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <label className="block text-sm font-bold text-slate-700">
-            Projektart
-            <select
-              value={form.scope}
-              onChange={(event) => onChange('scope', event.target.value)}
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-            >
-              <option value="persönlich">Persönlich</option>
-              <option value="abteilung">Abteilung</option>
-            </select>
-          </label>
-
-          <label className="block text-sm font-bold text-slate-700">
-            Bereich / Abteilung
-            <input
-              value={form.department}
-              onChange={(event) => onChange('department', event.target.value)}
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-            />
-          </label>
-
-          <label className="block text-sm font-bold text-slate-700">
-            Projektverantwortung
-            <input
-              value={form.owner}
-              onChange={(event) => onChange('owner', event.target.value)}
-              className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-            />
-          </label>
-        </section>
-      </div>
-
-      <div className="mt-5 flex justify-end gap-3">
-        <button type="button" onClick={onClose} className="h-11 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
-          Abbrechen
-        </button>
-        <button type="button" onClick={onSubmit} className="h-11 rounded-xl bg-[#c95767] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(201,87,103,0.22)]">
-          Projekt anlegen
-        </button>
-      </div>
-    </PopupShell>
   );
 }
 
@@ -1582,13 +1557,7 @@ export default function MyTasksPage() {
   const [attachmentType, setAttachmentType] = useState('Excel');
   const [performancePeriod, setPerformancePeriod] = useState('day');
   const [createTaskForm, setCreateTaskForm] = useState(() => buildCreateTaskForm(initialProjects[0]?.name || ''));
-  const [createProjectForm, setCreateProjectForm] = useState({
-    name: '',
-    description: '',
-    scope: 'persönlich',
-    department: 'Digitales Banking',
-    owner: 'Elisabeth Bezverkha',
-  });
+  const [createProjectForm, setCreateProjectForm] = useState(() => buildCreateProjectForm('Digitales Banking'));
   const routeTaskId = searchParams.get('taskId');
   const routeSearch = searchParams.get('search');
   const taskFocusToken = location.state?.focusTaskAt;
@@ -1596,6 +1565,10 @@ export default function MyTasksPage() {
 
   const normalizedSearch = searchValue.trim().toLowerCase();
   const currentUserName = user?.name || 'Mara Stein';
+  const projectDepartments = useMemo(
+    () => [...new Set(projects.map((project) => project.department || 'Digitales Banking'))].map((name) => ({ id: name, name })),
+    [projects],
+  );
   const assignees = useMemo(
     () => [...new Set(tasks.map((task) => task.assignee).filter(Boolean))].sort(),
     [tasks],
@@ -1966,13 +1939,7 @@ export default function MyTasksPage() {
     }
 
     if (item === 'Neues Projekt') {
-      setCreateProjectForm({
-        name: '',
-        description: '',
-        scope: 'persönlich',
-        department: 'Digitales Banking',
-        owner: 'Elisabeth Bezverkha',
-      });
+      setCreateProjectForm(buildCreateProjectForm(projectDepartments[0]?.id || 'Digitales Banking'));
       setCreateMode('project');
     }
   };
@@ -2089,10 +2056,13 @@ export default function MyTasksPage() {
     const nextProject = {
       id: `project-${Date.now()}`,
       name: trimmedName,
-      scope: createProjectForm.scope,
-      department: createProjectForm.department.trim() || 'Digitales Banking',
+      scope: createProjectForm.visibility === 'Abteilung' ? 'abteilung' : 'persönlich',
+      department: createProjectForm.departmentId || 'Digitales Banking',
       owner: createProjectForm.owner.trim() || 'Elisabeth Bezverkha',
-      description: createProjectForm.description.trim(),
+      deputyLead: createProjectForm.deputyLead.trim(),
+      projectSponsor: createProjectForm.projectSponsor.trim(),
+      description: createProjectForm.summary.trim(),
+      projectData: createProjectForm,
     };
 
     setProjects((current) => [nextProject, ...current]);
@@ -2302,7 +2272,8 @@ export default function MyTasksPage() {
         />
       ) : null}
       {createMode === 'project' ? (
-        <CreateProjectModal
+        <ProjectsCreateProjectModal
+          departments={projectDepartments}
           form={createProjectForm}
           onChange={handleCreateProjectFormChange}
           onClose={() => setCreateMode(null)}

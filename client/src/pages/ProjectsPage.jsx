@@ -823,7 +823,7 @@ function CreateDepartmentModal({ form, onChange, onClose, onSubmit }) {
   );
 }
 
-function CreateProjectModal({
+export function CreateProjectModal({
   departments,
   form,
   onChange,
