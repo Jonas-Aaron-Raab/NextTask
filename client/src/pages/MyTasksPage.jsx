@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   ArrowUpRight,
   CalendarDays,
@@ -327,20 +328,13 @@ function TaskCard({ task, onOpen }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[13px] font-bold leading-4 text-slate-900">{task.title}</p>
-          <p className="mt-0.5 truncate text-[11px] font-semibold text-slate-400">{task.project}</p>
         </div>
         {task.status === 'done' ? <CheckCircle2 className="h-3.5 w-3.5 flex-none text-emerald-500" /> : null}
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-2">
+      <div className="mt-2">
         <PriorityBadge priority={task.priority} />
-        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-          <CalendarDays className="h-3 w-3" />
-          {task.dueDate}
-        </span>
       </div>
-
-      <p className="mt-2 line-clamp-2 text-[11px] font-medium leading-4 text-slate-500">{task.note}</p>
 
       <div className="mt-3 grid grid-cols-[auto_1fr] items-center gap-2 border-t border-slate-100 pt-2">
         <div className="relative">
@@ -370,22 +364,34 @@ function TaskCard({ task, onOpen }) {
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-[10px] font-bold text-slate-500">
-          <span className="inline-flex items-center gap-1">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpen(task);
+            }}
+            className="inline-flex items-center gap-1 hover:text-rose-600"
+            aria-label={`Kommentare zu ${task.title} öffnen`}
+          >
             <MessageSquareMore className="h-3.5 w-3.5" />
             {task.comments.length}
-          </span>
+          </button>
           <span className="inline-flex items-center gap-1">
             <ListChecks className="h-3.5 w-3.5" />
             {checklistStats.completed}/{checklistStats.total}
           </span>
-          <span className="inline-flex items-center gap-1">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpen(task);
+            }}
+            className="inline-flex items-center gap-1 hover:text-rose-600"
+            aria-label={`Anhänge zu ${task.title} öffnen`}
+          >
             <Paperclip className="h-3.5 w-3.5" />
             {task.attachments.length}
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Clock3 className="h-3.5 w-3.5" />
-            {formatEffort(task.estimatedHours, 'hours')}
-          </span>
+          </button>
         </div>
       </div>
     </div>
@@ -1405,6 +1411,7 @@ function TaskDetailDrawer({
 }
 
 export default function MyTasksPage() {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const [tasks, setTasks] = useState(initialTasks);
@@ -1413,6 +1420,9 @@ export default function MyTasksPage() {
   const [columnOrder, setColumnOrder] = useState(columns.map((column) => column.id));
   const [draggedColumnId, setDraggedColumnId] = useState(null);
   const [searchValue, setSearchValue] = useState('');
+  const [taskScope, setTaskScope] = useState('all');
+  const [selectedPerson, setSelectedPerson] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [activePopup, setActivePopup] = useState(null);
   const [createMode, setCreateMode] = useState(null);
@@ -1447,26 +1457,49 @@ export default function MyTasksPage() {
   const routedDashboardTask = location.state?.dashboardTask;
 
   const normalizedSearch = searchValue.trim().toLowerCase();
+  const currentUserName = user?.name || 'Mara Stein';
+  const currentDepartment = user?.department || 'Informationstechnologie OR-IT';
+  const assigneeDepartmentMap = {
+    ...Object.fromEntries(Object.entries(teamProfiles).map(([name, profile]) => [name, profile.department])),
+    'Mara Stein': 'Informationstechnologie OR-IT',
+  };
+  const assignees = useMemo(
+    () => [...new Set(tasks.map((task) => task.assignee).filter(Boolean))].sort(),
+    [tasks],
+  );
+  const scopedTasks = useMemo(
+    () =>
+      tasks.filter((task) => {
+        const matchesScope =
+          taskScope === 'all' ||
+          (taskScope === 'mine' && task.assignee === currentUserName) ||
+          (taskScope === 'department' && assigneeDepartmentMap[task.assignee] === currentDepartment) ||
+          (taskScope === 'person' && task.assignee === selectedPerson);
+        const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+        return matchesScope && matchesStatus;
+      }),
+    [currentDepartment, currentUserName, selectedPerson, statusFilter, taskScope, tasks],
+  );
   const visibleTasks = useMemo(
     () =>
       normalizedSearch
-        ? tasks.filter(
+        ? scopedTasks.filter(
             (task) =>
               task.title.toLowerCase().includes(normalizedSearch) ||
               task.project.toLowerCase().includes(normalizedSearch),
           )
-        : tasks,
-    [normalizedSearch, tasks],
+        : scopedTasks,
+    [normalizedSearch, scopedTasks],
   );
   const orderedColumns = useMemo(
     () => columnOrder.map((columnId) => columns.find((column) => column.id === columnId)).filter(Boolean),
     [columnOrder],
   );
   const completionRate = useMemo(() => {
-    if (!tasks.length) return 0;
-    const completedTasks = tasks.filter((task) => task.status === 'done').length;
-    return Math.round((completedTasks / tasks.length) * 100);
-  }, [tasks]);
+    if (!visibleTasks.length) return 0;
+    const completedTasks = visibleTasks.filter((task) => task.status === 'done').length;
+    return Math.round((completedTasks / visibleTasks.length) * 100);
+  }, [visibleTasks]);
 
   const statGroups = [
     {
