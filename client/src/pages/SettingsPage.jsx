@@ -178,13 +178,13 @@ function SettingRow({ icon: Icon, label, description, children }) {
 
   return (
     <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center">
-      <div className="flex min-w-0 gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <span className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white text-[#b84758] shadow-sm">
           {iconNode}
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-extrabold text-slate-900">{label}</p>
-          <p className="mt-1 text-sm font-medium text-slate-500">{description}</p>
+          <p className="text-lg font-extrabold leading-tight text-slate-900">{label}</p>
+          {description ? <p className="mt-1 text-sm font-medium text-slate-500">{description}</p> : null}
         </div>
       </div>
       <div>{children}</div>
@@ -824,7 +824,6 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={Moon}
                     label="Darkmode"
-                    description="Wähle zwischen einer hellen und einer abgedunkelten Oberfläche."
                   >
                     <SegmentedControl
                       options={themeOptions}
@@ -836,7 +835,6 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={Rows3}
                     label="Layout-Dichte"
-                    description="Mehr Luft für Planung oder kompakter für viele Aufgaben."
                   >
                     <SegmentedControl
                       options={densityOptions}
@@ -848,7 +846,6 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={CalendarDays}
                     label="Datumsformat"
-                    description="Bestimme, ob Datumswerte kurz oder ausgeschrieben erscheinen."
                   >
                     <SegmentedControl
                       options={dateFormatOptions}
@@ -860,7 +857,6 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={Type}
                     label="Schriftgröße"
-                    description="Skaliere die gesamte Oberfläche nach deiner bevorzugten Lesbarkeit."
                   >
                     <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
                       <div className="flex items-center justify-between gap-3 text-sm font-extrabold text-slate-700">
@@ -884,7 +880,6 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={LayoutPanelLeft}
                     label="Sidebar"
-                    description="Lege fest, ob die Seitenleiste beim Start offen bleibt."
                   >
                     <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
                       <span className="text-sm font-extrabold text-slate-700">
@@ -901,7 +896,6 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={SlidersHorizontal}
                     label="Animationen"
-                    description="Reduziere Bewegungen, wenn du eine ruhigere Oberfläche willst."
                   >
                     <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
                       <span className="text-sm font-extrabold text-slate-700">
@@ -918,7 +912,6 @@ export default function SettingsPage() {
                   <SettingRow
                     icon={Monitor}
                     label="Startansicht"
-                    description="Die Ansicht, die später nach dem Login zuerst geöffnet wird."
                   >
                     <select
                       value={appearanceForm.startView}
