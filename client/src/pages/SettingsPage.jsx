@@ -81,6 +81,11 @@ const startViewOptions = [
   { value: 'projects', label: 'Projekte' },
   { value: 'my-tasks', label: 'Meine Aufgaben' },
   { value: 'calendar', label: 'Kalender' },
+  { value: 'documents', label: 'Dokumente' },
+  { value: 'reports', label: 'Reports' },
+  { value: 'approvals', label: 'Freigaben' },
+  { value: 'roles', label: 'Rollen' },
+  { value: 'audit-log', label: 'Audit-Log' },
 ];
 const dateFormatOptions = [
   { value: 'numeric', label: '30.05.2026', icon: CalendarDays },
