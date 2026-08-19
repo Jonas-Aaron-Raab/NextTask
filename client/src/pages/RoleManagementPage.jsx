@@ -318,16 +318,6 @@ export default function RoleManagementPage() {
                 Diese Liste kommt jetzt aus der Datenbank. Jeder Benutzer hier ist ein echter Account aus der User-Tabelle.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => addRole('GBL')} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#e3b4bc] bg-[#fff7f8] px-4 text-sm font-bold text-[#a23d4d] transition hover:bg-[#fff1f3]">
-                <Plus className="h-4 w-4" />
-                GBL Rolle
-              </button>
-              <button type="button" onClick={() => addRole('MEMBER')} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(184,71,88,0.22)] transition hover:bg-[#a23d4d]">
-                <Plus className="h-4 w-4" />
-                Mitarbeiterrolle
-              </button>
-            </div>
           </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -385,11 +375,19 @@ export default function RoleManagementPage() {
               <div className="flex min-w-0 items-center gap-3">
                 <RoleBadge role={draftRole} />
                 <div className="min-w-0">
-                  <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Rolle bearbeiten</p>
+                  <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Rollen bearbeiten & hinzufügen</p>
                   <h2 className="mt-1 truncate text-2xl font-black text-slate-950">{draftRole.name}</h2>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => addRole('GBL')} className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#e3b4bc] bg-[#fff7f8] px-4 text-sm font-bold text-[#a23d4d] transition hover:bg-[#fff1f3]">
+                  <Plus className="h-4 w-4" />
+                  GBL Rolle
+                </button>
+                <button type="button" onClick={() => addRole('MEMBER')} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(184,71,88,0.22)] transition hover:bg-[#a23d4d]">
+                  <Plus className="h-4 w-4" />
+                  Mitarbeiterrolle
+                </button>
                 {draftRole.id && !draftRole.system ? (
                   <button type="button" onClick={deleteRole} className="inline-flex h-11 items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-bold text-rose-700 transition hover:bg-rose-100">
                     <Trash2 className="h-4 w-4" />
