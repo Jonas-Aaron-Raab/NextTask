@@ -209,6 +209,21 @@ export default function ReportsContent(props) {
 
       <div className="mt-6 rounded-[24px] border border-slate-200 bg-[#f8fafc] p-4">
         <div className="flex flex-wrap items-end gap-3 xl:flex-nowrap">
+          <ReportFilterField label="Zeitraum" value={selectedPeriod} onChange={(event) => setSelectedPeriod(event.target.value)}>
+            {periods.map((period) => (
+              <option key={period}>{period}</option>
+            ))}
+          </ReportFilterField>
+          <ReportFilterField label="Abteilung" value={selectedDepartment} onChange={(event) => setSelectedDepartment(event.target.value)}>
+            {departmentOptions.map((department) => (
+              <option key={department}>{department}</option>
+            ))}
+          </ReportFilterField>
+          <ReportFilterField label="Projekt" value={selectedProject} onChange={(event) => setSelectedProject(event.target.value)}>
+            {projectOptions.map((project) => (
+              <option key={project}>{project}</option>
+            ))}
+          </ReportFilterField>
           <ReportFilterField label="Exportformat" value={exportFormat} onChange={(event) => setExportFormat(event.target.value)}>
             <option>PDF</option>
             <option>Excel</option>
@@ -631,28 +646,6 @@ export default function ReportsContent(props) {
       searchSuggestions={searchSuggestions}
     >
       <div className="space-y-6 px-4 py-4 xl:px-6">
-        <section className="rounded-[30px] border border-slate-300 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-          <div className="rounded-[24px] border border-slate-200 bg-[#f8fafc] p-4">
-            <div className="flex flex-wrap items-end gap-3 xl:flex-nowrap">
-              <ReportFilterField label="Zeitraum" value={selectedPeriod} onChange={(event) => setSelectedPeriod(event.target.value)}>
-                {periods.map((period) => (
-                  <option key={period}>{period}</option>
-                ))}
-              </ReportFilterField>
-              <ReportFilterField label="Abteilung" value={selectedDepartment} onChange={(event) => setSelectedDepartment(event.target.value)}>
-                {departmentOptions.map((department) => (
-                  <option key={department}>{department}</option>
-                ))}
-              </ReportFilterField>
-              <ReportFilterField label="Projekt" value={selectedProject} onChange={(event) => setSelectedProject(event.target.value)}>
-                {projectOptions.map((project) => (
-                  <option key={project}>{project}</option>
-                ))}
-              </ReportFilterField>
-            </div>
-          </div>
-        </section>
-
         <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
