@@ -1,4 +1,4 @@
-import { CircleDot, Clock3, Download, FileText, Flag, Users } from 'lucide-react';
+import { CircleDot, Clock3, Download, FileText, Flag } from 'lucide-react';
 import AppShell from '../../components/AppShell';
 import { DonutChart, ReportFilterField } from './ReportWidgets';
 import StatusReportPreview from './StatusReportPreview';
@@ -6,7 +6,7 @@ import { reportSelectClass } from './styles';
 import { formatLongDate, formatReportShortDate, getTimelineSpan } from '../../utils/calendar';
 
 export default function ReportsContent(props) {
-  const { searchValue, setSearchValue, periods, selectedPeriod, setSelectedPeriod, departmentOptions, selectedDepartment, setSelectedDepartment, exportFormat, setExportFormat, projectOptions, selectedProject, setSelectedProject, selectedReportProjectId, setSelectedReportProjectId, projectCards, selectedReportProject, statusReport, previewOpen, setPreviewOpen, taskStatusSegments, filteredProjects, activeProject, setActiveProjectId, selectedTimelineProjectId, setSelectedTimelineProjectId, timelineProjectOptions, selectedTimelineProject, selectedTimelineRange, selectedTimelineStats, selectedTimelineEntries, selectedTimelineEntry, setSelectedTimelineEntryId, teamLoad, taskMetrics, attentionProject, searchSuggestions, getReportHtml } = props;
+  const { searchValue, setSearchValue, periods, selectedPeriod, setSelectedPeriod, departmentOptions, selectedDepartment, setSelectedDepartment, exportFormat, setExportFormat, projectOptions, selectedProject, setSelectedProject, selectedReportProjectId, setSelectedReportProjectId, projectCards, selectedReportProject, statusReport, previewOpen, setPreviewOpen, taskStatusSegments, filteredProjects, activeProject, setActiveProjectId, selectedTimelineProjectId, setSelectedTimelineProjectId, timelineProjectOptions, selectedTimelineProject, selectedTimelineRange, selectedTimelineStats, selectedTimelineEntries, selectedTimelineEntry, setSelectedTimelineEntryId, searchSuggestions, getReportHtml } = props;
 
   return (
     <AppShell
@@ -481,71 +481,6 @@ export default function ReportsContent(props) {
           )}
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-2 xl:items-stretch">
-          <article className="h-full rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Team-Auslastung</h2>
-              </div>
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#edf4ff] text-[#4875c8]">
-                <Users className="h-5 w-5" />
-              </span>
-            </div>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
-              {teamLoad.map((member) => (
-                <div key={member.name} className="grid min-h-[220px] min-w-0 grid-rows-[auto_1fr_auto] overflow-hidden rounded-[22px] border border-slate-200 bg-[#fcfdff] p-4">
-                  <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="break-words text-lg font-extrabold leading-6 text-slate-950">{member.name}</p>
-                      <p className="mt-1 break-words text-sm font-semibold leading-5 text-slate-500">{member.role}</p>
-                    </div>
-                    <p className="max-w-[3.5rem] shrink-0 text-right text-lg font-extrabold leading-6 text-slate-950">{member.load}%</p>
-                  </div>
-                  <div />
-                  <div className="mt-4 h-3 w-full overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-3 rounded-full"
-                      style={{ width: `${member.load}%`, backgroundColor: member.tone }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </article>
-
-          <article className="h-full rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-extrabold tracking-tight text-slate-950">Wochenzusammenfassung</h2>
-              </div>
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eefaf4] text-[#1f7a4f]">
-                <CircleDot className="h-5 w-5" />
-              </span>
-            </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <div className="min-h-[150px] rounded-[22px] bg-[#f8fafc] p-4">
-                <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Erledigt</p>
-                <p className="mt-2 text-lg font-extrabold text-slate-950">{taskMetrics.done} Aufgaben abgeschlossen</p>
-              </div>
-              <div className="min-h-[150px] rounded-[22px] bg-[#f8fafc] p-4">
-                <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Offen</p>
-                <p className="mt-2 text-lg font-extrabold text-slate-950">
-                  {taskMetrics.open + taskMetrics.inProgress + taskMetrics.review} Aufgaben noch offen
-                </p>
-              </div>
-              <div className="min-h-[150px] rounded-[22px] bg-[#f8fafc] p-4">
-                <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Überfällig</p>
-                <p className="mt-2 text-lg font-extrabold text-slate-950">{taskMetrics.blocked} Aufgaben kritisch oder blockiert</p>
-              </div>
-              <div className="min-h-[150px] rounded-[22px] bg-[#f8fafc] p-4">
-                <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">Aufmerksamkeit</p>
-                <p className="mt-2 text-lg font-extrabold text-slate-950">{attentionProject?.name}</p>
-              </div>
-            </div>
-          </article>
-        </section>
       </div>
       {previewOpen && statusReport ? (
         <StatusReportPreview report={statusReport} onClose={() => setPreviewOpen(false)} getReportHtml={getReportHtml} />
