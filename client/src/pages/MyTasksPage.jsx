@@ -512,21 +512,25 @@ function SummaryStrip({ stats, controlCount, performanceValue, onOpenStat, onOpe
       <button
         type="button"
         onClick={onOpenControls}
-        className="rounded-2xl border border-slate-300 bg-white p-4 text-left shadow-[0_12px_32px_rgba(136,54,66,0.07)] transition hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-[0_16px_34px_rgba(136,54,66,0.12)]"
+        className="rounded-2xl border border-slate-300 bg-white p-2 text-left shadow-[0_12px_30px_rgba(136,54,66,0.07)] transition hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-[0_16px_34px_rgba(136,54,66,0.12)]"
       >
-        <p className="text-[13px] font-bold text-slate-900">Freigaben und Kontrollen</p>
-        <p className="mt-2 text-[28px] font-extrabold leading-none text-slate-950">{controlCount}</p>
-        <p className="mt-1 text-[11px] font-semibold text-[#8b5860]">offene Kontrollpunkte</p>
+        <div className="h-full rounded-[22px] border border-slate-200 bg-white p-3.5">
+          <p className="text-[12px] font-bold text-slate-900">Freigaben und Kontrollen</p>
+          <p className="mt-1.5 text-[24px] font-extrabold leading-none text-slate-950">{controlCount}</p>
+          <p className="mt-1 text-[11px] font-semibold text-[#8b5860]">offene Kontrollpunkte</p>
+        </div>
       </button>
 
       <button
         type="button"
         onClick={onOpenPerformance}
-        className="rounded-2xl border border-slate-300 bg-white p-4 text-left shadow-[0_12px_32px_rgba(136,54,66,0.07)] transition hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-[0_16px_34px_rgba(136,54,66,0.12)]"
+        className="rounded-2xl border border-slate-300 bg-white p-2 text-left shadow-[0_12px_30px_rgba(136,54,66,0.07)] transition hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-[0_16px_34px_rgba(136,54,66,0.12)]"
       >
-        <p className="text-[13px] font-bold text-slate-900">Leistungsüberblick</p>
-        <p className="mt-2 text-[30px] font-extrabold leading-none text-slate-950">{performanceValue}%</p>
-        <p className="mt-1 text-[11px] font-semibold text-[#8b5860]">erledigte Aufgaben</p>
+        <div className="h-full rounded-[22px] border border-slate-200 bg-white p-3.5">
+          <p className="text-[12px] font-bold text-slate-900">Leistungsüberblick</p>
+          <p className="mt-1.5 text-[26px] font-extrabold leading-none text-slate-950">{performanceValue}%</p>
+          <p className="mt-1 text-[11px] font-semibold text-[#8b5860]">erledigte Aufgaben</p>
+        </div>
       </button>
     </div>
   );
