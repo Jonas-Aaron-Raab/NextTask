@@ -272,6 +272,7 @@ model Task {
   estimatedHours Float?
   department  String?
   markerId    String?
+  approvalLevel String?
   projectId   String
   assigneeId  String?
   createdAt   DateTime    @default(now())

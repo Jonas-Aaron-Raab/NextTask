@@ -42,6 +42,7 @@ const auditTaskFields = [
   'estimatedHours',
   'department',
   'markerId',
+  'approvalLevel',
   'projectId',
   'assigneeId',
 ];
@@ -191,6 +192,7 @@ router.post('/', auth, async (req, res) => {
       estimatedHours,
       department,
       markerId,
+      approvalLevel,
     } = req.body;
     const normalizedStatus = normalizeStatus(status);
     const lastTask = await req.prisma.task.findFirst({
@@ -212,6 +214,7 @@ router.post('/', auth, async (req, res) => {
         estimatedHours: parseOptionalNumber(estimatedHours),
         department: department || null,
         markerId: markerId || null,
+        approvalLevel: approvalLevel || null,
       },
     });
     const task = await getTaskNotificationContext(req.prisma, createdTask.id);
@@ -259,6 +262,7 @@ router.put('/:id', auth, async (req, res) => {
       estimatedHours,
       department,
       markerId,
+      approvalLevel,
     } = req.body;
     const before = await req.prisma.task.findUnique({ where: { id: req.params.id } });
     const updatedTask = await req.prisma.task.update({
@@ -275,6 +279,7 @@ router.put('/:id', auth, async (req, res) => {
         estimatedHours: parseOptionalNumber(estimatedHours),
         department,
         markerId: markerId === undefined ? undefined : markerId || null,
+        approvalLevel: approvalLevel === undefined ? undefined : approvalLevel || null,
       },
     });
     const updated = await getTaskNotificationContext(req.prisma, req.params.id);

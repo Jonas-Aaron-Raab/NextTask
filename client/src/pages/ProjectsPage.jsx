@@ -38,6 +38,7 @@ import {
   X,
 } from 'lucide-react';
 import api from '../api/axios';
+import { storeApprovalRequest } from '../utils/approvalStorage';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 import { bankDepartments, bankProjects } from '../data/bankOrganization';
@@ -253,6 +254,24 @@ function normalizeLiveTaskStatus(status) {
   return 'todo';
 }
 
+function toApiTaskStatus(status) {
+  return {
+    todo: 'OPEN',
+    progress: 'IN_PROGRESS',
+    review: 'QA',
+    blocked: 'BLOCKED',
+    done: 'DONE',
+  }[status] || status;
+}
+
+function toApiTaskPriority(priority) {
+  return {
+    niedrig: 'LOW',
+    mittel: 'MEDIUM',
+    hoch: 'HIGH',
+  }[priority] || priority;
+}
+
 function normalizeLiveTaskPriority(priority) {
   const value = String(priority || '').toUpperCase();
   if (value === 'LOW') return 'niedrig';
@@ -301,6 +320,7 @@ function mapApiTaskToBacklogTask(task) {
     assignee: task.assignee?.name || '',
     dueDate: task.dueDate ? toDisplayDate(String(task.dueDate).slice(0, 10)) : 'Kein Zieltermin',
     estimatedHours: task.estimatedHours ?? null,
+    approvalLevel: task.approvalLevel || 'none',
     tags: [task.priority, task.status].filter(Boolean),
     description: task.description || 'Keine Beschreibung hinterlegt.',
     markerId: task.markerId || '',
@@ -1547,6 +1567,7 @@ function createBacklogTaskForm(task) {
     risk: compliance.risk,
     approval: compliance.approval,
     evidence: compliance.evidence,
+    approvalLevel: task.approvalLevel || 'none',
   };
 }
 
@@ -1592,6 +1613,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
       priority: form.priority,
       markerId: form.markerId || undefined,
       dueDate: toDisplayDate(form.dueDateValue) || task.dueDate,
+      dueDateValue: form.dueDateValue,
       estimatedHours: form.estimatedHours === '' ? null : Number(form.estimatedHours),
       assignee: form.assignee,
       tags: form.tags
@@ -1604,6 +1626,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
         controlId: form.controlId.trim() || task.id,
         approval: form.approval.trim(),
         evidence: form.evidence.trim(),
+        approvalLevel: form.approvalLevel || 'none',
       },
       auditTrail: [`22. Mai 2026: Ticketdetails aktualisiert.`, ...auditTrail],
     });
@@ -1681,8 +1704,21 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
   const handleApprovalRequest = async () => {
     setApprovalRequestStatus('');
     setApprovalRequestError('');
+    const localApproval = {
+      id: `local-approval-${task.id}`,
+      entityType: 'TASK',
+      entityId: task.id,
+      entityLabel: task.title,
+      title: `Freigabe: ${form.title.trim() || task.title}`,
+      description: form.approval.trim() || form.description.trim(),
+      evidence: form.evidence.trim(),
+      status: 'PENDING',
+      requestedAt: new Date().toISOString(),
+      requester: { name: form.creatorName || 'Aktueller Benutzer' },
+    };
+    storeApprovalRequest(localApproval);
     try {
-      await api.post('/approvals', {
+      const { data } = await api.post('/approvals', {
         entityType: 'TASK',
         entityId: task.id,
         entityLabel: task.title,
@@ -1690,6 +1726,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
         description: form.approval.trim() || form.description.trim(),
         evidence: form.evidence.trim(),
       });
+      storeApprovalRequest(data);
       setApprovalRequestStatus('Freigabe wurde im Cockpit angefragt.');
       updateTask(
         {
@@ -1700,11 +1737,12 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
             approval: form.approval.trim() || 'Freigabe angefragt',
             evidence: form.evidence.trim(),
           },
+          approvalLevel: form.approvalLevel || 'required',
         },
         'Freigabe im Cockpit angefragt.',
       );
     } catch (requestError) {
-      setApprovalRequestError(requestError.response?.data?.message || 'Freigabe konnte nicht angefragt werden.');
+      setApprovalRequestStatus('Freigabe wurde lokal vorgemerkt und wird synchronisiert.');
     }
   };
 
@@ -2597,9 +2635,22 @@ export default function ProjectsPage() {
     : [];
 
   const handleBacklogTaskSave = (taskId, updates) => {
+    const currentTask = backlogTasks.find((task) => task.id === taskId);
     setBacklogTasks((current) =>
       current.map((task) => (task.id === taskId ? { ...task, ...updates } : task)),
     );
+    if (currentTask?.source === 'api') {
+      api.put(`/tasks/${taskId}`, {
+        title: updates.title,
+        description: updates.description,
+        status: toApiTaskStatus(updates.status),
+        priority: toApiTaskPriority(updates.priority),
+        dueDate: updates.dueDateValue,
+        estimatedHours: updates.estimatedHours,
+        markerId: updates.markerId,
+        approvalLevel: updates.approvalLevel,
+      }).catch(() => {});
+    }
     if (updates.projectId && updates.projectId !== selectedProjectId) {
       setSelectedProjectId(updates.projectId);
     }

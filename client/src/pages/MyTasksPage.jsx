@@ -28,6 +28,7 @@ import api from '../api/axios';
 import { dashboardFallbackTasks, initialTasks, taskProjects as initialProjects } from '../data/taskFixtures';
 import { formatEffort, getEffortHoursFromInput, getEffortInputValue } from '../utils/effort';
 import { getStoredTaskMarkers, getTaskMarker } from '../utils/taskMarkers';
+import { storeApprovalRequest } from '../utils/approvalStorage';
 
 const columns = [
   { id: 'today', title: 'Heute', dot: 'bg-amber-400' },
@@ -118,6 +119,7 @@ const taskSelectClass =
 const attachmentSourceOptions = ['SharePoint', 'OneDrive', 'DMS', 'Audit-Ablage'];
 const attachmentTypeOptions = ['Excel', 'Word', 'PDF', 'Link'];
 const createMenuItems = ['Neue Aufgabe', 'Neues Projekt'];
+const myTasksStorageKey = 'nexttask:my-tasks';
 const performancePresets = {
   day: {
     label: 'Tag',
@@ -176,6 +178,17 @@ function formatDateLabel(value) {
     month: 'long',
     year: 'numeric',
   }).format(new Date(`${value}T00:00:00`));
+}
+
+function getStoredMyTasks() {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const storedTasks = JSON.parse(window.localStorage.getItem(myTasksStorageKey) || 'null');
+    return Array.isArray(storedTasks) ? storedTasks : null;
+  } catch {
+    return null;
+  }
 }
 
 const apiStatusMap = {
@@ -1537,7 +1550,12 @@ export default function MyTasksPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const [tasks, setTasks] = useState(() => withProjectTicketNumbers(initialTasks.map(normalizeFallbackTaskForMyTasks)));
+  const [tasks, setTasks] = useState(() => {
+    const storedTasks = getStoredMyTasks();
+    return storedTasks?.length
+      ? withProjectTicketNumbers(storedTasks.map(normalizeFallbackTaskForMyTasks))
+      : withProjectTicketNumbers(initialTasks.map(normalizeFallbackTaskForMyTasks));
+  });
   const [projects, setProjects] = useState(initialProjects);
   const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
   const [columnOrder, setColumnOrder] = useState(columns.map((column) => column.id));
@@ -1562,6 +1580,10 @@ export default function MyTasksPage() {
   const routeSearch = searchParams.get('search');
   const taskFocusToken = location.state?.focusTaskAt;
   const routedDashboardTask = location.state?.dashboardTask;
+
+  useEffect(() => {
+    window.localStorage.setItem(myTasksStorageKey, JSON.stringify(tasks));
+  }, [tasks]);
 
   const normalizedSearch = searchValue.trim().toLowerCase();
   const currentUserName = user?.name || 'Mara Stein';
@@ -1794,10 +1816,45 @@ export default function MyTasksPage() {
     );
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedTaskId || !detailForm?.title.trim()) return;
 
-    updateSelectedTask((task) => ({
+    const task = tasks.find((candidate) => candidate.id === selectedTaskId);
+    if (!task) return;
+
+    let approvalRequestId = task.approvalRequestId || '';
+    if (detailForm.approvalLevel !== 'none' && !task.approvalRequestId) {
+      const localApprovalId = `local-approval-${task.id}`;
+      storeApprovalRequest({
+        id: localApprovalId,
+        entityType: task.source === 'backend' ? 'TASK' : 'OTHER',
+        entityId: task.id,
+        entityLabel: detailForm.title.trim(),
+        title: `Freigabe: ${detailForm.title.trim()}`,
+        description: detailForm.approval.trim() || detailForm.description.trim(),
+        evidence: detailForm.evidence.trim(),
+        status: 'PENDING',
+        requestedAt: new Date().toISOString(),
+        requesterId: user?.id || '',
+        requester: { id: user?.id || '', name: user?.name || 'Aktueller Benutzer' },
+      });
+      approvalRequestId = localApprovalId;
+      try {
+        const { data } = await api.post('/approvals', {
+          entityType: task.source === 'backend' ? 'TASK' : 'OTHER',
+          entityId: task.id,
+          entityLabel: detailForm.title.trim(),
+          title: `Freigabe: ${detailForm.title.trim()}`,
+          description: detailForm.approval.trim() || detailForm.description.trim(),
+          evidence: detailForm.evidence.trim(),
+        });
+        approvalRequestId = data.id || localApprovalId;
+      } catch {
+        approvalRequestId = '';
+      }
+    }
+
+    const nextTask = {
       ...task,
       title: detailForm.title.trim(),
       project: detailForm.project.trim(),
@@ -1818,9 +1875,29 @@ export default function MyTasksPage() {
         approval: detailForm.approval.trim(),
         evidence: detailForm.evidence.trim(),
       },
+      approvalRequestId,
       parentTaskId: detailForm.parentTaskId || '',
       auditTrail: [`${formatDateLabel('2026-05-16')}: Ticketdetails aktualisiert.`, ...task.auditTrail],
-    }));
+    };
+
+    if (task.source === 'backend') {
+      try {
+        await api.put(`/tasks/${task.id}`, {
+          title: nextTask.title,
+          description: nextTask.description,
+          status: nextTask.status,
+          priority: nextTask.priority,
+          dueDate: nextTask.dueDateValue,
+          estimatedHours: nextTask.estimatedHours,
+          markerId: nextTask.markerId,
+          approvalLevel: nextTask.approvalLevel,
+        });
+      } catch {
+        // Die lokale Änderung wird trotzdem gespeichert.
+      }
+    }
+
+    updateSelectedTask(() => nextTask);
     closeTask();
   };
 

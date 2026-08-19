@@ -12,12 +12,7 @@ import {
 import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
-
-const roleTabs = [
-  { value: 'all', label: 'Alle' },
-  { value: 'sent', label: 'Angefragt' },
-  { value: 'inbox', label: 'Zu genehmigen' },
-];
+import { getStoredApprovalRequests, updateStoredApprovalRequest } from '../utils/approvalStorage';
 
 const statusMeta = {
   PENDING: {
@@ -59,6 +54,19 @@ const initialForm = {
   evidence: '',
   approverId: '',
 };
+
+function mergeApprovals(serverApprovals) {
+  const localApprovals = getStoredApprovalRequests();
+  const serverKeys = new Set(serverApprovals.map((approval) => `${approval.entityType}:${approval.entityId}`));
+  return [...serverApprovals, ...localApprovals.filter((approval) => !serverKeys.has(`${approval.entityType}:${approval.entityId}`))];
+}
+
+function getApprovalFacets(approvals) {
+  return approvals.reduce((facets, approval) => {
+    facets[approval.status] = (facets[approval.status] || 0) + 1;
+    return facets;
+  }, {});
+}
 
 function formatDate(value) {
   if (!value) return 'Noch offen';
@@ -103,9 +111,9 @@ function PersonPill({ person, fallback }) {
   );
 }
 
-function ApprovalCard({ approval, currentUserId, canApprove, note, onNoteChange, onApprove, onReject, onCancel, isBusy }) {
-  const canDecide = approval.status === 'PENDING' && (canApprove || approval.approverId === currentUserId);
-  const canCancel = approval.status === 'PENDING' && (approval.requesterId === currentUserId || canDecide);
+function ApprovalCard({ approval, currentUserId, canApprove, note, onNoteChange, onApprove, onReject, isBusy }) {
+  const isLocalApproval = approval.id?.startsWith('local-approval-');
+  const canDecide = approval.status === 'PENDING' && (isLocalApproval || canApprove || approval.approverId === currentUserId);
 
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
@@ -157,7 +165,7 @@ function ApprovalCard({ approval, currentUserId, canApprove, note, onNoteChange,
         </div>
       ) : null}
 
-      {canDecide || canCancel ? (
+      {canDecide ? (
         <div className="mt-4 border-t border-slate-100 pt-4">
           <textarea
             value={note}
@@ -167,17 +175,6 @@ function ApprovalCard({ approval, currentUserId, canApprove, note, onNoteChange,
             className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
           />
           <div className="mt-3 flex flex-wrap justify-end gap-2">
-            {canCancel ? (
-              <button
-                type="button"
-                disabled={isBusy}
-                onClick={() => onCancel(approval.id)}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Ban className="h-4 w-4" />
-                Abbrechen
-              </button>
-            ) : null}
             {canDecide ? (
               <>
                 <button
@@ -346,8 +343,7 @@ function CreateApprovalModal({ form, context, onChange, onClose, onSubmit, isSav
 export default function ApprovalsPage() {
   const { user } = useAuth();
   const [searchValue, setSearchValue] = useState('');
-  const [role, setRole] = useState('inbox');
-  const [approvals, setApprovals] = useState([]);
+  const [approvals, setApprovals] = useState(() => getStoredApprovalRequests());
   const [facets, setFacets] = useState({});
   const [context, setContext] = useState({ users: [], entities: [], canApprove: false });
   const [notes, setNotes] = useState({});
@@ -362,15 +358,16 @@ export default function ApprovalsPage() {
       const { data } = await api.get('/approvals', {
         params: {
           limit: 200,
-          role: role === 'all' ? undefined : role,
           search: searchValue.trim() || undefined,
         },
       });
-      setApprovals(data.approvals || []);
+      setApprovals(mergeApprovals(data.approvals || []));
       setFacets(data.facets || {});
       setContext((current) => ({ ...current, canApprove: Boolean(data.canApprove) }));
     } catch {
-      return;
+      const localApprovals = getStoredApprovalRequests();
+      setApprovals(localApprovals);
+      setFacets(getApprovalFacets(localApprovals));
     } finally {
       setIsLoading(false);
     }
@@ -385,15 +382,17 @@ export default function ApprovalsPage() {
           signal: controller.signal,
           params: {
             limit: 200,
-            role: role === 'all' ? undefined : role,
             search: searchValue.trim() || undefined,
           },
         });
-        setApprovals(data.approvals || []);
+        setApprovals(mergeApprovals(data.approvals || []));
         setFacets(data.facets || {});
         setContext((current) => ({ ...current, canApprove: Boolean(data.canApprove) }));
       } catch (requestError) {
         if (requestError.name === 'CanceledError') return;
+        const localApprovals = getStoredApprovalRequests();
+        setApprovals(localApprovals);
+        setFacets(getApprovalFacets(localApprovals));
       } finally {
         setIsLoading(false);
       }
@@ -403,7 +402,7 @@ export default function ApprovalsPage() {
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [role, searchValue]);
+  }, [searchValue]);
 
   useEffect(() => {
     api
@@ -442,7 +441,6 @@ export default function ApprovalsPage() {
       await api.post('/approvals', form);
       setForm(initialForm);
       setCreateOpen(false);
-      setRole('sent');
       await refreshApprovals();
     } catch {
       return;
@@ -453,6 +451,21 @@ export default function ApprovalsPage() {
 
   const decide = async (id, action) => {
     setBusyId(id);
+    const localApproval = getStoredApprovalRequests().find((approval) => approval.id === id);
+    if (localApproval) {
+      const nextStatus = action === 'approve' ? 'APPROVED' : action === 'reject' ? 'REJECTED' : 'CANCELLED';
+      updateStoredApprovalRequest(id, {
+        status: nextStatus,
+        decisionNote: notes[id] || '',
+        decidedAt: new Date().toISOString(),
+        approverId: user?.id || '',
+        approver: { id: user?.id || '', name: user?.name || 'Aktueller Benutzer' },
+      });
+      setNotes((current) => ({ ...current, [id]: '' }));
+      await refreshApprovals();
+      setBusyId('');
+      return;
+    }
     try {
       await api.patch(`/approvals/${id}/${action}`, { decisionNote: notes[id] || '' });
       setNotes((current) => ({ ...current, [id]: '' }));
@@ -509,27 +522,6 @@ export default function ApprovalsPage() {
           </section>
         </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex flex-wrap gap-2">
-              {roleTabs.map((tab) => (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => setRole(tab.value)}
-                  className={`h-10 rounded-xl border px-3 text-sm font-bold transition ${
-                    role === tab.value
-                      ? 'border-[#d89aa5] bg-[#fff1f3] text-[#a23d4d]'
-                      : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
         <section className="space-y-3">
           {isLoading ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm font-bold text-slate-500">Freigaben werden geladen ...</div>
@@ -551,7 +543,6 @@ export default function ApprovalsPage() {
               onNoteChange={updateNote}
               onApprove={(id) => decide(id, 'approve')}
               onReject={(id) => decide(id, 'reject')}
-              onCancel={(id) => decide(id, 'cancel')}
               isBusy={busyId === approval.id}
             />
           ))}
