@@ -47,12 +47,13 @@ export default function ReportsContent(props) {
     getReportHtml,
   } = props;
 
-  const [activeReportTab, setActiveReportTab] = useState('department-report');
+  const [activeReportTab, setActiveReportTab] = useState('status-report');
 
   const visibleTaskCount = taskStatusSegments.reduce((sum, segment) => sum + segment.value, 0);
   const reportTabs = [
-    { id: 'department-report', label: 'Abteilungsbericht', icon: Users, count: teamLoad.length },
+    { id: 'status-report', label: 'Status Report', icon: FileText },
     { id: 'project-report', label: 'Projektbericht', icon: Flag, count: filteredProjects.length },
+    { id: 'department-report', label: 'Abteilungsbericht', icon: Users, count: teamLoad.length },
     { id: 'task-status', label: 'Aufgabenstatus', icon: CircleDot, count: visibleTaskCount },
     { id: 'project-progress', label: 'Projektfortschritt', icon: BarChart3, count: filteredProjects.length },
   ];
@@ -340,11 +341,6 @@ export default function ReportsContent(props) {
         <div className="max-w-3xl">
           <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Projektbericht</p>
           <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">Projekt-Zeitachse</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Waehle ein Projekt aus, dann siehst du nur dessen Verlauf auf einer ruhigen Zeitachse. Auf der Achse stehen
-            nur kompakte Marker wie <span className="font-extrabold text-slate-700">MS1</span> oder
-            <span className="font-extrabold text-slate-700"> MS2</span>; die Details erscheinen erst darunter.
-          </p>
         </div>
         <label className="w-full max-w-[320px] space-y-2">
           <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">Projekt fuer Zeitachse</span>
@@ -362,8 +358,6 @@ export default function ReportsContent(props) {
           </select>
         </label>
       </div>
-
-      <div className="mt-6">{renderStatusReportPanel()}</div>
 
       {!selectedTimelineProject ? (
         <div className="mt-8 flex min-h-[280px] items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-[#fcfdff] px-6 py-10 text-center">
@@ -602,11 +596,12 @@ export default function ReportsContent(props) {
   );
 
   const renderActivePanel = () => {
+    if (activeReportTab === 'status-report') return renderStatusReportPanel();
     if (activeReportTab === 'department-report') return renderDepartmentPanel();
     if (activeReportTab === 'project-report') return renderProjectReportPanel();
     if (activeReportTab === 'task-status') return renderTaskStatusPanel();
     if (activeReportTab === 'project-progress') return renderProjectProgressPanel();
-    return renderDepartmentPanel();
+    return renderStatusReportPanel();
   };
 
   return (
