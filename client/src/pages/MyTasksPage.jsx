@@ -262,13 +262,6 @@ function getInitials(name) {
     .toUpperCase();
 }
 
-function parseChecklistStats(checklist) {
-  if (typeof checklist !== 'string') return { completed: '0', total: '0' };
-  const match = checklist.match(/(\d+)\/(\d+)/);
-  if (!match) return { completed: '0', total: '0' };
-  return { completed: match[1], total: match[2] };
-}
-
 function TaskFilterField({ label, value, onChange, children }) {
   return (
     <label className="min-w-[170px] flex-1 space-y-1.5">
@@ -323,7 +316,6 @@ function AssignerAvatar({ person }) {
 }
 
 function TaskCard({ task, onOpen }) {
-  const checklistStats = parseChecklistStats(task.checklist);
   const [showAssignerProfile, setShowAssignerProfile] = useState(false);
   const assignerProfile = teamProfiles[task.assignedBy.name];
   const marker = getTaskMarker(task);
@@ -381,33 +373,29 @@ function TaskCard({ task, onOpen }) {
           ) : null}
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-[10px] font-bold text-slate-500">
+        <div className="flex flex-wrap items-center justify-end gap-x-2.5 gap-y-1.5 text-[11px] font-bold text-slate-500">
           <button
             type="button"
             onClick={(event) => {
               event.stopPropagation();
               onOpen(task);
             }}
-            className="inline-flex items-center gap-1 hover:text-rose-600"
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2 py-1 hover:bg-rose-50 hover:text-rose-600"
             aria-label={`Kommentare zu ${task.title} öffnen`}
           >
-            <MessageSquareMore className="h-3.5 w-3.5" />
+            <MessageSquareMore className="h-4 w-4" />
             {task.comments.length}
           </button>
-          <span className="inline-flex items-center gap-1">
-            <ListChecks className="h-3.5 w-3.5" />
-            {checklistStats.completed}/{checklistStats.total}
-          </span>
           <button
             type="button"
             onClick={(event) => {
               event.stopPropagation();
               onOpen(task);
             }}
-            className="inline-flex items-center gap-1 hover:text-rose-600"
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-lg px-2 py-1 hover:bg-rose-50 hover:text-rose-600"
             aria-label={`Anhänge zu ${task.title} öffnen`}
           >
-            <Paperclip className="h-3.5 w-3.5" />
+            <Paperclip className="h-4 w-4" />
             {task.attachments.length}
           </button>
         </div>
@@ -1942,63 +1930,61 @@ export default function MyTasksPage() {
           onOpenPerformance={() => setActivePopup({ type: 'performance' })}
         />
 
-        <section className="rounded-[26px] border border-slate-300 bg-white p-2.5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
-          <div className="rounded-[20px] border border-slate-200 bg-[#f8fafc] p-2.5">
-            <div className="flex flex-wrap items-end gap-2 xl:flex-nowrap">
-              <TaskFilterField
-                label="Aufgabenbereich"
-                value={activeScopeValue}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  if (value === 'mine') {
-                    setTaskScope('mine');
-                    return;
-                  }
-                  setTaskScope('all');
-                }}
-              >
-                <option value="all">Alle Aufgaben</option>
-                <option value="mine">Meine Aufgaben</option>
-              </TaskFilterField>
-
-              <TaskFilterField label="Status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                {boardStatusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </TaskFilterField>
-
-              <TaskFilterField label="Person" value={activePersonFilter} onChange={(event) => setSelectedPerson(event.target.value)}>
-                <option value="">Alle Personen</option>
-                {assignees.map((assignee) => (
-                  <option key={assignee} value={assignee}>
-                    {assignee}
-                  </option>
-                ))}
-              </TaskFilterField>
-
-              <div className="min-w-[180px] flex-1 space-y-1.5 xl:max-w-[220px]">
-                <span className="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Filter</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTaskScope('all');
-                    setSelectedPerson('');
-                    setStatusFilter('all');
-                  }}
-                  className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                >
-                  Filter zurücksetzen
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <section className="rounded-2xl border border-slate-300 bg-white p-3.5 shadow-[0_16px_40px_rgba(136,54,66,0.08)]">
           <div className="rounded-2xl border border-[#f2d8dd] bg-[#fff8f9] p-3">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <div className="rounded-[18px] border border-white/80 bg-white/60 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+              <div className="flex flex-wrap items-end gap-2 xl:flex-nowrap">
+                <TaskFilterField
+                  label="Aufgabenbereich"
+                  value={activeScopeValue}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (value === 'mine') {
+                      setTaskScope('mine');
+                      return;
+                    }
+                    setTaskScope('all');
+                  }}
+                >
+                  <option value="all">Alle Aufgaben</option>
+                  <option value="mine">Meine Aufgaben</option>
+                </TaskFilterField>
+
+                <TaskFilterField label="Status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                  {boardStatusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </TaskFilterField>
+
+                <TaskFilterField label="Person" value={activePersonFilter} onChange={(event) => setSelectedPerson(event.target.value)}>
+                  <option value="">Alle Personen</option>
+                  {assignees.map((assignee) => (
+                    <option key={assignee} value={assignee}>
+                      {assignee}
+                    </option>
+                  ))}
+                </TaskFilterField>
+
+                <div className="min-w-[180px] flex-1 space-y-1.5 xl:max-w-[220px]">
+                  <span className="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Filter</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTaskScope('all');
+                      setSelectedPerson('');
+                      setStatusFilter('all');
+                    }}
+                    className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    Filter zurücksetzen
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
               {orderedColumns.map((column) => (
                 <BoardColumn
                   key={column.id}
