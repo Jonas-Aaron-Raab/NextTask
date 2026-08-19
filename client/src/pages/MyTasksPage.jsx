@@ -223,6 +223,7 @@ function normalizeApiTaskForMyTasks(task) {
       evidence: 'Noch kein Evidenznachweis hinterlegt',
     },
     markerId: task.markerId || '',
+    approvalLevel: task.approvalLevel || 'none',
     parentTaskId: task.parentTaskId || task.parentId || '',
     tags: [task.status, task.priority].filter(Boolean),
     linkedPeople: assignee ? [assignee] : [],
@@ -253,6 +254,7 @@ function normalizeFallbackTaskForMyTasks(task) {
     linkedPeople: task.linkedPeople || [],
     tags: task.tags || [],
     parentTaskId: task.parentTaskId || '',
+    approvalLevel: task.approvalLevel || 'none',
     auditTrail: task.auditTrail || [],
     assignedBy: task.assignedBy || { name: 'NextTask', initials: 'NT', tone: 'from-slate-200 to-slate-300' },
   };
@@ -313,6 +315,7 @@ function buildCreateTaskForm(projectName, creatorName = 'Elisabeth Bezverkha') {
     dueDateValue: '2026-08-20',
     estimatedHours: '4',
     assignee: 'Lisa Wagner',
+    approvalLevel: 'none',
     markerId: '',
     classification: 'Intern',
     risk: 'Niedrig',
@@ -1161,6 +1164,19 @@ function TaskEditorModal({
                     </select>
                   </label>
 
+                  <label className="block text-sm font-bold text-slate-700">
+                    Freigabe
+                    <select
+                      value={form.approvalLevel || 'none'}
+                      onChange={(event) => onFormChange('approvalLevel', event.target.value)}
+                      className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+                    >
+                      <option value="none">Keine Freigabe erforderlich</option>
+                      <option value="department">Freigabe durch Abteilungsleiter</option>
+                      <option value="gbl">Freigabe durch GBL</option>
+                    </select>
+                  </label>
+
                   <TaskMarkerField
                     value={form.markerId || ''}
                     markers={taskMarkers}
@@ -1699,6 +1715,7 @@ export default function MyTasksPage() {
       approval: task.compliance?.approval || 'Noch keine Freigabe hinterlegt',
       evidence: task.compliance?.evidence || 'Noch kein Evidenznachweis hinterlegt',
       markerId: task.markerId || '',
+      approvalLevel: task.approvalLevel || 'none',
       ticketNumber: task.ticketNumber,
       parentTaskId: task.parentTaskId || '',
     });
@@ -1818,6 +1835,7 @@ export default function MyTasksPage() {
       dueDate: formatDateLabel(detailForm.dueDateValue),
       estimatedHours: detailForm.estimatedHours === '' ? null : Number(detailForm.estimatedHours),
       assignee: detailForm.assignee,
+      approvalLevel: detailForm.approvalLevel || 'none',
       description: detailForm.description.trim(),
       note: detailForm.description.trim() || task.note,
       compliance: {
@@ -2105,6 +2123,7 @@ export default function MyTasksPage() {
       note,
       description: note,
       assignee: createTaskForm.assignee,
+      approvalLevel: createTaskForm.approvalLevel || 'none',
       assignedBy: createTaskForm.assignedBy || buildAssignedBy(currentUserName),
       tags: createTaskForm.tags?.length ? createTaskForm.tags : ['Neu'],
       linkedPeople: createTaskForm.linkedPeople || [],
