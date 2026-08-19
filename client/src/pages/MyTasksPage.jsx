@@ -114,7 +114,7 @@ const boardStatusOptions = [
   ...columns.map((column) => ({ value: column.id, label: statusLabels[column.id] })),
 ];
 const taskSelectClass =
-  'h-10 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12 dark:border-slate-700 dark:bg-[#121a2a] dark:text-slate-100 dark:focus:border-[#d77282] dark:focus:ring-[#d77282]/18';
+  'task-board-filter-control h-10 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12';
 
 const attachmentSourceOptions = ['SharePoint', 'OneDrive', 'DMS', 'Audit-Ablage'];
 const attachmentTypeOptions = ['Excel', 'Word', 'PDF', 'Link'];
@@ -393,7 +393,7 @@ function buildCreateProjectForm(departmentId = '') {
 function TaskFilterField({ label, value, onChange, children }) {
   return (
     <label className="min-w-[170px] flex-1 space-y-1.5">
-      <span className="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{label}</span>
+      <span className="task-board-filter-label block text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">{label}</span>
       <select value={value} onChange={onChange} className={taskSelectClass}>
         {children}
       </select>
@@ -2251,7 +2251,7 @@ export default function MyTasksPage() {
                 </TaskFilterField>
 
                 <div className="min-w-[180px] flex-1 space-y-1.5 xl:max-w-[220px]">
-                  <span className="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Filter</span>
+                  <span className="task-board-filter-label block text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Filter</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -2259,7 +2259,7 @@ export default function MyTasksPage() {
                       setSelectedPerson('');
                       setStatusFilter('all');
                     }}
-                    className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-[#121a2a] dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-[#1a2436]"
+                    className="task-board-filter-reset inline-flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                   >
                     Filter zurücksetzen
                   </button>

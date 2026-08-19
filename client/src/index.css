@@ -99,6 +99,27 @@ textarea {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 }
 
+.task-board-filter-label {
+  color: #94a3b8;
+}
+
+.task-board-filter-control {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.task-board-filter-reset {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  color: #334155;
+}
+
+.task-board-filter-reset:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
 :root.dark .bg-white {
   background-color: #111827;
 }
@@ -174,6 +195,27 @@ textarea {
 
 :root.dark .text-slate-400 {
   color: #94a3b8;
+}
+
+:root.dark .task-board-filter-label {
+  color: #64748b !important;
+}
+
+:root.dark .task-board-filter-control {
+  background-color: #121a2a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+:root.dark .task-board-filter-reset {
+  background-color: #121a2a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+:root.dark .task-board-filter-reset:hover {
+  background-color: #1a2436 !important;
+  border-color: #475569 !important;
 }
 
 :root.dark input,
