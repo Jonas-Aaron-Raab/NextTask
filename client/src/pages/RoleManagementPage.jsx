@@ -110,6 +110,7 @@ export default function RoleManagementPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [userForm, setUserForm] = useState(emptyUserForm);
+  const [activeTab, setActiveTab] = useState('roles');
   const roleManagerAllowed = canManageRoles(user, accessConfig);
   const currentRole = useMemo(() => getEffectiveRoleForUser(user, accessConfig), [accessConfig, user]);
   const searchTerm = searchValue.trim().toLowerCase();
@@ -239,6 +240,7 @@ export default function RoleManagementPage() {
     setStatus('');
     setError('');
     setDraftRole(createRole(kind));
+    setActiveTab('edit');
   };
 
   const deleteRole = async () => {
@@ -339,7 +341,21 @@ export default function RoleManagementPage() {
           </div>
         </section>
 
-        <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
+        <nav className="rounded-[30px] border border-slate-300 bg-white p-3 shadow-[0_18px_45px_rgba(15,23,42,0.04)]" aria-label="Rollenverwaltung">
+          <div className="grid gap-2 md:grid-cols-3">
+            {[
+              { id: 'roles', label: 'Rollen', icon: KeyRound },
+              { id: 'edit', label: 'Rolle bearbeiten', icon: ShieldCheck },
+              { id: 'assignments', label: 'Zuweisungen', icon: UsersRound },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const active = activeTab === tab.id;
+              return <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`inline-flex h-14 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-black transition ${active ? 'border-[#e3b4bc] bg-[#fff1f3] text-[#a23d4d]' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}><Icon className="h-5 w-5" />{tab.label}</button>;
+            })}
+          </div>
+        </nav>
+
+        {activeTab === 'roles' ? <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
           <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
             <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
               <div>
@@ -351,7 +367,7 @@ export default function RoleManagementPage() {
 
             <div className="mt-4 space-y-2">
               {filteredRoles.map((role) => (
-                <button key={role.id} type="button" onClick={() => setDraftRole(clone(role))} className={`flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left transition ${role.id === draftRole.id ? 'border-[#d89aa5] bg-[#fff7f8]' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
+                <button key={role.id} type="button" onClick={() => { setDraftRole(clone(role)); setActiveTab('edit'); }} className={`flex w-full items-start gap-3 rounded-2xl border px-4 py-3 text-left transition ${role.id === draftRole.id ? 'border-[#d89aa5] bg-[#fff7f8]' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
                   <RoleBadge role={role} />
                   <span className="min-w-0">
                     <span className="block text-sm font-black text-slate-950">{role.name}</span>
@@ -362,7 +378,7 @@ export default function RoleManagementPage() {
             </div>
           </section>
 
-          <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+          {activeTab === 'edit' ? <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4">
               <div className="flex min-w-0 items-center gap-3">
                 <RoleBadge role={draftRole} />
@@ -449,10 +465,10 @@ export default function RoleManagementPage() {
                 </div>
               </div>
             </div>
-          </section>
-        </div>
+          </section> : null}
+        </div> : null}
 
-        <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
+        {activeTab === 'assignments' ? <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4">
             <div>
               <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Zuweisungen</p>
@@ -499,7 +515,7 @@ export default function RoleManagementPage() {
               </div>
             </div>
           </div>
-        </section>
+        </section> : null}
       </div>
     </AppShell>
   );
