@@ -883,7 +883,7 @@ export function CreateProjectModal({
 
   return (
     <PopupShell title={title} subtitle={subtitle} maxWidth="max-w-5xl" onClose={onClose}>
-      <div className="mb-5 grid grid-cols-2 gap-2 border-b border-slate-200 pb-4 md:grid-cols-3 xl:grid-cols-6">
+      <div className="mb-5 grid grid-cols-1 gap-2 border-b border-slate-200 pb-4 sm:grid-cols-2 lg:grid-cols-3">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -892,7 +892,7 @@ export function CreateProjectModal({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl px-3 text-sm font-extrabold transition ${
+              className={`inline-flex h-12 w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 text-sm font-extrabold transition ${
                 isActive
                   ? 'bg-[#fff1f3] text-[#a23d4d] shadow-[0_8px_18px_rgba(136,54,66,0.08)]'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
@@ -1043,7 +1043,7 @@ export function CreateProjectModal({
 
             <div className="space-y-3">
               {rowsFor('milestoneRows').map((row) => (
-                <div key={row.id} className="grid gap-3 rounded-2xl border border-white bg-white p-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)] xl:grid-cols-[minmax(220px,1.4fr)_150px_150px_150px_120px_minmax(220px,1fr)_44px]">
+                <div key={row.id} className="grid min-w-0 gap-3 rounded-2xl border border-white bg-white p-3 shadow-[0_8px_20px_rgba(15,23,42,0.04)] md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.7fr)_minmax(0,1fr)_44px]">
                   <input value={row.title} onChange={(event) => updateRow('milestoneRows', row.id, 'title', event.target.value)} placeholder="Meilenstein" className={compactInputClass} />
                   <input type="date" value={row.planDate} onChange={(event) => updateRow('milestoneRows', row.id, 'planDate', event.target.value)} className={compactInputClass} />
                   <input type="date" value={row.newDate} onChange={(event) => updateRow('milestoneRows', row.id, 'newDate', event.target.value)} className={compactInputClass} />
