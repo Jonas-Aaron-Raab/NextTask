@@ -1683,7 +1683,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
     setApprovalRequestError('');
     try {
       await api.post('/approvals', {
-        entityType: 'OTHER',
+        entityType: 'TASK',
         entityId: task.id,
         entityLabel: task.title,
         title: `Freigabe: ${form.title.trim() || task.title}`,

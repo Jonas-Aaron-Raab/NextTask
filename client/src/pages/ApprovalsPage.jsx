@@ -4,8 +4,6 @@ import {
   CheckCircle2,
   Clock3,
   FileText,
-  Filter,
-  Plus,
   Send,
   ShieldCheck,
   X,
@@ -16,9 +14,9 @@ import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 
 const roleTabs = [
-  { value: 'inbox', label: 'Zu genehmigen' },
-  { value: 'sent', label: 'Angefragt' },
   { value: 'all', label: 'Alle' },
+  { value: 'sent', label: 'Angefragt' },
+  { value: 'inbox', label: 'Zu genehmigen' },
 ];
 
 const statusMeta = {
@@ -349,7 +347,6 @@ export default function ApprovalsPage() {
   const { user } = useAuth();
   const [searchValue, setSearchValue] = useState('');
   const [role, setRole] = useState('inbox');
-  const [status, setStatus] = useState('');
   const [approvals, setApprovals] = useState([]);
   const [facets, setFacets] = useState({});
   const [context, setContext] = useState({ users: [], entities: [], canApprove: false });
@@ -357,26 +354,23 @@ export default function ApprovalsPage() {
   const [busyId, setBusyId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
 
   const refreshApprovals = async () => {
-    setError('');
     try {
       const { data } = await api.get('/approvals', {
         params: {
           limit: 200,
           role: role === 'all' ? undefined : role,
-          status: status || undefined,
           search: searchValue.trim() || undefined,
         },
       });
       setApprovals(data.approvals || []);
       setFacets(data.facets || {});
       setContext((current) => ({ ...current, canApprove: Boolean(data.canApprove) }));
-    } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Freigaben konnten nicht geladen werden.');
+    } catch {
+      return;
     } finally {
       setIsLoading(false);
     }
@@ -386,14 +380,12 @@ export default function ApprovalsPage() {
     const controller = new AbortController();
     const timeoutId = window.setTimeout(async () => {
       setIsLoading(true);
-      setError('');
       try {
         const { data } = await api.get('/approvals', {
           signal: controller.signal,
           params: {
             limit: 200,
             role: role === 'all' ? undefined : role,
-            status: status || undefined,
             search: searchValue.trim() || undefined,
           },
         });
@@ -402,7 +394,6 @@ export default function ApprovalsPage() {
         setContext((current) => ({ ...current, canApprove: Boolean(data.canApprove) }));
       } catch (requestError) {
         if (requestError.name === 'CanceledError') return;
-        setError(requestError.response?.data?.message || 'Freigaben konnten nicht geladen werden.');
       } finally {
         setIsLoading(false);
       }
@@ -412,7 +403,7 @@ export default function ApprovalsPage() {
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [role, searchValue, status]);
+  }, [role, searchValue]);
 
   useEffect(() => {
     api
@@ -447,15 +438,14 @@ export default function ApprovalsPage() {
   const submitApproval = async () => {
     if (!form.title.trim()) return;
     setIsSaving(true);
-    setError('');
     try {
       await api.post('/approvals', form);
       setForm(initialForm);
       setCreateOpen(false);
       setRole('sent');
       await refreshApprovals();
-    } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Freigabe konnte nicht angefragt werden.');
+    } catch {
+      return;
     } finally {
       setIsSaving(false);
     }
@@ -463,13 +453,12 @@ export default function ApprovalsPage() {
 
   const decide = async (id, action) => {
     setBusyId(id);
-    setError('');
     try {
       await api.patch(`/approvals/${id}/${action}`, { decisionNote: notes[id] || '' });
       setNotes((current) => ({ ...current, [id]: '' }));
       await refreshApprovals();
-    } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Freigabe konnte nicht aktualisiert werden.');
+    } catch {
+      return;
     } finally {
       setBusyId('');
     }
@@ -492,18 +481,7 @@ export default function ApprovalsPage() {
             <div>
               <p className="text-sm font-extrabold uppercase tracking-[0.22em] text-[#b84758]">Genehmigungsworkflow</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Freigaben steuern</h1>
-              <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-slate-500">
-                Entscheidungen, Evidenz und Verantwortliche laufen hier zusammen und werden im Audit-Log protokolliert.
-              </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setCreateOpen(true)}
-              className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white shadow-[0_12px_24px_rgba(184,71,88,0.22)] transition hover:bg-[#a23d4d]"
-            >
-              <Plus className="h-4 w-4" />
-              Freigabe anfragen
-            </button>
           </div>
         </section>
 
@@ -533,10 +511,6 @@ export default function ApprovalsPage() {
 
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-2 text-sm font-black text-slate-950">
-              <Filter className="h-4 w-4 text-[#b84758]" />
-              Ansicht
-            </span>
             <div className="flex flex-wrap gap-2">
               {roleTabs.map((tab) => (
                 <button
@@ -553,22 +527,8 @@ export default function ApprovalsPage() {
                 </button>
               ))}
             </div>
-            <select
-              value={status}
-              onChange={(event) => setStatus(event.target.value)}
-              className="ml-auto h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10"
-            >
-              <option value="">Alle Status</option>
-              {Object.entries(statusMeta).map(([value, meta]) => (
-                <option key={value} value={value}>
-                  {meta.label}
-                </option>
-              ))}
-            </select>
           </div>
         </section>
-
-        {error ? <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-700">{error}</section> : null}
 
         <section className="space-y-3">
           {isLoading ? (
