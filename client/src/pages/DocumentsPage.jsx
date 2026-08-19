@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
   BookOpen,
-  CheckCircle2,
   Clock3,
   Eye,
   FileSpreadsheet,
@@ -9,21 +8,19 @@ import {
   FolderKanban,
   History,
   Link2,
-  LockKeyhole,
   Plus,
-  ShieldCheck,
   Upload,
   Users,
   X,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
-import { initialDepartments, initialProjects } from '../data/projectFixtures';
+import { initialDepartments } from '../data/projectFixtures';
 import { initialTasks } from '../data/taskFixtures';
 
 const createMenuItems = ['Neue Seite', 'Neues Dokument', 'Neue Vorlage', 'Upload Nachweis'];
 
 const typeOptions = ['Alle Typen', 'Richtlinie', 'Kontrollnachweis', 'Projektunterlage', 'Vorlage', 'Prozessdokument'];
-const statusOptions = ['Alle Stati', 'Entwurf', 'In Prüfung', 'Freigegeben', 'Abgelaufen'];
+const statusOptions = ['Alle Stati'];
 const documentSelectClass =
   'h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12';
 
@@ -312,20 +309,7 @@ export default function DocumentsPage() {
     });
   }, [searchValue, selectedDepartment, selectedStatus, selectedType]);
 
-  const visibleProjects = useMemo(() => {
-    const departmentFilter = selectedDepartment === 'Alle Abteilungen'
-      ? initialProjects
-      : initialProjects.filter((project) => {
-          const department = initialDepartments.find((item) => item.id === project.departmentId);
-          return department?.name === selectedDepartment;
-        });
-    return departmentFilter.length;
-  }, [selectedDepartment]);
-
   const policyCount = documents.filter((document) => document.type === 'Richtlinie' || document.type === 'Prozessdokument').length;
-  const evidenceCount = documents.filter((document) => document.type === 'Kontrollnachweis').length;
-  const reviewCount = documents.filter((document) => document.status === 'In Prüfung').length;
-  const confidentialCount = documents.filter((document) => document.classification !== 'Intern').length;
   const reviewDocuments = documents
     .filter((document) => document.status === 'In Prüfung' || document.status === 'Abgelaufen')
     .slice(0, 4);
@@ -436,56 +420,6 @@ export default function DocumentsPage() {
               </DocumentFilterField>
             </div>
           </div>
-        </section>
-
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {[
-            {
-              label: 'Freigegebene Dokumente',
-              value: documents.filter((document) => document.status === 'Freigegeben').length,
-              detail: 'revisionssicher verfügbar',
-              icon: CheckCircle2,
-              tone: 'bg-[#eefaf4] text-[#1f7a4f]',
-            },
-            {
-              label: 'Dokumente in Prüfung',
-              value: reviewCount,
-              detail: 'offene Freigaben und Reviews',
-              icon: Clock3,
-              tone: 'bg-[#fff6e8] text-[#b76c12]',
-            },
-            {
-              label: 'Kontrollnachweise',
-              value: evidenceCount,
-              detail: `${visibleProjects} Projekte verknüpft`,
-              icon: ShieldCheck,
-              tone: 'bg-[#fff0f2] text-[#b84758]',
-            },
-            {
-              label: 'Vertrauliche Dokumente',
-              value: confidentialCount,
-              detail: 'mit Klassifizierung markiert',
-              icon: LockKeyhole,
-              tone: 'bg-[#edf4ff] text-[#4875c8]',
-            },
-          ].map((item) => {
-            const Icon = item.icon;
-            return (
-              <article
-                key={item.label}
-                className="flex min-h-[168px] flex-col rounded-[24px] border border-slate-300 bg-white p-4 shadow-[0_14px_36px_rgba(15,23,42,0.05)]"
-              >
-                <div className="flex items-start gap-3">
-                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${item.tone}`}>
-                    <Icon className="h-4.5 w-4.5" />
-                  </span>
-                </div>
-                <p className="mt-3 text-sm font-semibold leading-5 text-slate-500">{item.label}</p>
-                <p className="mt-1.5 text-[1.8rem] font-extrabold tracking-tight text-slate-950">{item.value}</p>
-                <p className="mt-auto pt-3 text-sm font-semibold leading-5 text-slate-500">{item.detail}</p>
-              </article>
-            );
-          })}
         </section>
 
         <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
