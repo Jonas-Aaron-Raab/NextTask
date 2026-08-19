@@ -48,11 +48,10 @@ export default function ReportsContent(props) {
     getReportHtml,
   } = props;
 
-  const [activeReportTab, setActiveReportTab] = useState('status-report');
+  const [activeReportTab, setActiveReportTab] = useState('department-report');
 
   const visibleTaskCount = taskStatusSegments.reduce((sum, segment) => sum + segment.value, 0);
   const reportTabs = [
-    { id: 'status-report', label: 'Status Report', icon: FileText },
     { id: 'department-report', label: 'Abteilungsbericht', icon: Users, count: teamLoad.length },
     { id: 'project-report', label: 'Projektbericht', icon: Flag, count: filteredProjects.length },
     { id: 'task-status', label: 'Aufgabenstatus', icon: CircleDot, count: visibleTaskCount },
@@ -391,6 +390,8 @@ export default function ReportsContent(props) {
         </label>
       </div>
 
+      <div className="mt-6">{renderStatusReportPanel()}</div>
+
       {!selectedTimelineProject ? (
         <div className="mt-8 flex min-h-[280px] items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-[#fcfdff] px-6 py-10 text-center">
           <div className="max-w-md">
@@ -632,7 +633,7 @@ export default function ReportsContent(props) {
     if (activeReportTab === 'project-report') return renderProjectReportPanel();
     if (activeReportTab === 'task-status') return renderTaskStatusPanel();
     if (activeReportTab === 'project-progress') return renderProjectProgressPanel();
-    return renderStatusReportPanel();
+    return renderDepartmentPanel();
   };
 
   return (
