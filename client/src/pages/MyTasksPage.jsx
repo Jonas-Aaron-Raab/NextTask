@@ -11,6 +11,7 @@ import {
   Flag,
   GripVertical,
   History,
+  Link2,
   ListChecks,
   LockKeyhole,
   MessageSquareMore,
@@ -200,6 +201,7 @@ function normalizeApiTaskForMyTasks(task) {
 
   return {
     id: task.id,
+    ticketNumber: task.ticketNumber || buildTicketNumber(task.id),
     source: 'backend',
     title: task.title,
     project,
@@ -221,6 +223,7 @@ function normalizeApiTaskForMyTasks(task) {
       evidence: 'Noch kein Evidenznachweis hinterlegt',
     },
     markerId: task.markerId || '',
+    parentTaskId: task.parentTaskId || task.parentId || '',
     tags: [task.status, task.priority].filter(Boolean),
     linkedPeople: assignee ? [assignee] : [],
     attachments: [],
@@ -233,6 +236,7 @@ function normalizeApiTaskForMyTasks(task) {
 function normalizeFallbackTaskForMyTasks(task) {
   return {
     ...task,
+    ticketNumber: task.ticketNumber || buildTicketNumber(task.id),
     source: task.source || 'local',
     compliance: task.compliance || {
       classification: 'Intern',
@@ -248,9 +252,27 @@ function normalizeFallbackTaskForMyTasks(task) {
     comments: task.comments || [],
     linkedPeople: task.linkedPeople || [],
     tags: task.tags || [],
+    parentTaskId: task.parentTaskId || '',
     auditTrail: task.auditTrail || [],
     assignedBy: task.assignedBy || { name: 'NextTask', initials: 'NT', tone: 'from-slate-200 to-slate-300' },
   };
+}
+
+function buildTicketNumber(taskId) {
+  const numericId = String(taskId || '').match(/(\d+)$/)?.[1];
+  if (numericId) return `TASK-${numericId.padStart(3, '0')}`;
+
+  const hash = String(taskId || '').split('').reduce((total, character) => total + character.charCodeAt(0), 0);
+  return `TASK-${String((hash % 900) + 100)}`;
+}
+
+function getNextTicketNumber(taskList) {
+  const highestNumber = taskList.reduce((highest, task) => {
+    const number = Number(task.ticketNumber?.match(/(\d+)$/)?.[1] || 0);
+    return Math.max(highest, number);
+  }, 0);
+
+  return `TASK-${String(highestNumber + 1).padStart(3, '0')}`;
 }
 
 function getInitials(name) {
@@ -273,6 +295,7 @@ function buildAssignedBy(name = 'Elisabeth Bezverkha') {
 function buildCreateTaskForm(projectName, creatorName = 'Elisabeth Bezverkha') {
   return {
     title: '',
+    ticketNumber: '',
     description: '',
     project: projectName,
     status: 'today',
@@ -292,6 +315,7 @@ function buildCreateTaskForm(projectName, creatorName = 'Elisabeth Bezverkha') {
     comments: [],
     auditTrail: [],
     assignedBy: buildAssignedBy(creatorName),
+    parentTaskId: '',
   };
 }
 
@@ -654,6 +678,7 @@ function TaskMarkerField({ value, markers, onChange }) {
 }
 function CreateTaskModal({
   projects,
+  relatedTasks,
   form,
   taskMarkers,
   commentDraft,
@@ -677,6 +702,8 @@ function CreateTaskModal({
   onAttachmentTypeChange,
   onAttachmentFilesAdd,
   onAttachmentRemove,
+  onParentTaskChange,
+  onOpenRelatedTask,
 }) {
   return (
     <TaskEditorModal
@@ -689,10 +716,13 @@ function CreateTaskModal({
       attachments={form.attachments || []}
       comments={form.comments || []}
       auditTrail={form.auditTrail || []}
+      relatedTasks={relatedTasks}
+      parentTask={relatedTasks.find((task) => task.id === form.parentTaskId)}
+      childTasks={[]}
       assignedByName={form.assignedBy?.name}
       headerEyebrow="Aufgabe erstellen"
       headerTitle={form.title?.trim() || 'Neue Aufgabe'}
-      headerSubtitle="Lege eine neue Aufgabe mit Status, Projekt und Verantwortlichkeiten an."
+      headerTicketNumber={form.ticketNumber || 'wird vergeben'}
       commentDraft={commentDraft}
       tagDraft={tagDraft}
       personDraft={personDraft}
@@ -713,6 +743,8 @@ function CreateTaskModal({
       onAttachmentTypeChange={onAttachmentTypeChange}
       onAttachmentFilesAdd={onAttachmentFilesAdd}
       onAttachmentRemove={onAttachmentRemove}
+      onParentTaskChange={onParentTaskChange}
+      onOpenRelatedTask={onOpenRelatedTask}
       onSubmit={onSubmit}
       submitLabel="Aufgabe anlegen"
       taskMarkers={taskMarkers}
@@ -904,6 +936,7 @@ const taskEditorTabs = [
   { id: 'files', label: 'Dateien', icon: Paperclip },
   { id: 'comments', label: 'Kommentare', icon: MessageSquareMore },
   { id: 'organization', label: 'Organisation', icon: Tag },
+  { id: 'linked', label: 'Verknüpfte Tickets', icon: Link2 },
   { id: 'banking', label: 'Banking Ready', icon: ShieldCheck },
   { id: 'audit', label: 'Audit-Spur', icon: History },
 ];
@@ -945,10 +978,13 @@ function TaskEditorModal({
   attachments,
   comments,
   auditTrail,
+  relatedTasks = [],
+  parentTask,
+  childTasks = [],
   assignedByName,
   headerEyebrow,
   headerTitle,
-  headerSubtitle,
+  headerTicketNumber,
   commentDraft,
   tagDraft,
   personDraft,
@@ -969,6 +1005,8 @@ function TaskEditorModal({
   onAttachmentTypeChange,
   onAttachmentFilesAdd,
   onAttachmentRemove,
+  onParentTaskChange,
+  onOpenRelatedTask,
   onSubmit,
   submitLabel,
   taskMarkers,
@@ -977,13 +1015,6 @@ function TaskEditorModal({
 
   const [activeTab, setActiveTab] = useState('core');
   const projectOptions = [...new Set([...projects.map((project) => project.name), form.project].filter(Boolean))];
-  const displayAssignedBy = assignedByName || form.assignedBy?.name || 'Noch offen';
-  const displayDueDate = form.dueDateValue ? formatDateLabel(form.dueDateValue) : 'Ohne Frist';
-  const displayEffort =
-    form.estimatedHours === '' || form.estimatedHours === null || form.estimatedHours === undefined
-      ? 'Kein Aufwand'
-      : formatEffort(Number(form.estimatedHours), 'hours');
-
   useEffect(() => {
     setActiveTab('core');
   }, [resetKey]);
@@ -994,18 +1025,11 @@ function TaskEditorModal({
         <div className="flex-none border-b border-slate-200 bg-white px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#c95767]">{headerEyebrow}</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#c95767]">
+                {headerEyebrow}
+                {headerTicketNumber ? ` - ${headerTicketNumber}` : ''}
+              </p>
               <h2 className="mt-1 text-xl font-extrabold text-slate-950">{headerTitle}</h2>
-              {headerSubtitle ? <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500">{headerSubtitle}</p> : null}
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
-                <span>{form.project || 'Ohne Projekt'}</span>
-                <span className="text-slate-300">-</span>
-                <span>{form.assignee || 'Keine Person'}</span>
-                <span className="text-slate-300">-</span>
-                <span>{statusLabels[form.status] || 'Offen'}</span>
-                <span className="text-slate-300">-</span>
-                <span>{displayAssignedBy}</span>
-              </div>
             </div>
             <button
               type="button"
@@ -1015,15 +1039,6 @@ function TaskEditorModal({
             >
               <X className="h-5 w-5" />
             </button>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full bg-[#fff3f4] px-3 py-1 text-xs font-bold text-[#b84758]">{statusLabels[form.status] || 'Offen'}</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{form.project || 'Ohne Projekt'}</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{form.assignee || 'Keine Person'}</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{displayAssignedBy}</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{displayDueDate}</span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{displayEffort}</span>
           </div>
 
           <TaskEditorTabList activeTab={activeTab} onChange={setActiveTab} />
@@ -1365,6 +1380,63 @@ function TaskEditorModal({
               </DetailBlock>
             ) : null}
 
+            {activeTab === 'linked' ? (
+              <DetailBlock title="Verknüpfte Tickets" icon={Link2}>
+                <div className="space-y-5">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Übergeordnetes Ticket</p>
+                    <div className="mt-2 flex gap-2">
+                      <select
+                        value={form.parentTaskId || ''}
+                        onChange={(event) => onParentTaskChange?.(event.target.value)}
+                        className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
+                      >
+                        <option value="">Kein übergeordnetes Ticket</option>
+                        {relatedTasks.map((task) => (
+                          <option key={task.id} value={task.id}>
+                            {task.ticketNumber} - {task.title}
+                          </option>
+                        ))}
+                      </select>
+                      {parentTask ? (
+                        <button type="button" onClick={() => onParentTaskChange?.('')} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
+                          Trennen
+                        </button>
+                      ) : null}
+                    </div>
+                    {parentTask ? (
+                      <button type="button" onClick={() => onOpenRelatedTask?.(parentTask)} className="mt-3 flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-3 text-left transition hover:border-[#d99faa] hover:bg-[#fff7f8]">
+                        <span>
+                          <span className="block text-xs font-bold text-[#b84758]">{parentTask.ticketNumber}</span>
+                          <span className="mt-1 block text-sm font-bold text-slate-800">{parentTask.title}</span>
+                        </span>
+                        <ArrowUpRight className="h-4 w-4 text-slate-400" />
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Untertickets</p>
+                    {childTasks.length ? (
+                      <div className="mt-2 space-y-2">
+                        {childTasks.map((task) => (
+                          <button key={task.id} type="button" onClick={() => onOpenRelatedTask?.(task)} className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-3 text-left transition hover:border-[#d99faa] hover:bg-[#fff7f8]">
+                            <span>
+                              <span className="block text-xs font-bold text-[#b84758]">{task.ticketNumber}</span>
+                              <span className="mt-1 block text-sm font-bold text-slate-800">{task.title}</span>
+                            </span>
+                            <ArrowUpRight className="h-4 w-4 text-slate-400" />
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-2 rounded-xl bg-white px-3 py-3 text-sm font-medium text-slate-500">Noch keine Untertickets verknüpft.</div>
+                    )}
+                  </div>
+                </div>
+              </DetailBlock>
+            ) : null}
+
             {activeTab === 'banking' ? (
               <DetailBlock title="Banking Ready" icon={ShieldCheck}>
                 <div className="grid gap-3">
@@ -1472,7 +1544,7 @@ export default function MyTasksPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const [tasks, setTasks] = useState(initialTasks);
+  const [tasks, setTasks] = useState(() => initialTasks.map(normalizeFallbackTaskForMyTasks));
   const [projects, setProjects] = useState(initialProjects);
   const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
   const [columnOrder, setColumnOrder] = useState(columns.map((column) => column.id));
@@ -1603,6 +1675,9 @@ export default function MyTasksPage() {
 
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
   const activeStat = activePopup?.type === 'stat' ? statGroups.find((stat) => stat.id === activePopup.statId) : null;
+  const relatedTasks = tasks.filter((task) => task.id !== selectedTaskId);
+  const parentTask = selectedTask?.parentTaskId ? tasks.find((task) => task.id === selectedTask.parentTaskId) : null;
+  const childTasks = selectedTask ? tasks.filter((task) => task.parentTaskId === selectedTask.id) : [];
 
   const openTask = (task) => {
     setActivePopup(null);
@@ -1622,6 +1697,8 @@ export default function MyTasksPage() {
       approval: task.compliance?.approval || 'Noch keine Freigabe hinterlegt',
       evidence: task.compliance?.evidence || 'Noch kein Evidenznachweis hinterlegt',
       markerId: task.markerId || '',
+      ticketNumber: task.ticketNumber,
+      parentTaskId: task.parentTaskId || '',
     });
     setCommentDraft('');
     setTagDraft('');
@@ -1741,6 +1818,7 @@ export default function MyTasksPage() {
         approval: detailForm.approval.trim(),
         evidence: detailForm.evidence.trim(),
       },
+      parentTaskId: detailForm.parentTaskId || '',
       auditTrail: [`${formatDateLabel('2026-05-16')}: Ticketdetails aktualisiert.`, ...task.auditTrail],
     }));
     closeTask();
@@ -1848,7 +1926,10 @@ export default function MyTasksPage() {
 
   const handleCreateAction = (item) => {
     if (item === 'Neue Aufgabe') {
-      setCreateTaskForm(buildCreateTaskForm(projects[0]?.name || '', currentUserName));
+      setCreateTaskForm({
+        ...buildCreateTaskForm(projects[0]?.name || '', currentUserName),
+        ticketNumber: getNextTicketNumber(tasks),
+      });
       setCommentDraft('');
       setTagDraft('');
       setPersonDraft(teamMembers[0]);
@@ -2001,6 +2082,7 @@ export default function MyTasksPage() {
 
     const nextTask = {
       id: `my-task-${Date.now()}`,
+      ticketNumber: createTaskForm.ticketNumber || getNextTicketNumber(tasks),
       title: trimmedTitle,
       status: createTaskForm.status,
       project: createTaskForm.project,
@@ -2019,6 +2101,7 @@ export default function MyTasksPage() {
       linkedPeople: createTaskForm.linkedPeople || [],
       attachments: createTaskForm.attachments || [],
       comments: createTaskForm.comments || [],
+      parentTaskId: createTaskForm.parentTaskId || '',
       compliance: {
         classification: createTaskForm.classification || 'Intern',
         risk: createTaskForm.risk || 'Niedrig',
@@ -2162,6 +2245,7 @@ export default function MyTasksPage() {
       {createMode === 'task' ? (
         <CreateTaskModal
           projects={projects}
+          relatedTasks={tasks}
           form={createTaskForm}
           taskMarkers={taskMarkers}
           commentDraft={commentDraft}
@@ -2185,6 +2269,8 @@ export default function MyTasksPage() {
           onAttachmentTypeChange={setAttachmentType}
           onAttachmentFilesAdd={handleCreateAttachmentFilesAdd}
           onAttachmentRemove={handleCreateAttachmentRemove}
+          onParentTaskChange={(value) => handleCreateTaskFormChange('parentTaskId', value)}
+          onOpenRelatedTask={openTask}
         />
       ) : null}
       {createMode === 'project' ? (
@@ -2205,9 +2291,13 @@ export default function MyTasksPage() {
         attachments={selectedTask?.attachments || []}
         comments={selectedTask?.comments || []}
         auditTrail={selectedTask?.auditTrail || []}
+        relatedTasks={relatedTasks}
+        parentTask={parentTask}
+        childTasks={childTasks}
         assignedByName={selectedTask?.assignedBy?.name}
         headerEyebrow="Ticket Details"
         headerTitle={selectedTask?.title || 'Ticket'}
+        headerTicketNumber={selectedTask?.ticketNumber}
         commentDraft={commentDraft}
         tagDraft={tagDraft}
         personDraft={personDraft}
@@ -2228,6 +2318,8 @@ export default function MyTasksPage() {
         onAttachmentTypeChange={setAttachmentType}
         onAttachmentFilesAdd={handleAttachmentFilesAdd}
         onAttachmentRemove={handleAttachmentRemove}
+        onParentTaskChange={(value) => handleDetailFormChange('parentTaskId', value)}
+        onOpenRelatedTask={openTask}
         onSubmit={handleSave}
         submitLabel="Details speichern"
         taskMarkers={taskMarkers}
