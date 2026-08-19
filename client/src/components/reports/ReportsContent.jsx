@@ -126,6 +126,40 @@ export default function ReportsContent(props) {
         </span>
       </div>
 
+      <div className="mt-6 rounded-[24px] border border-slate-200 bg-[#f8fafc] p-4">
+        <div className="flex flex-wrap items-end gap-3 xl:flex-nowrap">
+          <ReportFilterField label="Zeitraum" value={selectedPeriod} onChange={(event) => setSelectedPeriod(event.target.value)}>
+            {periods.map((period) => (
+              <option key={period}>{period}</option>
+            ))}
+          </ReportFilterField>
+          <ReportFilterField label="Abteilung" value={selectedDepartment} onChange={(event) => setSelectedDepartment(event.target.value)}>
+            {departmentOptions.map((department) => (
+              <option key={department}>{department}</option>
+            ))}
+          </ReportFilterField>
+          <ReportFilterField label="Projekt" value={selectedProject} onChange={(event) => setSelectedProject(event.target.value)}>
+            {projectOptions.map((project) => (
+              <option key={project}>{project}</option>
+            ))}
+          </ReportFilterField>
+          <ReportFilterField label="Exportformat" value={exportFormat} onChange={(event) => setExportFormat(event.target.value)}>
+            <option>PDF</option>
+            <option>Excel</option>
+          </ReportFilterField>
+          <div className="min-w-[220px] flex-1 space-y-2 xl:max-w-[280px]">
+            <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">Export</span>
+            <button
+              type="button"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white transition hover:bg-[#a23d4d]"
+            >
+              <Download className="h-4 w-4" />
+              Als {exportFormat} exportieren
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)]">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="rounded-[24px] border border-slate-200 bg-[#fcfdff] p-5">
@@ -178,39 +212,6 @@ export default function ReportsContent(props) {
         </article>
       </div>
 
-      <div className="mt-6 rounded-[24px] border border-slate-200 bg-[#f8fafc] p-4">
-        <div className="flex flex-wrap items-end gap-3 xl:flex-nowrap">
-          <ReportFilterField label="Zeitraum" value={selectedPeriod} onChange={(event) => setSelectedPeriod(event.target.value)}>
-            {periods.map((period) => (
-              <option key={period}>{period}</option>
-            ))}
-          </ReportFilterField>
-          <ReportFilterField label="Abteilung" value={selectedDepartment} onChange={(event) => setSelectedDepartment(event.target.value)}>
-            {departmentOptions.map((department) => (
-              <option key={department}>{department}</option>
-            ))}
-          </ReportFilterField>
-          <ReportFilterField label="Projekt" value={selectedProject} onChange={(event) => setSelectedProject(event.target.value)}>
-            {projectOptions.map((project) => (
-              <option key={project}>{project}</option>
-            ))}
-          </ReportFilterField>
-          <ReportFilterField label="Exportformat" value={exportFormat} onChange={(event) => setExportFormat(event.target.value)}>
-            <option>PDF</option>
-            <option>Excel</option>
-          </ReportFilterField>
-          <div className="min-w-[220px] flex-1 space-y-2 xl:max-w-[280px]">
-            <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">Export</span>
-            <button
-              type="button"
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white transition hover:bg-[#a23d4d]"
-            >
-              <Download className="h-4 w-4" />
-              Als {exportFormat} exportieren
-            </button>
-          </div>
-        </div>
-      </div>
     </section>
   );
 
