@@ -882,7 +882,7 @@ export function CreateProjectModal({
   );
 
   return (
-    <PopupShell title={title} subtitle={subtitle} maxWidth="max-w-7xl" onClose={onClose}>
+    <PopupShell title={title} subtitle={subtitle} maxWidth="max-w-5xl" onClose={onClose}>
       <div className="mb-5 grid grid-cols-2 gap-2 border-b border-slate-200 pb-4 md:grid-cols-3 xl:grid-cols-6">
         {tabs.map((tab) => {
           const Icon = tab.icon;
