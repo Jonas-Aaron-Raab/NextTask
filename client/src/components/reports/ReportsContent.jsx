@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, CircleDot, Clock3, Download, FileText, Flag, Users } from 'lucide-react';
 import AppShell from '../../components/AppShell';
 import { DonutChart, ReportFilterField } from './ReportWidgets';
@@ -28,7 +28,6 @@ export default function ReportsContent(props) {
     statusReport,
     previewOpen,
     setPreviewOpen,
-    taskStatusSegments,
     filteredProjects,
     activeProject,
     setActiveProjectId,
@@ -48,6 +47,49 @@ export default function ReportsContent(props) {
   } = props;
 
   const [activeReportTab, setActiveReportTab] = useState('department-report');
+  const [taskStatusDepartment, setTaskStatusDepartment] = useState(selectedDepartment);
+  const [taskStatusProject, setTaskStatusProject] = useState('Alle Projekte');
+
+  useEffect(() => {
+    setTaskStatusDepartment(selectedDepartment);
+  }, [selectedDepartment]);
+
+  const taskStatusProjects = useMemo(
+    () => projectCards.filter((project) => project.departmentName === taskStatusDepartment),
+    [projectCards, taskStatusDepartment],
+  );
+
+  const taskStatusProjectOptions = useMemo(
+    () => ['Alle Projekte', ...taskStatusProjects.map((project) => project.name)],
+    [taskStatusProjects],
+  );
+
+  useEffect(() => {
+    if (!taskStatusProjectOptions.includes(taskStatusProject)) {
+      setTaskStatusProject('Alle Projekte');
+    }
+  }, [taskStatusProject, taskStatusProjectOptions]);
+
+  const taskStatusSegments = useMemo(() => {
+    const selectedProjects = taskStatusProject === 'Alle Projekte'
+      ? taskStatusProjects
+      : taskStatusProjects.filter((project) => project.name === taskStatusProject);
+    const tasks = selectedProjects.flatMap((project) => project.tasks || []);
+    const values = [
+      { label: 'Erledigt', value: tasks.filter((task) => task.status === 'done').length, color: '#1f7a4f', track: '#e8f7ef' },
+      {
+        label: 'In Bearbeitung',
+        value: tasks.filter((task) => task.status === 'progress' || task.status === 'review').length,
+        color: '#4875c8',
+        track: '#ecf3ff',
+      },
+      { label: 'Offen', value: tasks.filter((task) => task.status === 'todo').length, color: '#b76c12', track: '#fff6e8' },
+      { label: 'Überfällig', value: 0, color: '#b84758', track: '#fff0f2' },
+    ];
+    const total = tasks.length || 1;
+
+    return values.map((item) => ({ ...item, percent: Math.round((item.value / total) * 100) }));
+  }, [taskStatusProject, taskStatusProjects]);
 
   const visibleTaskCount = taskStatusSegments.reduce((sum, segment) => sum + segment.value, 0);
   const reportTabs = [
@@ -225,6 +267,21 @@ export default function ReportsContent(props) {
         <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f3f7ff] text-[#4875c8]">
           <CircleDot className="h-5 w-5" />
         </span>
+      </div>
+
+      <div className="mt-6 rounded-[24px] border border-slate-200 bg-[#f8fafc] p-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <ReportFilterField label="Abteilung" value={taskStatusDepartment} onChange={(event) => setTaskStatusDepartment(event.target.value)}>
+            {departmentOptions.map((department) => (
+              <option key={department}>{department}</option>
+            ))}
+          </ReportFilterField>
+          <ReportFilterField label="Projekt" value={taskStatusProject} onChange={(event) => setTaskStatusProject(event.target.value)}>
+            {taskStatusProjectOptions.map((project) => (
+              <option key={project}>{project}</option>
+            ))}
+          </ReportFilterField>
+        </div>
       </div>
 
       <div className="mt-8 flex min-h-[356px] flex-col items-center gap-8 xl:flex-row xl:items-center">

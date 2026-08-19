@@ -307,6 +307,7 @@ export default function ReportsPage() {
       return {
         ...project,
         departmentName: department?.name || 'Abteilung',
+        tasks: backlog,
         progress,
         signal,
         openTasks: backlog.filter((task) => task.status !== 'done').length || (project.status === 'Konzept' ? 5 : 3),
