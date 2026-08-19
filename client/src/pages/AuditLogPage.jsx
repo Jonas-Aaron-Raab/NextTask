@@ -3,7 +3,6 @@ import {
   AlertTriangle,
   CalendarClock,
   CheckCircle2,
-  Database,
   FileClock,
   Filter,
   Search,
@@ -243,14 +242,7 @@ export default function AuditLogPage() {
             <div>
               <p className="text-sm font-extrabold uppercase tracking-[0.22em] text-[#b84758]">Revision</p>
               <h1 className="mt-2 text-2xl font-black text-slate-950">Audit-Log</h1>
-              <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500">
-                Nachvollziehbare Protokollierung für sicherheitsrelevante Aktionen, Rollen, Aufgaben und Stammdaten.
-              </p>
             </div>
-            <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-extrabold uppercase tracking-[0.16em] text-slate-500">
-              <Database className="h-4 w-4" />
-              Append-only Ansicht
-            </span>
           </div>
         </section>
 
