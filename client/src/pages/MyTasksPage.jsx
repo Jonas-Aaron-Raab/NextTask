@@ -106,6 +106,13 @@ const statusLabels = {
   done: 'Erledigt',
 };
 
+const boardStatusOptions = [
+  { value: 'all', label: 'Alle Stati' },
+  ...columns.map((column) => ({ value: column.id, label: statusLabels[column.id] })),
+];
+const taskSelectClass =
+  'h-10 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12';
+
 const attachmentSourceOptions = ['SharePoint', 'OneDrive', 'DMS', 'Audit-Ablage'];
 const attachmentTypeOptions = ['Excel', 'Word', 'PDF', 'Link'];
 const createMenuItems = ['Neue Aufgabe', 'Neues Projekt'];
@@ -260,6 +267,17 @@ function parseChecklistStats(checklist) {
   const match = checklist.match(/(\d+)\/(\d+)/);
   if (!match) return { completed: '0', total: '0' };
   return { completed: match[1], total: match[2] };
+}
+
+function TaskFilterField({ label, value, onChange, children }) {
+  return (
+    <label className="min-w-[170px] flex-1 space-y-1.5">
+      <span className="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">{label}</span>
+      <select value={value} onChange={onChange} className={taskSelectClass}>
+        {children}
+      </select>
+    </label>
+  );
 }
 
 function PriorityBadge({ priority }) {
@@ -1458,27 +1476,22 @@ export default function MyTasksPage() {
 
   const normalizedSearch = searchValue.trim().toLowerCase();
   const currentUserName = user?.name || 'Mara Stein';
-  const currentDepartment = user?.department || 'Informationstechnologie OR-IT';
-  const assigneeDepartmentMap = {
-    ...Object.fromEntries(Object.entries(teamProfiles).map(([name, profile]) => [name, profile.department])),
-    'Mara Stein': 'Informationstechnologie OR-IT',
-  };
   const assignees = useMemo(
     () => [...new Set(tasks.map((task) => task.assignee).filter(Boolean))].sort(),
     [tasks],
   );
+  const activePersonFilter = assignees.includes(selectedPerson) ? selectedPerson : '';
   const scopedTasks = useMemo(
     () =>
       tasks.filter((task) => {
         const matchesScope =
           taskScope === 'all' ||
-          (taskScope === 'mine' && task.assignee === currentUserName) ||
-          (taskScope === 'department' && assigneeDepartmentMap[task.assignee] === currentDepartment) ||
-          (taskScope === 'person' && task.assignee === selectedPerson);
+          (taskScope === 'mine' && task.assignee === currentUserName);
+        const matchesPerson = !activePersonFilter || task.assignee === activePersonFilter;
         const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-        return matchesScope && matchesStatus;
+        return matchesScope && matchesPerson && matchesStatus;
       }),
-    [currentDepartment, currentUserName, selectedPerson, statusFilter, taskScope, tasks],
+    [activePersonFilter, currentUserName, statusFilter, taskScope, tasks],
   );
   const visibleTasks = useMemo(
     () =>
@@ -1500,6 +1513,8 @@ export default function MyTasksPage() {
     const completedTasks = visibleTasks.filter((task) => task.status === 'done').length;
     return Math.round((completedTasks / visibleTasks.length) * 100);
   }, [visibleTasks]);
+  const hasActiveBoardFilters = taskScope !== 'all' || statusFilter !== 'all' || activePersonFilter !== '';
+  const activeScopeValue = taskScope === 'mine' ? 'mine' : 'all';
 
   const statGroups = [
     {
@@ -1555,6 +1570,7 @@ export default function MyTasksPage() {
       window.removeEventListener('nexttask:task-markers-change', handleTaskMarkerChange);
     };
   }, []);
+
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) || null;
   const activeStat = activePopup?.type === 'stat' ? statGroups.find((stat) => stat.id === activePopup.statId) : null;
 
@@ -1922,27 +1938,85 @@ export default function MyTasksPage() {
           onOpenPerformance={() => setActivePopup({ type: 'performance' })}
         />
 
+        <section className="rounded-[26px] border border-slate-300 bg-white p-2.5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]">
+          <div className="rounded-[20px] border border-slate-200 bg-[#f8fafc] p-2.5">
+            <div className="flex flex-wrap items-end gap-2 xl:flex-nowrap">
+              <TaskFilterField
+                label="Aufgabenbereich"
+                value={activeScopeValue}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  if (value === 'mine') {
+                    setTaskScope('mine');
+                    return;
+                  }
+                  setTaskScope('all');
+                }}
+              >
+                <option value="all">Alle Aufgaben</option>
+                <option value="mine">Meine Aufgaben</option>
+              </TaskFilterField>
+
+              <TaskFilterField label="Status" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                {boardStatusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </TaskFilterField>
+
+              <TaskFilterField label="Person" value={activePersonFilter} onChange={(event) => setSelectedPerson(event.target.value)}>
+                <option value="">Alle Personen</option>
+                {assignees.map((assignee) => (
+                  <option key={assignee} value={assignee}>
+                    {assignee}
+                  </option>
+                ))}
+              </TaskFilterField>
+
+              <div className="min-w-[180px] flex-1 space-y-1.5 xl:max-w-[220px]">
+                <span className="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Filter</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTaskScope('all');
+                    setSelectedPerson('');
+                    setStatusFilter('all');
+                  }}
+                  className="inline-flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                >
+                  Filter zurücksetzen
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="rounded-2xl border border-slate-300 bg-white p-3.5 shadow-[0_16px_40px_rgba(136,54,66,0.08)]">
           <div className="rounded-2xl border border-[#f2d8dd] bg-[#fff8f9] p-3">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            {orderedColumns.map((column) => (
-              <BoardColumn
-                key={column.id}
-                column={column}
-                tasks={visibleTasks.filter((task) => task.status === column.id)}
-                onOpenTask={openTask}
-                onDragStart={setDraggedColumnId}
-                onDragOver={() => {}}
-                onDrop={moveColumn}
-                isDragged={draggedColumnId === column.id}
-              />
-            ))}
+              {orderedColumns.map((column) => (
+                <BoardColumn
+                  key={column.id}
+                  column={column}
+                  tasks={visibleTasks.filter((task) => task.status === column.id)}
+                  onOpenTask={openTask}
+                  onDragStart={setDraggedColumnId}
+                  onDragOver={() => {}}
+                  onDrop={moveColumn}
+                  isDragged={draggedColumnId === column.id}
+                />
+              ))}
             </div>
           </div>
-          {normalizedSearch && !visibleTasks.length ? (
+          {!visibleTasks.length ? (
             <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
               <p className="text-sm font-bold text-slate-700">Keine Aufgaben gefunden</p>
-              <p className="mt-1 text-sm text-slate-500">Passe deine Suche an, um andere zugewiesene Aufgaben zu sehen.</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {normalizedSearch || hasActiveBoardFilters
+                  ? 'Passe Suche oder Filter an, um wieder Aufgaben im Board anzuzeigen.'
+                  : 'Im Moment sind keine Aufgaben für diese Ansicht vorhanden.'}
+              </p>
             </div>
           ) : null}
         </section>
