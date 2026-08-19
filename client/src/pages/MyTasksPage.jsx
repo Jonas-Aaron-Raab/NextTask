@@ -487,23 +487,23 @@ function PopupShell({ title, subtitle, onClose, children, maxWidth = 'max-w-3xl'
 function SummaryStrip({ stats, controlCount, performanceValue, onOpenStat, onOpenControls, onOpenPerformance }) {
   return (
     <div className="grid gap-3 xl:grid-cols-[minmax(0,2.3fr)_minmax(190px,0.75fr)_minmax(190px,0.75fr)]">
-      <section className="rounded-2xl border border-slate-300 bg-white p-2.5 shadow-[0_12px_32px_rgba(136,54,66,0.08)]">
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+      <section className="rounded-2xl border border-slate-300 bg-white p-2 shadow-[0_12px_30px_rgba(136,54,66,0.07)]">
+        <div className="grid gap-1.5 md:grid-cols-2 xl:grid-cols-4">
           {stats.map((stat) => (
             <button
               key={stat.id}
               type="button"
               onClick={() => onOpenStat(stat)}
-              className={`rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(136,54,66,0.12)] ${stat.cardTone}`}
+              className={`rounded-[22px] border p-2.5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(136,54,66,0.12)] ${stat.cardTone}`}
             >
               <div className="flex items-start justify-between gap-3">
-                <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${stat.iconTone}`}>
-                  <stat.icon className="h-4 w-4" />
+                <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${stat.iconTone}`}>
+                  <stat.icon className="h-3.5 w-3.5" />
                 </span>
                 <ArrowUpRight className="h-3.5 w-3.5 text-[#b66773]" />
               </div>
-              <p className="mt-2 text-[11px] font-semibold text-[#8b5860]">{stat.title}</p>
-              <p className="mt-1 text-[22px] font-extrabold leading-none text-slate-950">{stat.value}</p>
+              <p className="mt-1.5 text-[10px] font-semibold text-[#8b5860]">{stat.title}</p>
+              <p className="mt-1 text-[20px] font-extrabold leading-none text-slate-950">{stat.value}</p>
             </button>
           ))}
         </div>
