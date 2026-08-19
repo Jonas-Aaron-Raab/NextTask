@@ -336,6 +336,8 @@ export default function ReportsContent(props) {
 
   const renderProjectReportPanel = () => (
     <section className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
+      {renderStatusReportPanel()}
+
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-3xl">
           <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Projektbericht</p>
@@ -362,8 +364,6 @@ export default function ReportsContent(props) {
           </select>
         </label>
       </div>
-
-      <div className="mt-6">{renderStatusReportPanel()}</div>
 
       {!selectedTimelineProject ? (
         <div className="mt-8 flex min-h-[280px] items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-[#fcfdff] px-6 py-10 text-center">
