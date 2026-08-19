@@ -201,7 +201,7 @@ function normalizeApiTaskForMyTasks(task) {
 
   return {
     id: task.id,
-    ticketNumber: task.ticketNumber || buildTicketNumber(task.id),
+    ticketNumber: task.ticketNumber || '',
     source: 'backend',
     title: task.title,
     project,
@@ -236,7 +236,7 @@ function normalizeApiTaskForMyTasks(task) {
 function normalizeFallbackTaskForMyTasks(task) {
   return {
     ...task,
-    ticketNumber: task.ticketNumber || buildTicketNumber(task.id),
+    ticketNumber: task.ticketNumber || '',
     source: task.source || 'local',
     compliance: task.compliance || {
       classification: 'Intern',
@@ -258,21 +258,31 @@ function normalizeFallbackTaskForMyTasks(task) {
   };
 }
 
-function buildTicketNumber(taskId) {
-  const numericId = String(taskId || '').match(/(\d+)$/)?.[1];
-  if (numericId) return `TASK-${numericId.padStart(3, '0')}`;
+function buildProjectKey(projectName) {
+  const words = String(projectName || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .match(/[A-Z0-9]+/g) || ['TASK'];
 
-  const hash = String(taskId || '').split('').reduce((total, character) => total + character.charCodeAt(0), 0);
-  return `TASK-${String((hash % 900) + 100)}`;
+  return words.length === 1 ? words[0].slice(0, 3) : words.map((word) => word[0]).join('').slice(0, 4);
 }
 
-function getNextTicketNumber(taskList) {
-  const highestNumber = taskList.reduce((highest, task) => {
-    const number = Number(task.ticketNumber?.match(/(\d+)$/)?.[1] || 0);
-    return Math.max(highest, number);
-  }, 0);
+function withProjectTicketNumbers(taskList) {
+  const counters = new Map();
 
-  return `TASK-${String(highestNumber + 1).padStart(3, '0')}`;
+  return taskList.map((task) => {
+    const projectKey = buildProjectKey(task.project);
+    const nextNumber = (counters.get(projectKey) || 0) + 1;
+    counters.set(projectKey, nextNumber);
+    return { ...task, ticketNumber: task.ticketNumber || `${projectKey}-${nextNumber}` };
+  });
+}
+
+function getNextTicketNumber(taskList, projectName) {
+  const projectKey = buildProjectKey(projectName);
+  const nextNumber = taskList.filter((task) => task.project === projectName).length + 1;
+  return `${projectKey}-${nextNumber}`;
 }
 
 function getInitials(name) {
@@ -394,6 +404,7 @@ function TaskCard({ task, onOpen }) {
       <span className="absolute left-0 top-0 h-full w-1.5" style={{ backgroundColor: marker.color }} aria-hidden="true" />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
+          <p className="mb-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#b84758]">{task.ticketNumber}</p>
           <p className="text-[13px] font-bold leading-4 text-slate-900">{task.title}</p>
         </div>
         {task.status === 'done' ? <CheckCircle2 className="h-3.5 w-3.5 flex-none text-emerald-500" /> : null}
@@ -931,7 +942,7 @@ function DetailBlock({ title, icon: Icon, children, action }) {
 }
 
 const taskEditorTabs = [
-  { id: 'core', label: 'Kerninfos', icon: FileText },
+  { id: 'core', label: 'Info', icon: FileText },
   { id: 'description', label: 'Beschreibung', icon: FileText },
   { id: 'files', label: 'Dateien', icon: Paperclip },
   { id: 'comments', label: 'Kommentare', icon: MessageSquareMore },
@@ -1047,7 +1058,7 @@ function TaskEditorModal({
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
           <div className="space-y-5">
             {activeTab === 'core' ? (
-              <DetailBlock title="Kerninfos" icon={FileText}>
+              <DetailBlock title="Info" icon={FileText}>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="block text-sm font-bold text-slate-700">
                     Titel
@@ -1467,15 +1478,6 @@ function TaskEditorModal({
                   </label>
 
                   <label className="block text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
-                    Kontroll-ID
-                    <input
-                      value={form.controlId}
-                      onChange={(event) => onFormChange('controlId', event.target.value)}
-                      className="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#c95767] focus:ring-4 focus:ring-[#c95767]/10"
-                    />
-                  </label>
-
-                  <label className="block text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
                     Freigabeprozess
                     <input
                       value={form.approval}
@@ -1544,7 +1546,7 @@ export default function MyTasksPage() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const [tasks, setTasks] = useState(() => initialTasks.map(normalizeFallbackTaskForMyTasks));
+  const [tasks, setTasks] = useState(() => withProjectTicketNumbers(initialTasks.map(normalizeFallbackTaskForMyTasks)));
   const [projects, setProjects] = useState(initialProjects);
   const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
   const [columnOrder, setColumnOrder] = useState(columns.map((column) => column.id));
@@ -1725,7 +1727,10 @@ export default function MyTasksPage() {
 
     if (routedDashboardTask?.id === routeTaskId) {
       if (!existingTask) {
-        setTasks((current) => [normalizeFallbackTaskForMyTasks(routedDashboardTask), ...current]);
+        setTasks((current) => {
+          const nextTask = normalizeFallbackTaskForMyTasks(routedDashboardTask);
+          return [{ ...nextTask, ticketNumber: getNextTicketNumber(current, nextTask.project) }, ...current];
+        });
       }
       return undefined;
     }
@@ -1734,7 +1739,10 @@ export default function MyTasksPage() {
 
     const fallbackTask = dashboardFallbackTasks.find((task) => task.id === routeTaskId);
     if (fallbackTask) {
-      setTasks((current) => [normalizeFallbackTaskForMyTasks(fallbackTask), ...current]);
+      setTasks((current) => {
+        const nextTask = normalizeFallbackTaskForMyTasks(fallbackTask);
+        return [{ ...nextTask, ticketNumber: getNextTicketNumber(current, nextTask.project) }, ...current];
+      });
       return undefined;
     }
 
@@ -1746,11 +1754,12 @@ export default function MyTasksPage() {
         const apiTask = Array.isArray(data) ? data[0] : null;
         if (cancelled || !apiTask) return;
 
-        setTasks((current) =>
-          current.some((task) => task.id === apiTask.id)
-            ? current.map((task) => (task.id === apiTask.id ? normalizeApiTaskForMyTasks(apiTask) : task))
-            : [normalizeApiTaskForMyTasks(apiTask), ...current],
-        );
+        setTasks((current) => {
+          const nextTask = normalizeApiTaskForMyTasks(apiTask);
+          return current.some((task) => task.id === apiTask.id)
+            ? current.map((task) => (task.id === apiTask.id ? { ...nextTask, ticketNumber: task.ticketNumber || getNextTicketNumber(current, nextTask.project) } : task))
+            : [{ ...nextTask, ticketNumber: getNextTicketNumber(current, nextTask.project) }, ...current];
+        });
       })
       .catch(() => {});
 
@@ -1928,7 +1937,7 @@ export default function MyTasksPage() {
     if (item === 'Neue Aufgabe') {
       setCreateTaskForm({
         ...buildCreateTaskForm(projects[0]?.name || '', currentUserName),
-        ticketNumber: getNextTicketNumber(tasks),
+        ticketNumber: getNextTicketNumber(tasks, projects[0]?.name || ''),
       });
       setCommentDraft('');
       setTagDraft('');
@@ -2082,7 +2091,7 @@ export default function MyTasksPage() {
 
     const nextTask = {
       id: `my-task-${Date.now()}`,
-      ticketNumber: createTaskForm.ticketNumber || getNextTicketNumber(tasks),
+      ticketNumber: createTaskForm.ticketNumber || getNextTicketNumber(tasks, createTaskForm.project),
       title: trimmedTitle,
       status: createTaskForm.status,
       project: createTaskForm.project,
