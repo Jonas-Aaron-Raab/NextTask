@@ -43,7 +43,6 @@ export default function ReportsContent(props) {
     teamLoad,
     taskMetrics,
     searchSuggestions,
-    getReportHtml,
   } = props;
 
   const [activeReportTab, setActiveReportTab] = useState('department-report');
@@ -159,9 +158,6 @@ export default function ReportsContent(props) {
         <div>
           <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Abteilungsbericht</p>
           <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">{selectedDepartment}</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-            Kompakter Bereich fuer Team-Auslastung, Risiken und den auffaelligsten Projektstand in der gewaehlten Abteilung.
-          </p>
         </div>
         <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#edf4ff] text-[#4875c8]">
           <Users className="h-5 w-5" />
@@ -353,7 +349,6 @@ export default function ReportsContent(props) {
               <div>
                 <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-slate-400">{activeProject.departmentName}</p>
                 <h3 className="mt-2 text-[1.35rem] font-extrabold leading-tight text-slate-950">{activeProject.name}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-500">{activeProject.summary}</p>
               </div>
               <span className={`rounded-full px-3 py-1 text-xs font-bold ${activeProject.signal.tone}`}>{activeProject.signal.label}</span>
             </div>
@@ -400,11 +395,6 @@ export default function ReportsContent(props) {
           <div className="max-w-3xl">
             <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Projektbericht</p>
             <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">Projekt-Zeitachse</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Waehle ein Projekt aus, dann siehst du nur dessen Verlauf auf einer ruhigen Zeitachse. Auf der Achse stehen
-              nur kompakte Marker wie <span className="font-extrabold text-slate-700">MS1</span> oder
-              <span className="font-extrabold text-slate-700"> MS2</span>; die Details erscheinen erst darunter.
-            </p>
           </div>
           <label className="w-full max-w-[320px] space-y-2">
             <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">Projekt fuer Zeitachse</span>
@@ -601,10 +591,6 @@ export default function ReportsContent(props) {
                     </div>
                   </div>
 
-                  <p className="mt-5 text-sm leading-7 text-slate-600">
-                    {selectedTimelineEntry?.description || 'Keine weitere Beschreibung vorhanden.'}
-                  </p>
-
                   <div className="mt-5 rounded-2xl border border-slate-200 bg-[#fcfdff] p-4">
                     <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Zusatzinfo</p>
                     <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">{selectedTimelineEntry?.meta}</p>
@@ -718,7 +704,7 @@ export default function ReportsContent(props) {
         {renderActivePanel()}
       </div>
       {previewOpen && statusReport ? (
-        <StatusReportPreview report={statusReport} onClose={() => setPreviewOpen(false)} getReportHtml={getReportHtml} />
+        <StatusReportPreview report={statusReport} onClose={() => setPreviewOpen(false)} />
       ) : null}
     </AppShell>
   );
