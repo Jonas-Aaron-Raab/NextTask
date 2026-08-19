@@ -883,7 +883,7 @@ export function CreateProjectModal({
 
   return (
     <PopupShell title={title} subtitle={subtitle} maxWidth="max-w-7xl" onClose={onClose}>
-      <div className="mb-5 flex flex-wrap gap-2 border-b border-slate-200 pb-4">
+      <div className="mb-5 grid grid-cols-2 gap-2 border-b border-slate-200 pb-4 md:grid-cols-3 xl:grid-cols-6">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -892,7 +892,7 @@ export function CreateProjectModal({
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-extrabold transition ${
+              className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl px-3 text-sm font-extrabold transition ${
                 isActive
                   ? 'bg-[#fff1f3] text-[#a23d4d] shadow-[0_8px_18px_rgba(136,54,66,0.08)]'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'

@@ -932,7 +932,7 @@ const taskEditorTabs = [
 
 function TaskEditorTabList({ activeTab, onChange }) {
   return (
-    <div className="mt-4 flex flex-wrap gap-2">
+    <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
       {taskEditorTabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -942,7 +942,7 @@ function TaskEditorTabList({ activeTab, onChange }) {
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
-            className={`inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition ${
+            className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border px-3 text-sm font-bold transition ${
               isActive
                 ? 'border-[#d99faa] bg-[#fff1f3] text-[#b84758]'
                 : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
