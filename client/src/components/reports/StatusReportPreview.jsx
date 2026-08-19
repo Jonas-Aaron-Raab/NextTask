@@ -1,4 +1,5 @@
-import { Printer, X } from 'lucide-react';
+import { Download, X } from 'lucide-react';
+import { downloadStatusReportPdf } from '../../utils/reportExport';
 
 function formatReportNumber(value, suffix = '') {
   if (value === null || value === undefined || value === '') return 'Noch offen';
@@ -14,34 +15,8 @@ function getStatusTone(status) {
 }
 
 
-export default function StatusReportPreview({ report, onClose, getReportHtml }) {
-  const handlePrint = () => {
-    const printFrame = document.createElement('iframe');
-    printFrame.style.position = 'fixed';
-    printFrame.style.right = '0';
-    printFrame.style.bottom = '0';
-    printFrame.style.width = '0';
-    printFrame.style.height = '0';
-    printFrame.style.border = '0';
-    document.body.appendChild(printFrame);
-
-    const frameWindow = printFrame.contentWindow;
-    const frameDocument = frameWindow?.document;
-    if (!frameWindow || !frameDocument) {
-      printFrame.remove();
-      return;
-    }
-
-    frameDocument.open();
-    frameDocument.write(getReportHtml(report));
-    frameDocument.close();
-
-    window.setTimeout(() => {
-      frameWindow.focus();
-      frameWindow.print();
-      window.setTimeout(() => printFrame.remove(), 1000);
-    }, 250);
-  };
+export default function StatusReportPreview({ report, onClose }) {
+  const handleDownload = () => downloadStatusReportPdf(report);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-6 backdrop-blur-sm">
@@ -53,9 +28,9 @@ export default function StatusReportPreview({ report, onClose, getReportHtml }) 
             <p className="mt-1 text-sm font-semibold text-slate-500">{report.departmentName} / {report.reportDate} / {report.reportVersion}</p>
           </div>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={handlePrint} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white transition hover:bg-[#a23d4d]">
-              <Printer className="h-4 w-4" />
-              PDF erstellen
+            <button type="button" onClick={handleDownload} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white transition hover:bg-[#a23d4d]">
+              <Download className="h-4 w-4" />
+              PDF herunterladen
             </button>
             <button type="button" onClick={onClose} className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">
               <X className="h-5 w-5" />

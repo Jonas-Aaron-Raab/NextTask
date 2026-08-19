@@ -1,3 +1,6 @@
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -340,4 +343,95 @@ function getReportHtml(report) {
 </html>`;
 }
 
-export { getReportHtml };
+function sanitizeFilename(value) {
+  return String(value || 'statusbericht')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'statusbericht';
+}
+
+function waitForReportFrame(frame, frameDocument) {
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      window.setTimeout(resolve, 350);
+    };
+
+    if (frameDocument.readyState === 'complete') {
+      finish();
+      return;
+    }
+
+    frame.addEventListener('load', finish, { once: true });
+    window.setTimeout(finish, 1200);
+  });
+}
+
+async function downloadStatusReportPdf(report) {
+  const renderFrame = document.createElement('iframe');
+  renderFrame.style.position = 'fixed';
+  renderFrame.style.left = '-10000px';
+  renderFrame.style.top = '0';
+  renderFrame.style.width = '210mm';
+  renderFrame.style.height = '297mm';
+  renderFrame.style.opacity = '0';
+  renderFrame.style.pointerEvents = 'none';
+  renderFrame.style.border = '0';
+  document.body.appendChild(renderFrame);
+
+  const frameWindow = renderFrame.contentWindow;
+  const frameDocument = frameWindow?.document;
+  if (!frameWindow || !frameDocument) {
+    renderFrame.remove();
+    return;
+  }
+
+  frameDocument.open();
+  frameDocument.write(getReportHtml(report));
+  frameDocument.close();
+
+  try {
+    await waitForReportFrame(renderFrame, frameDocument);
+    if (frameDocument.fonts?.ready) {
+      await frameDocument.fonts.ready;
+    }
+
+    const pageNodes = Array.from(frameDocument.querySelectorAll('.report-page'));
+    if (!pageNodes.length) return;
+
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+      compress: true,
+    });
+
+    for (let index = 0; index < pageNodes.length; index += 1) {
+      const pageNode = pageNodes[index];
+      const canvas = await html2canvas(pageNode, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        width: pageNode.scrollWidth,
+        height: pageNode.scrollHeight,
+        windowWidth: pageNode.scrollWidth,
+        windowHeight: pageNode.scrollHeight,
+      });
+
+      const imageData = canvas.toDataURL('image/png', 1);
+      if (index > 0) pdf.addPage();
+      pdf.addImage(imageData, 'PNG', 0, 0, 210, 297, undefined, 'FAST');
+    }
+
+    pdf.save(`statusbericht-${sanitizeFilename(report.projectName)}.pdf`);
+  } finally {
+    renderFrame.remove();
+  }
+}
+
+export { downloadStatusReportPdf, getReportHtml };

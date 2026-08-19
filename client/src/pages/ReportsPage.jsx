@@ -16,7 +16,6 @@ import { taskDateTimestamp } from '../utils/task';
 import { formatLongDate, getTimelineSpan } from '../utils/calendar';
 import { DonutChart, ReportFilterField } from '../components/reports/ReportWidgets';
 import ReportsContent from '../components/reports/ReportsContent';
-import { getReportHtml } from '../utils/reportExport';
 import {
   initialBacklogTasks,
   initialDepartments,
@@ -665,6 +664,5 @@ export default function ReportsPage() {
         taskMetrics={taskMetrics}
         attentionProject={attentionProject}
         searchSuggestions={searchSuggestions}
-        getReportHtml={getReportHtml}
       />;
 }
