@@ -395,31 +395,33 @@ export default function ReportsContent(props) {
     <section className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
       {renderStatusReportPanel()}
 
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="max-w-3xl">
-          <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Projektbericht</p>
-          <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">Projekt-Zeitachse</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Waehle ein Projekt aus, dann siehst du nur dessen Verlauf auf einer ruhigen Zeitachse. Auf der Achse stehen
-            nur kompakte Marker wie <span className="font-extrabold text-slate-700">MS1</span> oder
-            <span className="font-extrabold text-slate-700"> MS2</span>; die Details erscheinen erst darunter.
-          </p>
+      <div className="mt-6 rounded-[28px] border border-slate-200 bg-[#fcfdff] p-5 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="max-w-3xl">
+            <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Projektbericht</p>
+            <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">Projekt-Zeitachse</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Waehle ein Projekt aus, dann siehst du nur dessen Verlauf auf einer ruhigen Zeitachse. Auf der Achse stehen
+              nur kompakte Marker wie <span className="font-extrabold text-slate-700">MS1</span> oder
+              <span className="font-extrabold text-slate-700"> MS2</span>; die Details erscheinen erst darunter.
+            </p>
+          </div>
+          <label className="w-full max-w-[320px] space-y-2">
+            <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">Projekt fuer Zeitachse</span>
+            <select
+              value={selectedTimelineProjectId}
+              onChange={(event) => setSelectedTimelineProjectId(event.target.value)}
+              className={reportSelectClass}
+            >
+              <option value="">Projekt auswaehlen</option>
+              {timelineProjectOptions.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
-        <label className="w-full max-w-[320px] space-y-2">
-          <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">Projekt fuer Zeitachse</span>
-          <select
-            value={selectedTimelineProjectId}
-            onChange={(event) => setSelectedTimelineProjectId(event.target.value)}
-            className={reportSelectClass}
-          >
-            <option value="">Projekt auswaehlen</option>
-            {timelineProjectOptions.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
 
       {!selectedTimelineProject ? (
