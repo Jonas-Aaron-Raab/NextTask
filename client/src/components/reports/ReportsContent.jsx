@@ -43,7 +43,6 @@ export default function ReportsContent(props) {
     setSelectedTimelineEntryId,
     teamLoad,
     taskMetrics,
-    attentionProject,
     searchSuggestions,
     getReportHtml,
   } = props;
@@ -178,33 +177,6 @@ export default function ReportsContent(props) {
           </div>
         </article>
       </div>
-
-      {attentionProject ? (
-        <article className="mt-6 rounded-[24px] border border-[#f0d6db] bg-[#fff7f8] p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.22em] text-[#b84758]">Aufmerksamkeit</p>
-              <h3 className="mt-2 text-xl font-extrabold text-slate-950">{attentionProject.name}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{attentionProject.summary}</p>
-            </div>
-            <span className={`rounded-full px-3 py-1 text-xs font-bold ${attentionProject.signal.tone}`}>{attentionProject.signal.label}</span>
-          </div>
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl bg-white p-4">
-              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Fortschritt</p>
-              <p className="mt-2 text-2xl font-extrabold text-slate-950">{attentionProject.progress}%</p>
-            </div>
-            <div className="rounded-2xl bg-white p-4">
-              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Offene Aufgaben</p>
-              <p className="mt-2 text-2xl font-extrabold text-slate-950">{attentionProject.openTasks}</p>
-            </div>
-            <div className="rounded-2xl bg-white p-4">
-              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-400">Verantwortung</p>
-              <p className="mt-2 text-base font-extrabold leading-6 text-slate-950">{attentionProject.owner}</p>
-            </div>
-          </div>
-        </article>
-      ) : null}
 
       <div className="mt-6 rounded-[24px] border border-slate-200 bg-[#f8fafc] p-4">
         <div className="flex flex-wrap items-end gap-3 xl:flex-nowrap">
