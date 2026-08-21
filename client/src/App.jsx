@@ -13,6 +13,7 @@ import RegisterPage from './pages/RegisterPage';
 import RoleManagementPage from './pages/RoleManagementPage';
 import SettingsPage from './pages/SettingsPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { canManageRoles } from './data/bankOrganization';
 
 function RequireAuth({ children }) {
   const { isAuthenticated } = useAuth();
@@ -37,6 +38,16 @@ function PublicOnly({ children }) {
   return children;
 }
 
+function RequireAuditAccess({ children }) {
+  const { user } = useAuth();
+
+  if (!canManageRoles(user)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -52,7 +63,7 @@ function AppRoutes() {
       <Route path="/projects/:projectId" element={<RequireAuth><ProjectBoardPage /></RequireAuth>} />
       <Route path="/reports" element={<RequireAuth><ReportsPage /></RequireAuth>} />
       <Route path="/roles" element={<RequireAuth><RoleManagementPage /></RequireAuth>} />
-      <Route path="/audit-log" element={<RequireAuth><AuditLogPage /></RequireAuth>} />
+      <Route path="/audit-log" element={<RequireAuth><RequireAuditAccess><AuditLogPage /></RequireAuditAccess></RequireAuth>} />
       <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import api from '../api/axios';
 import { clearStoredTaskMarkers, loadTaskMarkersFromApi } from '../utils/taskMarkers';
 
 const AuthContext = createContext();
@@ -42,6 +43,37 @@ export function AuthProvider({ children }) {
 
     loadTaskMarkersFromApi().catch(() => {});
   }, [user?.id]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    let cancelled = false;
+
+    api
+      .get('/auth/me')
+      .then(({ data }) => {
+        if (cancelled || !data?.user) return;
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setUser(data.user);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        if (error?.response?.status === 401 || error?.response?.status === 404) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          clearStoredTaskMarkers();
+          setUser(null);
+          if (window.location.pathname !== '/login') {
+            window.location.replace('/login');
+          }
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const updateUser = useCallback((userData) => {
     setUser((currentUser) => {

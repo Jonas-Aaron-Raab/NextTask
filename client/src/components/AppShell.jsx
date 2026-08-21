@@ -21,6 +21,7 @@ import {
   BadgeCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { canManageRoles } from '../data/bankOrganization';
 import { getStoredAppearanceSettings } from '../utils/appearance';
 
 const navigationItems = [
@@ -202,10 +203,12 @@ export default function AppShell({
   const [, setRoleNavigationVersion] = useState(0);
   const availableSearchSuggestions = Array.isArray(searchSuggestions) ? searchSuggestions : [];
   const visibleNotifications = notifications.filter((notification) => !dismissedNotificationIds.includes(notification.id));
-  const activeNavigation = navigationItems.map((item) => ({
-    ...item,
-    active: item.label === activeItem,
-  }));
+  const activeNavigation = navigationItems
+    .filter((item) => item.label !== 'Audit-Log' || canManageRoles(user))
+    .map((item) => ({
+      ...item,
+      active: item.label === activeItem,
+    }));
 
   useEffect(() => {
     const handleKeyDown = (event) => {

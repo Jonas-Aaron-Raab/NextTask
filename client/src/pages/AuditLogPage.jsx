@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   FileClock,
   Filter,
+  LockKeyhole,
   Search,
   ShieldAlert,
   UserRound,
@@ -186,6 +187,7 @@ export default function AuditLogPage() {
   const [facets, setFacets] = useState({});
   const [total, setTotal] = useState(0);
   const [error, setError] = useState('');
+  const [accessDenied, setAccessDenied] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -193,6 +195,7 @@ export default function AuditLogPage() {
     const timeoutId = window.setTimeout(async () => {
       setIsLoading(true);
       setError('');
+      setAccessDenied(false);
       try {
         const { data } = await api.get('/audit-logs', {
           signal: controller.signal,
@@ -209,6 +212,11 @@ export default function AuditLogPage() {
         setTotal(data.total || 0);
       } catch (requestError) {
         if (requestError.name === 'CanceledError') return;
+        if (requestError.response?.status === 403) {
+          setAccessDenied(true);
+          setError('');
+          return;
+        }
         setError(requestError.response?.data?.message || 'Audit-Log konnte nicht geladen werden.');
       } finally {
         setIsLoading(false);
@@ -246,41 +254,53 @@ export default function AuditLogPage() {
           </div>
         </section>
 
-        <div className="grid gap-3 md:grid-cols-3">
-          <StatCard icon={FileClock} label="Einträge" value={total} tone="bg-slate-100 text-slate-600" />
-          <StatCard icon={ShieldAlert} label="Prüffälle" value={criticalCount} tone="bg-rose-50 text-[#b84758]" />
-          <StatCard icon={UserRound} label="Akteure" value={actorCount} tone="bg-blue-50 text-blue-700" />
-        </div>
+        {accessDenied ? (
+          <section className="rounded-[28px] border border-slate-300 bg-white px-6 py-12 text-center shadow-[0_18px_42px_rgba(15,23,42,0.06)]">
+            <LockKeyhole className="mx-auto h-10 w-10 text-[#b84758]" />
+            <h2 className="mt-4 text-2xl font-black text-slate-950">Audit-Log ist gesperrt</h2>
+            <p className="mx-auto mt-2 max-w-xl text-sm font-semibold leading-6 text-slate-500">
+              Dein aktueller Account hat keinen Zugriff auf diesen Bereich.
+            </p>
+          </section>
+        ) : (
+          <>
+            <div className="grid gap-3 md:grid-cols-3">
+              <StatCard icon={FileClock} label="Einträge" value={total} tone="bg-slate-100 text-slate-600" />
+              <StatCard icon={ShieldAlert} label="Prüffälle" value={criticalCount} tone="bg-rose-50 text-[#b84758]" />
+              <StatCard icon={UserRound} label="Akteure" value={actorCount} tone="bg-blue-50 text-blue-700" />
+            </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
-          <div className="flex items-center gap-2 text-sm font-black text-slate-950">
-            <Filter className="h-4 w-4 text-[#b84758]" />
-            Filter
-          </div>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <FilterSelect label="Bereich" value={entityType} onChange={setEntityType}>
-              {entityOptions.map((option) => (
-                <option key={option || 'all'} value={option}>
-                  {option ? entityLabels[option] || option : 'Alle Bereiche'}
-                </option>
-              ))}
-            </FilterSelect>
-            <FilterSelect label="Aktion" value={action} onChange={setAction}>
-              {actionOptions.map((option) => (
-                <option key={option || 'all'} value={option}>
-                  {option ? actionLabels[option] || option : 'Alle Aktionen'}
-                </option>
-              ))}
-            </FilterSelect>
-            <FilterSelect label="Kritikalität" value={severity} onChange={setSeverity}>
-              {severityOptions.map((option) => (
-                <option key={option || 'all'} value={option}>
-                  {option ? severityMeta[option]?.label || option : 'Alle Kritikalitäten'}
-                </option>
-              ))}
-            </FilterSelect>
-          </div>
-        </section>
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
+              <div className="flex items-center gap-2 text-sm font-black text-slate-950">
+                <Filter className="h-4 w-4 text-[#b84758]" />
+                Filter
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <FilterSelect label="Bereich" value={entityType} onChange={setEntityType}>
+                  {entityOptions.map((option) => (
+                    <option key={option || 'all'} value={option}>
+                      {option ? entityLabels[option] || option : 'Alle Bereiche'}
+                    </option>
+                  ))}
+                </FilterSelect>
+                <FilterSelect label="Aktion" value={action} onChange={setAction}>
+                  {actionOptions.map((option) => (
+                    <option key={option || 'all'} value={option}>
+                      {option ? actionLabels[option] || option : 'Alle Aktionen'}
+                    </option>
+                  ))}
+                </FilterSelect>
+                <FilterSelect label="Kritikalität" value={severity} onChange={setSeverity}>
+                  {severityOptions.map((option) => (
+                    <option key={option || 'all'} value={option}>
+                      {option ? severityMeta[option]?.label || option : 'Alle Kritikalitäten'}
+                    </option>
+                  ))}
+                </FilterSelect>
+              </div>
+            </section>
+          </>
+        )}
 
         {error ? (
           <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-700">{error}</section>
@@ -290,14 +310,14 @@ export default function AuditLogPage() {
           {isLoading ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm font-bold text-slate-500">Audit-Log wird geladen ...</div>
           ) : null}
-          {!isLoading && !logs.length ? (
+          {!accessDenied && !isLoading && !logs.length ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
               <Search className="mx-auto h-8 w-8 text-slate-300" />
               <p className="mt-3 text-base font-black text-slate-900">Keine Audit-Einträge gefunden</p>
               <p className="mt-1 text-sm font-semibold text-slate-500">Passe die Filter an oder fuehre eine neue Aktion aus.</p>
             </div>
           ) : null}
-          {logs.map((entry) => (
+          {!accessDenied && logs.map((entry) => (
             <AuditLogEntry key={entry.id} entry={entry} />
           ))}
         </section>

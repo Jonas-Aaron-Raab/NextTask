@@ -301,7 +301,7 @@ export function getRoleScopeLabel(role) {
 
 export function getAssignmentForUser(user, config = loadAccessConfig()) {
   if (!user) return null;
-  return config.users.find((item) => item.email === user.email) || config.users.find((item) => item.name === user.name) || null;
+  return config.users.find((item) => item.id === user.id) || config.users.find((item) => item.email === user.email) || null;
 }
 
 export function getEffectiveRoleForUser(user, config = loadAccessConfig()) {
