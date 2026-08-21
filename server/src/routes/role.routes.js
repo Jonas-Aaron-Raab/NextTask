@@ -197,6 +197,7 @@ router.put('/users/:id', auth, requireRoleManager, async (req, res) => {
       where: { id: req.params.id },
       data: {
         accessRoleId,
+        role: role.kind === 'ADMIN' ? 'ADMIN' : role.kind === 'GBL' ? 'PROJECT_MANAGER' : 'DEVELOPER',
         department: isBlank(department) ? undefined : String(department).trim(),
       },
       include: { accessRole: true },
