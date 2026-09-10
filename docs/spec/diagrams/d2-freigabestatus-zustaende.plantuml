@@ -1,0 +1,34 @@
+@startuml d2-freigabestatus-zustaende
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 11
+skinparam state {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+
+title D2.7 ApprovalStatusDT: Lebenszyklus einer Freigabeanfrage
+
+[*] --> PENDING : Anfrage gestellt (UC-18)\nrequestedAt gesetzt
+
+PENDING --> APPROVED : genehmigt (UC-19)\ndurch Genehmiger oder\nBerechtigung "Freigaben entscheiden"
+PENDING --> REJECTED : abgelehnt (UC-19)\ngleiche Berechtigung
+PENDING --> CANCELLED : abgebrochen (UC-20)\ndurch Anfragenden,\nGenehmiger oder Berechtigte
+
+APPROVED --> [*]
+REJECTED --> [*]
+CANCELLED --> [*]
+
+PENDING : offen, wartet auf Entscheidung
+APPROVED : decidedAt, decisionNote gesetzt
+REJECTED : decidedAt, decisionNote gesetzt
+CANCELLED : decidedAt gesetzt
+
+legend bottom left
+  Entschiedene Anfragen sind endgueltig. Ein Wiedereroeffnen
+  ist nicht vorgesehen; stattdessen wird eine neue Anfrage
+  gestellt. Jeder Uebergang erzeugt einen Audit-Eintrag.
+end legend
+@enduml

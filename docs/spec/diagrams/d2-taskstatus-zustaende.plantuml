@@ -1,0 +1,35 @@
+@startuml d2-taskstatus-zustaende
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 11
+skinparam state {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+left to right direction
+
+title D2.3 TaskStatusDT: vorgesehener Bearbeitungsablauf
+
+[*] --> OPEN : Aufgabe angelegt
+OPEN --> IN_PROGRESS : Bearbeitung beginnt
+IN_PROGRESS --> QA : zur Pruefung /\nReview
+QA --> DONE : abgenommen
+QA --> IN_PROGRESS : Nacharbeit
+IN_PROGRESS --> BLOCKED : Hindernis
+BLOCKED --> IN_PROGRESS : Hindernis\nbeseitigt
+DONE --> [*]
+
+OPEN : Backlog / heute faellig
+IN_PROGRESS : in Bearbeitung
+QA : wartet auf Review
+BLOCKED : Eskalation noetig\n(Audit: WARNING)
+DONE : erledigt
+
+legend bottom left
+  Das System erzwingt keine Reihenfolge: Im Board kann eine
+  Aufgabe in jede Spalte verschoben werden (UC-13). Das Diagramm
+  zeigt den fachlich vorgesehenen Weg.
+end legend
+@enduml
