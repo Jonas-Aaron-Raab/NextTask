@@ -100,23 +100,23 @@ Wer wenig Zeit hat, liest P1, den Index in F2 und die Tabelle B1.5. Diese drei S
 
 | Baustein | Titel | Status | Datei |
 |----------|-------|--------|-------|
-| S1 | Nachbarsystem-Schnittstellen | 🛠 | `S1-nachbarsysteme.md` |
+| S1 | Nachbarsystem-Schnittstellen | ✅ | [`S1-nachbarsysteme.md`](S1-nachbarsysteme.md) |
 | S2 | Datenmigration | ⛔ | — |
-| S3 | Inbetriebnahme | 🛠 | `S3-inbetriebnahme.md` |
+| S3 | Inbetriebnahme | ✅ | [`S3-inbetriebnahme.md`](S3-inbetriebnahme.md) |
 
 ### 6. Übergreifendes
 
 | Baustein | Titel | Status | Datei |
 |----------|-------|--------|-------|
-| N1 | Nichtfunktionale Anforderungen | 🛠 | `N1-nichtfunktional.md` |
-| N2 | Querschnittskonzepte | 🛠 | `N2-querschnittskonzepte.md` |
+| N1 | Nichtfunktionale Anforderungen | ✅ | [`N1-nichtfunktional.md`](N1-nichtfunktional.md) |
+| N2 | Querschnittskonzepte | ✅ | [`N2-querschnittskonzepte.md`](N2-querschnittskonzepte.md) |
 
 ### 7. Ergänzendes
 
 | Baustein | Titel | Status | Datei |
 |----------|-------|--------|-------|
 | E1 | Leseanleitung | ✅ | dieses Dokument (Abschnitt oben) |
-| E2 | Glossar | 🛠 | `E2-glossar.md` |
+| E2 | Glossar | ✅ | [`E2-glossar.md`](E2-glossar.md) |
 
 ---
 
@@ -206,3 +206,4 @@ Die Navigationskarte und die Bildschirmfotos der Masken kommen mit B1 hinzu.
 |---------|-------|----------|
 | 0.1 | 2026-09-10 | Wurzeldokument, Leseanleitung, P1, P2, D1, D2 mit Systemkontext, Informationsmodell und Zustandsdiagrammen; Render-Skript für Diagramme. |
 | 0.2 | 2026-09-11 | F1 mit zwei Aktivitätsdiagrammen, F2 mit 25 Anwendungsfällen und Use-Case-Diagramm, F3 mit elf Anwendungsfunktionen; Nachvollziehbarkeitsmatrix. |
+| 0.3 | 2026-09-11 | S1, S3, N1 mit 18 Anforderungen und Prüfkriterien, N2 mit acht Querschnittskonzepten, E2 Glossar. |
