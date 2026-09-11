@@ -1,0 +1,51 @@
+@startuml f2-uc02-anmelden
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam sequenceMessageAlign center
+skinparam sequence {
+  ArrowColor #555555
+  LifeLineBorderColor #999999
+  ParticipantBackgroundColor #F7F7F7
+  ParticipantBorderColor #333333
+  ActorBorderColor #333333
+}
+
+title UC-02 Anmelden mit Passwort und zweitem Faktor
+
+actor Anwender as A
+participant "Browser\n(DLG-01)" as B
+participant "NextTask" as S
+participant "Authenticator-App" as T
+
+A -> B : E-Mail, Passwort
+B -> S : Anmeldung
+S -> S : Konto suchen,\nPasswort-Hash pruefen
+alt Konto unbekannt oder Passwort falsch
+  S -> S : Audit LOGIN_FAILED (WARNING)
+  S --> B : Fehler
+  B --> A : Meldung anzeigen
+else zweiter Faktor nicht aktiv
+  S -> S : Audit LOGIN_SUCCESS
+  S --> B : Zugriffstoken (7 Tage), Profil
+  B --> A : Dashboard
+else zweiter Faktor aktiv
+  S -> S : Audit TWO_FACTOR_REQUIRED
+  S --> B : Challenge-Token (5 Minuten)
+  B --> A : Code abfragen
+  A -> T : Code ablesen
+  A -> B : Einmalcode oder Wiederherstellungscode
+  B -> S : Challenge-Token, Code
+  S -> S : Challenge pruefen,\nCode pruefen (AF-06)
+  alt Code gueltig
+    S -> S : Zeitschritt bzw. verbrauchten\nWiederherstellungscode merken
+    S -> S : Audit LOGIN_SUCCESS
+    S --> B : Zugriffstoken, Profil
+    B --> A : Dashboard
+  else Code ungueltig oder Challenge abgelaufen
+    S -> S : Audit TWO_FACTOR_LOGIN_FAILED
+    S --> B : Fehler
+    B --> A : Meldung anzeigen,\nerneute Eingabe
+  end
+end
+@enduml

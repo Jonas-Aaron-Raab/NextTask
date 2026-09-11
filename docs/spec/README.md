@@ -77,9 +77,9 @@ Wer wenig Zeit hat, liest P1, den Index in F2 und die Tabelle B1.5. Diese drei S
 
 | Baustein | Titel | Status | Datei |
 |----------|-------|--------|-------|
-| F1 | Geschäftsprozesse | 🛠 | `F1-geschaeftsprozesse.md` |
-| F2 | Anwendungsfälle | 🛠 | `F2-anwendungsfaelle.md` |
-| F3 | Anwendungsfunktionen | 🛠 | `F3-anwendungsfunktionen.md` |
+| F1 | Geschäftsprozesse | ✅ | [`F1-geschaeftsprozesse.md`](F1-geschaeftsprozesse.md) |
+| F2 | Anwendungsfälle | ✅ | [`F2-anwendungsfaelle.md`](F2-anwendungsfaelle.md) |
+| F3 | Anwendungsfunktionen | ✅ | [`F3-anwendungsfunktionen.md`](F3-anwendungsfunktionen.md) |
 
 ### 3. Daten
 
@@ -134,7 +134,37 @@ NextTask ist eine Neuentwicklung ohne Vorgängersystem. Es gibt keinen Altdatenb
 
 ## Nachvollziehbarkeit
 
-Die Matrix Anwendungsfall → Maske → Qualitätsanforderung wird mit F2, B1 und N1 ergänzt. Die Kennungen sind ab jetzt stabil; Bausteine, die noch fehlen, werden in bestehenden Dokumenten bereits mit ihren künftigen Kennungen referenziert.
+Jeder Anwendungsfall ist einem Geschäftsprozess, genau einer Maske oder Druckausgabe und den Qualitätsanforderungen zugeordnet, die ihn einschränken. Die Anwendungsfunktionen und Datentypen, die ein Anwendungsfall verwendet, stehen in seinen Szenarien in [F2](F2-anwendungsfaelle.md).
+
+| UC | Anwendungsfall | GP | Maske | AF | NFR |
+|----|----------------|----|-------|----|-----|
+| UC-01 | Registrieren | — | DLG-02 | AF-07 | 15b-02 |
+| UC-02 | Anmelden mit Passwort | — | DLG-01 | AF-06, AF-07 | 15a-01, 15a-02 |
+| UC-03 | Anmelden per SSO | — | DLG-01 | AF-11, AF-07 | 15a-03, 17b-01 |
+| UC-04 | Zweiten Faktor verwalten | — | DLG-12 | AF-06, AF-07 | 15a-01, 15b-01 |
+| UC-05 | Profil pflegen | — | DLG-12 | AF-09, AF-07 | 15b-02, 15d-01 |
+| UC-06 | Abmelden | — | Rahmen | — | 15a-02 |
+| UC-07 | Projekt anlegen | GP-01 | DLG-04 | AF-05, AF-07 | 15d-01 |
+| UC-08 | Berichtsbasis pflegen | GP-01 | DLG-04 | AF-07 | 15d-01 |
+| UC-09 | Statusbericht erfassen | GP-01 | DLG-04 | AF-07 | 15d-01 |
+| UC-10 | Statusbericht als PDF ausgeben | GP-01 | DLG-07, DR-01 | — | — |
+| UC-11 | Aufgabe anlegen | GP-02 | DLG-06, DLG-05 | AF-04, AF-08, AF-09, AF-07 | 12d-01 |
+| UC-12 | Aufgabe bearbeiten | GP-02 | DLG-05, DLG-04 | AF-04, AF-08, AF-09, AF-07 | 15d-01 |
+| UC-13 | Aufgabe im Board verschieben | GP-02 | DLG-05 | AF-04, AF-07 | — |
+| UC-14 | Aufgabe terminieren | GP-02 | DLG-06 | AF-08, AF-07 | 12d-01 |
+| UC-15 | Aufgabe kommentieren | GP-02 | DLG-05, DLG-04 | AF-09, AF-07 | 12d-01 |
+| UC-16 | Aufgabe löschen | — | (Schnittstelle) | AF-08, AF-07 | 15d-01 |
+| UC-17 | Aufgabenübersicht einsehen | GP-02 | DLG-03, DLG-05, DLG-06 | AF-02, AF-10 | 12a-01 |
+| UC-18 | Freigabe anfragen | GP-03 | DLG-05, DLG-04 | AF-03, AF-07 | 15d-01 |
+| UC-19 | Freigabe entscheiden | GP-03 | DLG-08 | AF-01, AF-03, AF-07 | 15d-01 |
+| UC-20 | Freigabe abbrechen | GP-03 | (Schnittstelle) | AF-01, AF-03, AF-07 | 15d-01 |
+| UC-21 | Rollen pflegen | — | DLG-11 | AF-01, AF-07 | 15d-01, 15d-02 |
+| UC-22 | Benutzer anlegen und zuordnen | — | DLG-11 | AF-01, AF-07 | 15b-02, 15b-03 |
+| UC-23 | Audit-Log einsehen | — | DLG-09 | AF-01 | 15d-01, 15d-02, 12e-01 |
+| UC-24 | Farbstreifen pflegen | — | DLG-12 | AF-10, AF-07 | — |
+| UC-25 | Kalender verbinden | — | DLG-12 | AF-08, AF-07 | 15b-01, 12d-01 |
+
+Die Ziele aus P1 werden so abgedeckt: G-01 durch UC-11 bis UC-17, G-02 durch AF-01 und AF-02 mit UC-21 und UC-22, G-03 durch UC-18 bis UC-20, G-04 durch UC-07 bis UC-10, G-05 durch QK-03 und NFR-15d-01, G-06 durch UC-02 bis UC-04.
 
 ---
 
@@ -143,11 +173,18 @@ Die Matrix Anwendungsfall → Maske → Qualitätsanforderung wird mit F2, B1 un
 | Nr. | Abbildung | Baustein | Quelle |
 |-----|-----------|----------|--------|
 | 1 | Systemkontext NextTask | P2.1 | [`diagrams/p2-systemkontext.plantuml`](diagrams/p2-systemkontext.plantuml) |
-| 2 | Informationsmodell | D1 | [`diagrams/d1-informationsmodell.plantuml`](diagrams/d1-informationsmodell.plantuml) |
-| 3 | Zustände einer Aufgabe (TaskStatusDT) | D2.3 | [`diagrams/d2-taskstatus-zustaende.plantuml`](diagrams/d2-taskstatus-zustaende.plantuml) |
-| 4 | Lebenszyklus einer Freigabeanfrage (ApprovalStatusDT) | D2.7 | [`diagrams/d2-freigabestatus-zustaende.plantuml`](diagrams/d2-freigabestatus-zustaende.plantuml) |
+| 2 | GP-01 Projekt steuern und berichten | F1.1 | [`diagrams/f1-gp01-projekt-berichten.plantuml`](diagrams/f1-gp01-projekt-berichten.plantuml) |
+| 3 | GP-03 Freigabe nach dem Vier-Augen-Prinzip | F1.3 | [`diagrams/f1-gp03-freigabe.plantuml`](diagrams/f1-gp03-freigabe.plantuml) |
+| 4 | Anwendungsfälle NextTask | F2.1 | [`diagrams/f2-anwendungsfaelle.plantuml`](diagrams/f2-anwendungsfaelle.plantuml) |
+| 5 | UC-02 Anmelden mit Passwort und zweitem Faktor | F2.2 | [`diagrams/f2-uc02-anmelden.plantuml`](diagrams/f2-uc02-anmelden.plantuml) |
+| 6 | UC-03 Anmelden per SSO | F2.2 | [`diagrams/f2-uc03-sso.plantuml`](diagrams/f2-uc03-sso.plantuml) |
+| 7 | UC-12 Aufgabe bearbeiten | F2.4 | [`diagrams/f2-uc12-aufgabe-bearbeiten.plantuml`](diagrams/f2-uc12-aufgabe-bearbeiten.plantuml) |
+| 8 | UC-19 Freigabe entscheiden | F2.5 | [`diagrams/f2-uc19-freigabe-entscheiden.plantuml`](diagrams/f2-uc19-freigabe-entscheiden.plantuml) |
+| 9 | Informationsmodell | D1 | [`diagrams/d1-informationsmodell.plantuml`](diagrams/d1-informationsmodell.plantuml) |
+| 10 | Zustände einer Aufgabe (TaskStatusDT) | D2.3 | [`diagrams/d2-taskstatus-zustaende.plantuml`](diagrams/d2-taskstatus-zustaende.plantuml) |
+| 11 | Lebenszyklus einer Freigabeanfrage (ApprovalStatusDT) | D2.7 | [`diagrams/d2-freigabestatus-zustaende.plantuml`](diagrams/d2-freigabestatus-zustaende.plantuml) |
 
-Weitere Abbildungen kommen mit F1, F2 und B1 hinzu.
+Die Navigationskarte und die Bildschirmfotos der Masken kommen mit B1 hinzu.
 
 ---
 
@@ -168,3 +205,4 @@ Weitere Abbildungen kommen mit F1, F2 und B1 hinzu.
 | Version | Datum | Änderung |
 |---------|-------|----------|
 | 0.1 | 2026-09-10 | Wurzeldokument, Leseanleitung, P1, P2, D1, D2 mit Systemkontext, Informationsmodell und Zustandsdiagrammen; Render-Skript für Diagramme. |
+| 0.2 | 2026-09-11 | F1 mit zwei Aktivitätsdiagrammen, F2 mit 25 Anwendungsfällen und Use-Case-Diagramm, F3 mit elf Anwendungsfunktionen; Nachvollziehbarkeitsmatrix. |

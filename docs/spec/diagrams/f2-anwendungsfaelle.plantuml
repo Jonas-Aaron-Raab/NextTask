@@ -1,0 +1,118 @@
+@startuml f2-anwendungsfaelle
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam ArrowColor #555555
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+skinparam actorBorderColor #333333
+skinparam nodesep 10
+skinparam ranksep 60
+left to right direction
+
+title F2 Anwendungsfaelle NextTask
+
+' Akteure links, von oben nach unten in der Reihenfolge der Pakete,
+' mit denen sie verbunden sind. Projektleitung, GBL und Administrator
+' sind Spezialisierungen von Mitarbeiter: Sie koennen alles, was ein
+' Mitarbeiter kann, und zusaetzlich die hier gezeichneten Faelle.
+' Unterstuetzende Nachbarsysteme (Identity Provider, Google Calendar,
+' SMTP) sind nicht gezeichnet; siehe P2 und S1.
+
+actor "Administrator" as ADM
+actor "Mitarbeiter" as MA
+actor "GBL" as GBL
+actor "Projektleitung\n(Eigentuemer\neines Projekts)" as PL
+
+rectangle "NextTask" {
+  package "Verwaltung" #F3EEFB {
+    usecase "UC-21 Rollen pflegen" as UC21
+    usecase "UC-22 Benutzer anlegen und zuordnen" as UC22
+    usecase "UC-23 Audit-Log einsehen" as UC23
+  }
+  package "Konto und Einstellungen" #EEF4FB {
+    usecase "UC-01 Registrieren" as UC01
+    usecase "UC-02 Anmelden mit Passwort\n(optional zweiter Faktor)" as UC02
+    usecase "UC-03 Anmelden per SSO" as UC03
+    usecase "UC-04 Zweiten Faktor verwalten" as UC04
+    usecase "UC-05 Profil pflegen" as UC05
+    usecase "UC-06 Abmelden" as UC06
+    usecase "UC-24 Farbstreifen pflegen" as UC24
+    usecase "UC-25 Kalender verbinden" as UC25
+  }
+  package "Aufgaben" as AUF #FFF6E8 {
+    usecase "UC-11 Aufgabe anlegen" as UC11
+    usecase "UC-12 Aufgabe bearbeiten" as UC12
+    usecase "UC-13 Aufgabe im Board verschieben" as UC13
+    usecase "UC-14 Aufgabe terminieren" as UC14
+    usecase "UC-15 Aufgabe kommentieren" as UC15
+    usecase "UC-16 Aufgabe loeschen" as UC16
+    usecase "UC-17 Aufgabenuebersicht einsehen" as UC17
+  }
+  package "Freigaben" as FRE #FBEEEE {
+    usecase "UC-18 Freigabe anfragen" as UC18
+    usecase "UC-19 Freigabe entscheiden" as UC19
+    usecase "UC-20 Freigabe abbrechen" as UC20
+  }
+  package "Projekte und Berichte" as PRJ #EEF7EE {
+    usecase "UC-07 Projekt anlegen" as UC07
+    usecase "UC-08 Berichtsbasis pflegen" as UC08
+    usecase "UC-09 Statusbericht erfassen" as UC09
+    usecase "UC-10 Statusbericht als PDF ausgeben" as UC10
+  }
+}
+
+' Administrator
+ADM -- UC21
+ADM -- UC22
+ADM -- UC23
+
+' Mitarbeiter
+MA -- UC01
+MA -- UC02
+MA -- UC03
+MA -- UC04
+MA -- UC05
+MA -- UC06
+MA -- UC24
+MA -- UC25
+MA -- UC11
+MA -- UC12
+MA -- UC13
+MA -- UC14
+MA -- UC15
+MA -- UC16
+MA -- UC17
+MA -- UC18
+MA -- UC20
+
+' GBL
+GBL -- UC19
+
+' Projektleitung
+PL -- UC19
+PL -- UC07
+PL -- UC08
+PL -- UC09
+PL -- UC10
+
+' Spezialisierung
+ADM -[hidden]down- MA
+MA -[hidden]down- GBL
+GBL -[hidden]down- PL
+ADM --|> MA
+GBL --|> MA
+PL --|> MA
+
+AUF -[hidden]down- FRE
+FRE -[hidden]down- PRJ
+
+' Beziehungen zwischen Anwendungsfaellen
+UC02 ..> UC04 : <<extend>>\n[erste Einrichtung]
+UC11 ..> UC12 : <<extend>>
+UC12 ..> UC18 : <<include>>\n[Freigabestufe gesetzt]
+UC09 ..> UC10 : <<precedes>>
+@enduml

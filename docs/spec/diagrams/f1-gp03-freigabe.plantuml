@@ -1,0 +1,64 @@
+@startuml f1-gp03-freigabe
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam ArrowColor #555555
+skinparam activity {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+  DiamondBackgroundColor #FFFFFF
+  DiamondBorderColor #333333
+}
+skinparam swimlaneBorderColor #999999
+
+title GP-03 Freigabe nach dem Vier-Augen-Prinzip
+
+|Anfragender|
+start
+:A1 Anlass erkennen
+Aufgabe mit Freigabestufe, Projekt,
+Statusbericht oder freies Anliegen;
+:A2 Freigabe anfragen
+Titel, Beschreibung, Nachweis (UC-18);
+|NextTask|
+:A3 Genehmiger bestimmen (AF-03)
+Vorschlag > Eigentuemer des Bezugsobjekts
+> erste Person mit Entscheidungsrecht;
+:Anfrage mit Status PENDING speichern,
+Audit-Eintrag APPROVAL_REQUESTED;
+|Genehmiger|
+:A4 Anfrage im Freigaben-Cockpit
+sichten, Nachweis pruefen;
+if (Anfragender zieht die Anfrage zurueck?) then (ja)
+  |Anfragender|
+  :A5' Anfrage abbrechen (UC-20);
+  |NextTask|
+  :Status CANCELLED;
+else (nein)
+  |Genehmiger|
+  if (Entscheidung?) then (genehmigen)
+    :A5 Genehmigen mit Vermerk (UC-19);
+    |NextTask|
+    :Status APPROVED,
+    Entscheider und Zeitpunkt festhalten;
+  else (ablehnen)
+    |Genehmiger|
+    :A5 Ablehnen mit Vermerk (UC-19);
+    |NextTask|
+    :Status REJECTED,
+    Entscheider und Zeitpunkt festhalten;
+  endif
+endif
+:Audit-Eintrag zur Entscheidung;
+|Anfragender|
+:A6 Ergebnis im Cockpit einsehen
+(keine Benachrichtigung per E-Mail);
+if (Ergebnis?) then (genehmigt)
+  :A7 Vorhaben umsetzen;
+  stop
+else (abgelehnt oder abgebrochen)
+  :A7' Nachbessern und
+  bei Bedarf neu anfragen;
+  stop
+endif
+@enduml

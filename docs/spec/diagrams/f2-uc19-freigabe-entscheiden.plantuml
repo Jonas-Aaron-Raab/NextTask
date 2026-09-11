@@ -1,0 +1,37 @@
+@startuml f2-uc19-freigabe-entscheiden
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam sequenceMessageAlign center
+skinparam sequence {
+  ArrowColor #555555
+  LifeLineBorderColor #999999
+  ParticipantBackgroundColor #F7F7F7
+  ParticipantBorderColor #333333
+  ActorBorderColor #333333
+}
+
+title UC-19 Freigabe entscheiden
+
+actor Genehmiger as G
+participant "Browser\n(DLG-08)" as B
+participant "NextTask" as S
+
+G -> B : Freigaben-Cockpit oeffnen
+B -> S : Freigaben laden (Filter, Suche)
+S -> S : Sichtbereich bestimmen (AF-01):\nalle bei "Freigaben entscheiden",\nsonst eigene und zugewiesene
+S --> B : Liste, Kennzahlen je Status
+G -> B : Anfrage pruefen, Vermerk eintragen,\n"Genehmigen" oder "Ablehnen"
+B -> S : Entscheidung mit Vermerk
+S -> S : Anfrage laden
+alt Anfrage nicht mehr PENDING
+  S --> B : "Diese Freigabe ist bereits entschieden"
+else Anwender weder Genehmiger noch berechtigt
+  S --> B : "Keine Berechtigung fuer diese Freigabe"
+else
+  S -> S : Status APPROVED oder REJECTED,\nEntscheider und Zeitpunkt setzen
+  S -> S : Audit APPROVAL_APPROVED (NOTICE)\noder APPROVAL_REJECTED (WARNING)
+  S --> B : aktualisierte Anfrage
+end
+B --> G : Karte mit neuem Status
+@enduml
