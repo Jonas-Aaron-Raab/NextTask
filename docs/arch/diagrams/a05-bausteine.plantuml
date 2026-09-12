@@ -1,0 +1,66 @@
+@startuml a05-bausteine
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 10
+skinparam packageStyle rectangle
+skinparam rectangle {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+skinparam database {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+skinparam nodesep 25
+skinparam ranksep 45
+
+title Bausteinsicht NextTask: Ebene 1 (drei Teile) und Ebene 2 (Module)
+
+package "Browser-Anwendung  client/src" as CLIENT #EEF4FB {
+  rectangle "Einstieg und Routing\nmain.jsx, App.jsx,\ncontext/AuthContext.jsx" as C_APP
+  rectangle "Anwendungsrahmen\ncomponents/AppShell.jsx" as C_SHELL
+  rectangle "Masken (12)\npages/*Page.jsx" as C_PAGES
+  rectangle "Bausteine\ncomponents/calendar (3)\ncomponents/reports (4)" as C_COMP
+  rectangle "Zugriffsschicht\napi/axios.js" as C_API
+  rectangle "Regeln und Speicher\nutils/ (8)" as C_UTILS
+  rectangle "Beispieldaten\ndata/ (4)" as C_DATA
+
+  C_APP --> C_PAGES : rendert je Route
+  C_PAGES --> C_SHELL : eingebettet in
+  C_PAGES --> C_COMP
+  C_PAGES --> C_API
+  C_PAGES --> C_UTILS
+  C_PAGES --> C_DATA
+  C_SHELL --> C_UTILS
+  C_SHELL --> C_DATA
+  C_APP --> C_DATA : canManageRoles
+}
+
+package "API-Server  server/src" as SERVER #EEF7EE {
+  rectangle "Einstieg\nindex.js\nExpress, CORS, PrismaClient" as S_IDX
+  rectangle "Zugriffsschutz\nmiddleware/auth.js\nJWT pruefen" as S_AUTH
+  rectangle "Routenmodule (9)\nroutes/*.routes.js\nauth, projects, tasks, calendar,\napprovals, roles, task-markers,\naudit-logs, calendar-integration" as S_ROUTES
+  rectangle "Hilfsmodule (8)\nutils/\naccessRoles, auditLog, twoFactor, sso,\ncalendarIntegration, taskNotificationMailer,\ndate, guestUser (ungenutzt)" as S_UTILS
+  rectangle "Persistenzschicht\nprisma/schema.prisma\nprisma/migrations (14)\n@prisma/client + adapter-pg" as S_PRISMA
+
+  S_IDX --> S_ROUTES : bindet unter /api ein
+  S_IDX --> S_PRISMA : erzeugt Client,\nreq.prisma
+  S_ROUTES --> S_AUTH : vor jedem\ngeschuetzten Handler
+  S_ROUTES --> S_UTILS
+  S_ROUTES --> S_PRISMA : Abfragen
+  S_UTILS --> S_PRISMA : accessRoles, sso,\ncalendarIntegration, auditLog
+}
+
+database "PostgreSQL\n14 Tabellen, 6 Enums" as DB
+
+C_API -right-> S_IDX : HTTP /api, JSON,\nBearer-Token
+S_PRISMA --> DB : SQL (pg)
+
+' Nachbarsysteme nur angedeutet; Vertraege in Kapitel 3
+cloud "Identity Provider,\nGoogle Calendar, SMTP" as EXT
+S_UTILS --> EXT : fetch, nodemailer
+
+CLIENT -[hidden]right- SERVER
+@enduml

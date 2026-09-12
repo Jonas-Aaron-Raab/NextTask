@@ -1,0 +1,64 @@
+@startuml a06-anmeldung
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+skinparam sequence {
+  ArrowColor #555555
+  LifeLineBorderColor #999999
+  ParticipantBackgroundColor #F7F7F7
+  ParticipantBorderColor #333333
+  ActorBorderColor #333333
+}
+
+title Laufzeitsicht 6.1: Anmeldung mit Passwort und zweitem Faktor (UC-02)
+
+actor Anwender as A
+participant "LoginPage.jsx\n+ AuthContext" as UI
+participant "auth.routes.js\nPOST /api/auth/login" as R1
+participant "auth.routes.js\nPOST /api/auth/login/2fa" as R2
+participant "twoFactor.js" as TF
+participant "auditLog.js" as AL
+database "PostgreSQL\nUser, AuditLog" as DB
+
+A -> UI : E-Mail, Passwort
+UI -> R1 : { email, password }
+R1 -> DB : user.findUnique({ email }, include accessRole)
+DB --> R1 : user
+R1 -> R1 : bcrypt.compare(password, user.password)
+alt Passwort falsch oder Konto unbekannt
+  R1 -> AL : writeAuditLog(LOGIN_FAILED, WARNING)
+  AL -> DB : auditLog.create
+  R1 --> UI : 400 { message }
+else twoFactorEnabled = false
+  R1 -> R1 : createToken(user)\nJWT purpose=access, 7d
+  R1 -> AL : writeAuditLog(LOGIN_SUCCESS)
+  R1 --> UI : { token, user }
+  UI -> UI : localStorage.token, user
+  UI --> A : Dashboard
+else twoFactorEnabled = true
+  R1 -> R1 : createTwoFactorChallengeToken(user)\nJWT purpose=two_factor_login, 5m
+  R1 -> AL : writeAuditLog(TWO_FACTOR_REQUIRED)
+  R1 --> UI : { requiresTwoFactor, challengeToken }
+  UI --> A : Code abfragen
+  A -> UI : Einmalcode
+  UI -> R2 : { challengeToken, code }
+  R2 -> R2 : verifyTwoFactorChallengeToken\n(Signatur, purpose, Ablauf)
+  R2 -> DB : user.findUnique({ id })
+  R2 -> TF : decryptSecret(twoFactorSecret)
+  R2 -> TF : verifyTotpCode(secret, code,\nlastUsedStep) ± 1 Schritt
+  alt TOTP ungueltig
+    R2 -> TF : verifyRecoveryCode(code, hashes)
+  end
+  alt Code gueltig
+    R2 -> DB : user.update(twoFactorLastUsedStep\noder verbrauchte Codes)
+    R2 -> R2 : createToken(user)
+    R2 -> AL : writeAuditLog(LOGIN_SUCCESS)
+    R2 --> UI : { token, user }
+    UI --> A : Dashboard
+  else Code ungueltig
+    R2 -> AL : writeAuditLog(TWO_FACTOR_LOGIN_FAILED)
+    R2 --> UI : 400 "Der 2FA-Code ist ungueltig"
+  end
+end
+@enduml

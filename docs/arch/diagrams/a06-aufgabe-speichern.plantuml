@@ -1,0 +1,56 @@
+@startuml a06-aufgabe-speichern
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+skinparam sequence {
+  ArrowColor #555555
+  LifeLineBorderColor #999999
+  ParticipantBackgroundColor #F7F7F7
+  ParticipantBorderColor #333333
+  ActorBorderColor #333333
+}
+
+title Laufzeitsicht 6.3: Aufgabe speichern mit Audit, Mail und Kalender (UC-12)
+
+participant "MyTasksPage.jsx\nvia api/axios.js" as UI
+participant "middleware/auth.js" as MW
+participant "task.routes.js\nPUT /api/tasks/:id" as R
+participant "auditLog.js" as AL
+participant "taskNotificationMailer.js" as M
+participant "calendarIntegration.js" as C
+database "PostgreSQL" as DB
+participant "SMTP" as SMTP
+participant "Google Calendar" as G
+
+UI -> MW : PUT /api/tasks/:id\nAuthorization: Bearer <JWT>
+MW -> MW : jwt.verify, purpose = access
+MW -> R : next(), req.user
+R -> DB : task.findUnique({ id })  [before]
+R -> R : normalizeStatus, normalizePriority,\nparseTaskDate x3, parseOptionalNumber
+R -> DB : task.update({ data })
+R -> DB : task.findUnique(include assignee, project)  [updated]
+R -> AL : writeAuditLog(TASK_UPDATED,\nbefore = summarizeChanges(before, updated),\nafter = pickFields(updated))
+AL -> AL : compactValue: password/token entfernen,\nDates -> ISO
+AL -> DB : auditLog.create (Fehler nur console.error)
+R -> M : notifyTaskAssignment(previousAssigneeId)
+alt canSendEmails() und Bearbeiter geaendert\nund Empfaenger hat Benachrichtigungen aktiv
+  M -> SMTP : sendMail "Ticket neu zugewiesen: <Titel>"
+  SMTP --> M : ok / Fehler -> console.error
+end
+R -> C : syncTaskCalendarSafely(taskId)
+C -> DB : task.findUnique(include assignee.calendar*)
+alt Bearbeiter mit Google-Verbindung und dueDate
+  C -> C : decryptSecret(calendarRefreshToken)
+  C -> G : POST oauth2/token (refresh)
+  C -> G : PATCH oder POST\ncalendars/primary/events
+  G --> C : event.id
+  C -> DB : calendarSyncEvent.upsert
+else sonst
+  C -> DB : calendarSyncEvent.findMany(taskId)
+  C -> G : DELETE events/<id> je Eintrag
+  C -> DB : calendarSyncEvent.deleteMany
+end
+note over C : jeder Fehler: console.error,\nAktion bleibt erfolgreich
+R --> UI : 200 updated task
+@enduml

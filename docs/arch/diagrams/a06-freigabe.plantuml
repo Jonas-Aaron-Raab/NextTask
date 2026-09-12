@@ -1,0 +1,45 @@
+@startuml a06-freigabe
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+skinparam sequence {
+  ArrowColor #555555
+  LifeLineBorderColor #999999
+  ParticipantBackgroundColor #F7F7F7
+  ParticipantBorderColor #333333
+  ActorBorderColor #333333
+}
+
+title Laufzeitsicht 6.4: Freigabe entscheiden (UC-19)
+
+participant "ApprovalsPage.jsx" as UI
+participant "middleware/auth.js" as MW
+participant "approval.routes.js\nPATCH /api/approvals/:id/approve" as R
+participant "accessRoles.js" as AR
+participant "auditLog.js" as AL
+database "PostgreSQL" as DB
+
+UI -> MW : PATCH ... { decisionNote }
+MW -> R : req.user (aus JWT)
+R -> DB : user.findUnique({ id: req.user.id },\ninclude accessRole)   [currentUser]
+note right of R : Berechtigung wird aus der\nDatenbank gelesen, nicht aus dem Token
+R -> DB : approvalRequest.findUnique({ id },\ninclude requester, approver)   [before]
+alt before fehlt
+  R --> UI : 404 "Freigabe wurde nicht gefunden"
+else before.status != PENDING
+  R --> UI : 400 "Diese Freigabe ist bereits entschieden"
+else
+  R -> AR : userCanApproveRequests(currentUser)
+  AR --> R : permissions.approveRequests\n|| kind ADMIN/GBL || role ADMIN/PROJECT_MANAGER
+  alt approverId != currentUser.id und nicht berechtigt
+    R --> UI : 403 "Keine Berechtigung fuer diese Freigabe"
+  else
+    R -> DB : approvalRequest.update(status APPROVED,\napproverId = before.approverId ?? currentUser.id,\ndecisionNote, decidedAt = now)
+    R -> AL : writeAuditLog(APPROVAL_APPROVED, NOTICE,\nbefore = summarizeChanges, after = pickFields)
+    AL -> DB : auditLog.create
+    R --> UI : 200 serializeApproval(updated)
+    UI -> UI : Karte im Zustand ersetzen,\nKennzahlen neu berechnen
+  end
+end
+@enduml

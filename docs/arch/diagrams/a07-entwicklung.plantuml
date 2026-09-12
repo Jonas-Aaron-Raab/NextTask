@@ -1,0 +1,49 @@
+@startuml a07-entwicklung
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 10
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+skinparam artifact {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+skinparam database {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+
+title Verteilungssicht 7.1: Entwicklungsumgebung
+
+node "Entwicklungsrechner (Windows, macOS oder Linux)" as PC {
+  node "Browser" as BROWSER {
+    artifact "Browser-Anwendung\nclient/src, von Vite geliefert\nLocal Storage: token, user, nexttask:*" as SPA
+  }
+  node "Prozess: Vite-Dev-Server\nnpm run dev (client), Port 5173" as VITE {
+    artifact "client/src\nHot Module Replacement" as SRC
+  }
+  node "Prozess: Node.js\nnodemon src/index.js (server), Port 5001" as NODE {
+    artifact "server/src\nExpress-App" as APP
+    artifact "@prisma/client\ngeneriert aus schema.prisma" as PC_CLIENT
+    file "server/.env\nDATABASE_URL, JWT_SECRET, ..." as ENV
+  }
+  file "package.json (Wurzel)\nnpm run dev -> concurrently" as ROOT
+}
+
+database "PostgreSQL\nlokal oder bei einem Anbieter\nDATABASE_URL, sslmode=require" as DB
+
+cloud "Identity Provider, Google, SMTP\n(nur wenn in .env konfiguriert)" as EXT
+
+ROOT ..> VITE : startet
+ROOT ..> NODE : startet
+VITE --> BROWSER : liefert index.html, JS, CSS\nhttp://localhost:5173
+SPA --> APP : HTTP http://localhost:5001/api\n(fest in api/axios.js)
+APP ..> ENV : dotenv beim Start
+APP --> PC_CLIENT
+PC_CLIENT --> DB : TCP, SQL
+APP --> EXT : HTTPS, SMTP
+@enduml

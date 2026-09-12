@@ -1,0 +1,58 @@
+@startuml a07-zielbild
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 10
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+skinparam artifact {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+skinparam database {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+
+title Verteilungssicht 7.2: Zielbild fuer einen Betrieb durch die Sparkassen-IT (nicht umgesetzt)
+
+node "Arbeitsplatz im Hausnetz" as PC {
+  artifact "Browser\nBrowser-Anwendung als statische Dateien" as SPA
+}
+
+node "Anwendungsserver (Linux)" as SRV {
+  node "Reverse Proxy\nHTTPS, eine Adresse" as PROXY {
+    artifact "client/dist\nstatische Dateien\naus vite build" as DIST
+  }
+  node "Prozess: Node.js\nunter Prozessmanager (systemd, pm2)" as NODE {
+    artifact "server/src + @prisma/client" as APP
+    file "Umgebungsvariablen\naus Secret-Store der IT" as ENV
+  }
+}
+
+database "PostgreSQL\nbetrieben von der Sparkassen-IT\nSicherung nach Hausregeln" as DB
+
+cloud "Identity Provider\nder Sparkasse" as IDP
+cloud "SMTP-Relay der Sparkasse" as SMTP
+cloud "Google Calendar\n(nur falls freigegeben)" as GCAL
+
+SPA --> PROXY : HTTPS
+PROXY --> DIST : /
+PROXY --> APP : /api/* (Weiterleitung, CORS eingeschraenkt)
+APP ..> ENV
+APP --> DB : TCP mit TLS
+APP --> IDP : HTTPS
+APP --> SMTP : SMTP
+APP --> GCAL : HTTPS
+
+note bottom of SRV
+  Voraussetzungen fuer dieses Zielbild (S3.6):
+  Serveradresse in api/axios.js konfigurierbar machen,
+  CORS auf die Proxy-Adresse einschraenken,
+  Rueckleitungsadressen beim Identity Provider registrieren,
+  Prozessmanager und Protokollrotation durch die Umgebung.
+end note
+@enduml
