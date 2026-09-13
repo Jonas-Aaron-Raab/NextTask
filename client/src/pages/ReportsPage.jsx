@@ -400,30 +400,8 @@ export default function ReportsPage() {
   const selectedReportProject = projectCards.find((project) => project.id === selectedReportProjectId) || projectCards[0] || null;
   const statusReport = useMemo(() => {
     if (!selectedReportProject) return null;
-    const fallbackMilestones = [
-      {
-        title: selectedReportProject.milestone,
-        planDate: selectedReportProject.dueDate,
-        newDate: '',
-        status: selectedReportProject.progress >= 80 ? 'Erreicht' : 'In Arbeit',
-        progress: selectedReportProject.progress,
-        statusNote: 'Aus Projektfortschritt abgeleitet.',
-      },
-    ];
-    const fallbackRisks = selectedReportProject.signal.label === 'Rot'
-      ? [{ code: 'R-1', title: 'Projektfortschritt kritisch', riskClass: 'Hoch', trend: 'Steigend' }]
-      : [];
-    const fallbackBudget = [
-      {
-        category: 'Gesamtbudget',
-        plannedAmount: selectedReportProject.plannedBudget || 0,
-        actualAmount: selectedReportProject.actualBudget || 0,
-        difference: (selectedReportProject.actualBudget || 0) - (selectedReportProject.plannedBudget || 0),
-        actualPercent: selectedReportProject.plannedBudget ? Math.round(((selectedReportProject.actualBudget || 0) / selectedReportProject.plannedBudget) * 100) : 0,
-      },
-    ];
-    const rawBudgetLines = selectedReportProject.budgetLines?.length ? selectedReportProject.budgetLines : fallbackBudget;
-    const budgetLines = rawBudgetLines.map((line) => {
+
+    const budgetLines = (selectedReportProject.budgetLines || []).map((line) => {
       const plannedAmount = Number(line.plannedAmount || 0);
       const actualAmount = Number(line.actualAmount || 0);
       return {
@@ -434,16 +412,11 @@ export default function ReportsPage() {
         actualPercent: line.actualPercent ?? (plannedAmount ? Math.round((actualAmount / plannedAmount) * 100) : 0),
       };
     });
-    const interfaces = selectedReportProject.interfaces?.length
-      ? selectedReportProject.interfaces
-      : (selectedReportProject.keyInterfaces || []).map((name) => ({
-          name,
-          status: 'Offen',
-          comment: 'Noch nicht bewertet.',
-        }));
+
+    const interfaces = selectedReportProject.interfaces || [];
     const nextMilestone =
       (selectedReportProject.milestones || []).find((milestone) => Number(milestone.progress || 0) < 100) ||
-      (selectedReportProject.milestones || [])[0];
+      (selectedReportProject.milestones || [])[0] || null;
     const actualBudget = selectedReportProject.actualBudget ?? budgetLines.reduce((sum, line) => sum + line.actualAmount, 0);
     const effortDifferencePt =
       selectedReportProject.effortDifferencePt ??
@@ -476,8 +449,8 @@ export default function ReportsPage() {
       reportNotes: selectedReportProject.reportNotes || 'Keine Erläuterung gepflegt.',
       collaborationQuality: selectedReportProject.collaborationQuality || 'Noch keine Bewertung gepflegt.',
       nextSteps: selectedReportProject.nextSteps || 'Nächste Schritte prüfen und im Projekt pflegen.',
-      milestones: selectedReportProject.milestones?.length ? selectedReportProject.milestones : fallbackMilestones,
-      risks: selectedReportProject.risks?.length ? selectedReportProject.risks : fallbackRisks,
+      milestones: selectedReportProject.milestones || [],
+      risks: selectedReportProject.risks || [],
       budgetLines,
       interfaces,
       approvals: selectedReportProject.approvals || {},

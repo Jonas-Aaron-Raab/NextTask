@@ -122,18 +122,6 @@ function applyScheduleOverrides(tasks) {
   return tasks.map((task) => (overrides[task.id] ? applyTaskSchedule(task, overrides[task.id]) : task));
 }
 
-function getFallbackCalendarTasks() {
-  return [];
-}
-
-function mergeCalendarTasks(primaryTasks, fallbackTasks) {
-  const taskMap = new Map();
-  [...fallbackTasks, ...primaryTasks].forEach((task) => {
-    taskMap.set(task.id, task);
-  });
-  return [...taskMap.values()];
-}
-
 function isOverdue(task) {
   return task.status !== 'DONE' && task.dueDate < toDateKey(new Date());
 }
@@ -189,9 +177,9 @@ export default function CalendarPage() {
           return result.value.data.map(normalizeTask);
         });
 
-        setTasks(applyScheduleOverrides(mergeCalendarTasks(apiTasks, getFallbackCalendarTasks())));
+        setTasks(applyScheduleOverrides(apiTasks));
       } catch {
-        setTasks(getFallbackCalendarTasks());
+        setTasks([]);
       }
     };
 

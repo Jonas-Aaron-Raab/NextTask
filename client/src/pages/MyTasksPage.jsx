@@ -27,7 +27,6 @@ import { CreateProjectModal as ProjectsCreateProjectModal } from './ProjectsPage
 import api from '../api/axios';
 import { formatEffort, getEffortHoursFromInput, getEffortInputValue } from '../utils/effort';
 import { getStoredTaskMarkers, getTaskMarker } from '../utils/taskMarkers';
-import { storeApprovalRequest } from '../utils/approvalStorage';
 
 const columns = [
   { id: 'today', title: 'Heute', dot: 'bg-amber-400' },
@@ -1939,21 +1938,6 @@ export default function MyTasksPage() {
 
     let approvalRequestId = task.approvalRequestId || '';
     if (detailForm.approvalLevel !== 'none' && !task.approvalRequestId) {
-      const localApprovalId = `local-approval-${task.id}`;
-      storeApprovalRequest({
-        id: localApprovalId,
-        entityType: task.source === 'backend' ? 'TASK' : 'OTHER',
-        entityId: task.id,
-        entityLabel: detailForm.title.trim(),
-        title: `Freigabe: ${detailForm.title.trim()}`,
-        description: detailForm.approval.trim() || detailForm.description.trim(),
-        evidence: detailForm.evidence.trim(),
-        status: 'PENDING',
-        requestedAt: new Date().toISOString(),
-        requesterId: user?.id || '',
-        requester: { id: user?.id || '', name: user?.name || 'Aktueller Benutzer' },
-      });
-      approvalRequestId = localApprovalId;
       try {
         const { data } = await api.post('/approvals', {
           entityType: task.source === 'backend' ? 'TASK' : 'OTHER',
@@ -1963,7 +1947,7 @@ export default function MyTasksPage() {
           description: detailForm.approval.trim() || detailForm.description.trim(),
           evidence: detailForm.evidence.trim(),
         });
-        approvalRequestId = data.id || localApprovalId;
+        approvalRequestId = data.id || '';
       } catch {
         approvalRequestId = '';
       }
