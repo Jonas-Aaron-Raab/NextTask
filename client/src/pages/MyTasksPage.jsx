@@ -25,7 +25,6 @@ import {
 import AppShell from '../components/AppShell';
 import { CreateProjectModal as ProjectsCreateProjectModal } from './ProjectsPage';
 import api from '../api/axios';
-import { dashboardFallbackTasks, initialTasks, taskProjects as initialProjects } from '../data/taskFixtures';
 import { formatEffort, getEffortHoursFromInput, getEffortInputValue } from '../utils/effort';
 import { getStoredTaskMarkers, getTaskMarker } from '../utils/taskMarkers';
 import { storeApprovalRequest } from '../utils/approvalStorage';
@@ -119,7 +118,12 @@ const taskSelectClass =
 const attachmentSourceOptions = ['SharePoint', 'OneDrive', 'DMS', 'Audit-Ablage'];
 const attachmentTypeOptions = ['Excel', 'Word', 'PDF', 'Link'];
 const createMenuItems = ['Neue Aufgabe', 'Neues Projekt'];
-const myTasksStorageKey = 'nexttask:my-tasks';
+const performancePeriods = [
+  { id: 'day', label: 'Tag', days: 1 },
+  { id: 'week', label: 'Woche', days: 7 },
+  { id: 'month', label: 'Monat', days: 31 },
+  { id: 'year', label: 'Jahr', days: 365 },
+];
 const performancePresets = {
   day: {
     label: 'Tag',
@@ -181,14 +185,7 @@ function formatDateLabel(value) {
 }
 
 function getStoredMyTasks() {
-  if (typeof window === 'undefined') return null;
-
-  try {
-    const storedTasks = JSON.parse(window.localStorage.getItem(myTasksStorageKey) || 'null');
-    return Array.isArray(storedTasks) ? storedTasks : null;
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 const apiStatusMap = {
@@ -227,6 +224,7 @@ function normalizeApiTaskForMyTasks(task) {
     checklist: task.checklist || '0/0 erledigt',
     progress: task.progress ?? 0,
     assignee,
+    department: task.department || task.project?.department?.name || '',
     description: task.description || task.note || '',
     note: task.note || task.description || '',
     compliance: task.compliance || {
@@ -322,6 +320,84 @@ function buildAssignedBy(name = 'Elisabeth Bezverkha') {
     name,
     initials: getInitials(name),
     tone: 'from-rose-200 to-orange-200',
+  };
+}
+
+function buildTeamMembersFromTasks(taskList, currentUserName) {
+  const members = new Set([currentUserName].filter(Boolean));
+  taskList.forEach((task) => {
+    if (task.assignee) members.add(task.assignee);
+    if (task.assignedBy?.name) members.add(task.assignedBy.name);
+    (task.linkedPeople || []).forEach((person) => members.add(person));
+  });
+  return [...members].sort((a, b) => a.localeCompare(b, 'de-DE'));
+}
+
+function buildTeamProfilesFromTasks(taskList) {
+  return taskList.reduce((profiles, task) => {
+    const people = [
+      task.assignedBy,
+      task.assignee ? { name: task.assignee, role: 'Zustaendige Person', department: task.department || task.project } : null,
+    ].filter(Boolean);
+
+    people.forEach((person) => {
+      if (!person.name || profiles[person.name]) return;
+      profiles[person.name] = {
+        email: person.email || '',
+        role: person.role || 'Teammitglied',
+        department: person.department || task.department || task.project || '',
+      };
+    });
+
+    return profiles;
+  }, {});
+}
+
+function buildControlItemsFromTasks(taskList) {
+  return taskList
+    .filter((task) => task.status === 'blocked' || (task.approvalLevel && task.approvalLevel !== 'none') || task.compliance?.evidence)
+    .slice(0, 6)
+    .map((task) => ({
+      taskId: task.id,
+      title: task.status === 'blocked' ? 'Blockade pruefen' : task.approvalLevel !== 'none' ? 'Freigabe pruefen' : 'Evidenznachweis pruefen',
+      meta: `${task.compliance?.controlId || task.ticketNumber || task.id} - ${task.project}`,
+      note: task.compliance?.approval || task.compliance?.evidence || task.note || task.description || 'Kontrollpunkt aus der Aufgabe pruefen.',
+    }));
+}
+
+function buildPerformanceDataFromTasks(taskList, period) {
+  const periodConfig = performancePeriods.find((item) => item.id === period) || performancePeriods[0];
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - periodConfig.days + 1);
+  cutoff.setHours(0, 0, 0, 0);
+
+  const scopedTasks = taskList.filter((task) => {
+    if (!task.dueDateValue) return true;
+    const dueDate = new Date(`${task.dueDateValue}T00:00:00`);
+    return Number.isNaN(dueDate.getTime()) || dueDate >= cutoff;
+  });
+  const done = scopedTasks.filter((task) => task.status === 'done').length;
+  const progress = scopedTasks.filter((task) => task.status === 'in-progress' || task.status === 'review').length;
+  const open = scopedTasks.filter((task) => task.status === 'today' || task.status === 'blocked').length;
+  const total = scopedTasks.length || 1;
+  const percentage = Math.round((done / total) * 100);
+  const bars = Array.from({ length: 7 }, (_, index) => {
+    const sliceSize = Math.ceil(((index + 1) / 7) * scopedTasks.length);
+    const slice = scopedTasks.slice(0, sliceSize);
+    if (!slice.length) return 18;
+    return Math.max(18, Math.round((slice.filter((task) => task.status === 'done').length / slice.length) * 100));
+  });
+
+  return {
+    ...periodConfig,
+    progress: percentage,
+    summary: `${done} von ${scopedTasks.length} Aufgaben erledigt`,
+    metrics: [
+      { type: 'done', value: String(done) },
+      { type: 'progress', value: String(progress) },
+      { type: 'open', value: String(open) },
+    ],
+    bars,
   };
 }
 
@@ -450,7 +526,7 @@ function AssignerAvatar({ person }) {
   );
 }
 
-function TaskCard({ task, onOpen }) {
+function TaskCard({ task, onOpen, teamProfiles = {} }) {
   const [showAssignerProfile, setShowAssignerProfile] = useState(false);
   const assignerProfile = teamProfiles[task.assignedBy.name];
   const marker = getTaskMarker(task);
@@ -540,7 +616,7 @@ function TaskCard({ task, onOpen }) {
   );
 }
 
-function BoardColumn({ column, tasks, onOpenTask, onDragStart, onDragOver, onDrop, isDragged }) {
+function BoardColumn({ column, tasks, onOpenTask, onDragStart, onDragOver, onDrop, isDragged, teamProfiles }) {
   return (
     <section
       draggable
@@ -568,7 +644,7 @@ function BoardColumn({ column, tasks, onOpenTask, onDragStart, onDragOver, onDro
 
       <div className="mt-3 flex flex-col gap-2">
         {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} onOpen={onOpenTask} />
+          <TaskCard key={task.id} task={task} onOpen={onOpenTask} teamProfiles={teamProfiles} />
         ))}
       </div>
     </section>
@@ -758,6 +834,7 @@ function TaskMarkerField({ value, markers, onChange }) {
 function CreateTaskModal({
   projects,
   relatedTasks,
+  teamMembers,
   form,
   taskMarkers,
   commentDraft,
@@ -796,6 +873,7 @@ function CreateTaskModal({
       comments={form.comments || []}
       auditTrail={form.auditTrail || []}
       relatedTasks={relatedTasks}
+      teamMembers={teamMembers}
       parentTask={relatedTasks.find((task) => task.id === form.parentTaskId)}
       childTasks={[]}
       assignedByName={form.assignedBy?.name}
@@ -831,8 +909,7 @@ function CreateTaskModal({
   );
 }
 
-function PerformanceCard({ period, onPeriodChange }) {
-  const data = performancePresets[period];
+function PerformanceCard({ period, onPeriodChange, data }) {
   const radius = 34;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (data.progress / 100) * circumference;
@@ -850,13 +927,13 @@ function PerformanceCard({ period, onPeriodChange }) {
   return (
     <div>
       <div className="mt-3 grid grid-cols-4 gap-2">
-        {Object.entries(performancePresets).map(([key, preset]) => (
+        {performancePeriods.map((preset) => (
           <button
-            key={key}
+            key={preset.id}
             type="button"
-            onClick={() => onPeriodChange(key)}
+            onClick={() => onPeriodChange(preset.id)}
             className={`rounded-full px-2 py-1.5 text-[11px] font-bold transition ${
-              period === key ? 'bg-[#c95767] text-white shadow-[0_10px_18px_rgba(201,87,103,0.26)]' : 'bg-[#f7ecee] text-[#8b5860] hover:bg-[#f3dfe3]'
+              period === preset.id ? 'bg-[#c95767] text-white shadow-[0_10px_18px_rgba(201,87,103,0.26)]' : 'bg-[#f7ecee] text-[#8b5860] hover:bg-[#f3dfe3]'
             }`}
           >
             {preset.label}
@@ -988,6 +1065,7 @@ function TaskEditorModal({
   comments,
   auditTrail,
   relatedTasks = [],
+  teamMembers = [],
   parentTask,
   childTasks = [],
   assignedByName,
@@ -1559,11 +1637,9 @@ export default function MyTasksPage() {
   const location = useLocation();
   const [tasks, setTasks] = useState(() => {
     const storedTasks = getStoredMyTasks();
-    return storedTasks?.length
-      ? withProjectTicketNumbers(storedTasks.map(normalizeFallbackTaskForMyTasks))
-      : withProjectTicketNumbers(initialTasks.map(normalizeFallbackTaskForMyTasks));
+    return storedTasks?.length ? withProjectTicketNumbers(storedTasks.map(normalizeFallbackTaskForMyTasks)) : [];
   });
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState([]);
   const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
   const [columnOrder, setColumnOrder] = useState(columns.map((column) => column.id));
   const [draggedColumnId, setDraggedColumnId] = useState(null);
@@ -1577,20 +1653,16 @@ export default function MyTasksPage() {
   const [detailForm, setDetailForm] = useState(null);
   const [commentDraft, setCommentDraft] = useState('');
   const [tagDraft, setTagDraft] = useState('');
-  const [personDraft, setPersonDraft] = useState(teamMembers[0]);
+  const [personDraft, setPersonDraft] = useState('');
   const [attachmentSource, setAttachmentSource] = useState('SharePoint');
   const [attachmentType, setAttachmentType] = useState('Excel');
   const [performancePeriod, setPerformancePeriod] = useState('day');
-  const [createTaskForm, setCreateTaskForm] = useState(() => buildCreateTaskForm(initialProjects[0]?.name || ''));
+  const [createTaskForm, setCreateTaskForm] = useState(() => buildCreateTaskForm(''));
   const [createProjectForm, setCreateProjectForm] = useState(() => buildCreateProjectForm('Digitales Banking'));
   const routeTaskId = searchParams.get('taskId');
   const routeSearch = searchParams.get('search');
   const taskFocusToken = location.state?.focusTaskAt;
   const routedDashboardTask = location.state?.dashboardTask;
-
-  useEffect(() => {
-    window.localStorage.setItem(myTasksStorageKey, JSON.stringify(tasks));
-  }, [tasks]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1636,7 +1708,18 @@ export default function MyTasksPage() {
     () => [...new Set(tasks.map((task) => task.assignee).filter(Boolean))].sort(),
     [tasks],
   );
+  const teamMembers = useMemo(() => buildTeamMembersFromTasks(tasks, currentUserName), [currentUserName, tasks]);
+  const teamProfiles = useMemo(() => buildTeamProfilesFromTasks(tasks), [tasks]);
+  const controlItems = useMemo(() => buildControlItemsFromTasks(tasks), [tasks]);
+  const performanceData = useMemo(() => buildPerformanceDataFromTasks(tasks, performancePeriod), [performancePeriod, tasks]);
   const activePersonFilter = assignees.includes(selectedPerson) ? selectedPerson : '';
+
+  useEffect(() => {
+    if (!personDraft && teamMembers.length) {
+      setPersonDraft(teamMembers[0]);
+    }
+  }, [personDraft, teamMembers]);
+
   const scopedTasks = useMemo(
     () =>
       tasks.filter((task) => {
@@ -1757,7 +1840,7 @@ export default function MyTasksPage() {
     });
     setCommentDraft('');
     setTagDraft('');
-    setPersonDraft(teamMembers[0]);
+    setPersonDraft(teamMembers[0] || '');
     setAttachmentSource('SharePoint');
     setAttachmentType('Excel');
   };
@@ -1789,15 +1872,6 @@ export default function MyTasksPage() {
     }
 
     if (existingTask) return undefined;
-
-    const fallbackTask = dashboardFallbackTasks.find((task) => task.id === routeTaskId);
-    if (fallbackTask) {
-      setTasks((current) => {
-        const nextTask = normalizeFallbackTaskForMyTasks(fallbackTask);
-        return [{ ...nextTask, ticketNumber: getNextTicketNumber(current, nextTask.project) }, ...current];
-      });
-      return undefined;
-    }
 
     let cancelled = false;
 
@@ -2070,7 +2144,7 @@ export default function MyTasksPage() {
       });
       setCommentDraft('');
       setTagDraft('');
-      setPersonDraft(teamMembers[0]);
+      setPersonDraft(teamMembers[0] || '');
       setAttachmentSource('SharePoint');
       setAttachmentType('Excel');
       setCreateMode('task');
@@ -2208,7 +2282,7 @@ export default function MyTasksPage() {
     setCreateMode(null);
   };
 
-  const handleCreateTaskSubmit = () => {
+  const handleCreateTaskSubmit = async () => {
     const trimmedTitle = createTaskForm.title.trim();
     if (!trimmedTitle || !createTaskForm.project) return;
 
@@ -2250,6 +2324,40 @@ export default function MyTasksPage() {
 
     setTasks((current) => [nextTask, ...current]);
     setCreateMode(null);
+
+    const projectMatch = projects.find((project) => project.name === createTaskForm.project);
+    if (!projectMatch?.id) return;
+
+    const assigneeMatch = tasks.find((task) => task.assignee === createTaskForm.assignee && task.assigneeId);
+    try {
+      const { data } = await api.post('/tasks', {
+        title: nextTask.title,
+        description: nextTask.description,
+        status: nextTask.status,
+        priority: nextTask.priority,
+        projectId: projectMatch.id,
+        assigneeId: assigneeMatch?.assigneeId || null,
+        dueDate: nextTask.dueDateValue,
+        estimatedHours: nextTask.estimatedHours,
+        ticketNumber: nextTask.ticketNumber,
+        progress: nextTask.progress,
+        checklist: nextTask.checklist,
+        note: nextTask.note,
+        markerId: nextTask.markerId,
+        approvalLevel: nextTask.approvalLevel,
+        parentTaskId: nextTask.parentTaskId,
+        tags: nextTask.tags,
+        linkedPeople: nextTask.linkedPeople,
+        attachments: nextTask.attachments,
+        compliance: nextTask.compliance,
+        assignedBy: nextTask.assignedBy,
+        auditTrail: nextTask.auditTrail,
+      });
+      const savedTask = normalizeApiTaskForMyTasks(data);
+      setTasks((current) => current.map((task) => (task.id === nextTask.id ? savedTask : task)));
+    } catch {
+      // The optimistic task remains visible until the next successful API refresh.
+    }
   };
 
   return (
@@ -2267,7 +2375,7 @@ export default function MyTasksPage() {
       <div className="space-y-4 px-4 py-4 xl:px-6">
         <SummaryStrip
           stats={statGroups}
-          controlCount={controlFeed.length}
+          controlCount={controlItems.length}
           performanceValue={completionRate}
           onOpenStat={(stat) => setActivePopup({ type: 'stat', statId: stat.id })}
           onOpenControls={() => setActivePopup({ type: 'controls' })}
@@ -2339,6 +2447,7 @@ export default function MyTasksPage() {
                   onDragOver={() => {}}
                   onDrop={moveColumn}
                   isDragged={draggedColumnId === column.id}
+                  teamProfiles={teamProfiles}
                 />
               ))}
             </div>
@@ -2366,7 +2475,7 @@ export default function MyTasksPage() {
         />
       ) : null}
       {activePopup?.type === 'controls' ? (
-        <ControlsPopup items={controlFeed} tasks={tasks} onClose={() => setActivePopup(null)} onOpenTask={openTask} />
+        <ControlsPopup items={controlItems} tasks={tasks} onClose={() => setActivePopup(null)} onOpenTask={openTask} />
       ) : null}
       {activePopup?.type === 'performance' ? (
         <PopupShell
@@ -2375,13 +2484,14 @@ export default function MyTasksPage() {
           onClose={() => setActivePopup(null)}
           maxWidth="max-w-2xl"
         >
-          <PerformanceCard period={performancePeriod} onPeriodChange={setPerformancePeriod} />
+          <PerformanceCard period={performancePeriod} onPeriodChange={setPerformancePeriod} data={performanceData} />
         </PopupShell>
       ) : null}
       {createMode === 'task' ? (
         <CreateTaskModal
           projects={projects}
           relatedTasks={tasks}
+          teamMembers={teamMembers}
           form={createTaskForm}
           taskMarkers={taskMarkers}
           commentDraft={commentDraft}
@@ -2429,6 +2539,7 @@ export default function MyTasksPage() {
         comments={selectedTask?.comments || []}
         auditTrail={selectedTask?.auditTrail || []}
         relatedTasks={relatedTasks}
+        teamMembers={teamMembers}
         parentTask={parentTask}
         childTasks={childTasks}
         assignedByName={selectedTask?.assignedBy?.name}

@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
 import api from '../api/axios';
-import { initialDepartments } from '../data/projectFixtures';
 
 const createMenuItems = ['Neue Seite', 'Neues Dokument', 'Neue Vorlage', 'Upload Nachweis'];
 
@@ -22,133 +21,6 @@ const typeOptions = ['Alle Typen', 'Richtlinie', 'Kontrollnachweis', 'Projektunt
 const statusOptions = ['Alle Stati'];
 const documentSelectClass =
   'h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12';
-
-const documents = [
-  {
-    id: 'doc-1',
-    title: 'Mobile Banking Fachkonzept',
-    department: 'Digitales Banking',
-    project: 'Mobile Banking Relaunch',
-    type: 'Projektunterlage',
-    status: 'In Prüfung',
-    classification: 'Vertraulich',
-    owner: 'Lisa Wagner',
-    version: 'v2.3',
-    reviewDate: '12. Juni 2026',
-    retention: '31.12.2027',
-    summary: 'Fachkonzept für Kontoansicht, Karten-Services und digitale Self-Services.',
-    linkedTasks: ['Hero-Text und CTA für Startseite finalisieren', 'Responsive Navigation auf iPhone Breakpoints prüfen'],
-    controls: ['CTRL-WEB-204', 'CTRL-UI-118'],
-    auditTrail: ['29. Mai 2026: Version 2.3 hochgeladen', '28. Mai 2026: Datenschutz-Hinweise angepasst'],
-  },
-  {
-    id: 'doc-2',
-    title: 'QA Freigabeprotokoll Checkout',
-    department: 'Qualitätssicherung',
-    project: 'Checkout Testprogramm',
-    type: 'Kontrollnachweis',
-    status: 'Freigegeben',
-    classification: 'Reguliert',
-    owner: 'Tom Becker',
-    version: 'v1.8',
-    reviewDate: '04. Juni 2026',
-    retention: '31.12.2028',
-    summary: 'Revisionssichere Sammeldokumentation für Testlauf, Befunde und Freigaben.',
-    linkedTasks: ['Checkout-Testlauf dokumentieren und an QA geben'],
-    controls: ['CTRL-QA-332', 'CTRL-PAY-771'],
-    auditTrail: ['30. Mai 2026: Freigabe durch QA erteilt', '29. Mai 2026: Defect-Liste angehängt'],
-  },
-  {
-    id: 'doc-3',
-    title: 'Sparkassen Kampagnenbriefing',
-    department: 'Marketing und Content',
-    project: 'Sparkassen Herbstkampagne',
-    type: 'Projektunterlage',
-    status: 'Entwurf',
-    classification: 'Intern',
-    owner: 'Sarah Nguyen',
-    version: 'v0.9',
-    reviewDate: '18. Juni 2026',
-    retention: '31.12.2026',
-    summary: 'Briefing für Landingpages, Anzeigenbausteine und Freigabeprozess der Kampagne.',
-    linkedTasks: ['Sparkassen-Landingpage Teaser für Startseite abstimmen'],
-    controls: ['CTRL-SPK-301'],
-    auditTrail: ['30. Mai 2026: Copy-Entwurf aktualisiert', '27. Mai 2026: Bildsprache mit Marken-Team abgestimmt'],
-  },
-  {
-    id: 'doc-4',
-    title: 'Freigabe-Cockpit Kontrollmatrix',
-    department: 'Produkt und Compliance',
-    project: 'Freigabe-Cockpit',
-    type: 'Kontrollnachweis',
-    status: 'In Prüfung',
-    classification: 'Streng vertraulich',
-    owner: 'Anna Becker',
-    version: 'v1.4',
-    reviewDate: '07. Juni 2026',
-    retention: '31.12.2029',
-    summary: 'Kontrollmatrix für Freigaben, Evidenz und regulatorische Nachweise je Fachbereich.',
-    linkedTasks: ['Texte für Pricing-Seite abstimmen'],
-    controls: ['CTRL-PRC-551', 'CTRL-WEB-204'],
-    auditTrail: ['30. Mai 2026: Kontroll-ID nachgezogen', '28. Mai 2026: Vier-Augen-Prüfung gestartet'],
-  },
-  {
-    id: 'doc-5',
-    title: 'Service Anfrage-Cockpit Leitfaden',
-    department: 'Kundenservice',
-    project: 'Service Anfrage-Cockpit',
-    type: 'Prozessdokument',
-    status: 'Freigegeben',
-    classification: 'Intern',
-    owner: 'Nina Hoffmann',
-    version: 'v3.1',
-    reviewDate: '22. Juni 2026',
-    retention: '31.12.2027',
-    summary: 'Leitfaden für Rückfragen, Eskalationspfade und SLA-Handling im Service.',
-    linkedTasks: ['Onboarding-Mails in deutsch überarbeiten'],
-    controls: ['CTRL-SRV-110'],
-    auditTrail: ['30. Mai 2026: SLA-Hinweise aktualisiert', '25. Mai 2026: Leitfaden freigegeben'],
-  },
-  {
-    id: 'doc-6',
-    title: 'Vorlage Datenschutz-Folgenbewertung',
-    department: 'Produkt und Compliance',
-    project: 'Freigabe-Cockpit',
-    type: 'Vorlage',
-    status: 'Freigegeben',
-    classification: 'Reguliert',
-    owner: 'Anna Becker',
-    version: 'v2.0',
-    reviewDate: '14. Juni 2026',
-    retention: '31.12.2030',
-    summary: 'Standardisierte Vorlage für DSFA, Fachfreigabe und technische Kontrollpunkte.',
-    linkedTasks: [],
-    controls: ['CTRL-DSFA-019'],
-    auditTrail: ['27. Mai 2026: Vorlage freigegeben', '22. Mai 2026: Felder für Datenkategorien erweitert'],
-  },
-];
-
-const knowledgeSpaces = initialDepartments.map((department, index) => ({
-  id: department.id,
-  title: department.name,
-  description: department.description,
-  lead: department.lead,
-  docsCount: documents.filter((document) => document.department === department.name).length,
-  tone: [
-    'bg-[#fff7f8] border-slate-300',
-    'bg-[#f4f8ff] border-slate-300',
-    'bg-[#effbf7] border-slate-300',
-    'bg-[#fff8ef] border-slate-300',
-    'bg-[#f3fbf6] border-slate-300',
-  ][index % 5],
-}));
-
-const templates = [
-  'Vorlage Datenschutz-Folgenbewertung',
-  'Kontrollnachweis für Freigaben',
-  'Projektsteckbrief Sparkasse',
-  'Audit-Protokoll für Revision',
-];
 
 function classificationTone(value) {
   if (value === 'Streng vertraulich') return 'bg-[#fff0f2] text-[#b84758]';
@@ -290,6 +162,7 @@ export default function DocumentsPage() {
   const [activeSection, setActiveSection] = useState('library');
   const [apiDocuments, setApiDocuments] = useState(null);
   const [apiTemplates, setApiTemplates] = useState(null);
+  const [departments, setDepartments] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -312,11 +185,28 @@ export default function DocumentsPage() {
     };
   }, []);
 
-  const activeDocuments = apiDocuments?.length ? apiDocuments : documents;
-  const activeTemplates = apiTemplates?.length ? apiTemplates.map((template) => template.title || template) : templates;
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .get('/organization/departments')
+      .then(({ data }) => {
+        if (!cancelled) setDepartments(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setDepartments([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const activeDocuments = apiDocuments || [];
+  const activeTemplates = apiTemplates?.length ? apiTemplates.map((template) => template.title || template) : [];
   const activeKnowledgeSpaces = useMemo(
     () =>
-      initialDepartments.map((department, index) => ({
+      departments.map((department, index) => ({
         id: department.id,
         title: department.name,
         description: department.description,
@@ -330,7 +220,7 @@ export default function DocumentsPage() {
           'bg-[#f3fbf6] border-slate-300',
         ][index % 5],
       })),
-    [activeDocuments],
+    [activeDocuments, departments],
   );
   const documentStatusOptions = useMemo(
     () => ['Alle Stati', ...Array.from(new Set(activeDocuments.map((document) => document.status))).filter(Boolean)],
@@ -439,7 +329,7 @@ export default function DocumentsPage() {
             <div className="flex flex-wrap items-end gap-2.5 xl:flex-nowrap">
               <DocumentFilterField label="Abteilung" value={selectedDepartment} onChange={(event) => setSelectedDepartment(event.target.value)}>
                 <option>Alle Abteilungen</option>
-                {initialDepartments.map((department) => (
+                {departments.map((department) => (
                   <option key={department.id}>{department.name}</option>
                 ))}
               </DocumentFilterField>
