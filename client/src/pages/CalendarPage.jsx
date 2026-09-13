@@ -19,23 +19,16 @@ import { CreateTaskModal, DetailPanel } from '../components/calendar/CalendarDia
 import { addDays, fromDateKey, formatDateRangeTitle, formatFullDate, getRange, toDateKey } from '../utils/calendar';
 import { priorityLabels, statusColors, statusLabels } from '../data/calendarConstants';
 import { normalizeTaskPriority, normalizeTaskStatus, toTaskDateValue } from '../utils/task';
-import { initialTasks } from '../data/taskFixtures';
-import {
-  initialBacklogTasks,
-  initialDepartments,
-  initialProjects,
-} from '../data/projectFixtures';
 
 const projectColors = ['#4f46e5', '#0f766e', '#b45309', '#be123c', '#6d28d9', '#15803d'];
-const mockPeople = ['Lisa Wagner', 'Markus Klein', 'Anna Becker', 'Tom Becker', 'Sarah Nguyen'];
-const mockDepartments = ['Development', 'Design', 'QA', 'Marketing', 'Digitales Banking'];
 const calendarScheduleStorageKey = 'nexttask-calendar-schedule-overrides';
 const monthPreviewLimit = 2;
 
 function normalizeTask(task, index = 0) {
   const dueDate = toTaskDateValue(task.dueDateValue || task.dueDate);
   const projectName = task.project?.name || task.project || 'Ohne Projekt';
-  const assigneeName = task.assignee?.name || task.assignee || task.assigneeName || mockPeople[index % mockPeople.length];
+  const assigneeName = task.assignee?.name || task.assignee || task.assigneeName || 'Nicht zugewiesen';
+  const departmentName = task.department || task.assignee?.department || task.project?.department?.name || 'Ohne Abteilung';
   return {
     id: task.id,
     title: task.title,
@@ -45,14 +38,14 @@ function normalizeTask(task, index = 0) {
     projectColor: task.project?.color || projectColors[index % projectColors.length],
     assigneeId: task.assignee?.id || task.assigneeId || assigneeName,
     assignee: assigneeName,
-    department: task.department || task.assignee?.department || mockDepartments[index % mockDepartments.length],
+    department: departmentName,
     status: normalizeTaskStatus(task.status),
     priority: normalizeTaskPriority(task.priority),
     startDate: task.startDate?.slice?.(0, 10) || dueDate,
     dueDate,
     endDate: task.endDate?.slice?.(0, 10) || dueDate,
     estimatedHours: task.estimatedHours ?? null,
-    source: task.source || (task.project?.id ? 'api' : 'mock'),
+    source: task.source || (task.project?.id ? 'api' : 'api'),
   };
 }
 
@@ -129,37 +122,8 @@ function applyScheduleOverrides(tasks) {
   return tasks.map((task) => (overrides[task.id] ? applyTaskSchedule(task, overrides[task.id]) : task));
 }
 
-function getDepartmentName(project) {
-  const department = initialDepartments.find((candidate) => candidate.id === project?.departmentId);
-  return department?.name || 'Ohne Abteilung';
-}
-
-function mapBacklogTaskToCalendarTask(task) {
-  const project = initialProjects.find((candidate) => candidate.id === task.projectId);
-
-  return {
-    id: `backlog-${task.id}`,
-    title: task.title,
-    description: task.description,
-    projectId: task.projectId,
-    project: project?.name || 'Ohne Projekt',
-    assignee: task.assignee || 'Nicht zugewiesen',
-    department: getDepartmentName(project),
-    status: task.status,
-    priority: task.priority,
-    dueDate: task.dueDate,
-    startDate: task.dueDate,
-    endDate: task.dueDate,
-    estimatedHours: null,
-    source: 'project-backlog',
-  };
-}
-
 function getFallbackCalendarTasks() {
-  return applyScheduleOverrides([
-    ...initialTasks,
-    ...initialBacklogTasks.map(mapBacklogTaskToCalendarTask),
-  ].map(normalizeTask));
+  return [];
 }
 
 function mergeCalendarTasks(primaryTasks, fallbackTasks) {
@@ -177,7 +141,7 @@ function isOverdue(task) {
 export default function CalendarPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
-  const [tasks, setTasks] = useState(() => getFallbackCalendarTasks());
+  const [tasks, setTasks] = useState([]);
   const [view, setView] = useState('month');
   const [cursorDate, setCursorDate] = useState(new Date());
   const [selectedTask, setSelectedTask] = useState(null);
@@ -225,12 +189,7 @@ export default function CalendarPage() {
           return result.value.data.map(normalizeTask);
         });
 
-        if (apiTasks.length) {
-          setTasks(applyScheduleOverrides(mergeCalendarTasks(apiTasks, getFallbackCalendarTasks())));
-          return;
-        }
-
-        setTasks(getFallbackCalendarTasks());
+        setTasks(applyScheduleOverrides(mergeCalendarTasks(apiTasks, getFallbackCalendarTasks())));
       } catch {
         setTasks(getFallbackCalendarTasks());
       }

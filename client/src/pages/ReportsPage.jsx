@@ -10,39 +10,23 @@ import {
   ShieldCheck,
   Users,
 } from 'lucide-react';
-import AppShell from '../components/AppShell';
-import { initialTasks } from '../data/taskFixtures';
+import api from '../api/axios';
 import { taskDateTimestamp } from '../utils/task';
 import { formatLongDate, getTimelineSpan } from '../utils/calendar';
 import { DonutChart, ReportFilterField } from '../components/reports/ReportWidgets';
 import ReportsContent from '../components/reports/ReportsContent';
-import {
-  initialBacklogTasks,
-  initialDepartments,
-  initialProjects,
-  mergeProjectsWithDefaults,
-  projectStorageKey,
-} from '../data/projectFixtures';
 
 const periods = ['Diese Woche', 'Dieser Monat', 'Dieses Jahr'];
 const reportSelectClass =
   'h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12';
 const dayInMs = 86400000;
 
-const taskDepartmentMap = {
-  'Website Relaunch': 'Digitales Banking',
-  'Sales Deck': 'Digitales Banking',
-  'NextTask UI': 'Digitales Banking',
-  'Shop Optimierung': 'Qualitätssicherung',
-  'Content Sprint': 'Marketing und Content',
-  'Sparkasse Kampagne': 'Marketing und Content',
-  'CRM Automation': 'Kundenservice',
-};
 
 const progressWeights = {
   todo: 18,
   progress: 58,
   review: 84,
+  blocked: 36,
   done: 100,
 };
 
@@ -70,6 +54,7 @@ const taskStatusProgress = {
   todo: 22,
   progress: 58,
   review: 88,
+  blocked: 32,
   done: 100,
 };
 
@@ -120,18 +105,46 @@ function getDaysBetween(startTime, endTime) {
   return Math.max(1, Math.round((endTime - startTime) / dayInMs) + 1);
 }
 
-function getSourceTask(task) {
-  return initialTasks.find((item) => item.id === task.sourceTaskId) || null;
+function mapTaskStatus(status) {
+  const value = String(status || '').toUpperCase();
+  if (value === 'DONE') return 'done';
+  if (value === 'QA') return 'review';
+  if (value === 'IN_PROGRESS') return 'progress';
+  if (value === 'BLOCKED') return 'blocked';
+  return 'todo';
+}
+
+function mapTaskPriority(priority) {
+  const value = String(priority || '').toUpperCase();
+  if (value === 'LOW') return 'niedrig';
+  if (value === 'HIGH' || value === 'URGENT') return 'hoch';
+  return 'mittel';
+}
+
+function normalizeReportTask(task, departmentsById) {
+  const project = task.project || {};
+  const department = departmentsById[project.departmentId] || null;
+
+  return {
+    ...task,
+    projectId: task.projectId || project.id,
+    project: project.name || 'Ohne Projekt',
+    departmentName: task.department || department?.name || task.assignee?.department || 'Ohne Abteilung',
+    status: mapTaskStatus(task.status),
+    priority: mapTaskPriority(task.priority),
+    dueDate: String(task.dueDate || task.endDate || task.startDate || '').slice(0, 10),
+    assignee: task.assignee?.name || task.assignee || '',
+    description: task.description || task.note || '',
+  };
 }
 
 function buildTaskTimeline(task) {
-  const sourceTask = getSourceTask(task);
   const dueTime = taskDateTimestamp(task.dueDate);
   const baseDuration = taskDurationByPriority[task.priority] || 6;
   const durationDays = Math.max(3, baseDuration + (taskStatusDurationAdjustment[task.status] || 0));
   const startTime = dueTime - (durationDays - 1) * dayInMs;
   const reviewDate = task.status === 'review' ? dueTime - dayInMs : null;
-  const sourceState = sourceTask?.status;
+  const sourceState = task.status;
   const finishLabel =
     task.status === 'done'
       ? `Fertig am ${formatLongDate(dueTime)}`
@@ -197,55 +210,71 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
-function getStoredReportProjects() {
-  if (typeof window === 'undefined') return initialProjects;
-  try {
-    const stored = window.localStorage.getItem(projectStorageKey);
-    const parsed = stored ? JSON.parse(stored) : null;
-    return mergeProjectsWithDefaults(parsed);
-  } catch {
-    return initialProjects;
-  }
-}
-
 export default function ReportsPage() {
   const [searchValue, setSearchValue] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState(periods[0]);
   const [selectedProject, setSelectedProject] = useState('Alle Projekte');
-  const [selectedDepartment, setSelectedDepartment] = useState(initialDepartments[0]?.name || '');
+  const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedTimelineProjectId, setSelectedTimelineProjectId] = useState('');
   const [selectedTimelineEntryId, setSelectedTimelineEntryId] = useState('');
   const [activeProjectId, setActiveProjectId] = useState('');
   const [exportFormat, setExportFormat] = useState('PDF');
   const [selectedReportProjectId, setSelectedReportProjectId] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [reportProjects, setReportProjects] = useState(() => getStoredReportProjects());
+  const [departments, setDepartments] = useState([]);
+  const [reportProjects, setReportProjects] = useState([]);
+  const [reportTasks, setReportTasks] = useState([]);
   const reportDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   const departmentById = useMemo(
-    () => Object.fromEntries(initialDepartments.map((department) => [department.id, department])),
-    [],
+    () => Object.fromEntries(departments.map((department) => [department.id, department])),
+    [departments],
   );
 
-  const departmentOptions = useMemo(() => initialDepartments.map((department) => department.name), []);
+  const departmentOptions = useMemo(() => departments.map((department) => department.name), [departments]);
 
   useEffect(() => {
-    const handleStorage = (event) => {
-      if (event.key === projectStorageKey) {
-        setReportProjects(getStoredReportProjects());
-      }
-    };
+    let cancelled = false;
 
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    api
+      .get('/organization')
+      .then(({ data }) => {
+        if (cancelled) return;
+
+        const nextDepartments = Array.isArray(data.departments) ? data.departments : [];
+        const nextProjects = Array.isArray(data.projects) ? data.projects : [];
+        const nextDepartmentById = Object.fromEntries(nextDepartments.map((department) => [department.id, department]));
+        const nextTasks = Array.isArray(data.tasks)
+          ? data.tasks.map((task) => normalizeReportTask(task, nextDepartmentById))
+          : [];
+
+        setDepartments(nextDepartments);
+        setReportProjects(nextProjects);
+        setReportTasks(nextTasks);
+        setSelectedDepartment((current) =>
+          current && nextDepartments.some((department) => department.name === current)
+            ? current
+            : nextDepartments[0]?.name || '',
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setDepartments([]);
+        setReportProjects([]);
+        setReportTasks([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const departmentTasks = useMemo(() => {
-    return initialTasks.filter((task) => taskDepartmentMap[task.project] === selectedDepartment);
-  }, [selectedDepartment]);
+    return reportTasks.filter((task) => task.departmentName === selectedDepartment);
+  }, [reportTasks, selectedDepartment]);
 
   const taskMetrics = useMemo(() => {
-    const sourceTasks = departmentTasks.length ? departmentTasks : initialTasks;
+    const sourceTasks = departmentTasks;
     const done = sourceTasks.filter((task) => task.status === 'done').length;
     const inProgress = sourceTasks.filter((task) => task.status === 'in-progress').length;
     const review = sourceTasks.filter((task) => task.status === 'review').length;
@@ -283,7 +312,7 @@ export default function ReportsPage() {
       return accumulator;
     }, {});
     const activeDepartment =
-      initialDepartments.find((department) => department.name === selectedDepartment) || initialDepartments[0];
+      departments.find((department) => department.name === selectedDepartment) || departments[0];
 
     return (activeDepartment?.members || []).map((member, index) => ({
       name: member,
@@ -294,11 +323,11 @@ export default function ReportsPage() {
       load: Math.min(100, 42 + (ownerCounts[member] || 0) * 18 + index * 9),
       tone: ['#4875c8', '#b76c12', '#1f7a4f', '#b84758', '#6d5df6'][index % 5],
     }));
-  }, [reportProjects, selectedDepartment]);
+  }, [departments, reportProjects, selectedDepartment]);
 
   const projectCards = useMemo(() => {
     return reportProjects.map((project) => {
-      const backlog = initialBacklogTasks.filter((task) => task.projectId === project.id);
+      const backlog = reportTasks.filter((task) => task.projectId === project.id);
       const progress = getProjectProgress(backlog, project.status);
       const signal = getSignal(progress, project.status);
       const department = departmentById[project.departmentId];
@@ -313,7 +342,7 @@ export default function ReportsPage() {
         milestone: `${project.dueDate} - nächster Meilenstein`,
       };
     });
-  }, [departmentById, reportProjects]);
+  }, [departmentById, reportProjects, reportTasks]);
 
   useEffect(() => {
     setSelectedReportProjectId((current) => {
@@ -486,7 +515,7 @@ export default function ReportsPage() {
     const project = departmentProjects.find((item) => item.id === selectedTimelineProjectId);
     if (!project) return null;
 
-    const tasks = initialBacklogTasks
+    const tasks = reportTasks
       .filter((task) => task.projectId === project.id)
       .map(buildTaskTimeline)
       .sort((left, right) => left.endTime - right.endTime);
@@ -505,7 +534,7 @@ export default function ReportsPage() {
       durationDays,
       nextTask,
     };
-  }, [departmentProjects, selectedTimelineProjectId]);
+  }, [departmentProjects, reportTasks, selectedTimelineProjectId]);
 
   const selectedTimelineRange = useMemo(() => {
     if (!selectedTimelineProject) return null;
