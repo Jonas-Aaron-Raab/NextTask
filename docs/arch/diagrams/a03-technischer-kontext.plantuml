@@ -1,0 +1,46 @@
+@startuml a03-technischer-kontext
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 10
+skinparam rectangle {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+skinparam node {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+skinparam database {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+left to right direction
+
+title Technischer Kontext NextTask (Entwicklungsumgebung)
+
+node "Arbeitsplatz des Anwenders" as PC {
+  rectangle "Browser\nReact-SPA (Vite-Dev-Server :5173)\nToken und Profil im Local Storage" as BR
+  rectangle "Authenticator-App\n(Smartphone, TOTP)" as TOTP
+}
+
+node "Entwicklungsrechner / Server" as SRV {
+  rectangle "NextTask-Server\nExpress 5, Node.js, Port 5001\n/api/*" as API
+}
+
+database "PostgreSQL\nDATABASE_URL\n(Prisma, adapter-pg)" as DB
+
+cloud "Identity Provider\nder Sparkasse" as IDP
+cloud "Google\noauth2.googleapis.com\nwww.googleapis.com/calendar/v3" as GCAL
+cloud "SMTP-Relay\nSMTP_HOST:SMTP_PORT" as SMTP
+
+BR --> API : HTTP, JSON\nAuthorization: Bearer <JWT>\nCORS offen
+BR ..> IDP : Umleitung (Browser)\nAuthorisierungsanfrage
+BR ..> GCAL : Umleitung (Browser)\nOAuth-Zustimmung
+API --> IDP : HTTPS\nDiscovery, Token, JWKS, UserInfo
+API --> GCAL : HTTPS\nToken, Kalenderereignisse
+API --> SMTP : SMTP, STARTTLS oder TLS\nnodemailer
+API --> DB : TCP\nSQL ueber Prisma-Client
+TOTP .. BR : Code abgelesen\nvom Anwender
+@enduml

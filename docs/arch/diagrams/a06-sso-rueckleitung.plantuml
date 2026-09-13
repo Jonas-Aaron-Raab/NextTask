@@ -1,0 +1,57 @@
+@startuml a06-sso-rueckleitung
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+skinparam sequence {
+  ArrowColor #555555
+  LifeLineBorderColor #999999
+  ParticipantBackgroundColor #F7F7F7
+  ParticipantBorderColor #333333
+  ActorBorderColor #333333
+}
+
+title Laufzeitsicht 6.2: SSO-Rueckleitung und Ticket-Einloesung (UC-03, Schritte 4 bis 8)
+
+participant "Browser" as B
+participant "auth.routes.js\nGET /api/auth/sso/callback" as CB
+participant "sso.js" as S
+participant "Identity Provider" as IDP
+database "PostgreSQL" as DB
+participant "auth.routes.js\nPOST /api/auth/sso/exchange" as EX
+
+B -> CB : ?code=...&state=...
+CB -> S : exchangeAuthorizationCode({ code, state })
+S -> S : decryptState(state)\nAES-GCM mit Schluessel aus JWT_SECRET,\nAblauf 10 min, enthaelt nonce, codeVerifier, returnTo
+S -> IDP : POST token_endpoint\ncode, code_verifier, client auth
+IDP --> S : id_token, access_token
+S -> IDP : GET jwks_uri (zwischengespeichert)
+IDP --> S : Schluessel
+S -> S : ID-Token pruefen: RS256-Signatur,\niss, aud, nonce, exp
+S -> IDP : GET userinfo_endpoint (optional)
+IDP --> S : Claims
+S -> S : Profil: sub, email, name, groups\nDomaene pruefen, email_verified pruefen
+S --> CB : { profile, returnTo }
+CB -> S : findOrCreateSsoUser(prisma, profile)
+S -> DB : user.findFirst (ssoSubject oder email)
+alt Konto vorhanden
+  S -> DB : user.update(ssoProvider, ssoSubject,\nauthProvider LOCAL -> LOCAL_SSO)
+else kein Konto und autoCreateUsers
+  S -> DB : accessRole.findUnique(code A oder Standard)
+  S -> DB : user.create(authProvider SSO,\nZufallspasswort, Standardabteilung)
+end
+S --> CB : user
+CB -> S : createSsoLoginTicket(prisma, user.id)
+S -> DB : ssoLoginTicket.create(tokenHash = sha256(code),\nexpiresAt = +90 s)
+CB -> DB : auditLog.create(SSO_CALLBACK_ACCEPTED)
+CB --> B : 302 SSO_FRONTEND_REDIRECT_URI\n?sso=callback&code=<Ticket>&returnTo=...
+
+B -> EX : { code }
+EX -> S : consumeSsoLoginTicket(prisma, code)
+S -> DB : ssoLoginTicket.findUnique(tokenHash)\npruefen: nicht abgelaufen, usedAt leer
+S -> DB : ssoLoginTicket.update(usedAt = jetzt)
+S --> EX : user
+EX -> EX : createToken(user)
+EX -> DB : auditLog.create(SSO_LOGIN_SUCCESS)
+EX --> B : { token, user }
+@enduml
