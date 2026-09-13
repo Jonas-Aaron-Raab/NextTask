@@ -32,16 +32,13 @@ const priorityTone = {
   niedrig: 'bg-[#eefaf4] text-[#2f7d68]',
 };
 
-function countTasksForDepartment(departmentId) {
-  return bankProjects
+function countTasksForDepartment(departmentId, projects) {
+  return projects
     .filter((project) => project.departmentId === departmentId)
     .reduce((sum, project) => sum + project.tasks.length, 0);
 }
 
-function DepartmentCard({ department, selected, onSelect }) {
-  const projectCount = bankProjects.filter((project) => project.departmentId === department.id).length;
-  const taskCount = countTasksForDepartment(department.id);
-
+function DepartmentCard({ department, projectCount, taskCount, selected, onSelect }) {
   return (
     <button
       type="button"
@@ -137,8 +134,36 @@ export default function DepartmentsPage() {
   const { user } = useAuth();
   const [searchValue, setSearchValue] = useState('');
   const [accessConfig, setAccessConfig] = useState(() => loadAccessConfig());
+  const [organizationData, setOrganizationData] = useState(null);
   const effectiveRole = useMemo(() => getEffectiveRoleForUser(user, accessConfig), [accessConfig, user]);
-  const visibleDepartments = useMemo(() => getVisibleDepartmentsForRole(effectiveRole), [effectiveRole]);
+  const departments = organizationData?.departments?.length ? organizationData.departments : getVisibleDepartmentsForRole({ kind: 'ADMIN' });
+  const organizationProjects = useMemo(() => {
+    if (!organizationData?.projects?.length) return bankProjects;
+
+    return organizationData.projects.map((project) => ({
+      ...project,
+      goal: project.projectGoal || project.summary || project.description || '',
+      tasks: (organizationData.tasks || [])
+        .filter((task) => task.projectId === project.id)
+        .map((task) => ({
+          id: task.id,
+          title: task.title,
+          assignee: task.assignee?.name || '',
+          status:
+            task.status === 'IN_PROGRESS'
+              ? 'In Arbeit'
+              : task.status === 'QA'
+                ? 'Review'
+                : task.status === 'DONE'
+                  ? 'Erledigt'
+                  : task.status === 'BLOCKED'
+                    ? 'Blockiert'
+                    : 'Offen',
+          priority: task.priority === 'LOW' ? 'niedrig' : task.priority === 'HIGH' || task.priority === 'URGENT' ? 'hoch' : 'mittel',
+        })),
+    }));
+  }, [organizationData]);
+  const visibleDepartments = useMemo(() => getVisibleDepartmentsForRole(effectiveRole, departments), [departments, effectiveRole]);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
   const searchTerm = searchValue.trim().toLowerCase();
   const roleManagerAllowed = canManageRoles(user, accessConfig);
@@ -152,9 +177,18 @@ export default function DepartmentsPage() {
         if (!ignore) setAccessConfig(loadAccessConfig());
       }
     };
+    const refreshOrganization = async () => {
+      try {
+        const { data } = await api.get('/organization');
+        if (!ignore) setOrganizationData(data);
+      } catch {
+        if (!ignore) setOrganizationData(null);
+      }
+    };
     const handleRoleChange = (event) => setAccessConfig(event.detail || loadAccessConfig());
 
     refreshRoles();
+    refreshOrganization();
     window.addEventListener('nexttask:roles-change', handleRoleChange);
     return () => {
       ignore = true;
@@ -172,12 +206,12 @@ export default function DepartmentsPage() {
   const selectedDepartment = visibleDepartments.find((department) => department.id === selectedDepartmentId) || visibleDepartments[0] || null;
   const selectedProjects = useMemo(() => {
     if (!selectedDepartment) return [];
-    const projects = bankProjects.filter((project) => project.departmentId === selectedDepartment.id);
+    const projects = organizationProjects.filter((project) => project.departmentId === selectedDepartment.id);
     if (!searchTerm) return projects;
     return projects.filter((project) =>
       [project.name, project.owner, project.status, project.goal, ...project.tasks.map((task) => task.title)].join(' ').toLowerCase().includes(searchTerm),
     );
-  }, [searchTerm, selectedDepartment]);
+  }, [organizationProjects, searchTerm, selectedDepartment]);
 
   const searchSuggestions = useMemo(() => {
     if (!searchTerm) return [];
@@ -192,7 +226,7 @@ export default function DepartmentsPage() {
 
     const projectSuggestions = visibleDepartments
       .flatMap((department) =>
-        bankProjects
+        organizationProjects
           .filter((project) => project.departmentId === department.id)
           .map((project) => ({ ...project, departmentName: department.name })),
       )
@@ -208,13 +242,13 @@ export default function DepartmentsPage() {
       }));
 
     return [...departmentSuggestions, ...projectSuggestions];
-  }, [filteredDepartments, searchTerm, visibleDepartments]);
+  }, [filteredDepartments, organizationProjects, searchTerm, visibleDepartments]);
 
   const visibleProjectCount = visibleDepartments.reduce(
-    (sum, department) => sum + bankProjects.filter((project) => project.departmentId === department.id).length,
+    (sum, department) => sum + organizationProjects.filter((project) => project.departmentId === department.id).length,
     0,
   );
-  const visibleTaskCount = visibleDepartments.reduce((sum, department) => sum + countTasksForDepartment(department.id), 0);
+  const visibleTaskCount = visibleDepartments.reduce((sum, department) => sum + countTasksForDepartment(department.id, organizationProjects), 0);
 
   return (
     <AppShell
@@ -287,6 +321,8 @@ export default function DepartmentsPage() {
                 <DepartmentCard
                   key={department.id}
                   department={department}
+                  projectCount={organizationProjects.filter((project) => project.departmentId === department.id).length}
+                  taskCount={countTasksForDepartment(department.id, organizationProjects)}
                   selected={department.id === selectedDepartment?.id}
                   onSelect={setSelectedDepartmentId}
                 />

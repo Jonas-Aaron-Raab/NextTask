@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BookOpen,
   Eye,
@@ -13,8 +13,8 @@ import {
   X,
 } from 'lucide-react';
 import AppShell from '../components/AppShell';
+import api from '../api/axios';
 import { initialDepartments } from '../data/projectFixtures';
-import { initialTasks } from '../data/taskFixtures';
 
 const createMenuItems = ['Neue Seite', 'Neues Dokument', 'Neue Vorlage', 'Upload Nachweis'];
 
@@ -288,13 +288,61 @@ export default function DocumentsPage() {
   const [selectedStatus, setSelectedStatus] = useState(statusOptions[0]);
   const [activeDocumentId, setActiveDocumentId] = useState(null);
   const [activeSection, setActiveSection] = useState('library');
+  const [apiDocuments, setApiDocuments] = useState(null);
+  const [apiTemplates, setApiTemplates] = useState(null);
 
-  const activeDocument = documents.find((document) => document.id === activeDocumentId) || null;
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .get('/documents')
+      .then(({ data }) => {
+        if (cancelled) return;
+        setApiDocuments(Array.isArray(data.documents) ? data.documents : []);
+        setApiTemplates(Array.isArray(data.templates) ? data.templates : []);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setApiDocuments(null);
+        setApiTemplates(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const activeDocuments = apiDocuments?.length ? apiDocuments : documents;
+  const activeTemplates = apiTemplates?.length ? apiTemplates.map((template) => template.title || template) : templates;
+  const activeKnowledgeSpaces = useMemo(
+    () =>
+      initialDepartments.map((department, index) => ({
+        id: department.id,
+        title: department.name,
+        description: department.description,
+        lead: department.lead,
+        docsCount: activeDocuments.filter((document) => document.department === department.name).length,
+        tone: [
+          'bg-[#fff7f8] border-slate-300',
+          'bg-[#f4f8ff] border-slate-300',
+          'bg-[#effbf7] border-slate-300',
+          'bg-[#fff8ef] border-slate-300',
+          'bg-[#f3fbf6] border-slate-300',
+        ][index % 5],
+      })),
+    [activeDocuments],
+  );
+  const documentStatusOptions = useMemo(
+    () => ['Alle Stati', ...Array.from(new Set(activeDocuments.map((document) => document.status))).filter(Boolean)],
+    [activeDocuments],
+  );
+
+  const activeDocument = activeDocuments.find((document) => document.id === activeDocumentId) || null;
 
   const filteredDocuments = useMemo(() => {
     const query = searchValue.trim().toLowerCase();
 
-    return documents.filter((document) => {
+    return activeDocuments.filter((document) => {
       const matchesSearch =
         !query ||
         [document.title, document.department, document.project, document.owner, document.summary].some((value) =>
@@ -306,9 +354,9 @@ export default function DocumentsPage() {
 
       return matchesSearch && matchesDepartment && matchesType && matchesStatus;
     });
-  }, [searchValue, selectedDepartment, selectedStatus, selectedType]);
+  }, [activeDocuments, searchValue, selectedDepartment, selectedStatus, selectedType]);
 
-  const policyCount = documents.filter((document) => document.type === 'Richtlinie' || document.type === 'Prozessdokument').length;
+  const policyCount = activeDocuments.filter((document) => document.type === 'Richtlinie' || document.type === 'Prozessdokument').length;
   const searchSuggestions = useMemo(() => {
     const query = searchValue.trim().toLowerCase();
     if (!query) return [];
@@ -324,7 +372,7 @@ export default function DocumentsPage() {
       },
     }));
 
-    const spaceSuggestions = knowledgeSpaces
+    const spaceSuggestions = activeKnowledgeSpaces
       .filter((space) => [space.title, space.description, space.lead].join(' ').toLowerCase().includes(query))
       .map((space) => ({
         id: `space-${space.id}`,
@@ -334,7 +382,7 @@ export default function DocumentsPage() {
         onSelect: () => setActiveSection('spaces'),
       }));
 
-    const templateSuggestions = templates
+    const templateSuggestions = activeTemplates
       .filter((template) => template.toLowerCase().includes(query))
       .map((template) => ({
         id: `template-${template}`,
@@ -345,7 +393,7 @@ export default function DocumentsPage() {
       }));
 
     return [...documentSuggestions, ...spaceSuggestions, ...templateSuggestions];
-  }, [filteredDocuments, searchValue]);
+  }, [activeKnowledgeSpaces, activeTemplates, filteredDocuments, searchValue]);
 
   const sectionCards = [
     {
@@ -360,7 +408,7 @@ export default function DocumentsPage() {
       id: 'spaces',
       title: 'Wissensbereiche',
       description: 'Abteilungswissen und Spaces',
-      count: knowledgeSpaces.length,
+      count: activeKnowledgeSpaces.length,
       icon: BookOpen,
       tone: 'bg-[#edf4ff] text-[#4875c8]',
     },
@@ -368,7 +416,7 @@ export default function DocumentsPage() {
       id: 'templates',
       title: 'Vorlagen & Nachweise',
       description: 'Standardvorlagen und Uploads',
-      count: templates.length,
+      count: activeTemplates.length,
       icon: Upload,
       tone: 'bg-[#eefaf4] text-[#1f7a4f]',
     },
@@ -401,7 +449,7 @@ export default function DocumentsPage() {
                 ))}
               </DocumentFilterField>
               <DocumentFilterField label="Status" value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)}>
-                {statusOptions.map((option) => (
+                {documentStatusOptions.map((option) => (
                   <option key={option}>{option}</option>
                 ))}
               </DocumentFilterField>
@@ -501,7 +549,7 @@ export default function DocumentsPage() {
                 </div>
 
                 <div className="mt-5 grid gap-3 xl:grid-cols-2">
-                  {knowledgeSpaces.map((space) => (
+                  {activeKnowledgeSpaces.map((space) => (
                     <div key={space.id} className={`rounded-[22px] border p-4 ${space.tone}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -527,7 +575,7 @@ export default function DocumentsPage() {
                 </div>
 
                 <div className="mt-5 grid gap-3 xl:grid-cols-2">
-                  {templates.map((template) => (
+                  {activeTemplates.map((template) => (
                     <div key={template} className="rounded-[22px] border border-slate-200 bg-[#fcfdff] px-4 py-3 text-sm font-semibold text-slate-700">
                       {template}
                     </div>

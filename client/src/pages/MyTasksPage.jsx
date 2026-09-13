@@ -227,9 +227,9 @@ function normalizeApiTaskForMyTasks(task) {
     checklist: task.checklist || '0/0 erledigt',
     progress: task.progress ?? 0,
     assignee,
-    description: task.description || '',
-    note: '',
-    compliance: {
+    description: task.description || task.note || '',
+    note: task.note || task.description || '',
+    compliance: task.compliance || {
       classification: 'Intern',
       risk: 'Niedrig',
       controlId: task.project?.key ? `${task.project.key}-${String(task.id).slice(-4)}` : task.id,
@@ -239,12 +239,19 @@ function normalizeApiTaskForMyTasks(task) {
     markerId: task.markerId || '',
     approvalLevel: task.approvalLevel || 'none',
     parentTaskId: task.parentTaskId || task.parentId || '',
-    tags: [task.status, task.priority].filter(Boolean),
-    linkedPeople: assignee ? [assignee] : [],
-    attachments: [],
-    comments: [],
-    auditTrail: [`${formatDateLabel(new Date().toISOString().slice(0, 10))}: Aufgabe aus dem Backend geladen.`],
-    assignedBy: { name: 'NextTask', initials: 'NT', tone: 'from-slate-200 to-slate-300' },
+    tags: task.tags?.length ? task.tags : [task.status, task.priority].filter(Boolean),
+    linkedPeople: task.linkedPeople?.length ? task.linkedPeople : assignee ? [assignee] : [],
+    attachments: task.attachments || [],
+    comments: Array.isArray(task.comments)
+      ? task.comments.map((comment) => ({
+          id: comment.id,
+          author: comment.author?.name || 'NextTask',
+          time: comment.createdAt ? formatDateLabel(String(comment.createdAt).slice(0, 10)) : 'gerade eben',
+          text: comment.text || comment.content,
+        }))
+      : [],
+    auditTrail: task.auditTrail?.length ? task.auditTrail : [`${formatDateLabel(new Date().toISOString().slice(0, 10))}: Aufgabe aus dem Backend geladen.`],
+    assignedBy: task.assignedBy || { name: 'NextTask', initials: 'NT', tone: 'from-slate-200 to-slate-300' },
   };
 }
 
@@ -1585,6 +1592,40 @@ export default function MyTasksPage() {
     window.localStorage.setItem(myTasksStorageKey, JSON.stringify(tasks));
   }, [tasks]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .get('/organization')
+      .then(({ data }) => {
+        if (cancelled) return;
+        const nextTasks = Array.isArray(data.tasks)
+          ? withProjectTicketNumbers(data.tasks.map(normalizeApiTaskForMyTasks))
+          : [];
+        const nextProjects = Array.isArray(data.projects)
+          ? data.projects.map((project) => ({
+              id: project.id,
+              name: project.name,
+              scope: project.visibility === 'Abteilung' ? 'abteilung' : 'persoenlich',
+              department: project.businessArea || project.departmentName || 'Digitales Banking',
+              owner: project.owner || 'Projektteam',
+              description: project.summary || project.projectGoal || '',
+            }))
+          : [];
+
+        if (nextTasks.length) setTasks(nextTasks);
+        if (nextProjects.length) {
+          setProjects(nextProjects);
+          setCreateTaskForm((current) => ({ ...current, project: nextProjects[0]?.name || current.project }));
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const normalizedSearch = searchValue.trim().toLowerCase();
   const currentUserName = user?.name || 'Mara Stein';
   const projectDepartments = useMemo(
@@ -1891,6 +1932,17 @@ export default function MyTasksPage() {
           estimatedHours: nextTask.estimatedHours,
           markerId: nextTask.markerId,
           approvalLevel: nextTask.approvalLevel,
+          ticketNumber: nextTask.ticketNumber,
+          progress: nextTask.progress,
+          checklist: nextTask.checklist,
+          note: nextTask.note,
+          parentTaskId: nextTask.parentTaskId,
+          tags: nextTask.tags,
+          linkedPeople: nextTask.linkedPeople,
+          attachments: nextTask.attachments,
+          compliance: nextTask.compliance,
+          assignedBy: nextTask.assignedBy,
+          auditTrail: nextTask.auditTrail,
         });
       } catch {
         // Die lokale Änderung wird trotzdem gespeichert.
@@ -1901,17 +1953,26 @@ export default function MyTasksPage() {
     closeTask();
   };
 
-  const handleCommentSubmit = () => {
+  const handleCommentSubmit = async () => {
     if (!selectedTaskId || !commentDraft.trim()) return;
+    const currentComment = commentDraft.trim();
+    const selectedTask = tasks.find((task) => task.id === selectedTaskId);
     updateSelectedTask((task) => ({
       ...task,
       comments: [
         ...task.comments,
-        { id: `comment-${Date.now()}`, author: 'Elisabeth Bezverkha', time: 'gerade eben', text: commentDraft.trim() },
+        { id: `comment-${Date.now()}`, author: user?.name || 'Elisabeth Bezverkha', time: 'gerade eben', text: currentComment },
       ],
       auditTrail: [`${formatDateLabel('2026-05-16')}: Kommentar hinzugefuegt.`, ...task.auditTrail],
     }));
     setCommentDraft('');
+    if (selectedTask?.source === 'backend') {
+      try {
+        await api.post(`/tasks/${selectedTask.id}/comments`, { content: currentComment });
+      } catch {
+        // The optimistic local comment remains visible.
+      }
+    }
   };
 
   const handleInsertMention = (member) => {

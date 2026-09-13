@@ -321,22 +321,28 @@ function mapApiTaskToBacklogTask(task) {
     dueDate: task.dueDate ? toDisplayDate(String(task.dueDate).slice(0, 10)) : 'Kein Zieltermin',
     estimatedHours: task.estimatedHours ?? null,
     approvalLevel: task.approvalLevel || 'none',
-    tags: [task.priority, task.status].filter(Boolean),
-    description: task.description || 'Keine Beschreibung hinterlegt.',
+    tags: task.tags?.length ? task.tags : [task.priority, task.status].filter(Boolean),
+    description: task.description || task.note || 'Keine Beschreibung hinterlegt.',
     markerId: task.markerId || '',
+    attachments: task.attachments || [],
+    compliance: task.compliance || null,
     comments: Array.isArray(task.comments)
       ? task.comments.map((comment) => ({
           id: comment.id,
           author: comment.author?.name || 'NextTask',
           time: comment.createdAt ? toDisplayDate(String(comment.createdAt).slice(0, 10)) : 'gerade eben',
-          text: comment.content,
+          text: comment.text || comment.content,
         }))
       : [],
-    linkedPeople: task.assignee?.name ? [task.assignee.name] : [],
-    auditTrail: [
-      `Live Sync: ${task.updatedAt ? toDisplayDate(String(task.updatedAt).slice(0, 10)) : 'heute'} aktualisiert.`,
-      `Ticket ${task.id} aus dem Backend geladen.`,
-    ],
+    linkedPeople: task.linkedPeople?.length ? task.linkedPeople : task.assignee?.name ? [task.assignee.name] : [],
+    auditTrail: task.auditTrail?.length
+      ? task.auditTrail
+      : [
+          `Live Sync: ${task.updatedAt ? toDisplayDate(String(task.updatedAt).slice(0, 10)) : 'heute'} aktualisiert.`,
+          `Ticket ${task.id} aus dem Backend geladen.`,
+        ],
+    creatorInitials: task.assignedBy?.initials || 'API',
+    creatorName: task.assignedBy?.name || 'NextTask',
   };
 }
 
@@ -665,6 +671,42 @@ function createProjectPayload(projectForm, departments) {
       approvalDateInput: projectForm.approvalDate,
     },
     reportCycle: 'MONTHLY',
+  };
+}
+
+function createProjectApiPayload(project) {
+  return {
+    name: project.name,
+    description: project.summary,
+    departmentId: project.departmentId,
+    businessArea: project.businessArea,
+    projectGoal: project.projectGoal,
+    plannedStart: project.plannedStartInput,
+    plannedEnd: project.dueDateInput,
+    deadline: project.dueDateInput,
+    deputyLead: project.deputyLead,
+    projectSponsor: project.projectSponsor,
+    plannedEffortPt: project.plannedEffortPt,
+    plannedBudget: project.plannedBudget,
+    keyInterfaces: project.keyInterfaces,
+    collaborationQuality: project.collaborationQuality,
+    visibility: project.visibility,
+    status: project.status,
+    projectType: project.projectType,
+    milestones: (project.milestones || []).map((milestone) => ({
+      ...milestone,
+      planDate: milestone.planDateInput,
+      newDate: milestone.newDateInput,
+    })),
+    risks: project.risks || [],
+    budgetLines: project.budgetLines || [],
+    interfaces: project.interfaces || [],
+    approvals: project.approvals
+      ? {
+          ...project.approvals,
+          approvalDate: project.approvals.approvalDateInput,
+        }
+      : null,
   };
 }
 
@@ -2245,6 +2287,29 @@ export default function ProjectsPage() {
     window.localStorage.setItem(projectStorageKey, JSON.stringify(projects));
   }, [projects]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .get('/organization')
+      .then(({ data }) => {
+        if (cancelled || !Array.isArray(data.departments) || !Array.isArray(data.projects)) return;
+
+        const nextTasks = Array.isArray(data.tasks) ? data.tasks.map(mapApiTaskToBacklogTask) : [];
+        setDepartments(data.departments);
+        setProjects(data.projects);
+        setBacklogTasks(nextTasks);
+        setSelectedDepartmentId((current) =>
+          data.departments.some((department) => department.id === current) ? current : data.departments[0]?.id || current,
+        );
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const visibleDepartments = useMemo(
     () =>
       normalizedSearch
@@ -2534,7 +2599,7 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleDepartmentSubmit = () => {
+  const handleDepartmentSubmit = async () => {
     const trimmedName = departmentForm.name.trim();
     if (!trimmedName) return;
 
@@ -2549,14 +2614,29 @@ export default function ProjectsPage() {
       members: [departmentForm.lead.trim() || 'Elisabeth Bezverkha'],
     };
 
-    setDepartments((current) => [nextDepartment, ...current]);
-    setSelectedDepartmentId(nextDepartment.id);
+    let savedDepartment = nextDepartment;
+    try {
+      const { data } = await api.post('/organization/departments', {
+        name: trimmedName,
+        lead: nextDepartment.lead,
+        memberCount: nextDepartment.memberCount,
+        description: nextDepartment.description,
+        accent: nextDepartment.accent,
+        badgeTone: nextDepartment.badgeTone,
+      });
+      savedDepartment = data;
+    } catch {
+      // Keep the optimistic department if the API is not available.
+    }
+
+    setDepartments((current) => [savedDepartment, ...current.filter((department) => department.id !== savedDepartment.id)]);
+    setSelectedDepartmentId(savedDepartment.id);
     setViewMode('projects');
     setSelectedBacklogTaskId(null);
     setCreateMode(null);
   };
 
-  const handleProjectSubmit = () => {
+  const handleProjectSubmit = async () => {
     const trimmedName = projectForm.name.trim();
     if (!trimmedName || !projectForm.departmentId) return;
 
@@ -2565,31 +2645,47 @@ export default function ProjectsPage() {
       ...createProjectPayload(projectForm, departments),
     };
 
-    setProjects((current) => [nextProject, ...current]);
-    setSelectedDepartmentId(projectForm.departmentId);
+    let savedProject = nextProject;
+    try {
+      const { data } = await api.post('/projects', createProjectApiPayload(nextProject));
+      savedProject = data;
+    } catch {
+      // Keep the optimistic project if the API is not available.
+    }
+
+    setProjects((current) => [savedProject, ...current.filter((project) => project.id !== savedProject.id)]);
+    setSelectedDepartmentId(savedProject.departmentId || projectForm.departmentId);
     setSelectedProjectId(null);
     setViewMode('projects');
     setCreateMode(null);
   };
 
-  const handleProjectEditSubmit = () => {
+  const handleProjectEditSubmit = async () => {
     const trimmedName = projectForm.name.trim();
     if (!trimmedName || !projectForm.departmentId || !editingProjectId) return;
 
     const updates = createProjectPayload(projectForm, departments);
+
+    let savedUpdates = { ...updates, id: editingProjectId };
+    try {
+      const { data } = await api.put(`/projects/${editingProjectId}/reporting`, createProjectApiPayload({ ...updates, name: trimmedName }));
+      savedUpdates = data;
+    } catch {
+      // Keep the optimistic update if the API is not available.
+    }
 
     setProjects((current) =>
       current.map((project) =>
         project.id === editingProjectId
           ? {
               ...project,
-              ...updates,
+              ...savedUpdates,
               id: project.id,
             }
           : project,
       ),
     );
-    setSelectedDepartmentId(projectForm.departmentId);
+    setSelectedDepartmentId(savedUpdates.departmentId || projectForm.departmentId);
     setSelectedProjectId(editingProjectId);
     setViewMode('backlog');
     setCreateMode(null);
@@ -2649,6 +2745,11 @@ export default function ProjectsPage() {
         estimatedHours: updates.estimatedHours,
         markerId: updates.markerId,
         approvalLevel: updates.approvalLevel,
+        tags: updates.tags,
+        linkedPeople: updates.linkedPeople,
+        attachments: updates.attachments,
+        compliance: updates.compliance,
+        auditTrail: updates.auditTrail,
       }).catch(() => {});
     }
     if (updates.projectId && updates.projectId !== selectedProjectId) {
