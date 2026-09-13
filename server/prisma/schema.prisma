@@ -84,6 +84,7 @@ model User {
   createdAt    DateTime    @default(now())
   projects     Project[]
   tasks        Task[]      @relation("AssignedTasks")
+  ledDepartments Department[] @relation("DepartmentLead")
   comments     Comment[]
   taskMarkers  TaskMarker[]
   auditLogs    AuditLog[]
@@ -94,6 +95,45 @@ model User {
   ssoLoginTickets SsoLoginTicket[]
 
   @@unique([ssoProvider, ssoSubject])
+}
+
+model Department {
+  id           String             @id @default(cuid())
+  code         String?            @unique
+  name         String
+  businessArea String?
+  leadName     String
+  memberCount  Int                @default(0)
+  description  String             @default("")
+  accent       String             @default("border-slate-300 bg-[#fff4f6]")
+  badgeTone    String             @default("bg-[#fff0f2] text-[#b84758]")
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  leadId       String?
+  lead         User?              @relation("DepartmentLead", fields: [leadId], references: [id], onDelete: SetNull)
+  members      DepartmentMember[]
+  projects     Project[]
+  documents    Document[]
+
+  @@index([businessArea])
+  @@index([leadId])
+}
+
+model DepartmentMember {
+  id           String     @id @default(cuid())
+  name         String
+  email        String?
+  roleLabel    String?
+  order        Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  userId       String?
+
+  @@unique([departmentId, name])
+  @@index([departmentId, order])
+  @@index([userId])
 }
 
 model SsoLoginTicket {
@@ -142,14 +182,24 @@ model Project {
   keyInterfaces        String[]              @default([])
   collaborationQuality String?
   reportCycle          String                @default("MONTHLY")
+  visibility           String?
+  statusLabel          String?
+  projectType          String?
   createdAt            DateTime              @default(now())
   ownerId              String
   owner                User                  @relation(fields: [ownerId], references: [id])
+  departmentId          String?
+  department            Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   tasks                Task[]
   milestones           ProjectMilestone[]
   risks                ProjectRisk[]
   budgetLines          ProjectBudgetLine[]
+  interfaces           ProjectInterface[]
+  approvals            ProjectApproval[]
   statusReports        ProjectStatusReport[]
+  documents            Document[]
+
+  @@index([departmentId])
 }
 
 model ProjectMilestone {
@@ -174,6 +224,7 @@ model ProjectRisk {
   code        String
   title       String
   description String?
+  measure     String?
   impact      Int?
   probability Int?
   riskClass   String?
@@ -185,6 +236,32 @@ model ProjectRisk {
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId, active])
+}
+
+model ProjectInterface {
+  id        String   @id @default(cuid())
+  name      String
+  status    String   @default("Offen")
+  comment   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, order])
+}
+
+model ProjectApproval {
+  id                  String   @id @default(cuid())
+  projectResponsible  String?
+  gbl                 String?
+  projectLead         String?
+  approvalDate        DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  projectId           String   @unique
+  project             Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model ProjectBudgetLine {
@@ -270,17 +347,108 @@ model Task {
   dueDate     DateTime?
   endDate     DateTime?
   estimatedHours Float?
+  ticketNumber String?
+  progress     Int      @default(0)
+  checklist    String?
+  note         String?
+  sourceTaskId String?
   department  String?
   markerId    String?
   approvalLevel String?
   projectId   String
   assigneeId  String?
+  parentTaskId String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   assignee    User?       @relation("AssignedTasks", fields: [assigneeId], references: [id])
+  parentTask  Task?       @relation("TaskHierarchy", fields: [parentTaskId], references: [id], onDelete: SetNull)
+  childTasks  Task[]      @relation("TaskHierarchy")
+  assignmentSource TaskAssignmentSource?
+  compliance  TaskCompliance?
+  attachments TaskAttachment[]
+  auditEntries TaskAuditEntry[]
+  personLinks TaskPersonLink[]
+  tags        TaskTag[]
   comments    Comment[]
   calendarSyncEvents CalendarSyncEvent[]
+
+  @@index([projectId, status, order])
+  @@index([assigneeId])
+  @@index([parentTaskId])
+  @@index([ticketNumber])
+}
+
+model TaskAssignmentSource {
+  id        String   @id @default(cuid())
+  name      String
+  initials  String?
+  tone      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  taskId    String   @unique
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model TaskTag {
+  id        String   @id @default(cuid())
+  label     String
+  createdAt DateTime @default(now())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, label])
+  @@index([label])
+}
+
+model TaskPersonLink {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  createdAt DateTime @default(now())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, name])
+}
+
+model TaskAttachment {
+  id        String   @id @default(cuid())
+  name      String
+  type      String
+  source    String
+  owner     String?
+  url       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}
+
+model TaskCompliance {
+  id             String   @id @default(cuid())
+  classification String   @default("Intern")
+  risk           String   @default("Niedrig")
+  controlId      String?
+  approval       String?
+  evidence       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  taskId         String   @unique
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model TaskAuditEntry {
+  id        String   @id @default(cuid())
+  content   String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, order])
 }
 
 model CalendarSyncEvent {
@@ -308,6 +476,76 @@ model Comment {
   authorId  String
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   author    User     @relation(fields: [authorId], references: [id])
+}
+
+model Document {
+  id             String               @id @default(cuid())
+  title          String
+  type           String
+  status         String
+  classification String
+  ownerName      String
+  version        String?
+  reviewDate     DateTime?
+  retentionDate  DateTime?
+  summary        String
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  departmentId   String?
+  department     Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  projectId      String?
+  project        Project?             @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  linkedTasks    DocumentTaskLink[]
+  controls       DocumentControl[]
+  auditEntries   DocumentAuditEntry[]
+
+  @@index([departmentId])
+  @@index([projectId])
+  @@index([type])
+  @@index([status])
+}
+
+model DocumentTaskLink {
+  id         String   @id @default(cuid())
+  taskTitle  String
+  taskId     String?
+  createdAt  DateTime @default(now())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, taskTitle])
+  @@index([taskId])
+}
+
+model DocumentControl {
+  id         String   @id @default(cuid())
+  controlId  String
+  createdAt  DateTime @default(now())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, controlId])
+  @@index([controlId])
+}
+
+model DocumentAuditEntry {
+  id         String   @id @default(cuid())
+  content    String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, order])
+}
+
+model DocumentTemplate {
+  id          String   @id @default(cuid())
+  title       String   @unique
+  description String?
+  type        String   @default("Vorlage")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model TaskMarker {
