@@ -12,7 +12,6 @@ import {
 import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
-import { getStoredApprovalRequests, updateStoredApprovalRequest } from '../utils/approvalStorage';
 
 const statusMeta = {
   PENDING: {
@@ -54,12 +53,6 @@ const initialForm = {
   evidence: '',
   approverId: '',
 };
-
-function mergeApprovals(serverApprovals) {
-  const localApprovals = getStoredApprovalRequests();
-  const serverKeys = new Set(serverApprovals.map((approval) => `${approval.entityType}:${approval.entityId}`));
-  return [...serverApprovals, ...localApprovals.filter((approval) => !serverKeys.has(`${approval.entityType}:${approval.entityId}`))];
-}
 
 function getApprovalFacets(approvals) {
   return approvals.reduce((facets, approval) => {
@@ -343,7 +336,7 @@ function CreateApprovalModal({ form, context, onChange, onClose, onSubmit, isSav
 export default function ApprovalsPage() {
   const { user } = useAuth();
   const [searchValue, setSearchValue] = useState('');
-  const [approvals, setApprovals] = useState(() => getStoredApprovalRequests());
+  const [approvals, setApprovals] = useState([]);
   const [facets, setFacets] = useState({});
   const [context, setContext] = useState({ users: [], entities: [], canApprove: false });
   const [notes, setNotes] = useState({});
@@ -361,13 +354,12 @@ export default function ApprovalsPage() {
           search: searchValue.trim() || undefined,
         },
       });
-      setApprovals(mergeApprovals(data.approvals || []));
+      setApprovals(data.approvals || []);
       setFacets(data.facets || {});
       setContext((current) => ({ ...current, canApprove: Boolean(data.canApprove) }));
     } catch {
-      const localApprovals = getStoredApprovalRequests();
-      setApprovals(localApprovals);
-      setFacets(getApprovalFacets(localApprovals));
+      setApprovals([]);
+      setFacets({});
     } finally {
       setIsLoading(false);
     }
@@ -385,14 +377,13 @@ export default function ApprovalsPage() {
             search: searchValue.trim() || undefined,
           },
         });
-        setApprovals(mergeApprovals(data.approvals || []));
+        setApprovals(data.approvals || []);
         setFacets(data.facets || {});
         setContext((current) => ({ ...current, canApprove: Boolean(data.canApprove) }));
       } catch (requestError) {
         if (requestError.name === 'CanceledError') return;
-        const localApprovals = getStoredApprovalRequests();
-        setApprovals(localApprovals);
-        setFacets(getApprovalFacets(localApprovals));
+        setApprovals([]);
+        setFacets({});
       } finally {
         setIsLoading(false);
       }
@@ -451,21 +442,6 @@ export default function ApprovalsPage() {
 
   const decide = async (id, action) => {
     setBusyId(id);
-    const localApproval = getStoredApprovalRequests().find((approval) => approval.id === id);
-    if (localApproval) {
-      const nextStatus = action === 'approve' ? 'APPROVED' : action === 'reject' ? 'REJECTED' : 'CANCELLED';
-      updateStoredApprovalRequest(id, {
-        status: nextStatus,
-        decisionNote: notes[id] || '',
-        decidedAt: new Date().toISOString(),
-        approverId: user?.id || '',
-        approver: { id: user?.id || '', name: user?.name || 'Aktueller Benutzer' },
-      });
-      setNotes((current) => ({ ...current, [id]: '' }));
-      await refreshApprovals();
-      setBusyId('');
-      return;
-    }
     try {
       await api.patch(`/approvals/${id}/${action}`, { decisionNote: notes[id] || '' });
       setNotes((current) => ({ ...current, [id]: '' }));
