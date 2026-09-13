@@ -38,7 +38,6 @@ import {
   X,
 } from 'lucide-react';
 import api from '../api/axios';
-import { storeApprovalRequest } from '../utils/approvalStorage';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -1693,21 +1692,8 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
   const handleApprovalRequest = async () => {
     setApprovalRequestStatus('');
     setApprovalRequestError('');
-    const localApproval = {
-      id: `local-approval-${task.id}`,
-      entityType: 'TASK',
-      entityId: task.id,
-      entityLabel: task.title,
-      title: `Freigabe: ${form.title.trim() || task.title}`,
-      description: form.approval.trim() || form.description.trim(),
-      evidence: form.evidence.trim(),
-      status: 'PENDING',
-      requestedAt: new Date().toISOString(),
-      requester: { name: form.creatorName || 'Aktueller Benutzer' },
-    };
-    storeApprovalRequest(localApproval);
     try {
-      const { data } = await api.post('/approvals', {
+      await api.post('/approvals', {
         entityType: 'TASK',
         entityId: task.id,
         entityLabel: task.title,
@@ -1715,7 +1701,6 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
         description: form.approval.trim() || form.description.trim(),
         evidence: form.evidence.trim(),
       });
-      storeApprovalRequest(data);
       setApprovalRequestStatus('Freigabe wurde im Cockpit angefragt.');
       updateTask(
         {
@@ -1731,7 +1716,7 @@ function BacklogDetailPanel({ task, projects, assignees, assigneeWorkloads, effo
         'Freigabe im Cockpit angefragt.',
       );
     } catch (requestError) {
-      setApprovalRequestStatus('Freigabe wurde lokal vorgemerkt und wird synchronisiert.');
+      setApprovalRequestError(requestError.response?.data?.message || 'Freigabe konnte nicht angefragt werden.');
     }
   };
 
