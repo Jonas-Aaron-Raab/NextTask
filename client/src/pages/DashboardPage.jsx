@@ -4,11 +4,9 @@ import { ArrowRight, Building2, CalendarClock, CheckSquare, CircleAlert, LayoutD
 import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
-import { bankDepartments, getEffectiveRoleForUser } from '../data/bankOrganization';
+import { getEffectiveRoleForUser } from '../data/bankOrganization';
 import { effortUnitOptions, formatEffort, sumEffortHours } from '../utils/effort';
 import { taskDateTimestamp, toDashboardPriority, toDashboardStatus, toTaskDateValue } from '../utils/task';
-import { dashboardFallbackTasks } from '../data/taskFixtures';
-import { initialBacklogTasks, initialDepartments, initialProjects } from '../data/projectFixtures';
 
 const dashboardSelectClass =
   'h-11 min-w-[220px] rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12';
@@ -73,20 +71,6 @@ function formatDashboardDate(dateValue) {
   }).format(new Date(`${dateValue}T00:00:00`));
 }
 
-function getDynamicFallbackTasks() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  return dashboardFallbackTasks.map((task) => {
-    const offsetByStatus = { blocked: -2, today: 0, review: 1, 'in-progress': 2 };
-    const dueDate = new Date(today);
-    dueDate.setDate(today.getDate() + (offsetByStatus[task.status] || 0));
-    const dueDateValue = dueDate.toISOString().slice(0, 10);
-
-    return { ...task, dueDateValue, dueDate: formatDashboardDate(dueDateValue) };
-  });
-}
-
 function normalizeApiTaskForDashboard(task) {
   const dueDateValue = toTaskDateValue(task.dueDate || task.endDate || task.startDate);
   const projectName = task.project?.name || task.project || 'Ohne Projekt';
@@ -142,11 +126,11 @@ function matchesDepartmentScope(departmentName, scopes) {
   return scopes.some((scope) => departmentMatchesScope(departmentName, scope));
 }
 
-function getUserDepartmentScopes(user, role) {
+function getUserDepartmentScopes(user, role, departments) {
   const scopes = [user?.department];
   const roleDepartmentIds = new Set(role?.departmentIds || []);
 
-  bankDepartments.forEach((department) => {
+  departments.forEach((department) => {
     if (!roleDepartmentIds.has(department.id)) return;
     scopes.push(department.name, `${department.name} ${department.code}`, department.code);
   });
@@ -206,10 +190,13 @@ export default function DashboardPage() {
   const [activeDashboardTab, setActiveDashboardTab] = useState('overview');
   const [workloadUnit, setWorkloadUnit] = useState('hours');
   const [apiTasks, setApiTasks] = useState(null);
+  const [organizationData, setOrganizationData] = useState({ departments: [], projects: [] });
   const currentAssignee = user?.name || 'Teammitglied';
   const effectiveRole = useMemo(() => getEffectiveRoleForUser(user), [user]);
   const showDepartmentFilter = canFilterDepartments(effectiveRole);
-  const userDepartmentScopes = useMemo(() => getUserDepartmentScopes(user, effectiveRole), [effectiveRole, user]);
+  const departments = organizationData.departments || [];
+  const organizationProjects = organizationData.projects || [];
+  const userDepartmentScopes = useMemo(() => getUserDepartmentScopes(user, effectiveRole, departments), [departments, effectiveRole, user]);
   const activeDepartmentScopes = useMemo(
     () => (showDepartmentFilter ? [selectedDepartment] : userDepartmentScopes),
     [selectedDepartment, showDepartmentFilter, userDepartmentScopes],
@@ -242,26 +229,47 @@ export default function DashboardPage() {
     };
   }, [user?.id]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .get('/organization')
+      .then(({ data }) => {
+        if (cancelled) return;
+        setOrganizationData({
+          departments: Array.isArray(data.departments) ? data.departments : [],
+          projects: Array.isArray(data.projects) ? data.projects : [],
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setOrganizationData({ departments: [], projects: [] });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const searchTerm = searchValue.trim().toLowerCase();
-  const dashboardTasks = apiTasks?.length ? apiTasks : currentAssignee === 'Mara Stein' ? getDynamicFallbackTasks() : [];
+  const dashboardTasks = apiTasks || [];
   const departmentByProjectName = useMemo(() => {
     return Object.fromEntries(
-      initialProjects.map((project) => {
-        const department = initialDepartments.find((item) => item.id === project.departmentId);
+      organizationProjects.map((project) => {
+        const department = departments.find((item) => item.id === project.departmentId);
         return [project.name, department?.name || 'Ohne Abteilung'];
       }),
     );
-  }, []);
+  }, [departments, organizationProjects]);
 
   const departmentOptions = useMemo(() => {
     const values = new Set(['Alle Abteilungen']);
-    initialDepartments.forEach((department) => values.add(department.name));
+    departments.forEach((department) => values.add(department.name));
     dashboardTasks.forEach((task) => {
       const name = getTaskDepartment(task, departmentByProjectName);
       if (name) values.add(name);
     });
     return [...values];
-  }, [dashboardTasks, departmentByProjectName]);
+  }, [dashboardTasks, departmentByProjectName, departments]);
 
   const openTasks = useMemo(() => {
     return dashboardTasks.filter((task) => {
@@ -280,11 +288,11 @@ export default function DashboardPage() {
   }, [currentAssignee, openTasks, user]);
 
   const visibleProjects = useMemo(() => {
-    return initialProjects.filter((project) => {
-      const department = initialDepartments.find((item) => item.id === project.departmentId);
+    return organizationProjects.filter((project) => {
+      const department = departments.find((item) => item.id === project.departmentId);
       return matchesDepartmentScope(department?.name, activeDepartmentScopes);
     });
-  }, [activeDepartmentScopes]);
+  }, [activeDepartmentScopes, departments, organizationProjects]);
 
   const focusTasks = useMemo(() => {
     const baseTasks = openTasks
@@ -307,10 +315,10 @@ export default function DashboardPage() {
   }, [openTasks, searchTerm]);
 
   const departmentCards = useMemo(() => {
-    const cards = initialDepartments.map((department) => {
+    const cards = departments.map((department) => {
       const departmentProjects = visibleProjects.filter((project) => project.departmentId === department.id);
       const projectIds = departmentProjects.map((project) => project.id);
-      const departmentBacklog = initialBacklogTasks.filter((task) => projectIds.includes(task.projectId));
+      const departmentBacklog = dashboardTasks.filter((task) => projectIds.includes(task.projectId));
       const openBacklogCount = departmentBacklog.filter((task) => task.status !== 'done').length;
       const reviewCount = departmentBacklog.filter((task) => task.status === 'review').length;
 
@@ -329,7 +337,7 @@ export default function DashboardPage() {
     return scopedCards.filter((department) =>
       [department.name, department.lead, department.description].join(' ').toLowerCase().includes(searchTerm),
     );
-  }, [activeDepartmentScopes, searchTerm, visibleProjects]);
+  }, [activeDepartmentScopes, dashboardTasks, departments, searchTerm, visibleProjects]);
 
   const upcomingItems = useMemo(() => {
     return openTasks

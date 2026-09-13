@@ -17,7 +17,6 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { getTaskMarker } from '../utils/taskMarkers';
 import {
-  bankProjects,
   canManageRoles,
   getEffectiveRoleForUser,
   getRoleKindLabel,
@@ -136,9 +135,9 @@ export default function DepartmentsPage() {
   const [accessConfig, setAccessConfig] = useState(() => loadAccessConfig());
   const [organizationData, setOrganizationData] = useState(null);
   const effectiveRole = useMemo(() => getEffectiveRoleForUser(user, accessConfig), [accessConfig, user]);
-  const departments = organizationData?.departments?.length ? organizationData.departments : getVisibleDepartmentsForRole({ kind: 'ADMIN' });
+  const departments = organizationData?.departments || [];
   const organizationProjects = useMemo(() => {
-    if (!organizationData?.projects?.length) return bankProjects;
+    if (!organizationData?.projects?.length) return [];
 
     return organizationData.projects.map((project) => ({
       ...project,
@@ -293,7 +292,7 @@ export default function DepartmentsPage() {
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             <div className="rounded-2xl border border-slate-200 bg-[#fcfcfd] px-4 py-3">
               <p className="text-[0.7rem] font-bold uppercase tracking-[0.22em] text-slate-400">Sichtbereich</p>
-              <p className="mt-2 text-sm font-black text-slate-900">{getRoleScopeLabel(effectiveRole)}</p>
+              <p className="mt-2 text-sm font-black text-slate-900">{getRoleScopeLabel(effectiveRole, departments)}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-[#fcfcfd] px-4 py-3">
               <p className="text-[0.7rem] font-bold uppercase tracking-[0.22em] text-slate-400">Sichtbare Projekte</p>

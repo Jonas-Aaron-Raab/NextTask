@@ -15,13 +15,10 @@ import api from '../api/axios';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
 import {
-  bankDepartments,
   canManageRoles,
   getDefaultAccessConfig,
-  getDepartmentLabel,
   getEffectiveRoleForUser,
   getRoleKindLabel,
-  getRoleScopeLabel,
   permissionLabels,
   roleKinds,
 } from '../data/bankOrganization';
@@ -36,7 +33,7 @@ const emptyUserForm = {
   accessRoleId: '',
 };
 
-function createRole(kind = 'MEMBER') {
+function createRole(kind = 'MEMBER', defaultDepartmentId = 'or-it') {
   const suffix = Date.now().toString(36);
 
   return {
@@ -46,7 +43,7 @@ function createRole(kind = 'MEMBER') {
     kind,
     description: 'Neue Rolle mit eigenem Sichtbereich.',
     businessAreas: kind === 'GBL' ? ['OR'] : [],
-    departmentIds: kind === 'MEMBER' ? ['or-it'] : [],
+    departmentIds: kind === 'MEMBER' ? [defaultDepartmentId] : [],
     permissions: {
       viewDepartments: true,
       editProjects: kind !== 'MEMBER',
@@ -63,15 +60,30 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function getUserDepartmentLabel(value) {
+function getDepartmentLabelFromList(departmentId, departments) {
+  const department = departments.find((item) => item.id === departmentId);
+  return department ? `${department.name} ${department.code || ''}`.trim() : 'Keine Abteilung';
+}
+
+function getRoleScopeLabelForDepartments(role, departments) {
+  if (!role) return 'Keine Rolle';
+  if (role.kind === 'ADMIN') return 'Alle Geschäftsbereiche und Abteilungen';
+  if (role.kind === 'GBL') return `Geschäftsbereich ${role.businessAreas?.join(', ') || 'ohne Zuordnung'}`;
+  if (role.kind === 'MEMBER') {
+    return (role.departmentIds || []).map((departmentId) => getDepartmentLabelFromList(departmentId, departments)).join(', ') || 'Keine Abteilung zugeordnet';
+  }
+  return 'Keine Einschraenkung definiert';
+}
+
+function getUserDepartmentLabel(value, departments) {
   if (!value) return 'Keine Abteilung';
-  const directMatch = bankDepartments.find((department) => department.id === value);
-  if (directMatch) return getDepartmentLabel(value);
+  const directMatch = departments.find((department) => department.id === value);
+  if (directMatch) return getDepartmentLabelFromList(value, departments);
   return value;
 }
 
 function getDepartmentValue(department) {
-  return `${department.name} ${department.code}`;
+  return `${department.name} ${department.code || ''}`.trim();
 }
 
 function RoleBadge({ role }) {
@@ -106,6 +118,7 @@ export default function RoleManagementPage() {
   const [searchValue, setSearchValue] = useState('');
   const [accessConfig, setAccessConfig] = useState(() => getDefaultAccessConfig());
   const [draftRole, setDraftRole] = useState(() => getDefaultAccessConfig().roles[0] || createRole('ADMIN'));
+  const [departments, setDepartments] = useState([]);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -139,21 +152,48 @@ export default function RoleManagementPage() {
     refreshConfig();
   }, [refreshConfig]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    api
+      .get('/organization/departments')
+      .then(({ data }) => {
+        if (!cancelled) setDepartments(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setDepartments([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!departments.length) return;
+    setUserForm((current) => {
+      const knownValues = new Set(departments.map(getDepartmentValue));
+      return knownValues.has(current.department)
+        ? current
+        : { ...current, department: getDepartmentValue(departments[0]) };
+    });
+  }, [departments]);
+
   const filteredRoles = useMemo(() => {
     if (!searchTerm) return accessConfig.roles;
     return accessConfig.roles.filter((role) =>
-      [role.name, role.code, role.description, getRoleKindLabel(role.kind), getRoleScopeLabel(role)].join(' ').toLowerCase().includes(searchTerm),
+        [role.name, role.code, role.description, getRoleKindLabel(role.kind), getRoleScopeLabelForDepartments(role, departments)].join(' ').toLowerCase().includes(searchTerm),
     );
-  }, [accessConfig.roles, searchTerm]);
+  }, [accessConfig.roles, departments, searchTerm]);
 
   const searchSuggestions = useMemo(() => {
     if (!searchTerm) return [];
 
     const roleSuggestions = filteredRoles.map((role) => ({
-      id: `role-${role.id}`,
-      type: 'Rolle',
-      label: role.name,
-      meta: `${role.code} - ${getRoleScopeLabel(role)}`,
+        id: `role-${role.id}`,
+        type: 'Rolle',
+        label: role.name,
+        meta: `${role.code} - ${getRoleScopeLabelForDepartments(role, departments)}`,
       onSelect: () => {
         setDraftRole(clone(role));
         setActiveTab('manage');
@@ -162,17 +202,17 @@ export default function RoleManagementPage() {
 
     const userSuggestions = accessConfig.users
       .filter((item) =>
-        [item.name, item.email, getUserDepartmentLabel(item.department)].join(' ').toLowerCase().includes(searchTerm),
+        [item.name, item.email, getUserDepartmentLabel(item.department, departments)].join(' ').toLowerCase().includes(searchTerm),
       )
       .map((item) => ({
         id: `user-${item.id}`,
         type: 'User',
         label: item.name,
-        meta: `${item.email} - ${getUserDepartmentLabel(item.department)}`,
+        meta: `${item.email} - ${getUserDepartmentLabel(item.department, departments)}`,
       }));
 
     return [...roleSuggestions, ...userSuggestions];
-  }, [accessConfig.users, filteredRoles, searchTerm]);
+  }, [accessConfig.users, departments, filteredRoles, searchTerm]);
 
   const updateDraft = (field, value) => {
     setStatus('');
@@ -242,7 +282,7 @@ export default function RoleManagementPage() {
   const addRole = (kind) => {
     setStatus('');
     setError('');
-    setDraftRole(createRole(kind));
+    setDraftRole(createRole(kind, departments[0]?.id || 'or-it'));
     setActiveTab('manage');
   };
 
@@ -347,7 +387,7 @@ export default function RoleManagementPage() {
                   <RoleBadge role={role} />
                   <span className="min-w-0">
                     <span className="block text-sm font-black text-slate-950">{role.name}</span>
-                    <span className="mt-1 block text-xs font-bold text-slate-400">{getRoleScopeLabel(role)}</span>
+                    <span className="mt-1 block text-xs font-bold text-slate-400">{getRoleScopeLabelForDepartments(role, departments)}</span>
                   </span>
                 </button>
               ))}
@@ -410,7 +450,7 @@ export default function RoleManagementPage() {
               <div className="space-y-4">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <p className="text-sm font-black text-slate-950">Sichtbereich</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-500">{getRoleScopeLabel(draftRole)}</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-500">{getRoleScopeLabelForDepartments(draftRole, departments)}</p>
 
                   {draftRole.kind === 'GBL' ? (
                     <label className="mt-4 block text-sm font-bold text-slate-700">
@@ -421,7 +461,7 @@ export default function RoleManagementPage() {
 
                   {draftRole.kind === 'MEMBER' ? (
                     <div className="mt-4 grid gap-2">
-                      {bankDepartments.map((department) => {
+                      {departments.map((department) => {
                         const active = draftRole.departmentIds?.includes(department.id);
                         return (
                           <button key={department.id} type="button" onClick={() => toggleDepartment(department.id)} className={`flex items-center justify-between gap-3 rounded-2xl border px-3 py-3 text-left transition ${active ? 'border-[#d89aa5] bg-white text-[#a23d4d]' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
@@ -474,7 +514,7 @@ export default function RoleManagementPage() {
                     <p className="truncate text-slate-950">{item.name}</p>
                     <p className="mt-1 truncate text-xs text-slate-400">{item.email}</p>
                   </div>
-                  <span className="self-center text-xs font-extrabold text-slate-500">{getUserDepartmentLabel(item.department)}</span>
+                  <span className="self-center text-xs font-extrabold text-slate-500">{getUserDepartmentLabel(item.department, departments)}</span>
                   <select value={item.accessRoleId || ''} onChange={(event) => assignRole(item, event.target.value)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10">
                     <option value="">Keine Access-Rolle</option>
                     {accessConfig.roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}
@@ -490,7 +530,7 @@ export default function RoleManagementPage() {
                 <input type="email" value={userForm.email} onChange={(event) => setUserForm((current) => ({ ...current, email: event.target.value }))} placeholder="E-Mail" className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10" />
                 <input type="text" value={userForm.password} onChange={(event) => setUserForm((current) => ({ ...current, password: event.target.value }))} placeholder="Startpasswort" className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10" />
                 <select value={userForm.department} onChange={(event) => setUserForm((current) => ({ ...current, department: event.target.value }))} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10">
-                  {bankDepartments.map((department) => <option key={department.id} value={getDepartmentValue(department)}>{getDepartmentValue(department)}</option>)}
+                  {departments.map((department) => <option key={department.id} value={getDepartmentValue(department)}>{getDepartmentValue(department)}</option>)}
                 </select>
                 <select value={userForm.accessRoleId || accessConfig.roles[0]?.id || ''} onChange={(event) => setUserForm((current) => ({ ...current, accessRoleId: event.target.value }))} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/10">
                   {accessConfig.roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}

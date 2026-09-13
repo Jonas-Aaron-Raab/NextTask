@@ -280,8 +280,8 @@ export function resetAccessConfig() {
   return config;
 }
 
-export function getDepartmentLabel(departmentId) {
-  const department = bankDepartments.find((item) => item.id === departmentId);
+export function getDepartmentLabel(departmentId, departments = bankDepartments) {
+  const department = departments.find((item) => item.id === departmentId);
   return department ? `${department.name} ${department.code}` : 'Keine Abteilung';
 }
 
@@ -289,12 +289,12 @@ export function getRoleKindLabel(kind) {
   return roleKinds.find((item) => item.value === kind)?.label || kind;
 }
 
-export function getRoleScopeLabel(role) {
+export function getRoleScopeLabel(role, departments = bankDepartments) {
   if (!role) return 'Keine Rolle';
   if (role.kind === 'ADMIN') return 'Alle Geschäftsbereiche und Abteilungen';
   if (role.kind === 'GBL') return `Geschäftsbereich ${role.businessAreas?.join(', ') || 'ohne Zuordnung'}`;
   if (role.kind === 'MEMBER') {
-    return (role.departmentIds || []).map(getDepartmentLabel).join(', ') || 'Keine Abteilung zugeordnet';
+    return (role.departmentIds || []).map((departmentId) => getDepartmentLabel(departmentId, departments)).join(', ') || 'Keine Abteilung zugeordnet';
   }
   return 'Keine Einschraenkung definiert';
 }

@@ -41,7 +41,6 @@ import api from '../api/axios';
 import { storeApprovalRequest } from '../utils/approvalStorage';
 import AppShell from '../components/AppShell';
 import { useAuth } from '../context/AuthContext';
-import { bankDepartments, bankProjects } from '../data/bankOrganization';
 import {
   effortUnitOptions,
   formatEffort,
@@ -50,48 +49,7 @@ import {
   parseEffortHours,
 } from '../utils/effort';
 import { getStoredTaskMarkers, getTaskMarker } from '../utils/taskMarkers';
-import { initialTasks as sourceTasks } from '../data/taskFixtures';
-import {
-  initialBacklogTasks,
-  initialDepartments,
-  initialProjects,
-  mergeProjectsWithDefaults,
-  projectStorageKey,
-} from '../data/projectFixtures';
 
-const bankDepartmentFixtures = bankDepartments.map((department) => ({
-  ...department,
-  id: `bank-${department.id}`,
-  members: [department.lead],
-}));
-
-const bankProjectFixtures = bankProjects.map((project) => ({
-  id: `bank-${project.id}`,
-  departmentId: `bank-${project.departmentId}`,
-  name: project.name,
-  owner: project.owner,
-  visibility: 'Abteilung',
-  status: project.status,
-  dueDate: project.dueDate,
-  summary: project.goal,
-}));
-
-const bankBacklogFixtures = bankProjects.flatMap((project) =>
-  project.tasks.map((task, index) => ({
-    id: `bank-${task.id}`,
-    sourceTaskId: null,
-    projectId: `bank-${project.id}`,
-    title: task.title,
-    status: task.status === 'In Arbeit' ? 'progress' : task.status === 'Review' ? 'review' : 'todo',
-    priority: task.priority,
-    assignee: task.assignee,
-    dueDate: project.dueDate,
-    estimatedHours: 4 + index,
-    tags: [task.status, task.priority],
-    description: `${task.title} für ${project.name} bearbeiten und dokumentieren.`,
-    controlId: `BANK-${project.id.toUpperCase()}-${index + 1}`,
-  })),
-);
 
 const createMenuItems = ['Neue Abteilung', 'Neues Projekt'];
 
@@ -144,7 +102,7 @@ function DetailBlock({ title, icon, children, action }) {
 }
 
 function getSourceTask(task) {
-  return sourceTasks.find((candidate) => candidate.id === task.sourceTaskId) || null;
+  return null;
 }
 
 function getSourceTaskKey(task) {
@@ -416,7 +374,7 @@ function createInterfaceRow(overrides = {}) {
 
 const emptyProjectForm = {
   name: '',
-  departmentId: initialDepartments[0].id,
+  departmentId: '',
   owner: 'Elisabeth Bezverkha',
   deputyLead: '',
   projectSponsor: '',
@@ -491,17 +449,6 @@ function calculateActualPercent(plannedValue, actualValue) {
 
 function ensureRows(rows, createRow) {
   return Array.isArray(rows) && rows.length ? rows : [createRow()];
-}
-
-function getStoredProjects() {
-  if (typeof window === 'undefined') return initialProjects;
-  try {
-    const stored = window.localStorage.getItem(projectStorageKey);
-    const parsed = stored ? JSON.parse(stored) : null;
-    return mergeProjectsWithDefaults(parsed);
-  } catch {
-    return initialProjects;
-  }
 }
 
 const germanMonthNumbers = {
@@ -2259,15 +2206,11 @@ export default function ProjectsPage() {
       activationConstraint: { distance: 6 },
     }),
   );
-  const [departments, setDepartments] = useState(() => [...initialDepartments, ...bankDepartmentFixtures]);
-  const [projects, setProjects] = useState(() => {
-    const storedProjects = getStoredProjects();
-    const storedIds = new Set(storedProjects.map((project) => project.id));
-    return [...storedProjects, ...bankProjectFixtures.filter((project) => !storedIds.has(project.id))];
-  });
-  const [backlogTasks, setBacklogTasks] = useState(() => [...initialBacklogTasks, ...bankBacklogFixtures]);
+  const [departments, setDepartments] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [backlogTasks, setBacklogTasks] = useState([]);
   const [taskMarkers, setTaskMarkers] = useState(() => getStoredTaskMarkers());
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState(initialDepartments[0].id);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [viewMode, setViewMode] = useState('projects');
   const [selectedBacklogTaskId, setSelectedBacklogTaskId] = useState(null);
@@ -2282,10 +2225,6 @@ export default function ProjectsPage() {
   const [projectForm, setProjectForm] = useState(emptyProjectForm);
 
   const normalizedSearch = searchValue.trim().toLowerCase();
-
-  useEffect(() => {
-    window.localStorage.setItem(projectStorageKey, JSON.stringify(projects));
-  }, [projects]);
 
   useEffect(() => {
     let cancelled = false;
