@@ -1,12 +1,17 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const { pickFields, writeAuditLog } = require('../utils/auditLog');
+const { serializeProject } = require('../utils/contentSerializers');
 const router = express.Router();
 
 const projectInclude = {
+  owner: { select: { id: true, name: true, email: true, department: true } },
+  department: true,
   milestones: { orderBy: { order: 'asc' } },
   risks: { orderBy: { createdAt: 'asc' } },
   budgetLines: { orderBy: { order: 'asc' } },
+  interfaces: { orderBy: { order: 'asc' } },
+  approvals: true,
   statusReports: { orderBy: { reportDate: 'desc' } },
 };
 
@@ -81,9 +86,22 @@ function buildRiskCreates(risks) {
       probability: optionalNumber(risk.probability),
       riskClass: optionalString(risk.riskClass),
       trend: optionalString(risk.trend),
+      measure: optionalString(risk.measure),
       active: risk.active === undefined ? true : Boolean(risk.active),
     }))
     .filter((risk) => risk.title);
+}
+
+function buildInterfaceCreates(interfaces) {
+  if (!Array.isArray(interfaces)) return [];
+  return interfaces
+    .map((item, index) => ({
+      name: optionalString(item.name),
+      status: optionalString(item.status) || 'Offen',
+      comment: optionalString(item.comment),
+      order: optionalNumber(item.order) ?? index,
+    }))
+    .filter((item) => item.name);
 }
 
 function buildBudgetLineCreates(budgetLines) {
@@ -105,7 +123,7 @@ router.get('/', auth, async (req, res) => {
       orderBy: { createdAt: 'desc' },
       include: projectInclude,
     });
-    res.json(projects);
+    res.json(projects.map(serializeProject));
   } catch (error) {
     res.status(500).json({
       message: 'Fehler beim Laden der Projekte',
@@ -133,9 +151,15 @@ router.post('/', auth, async (req, res) => {
       keyInterfaces,
       collaborationQuality,
       reportCycle,
+      departmentId,
+      visibility,
+      status,
+      projectType,
       milestones,
       risks,
       budgetLines,
+      interfaces,
+      approvals,
     } = req.body;
 
     const trimmedName = normalizeString(name);
@@ -146,6 +170,7 @@ router.post('/', auth, async (req, res) => {
     const milestoneCreates = buildMilestoneCreates(milestones);
     const riskCreates = buildRiskCreates(risks);
     const budgetLineCreates = buildBudgetLineCreates(budgetLines);
+    const interfaceCreates = buildInterfaceCreates(interfaces);
 
     const project = await req.prisma.project.create({
       data: {
@@ -165,10 +190,25 @@ router.post('/', auth, async (req, res) => {
         keyInterfaces: toStringArray(keyInterfaces),
         collaborationQuality: optionalString(collaborationQuality),
         reportCycle: optionalString(reportCycle) || 'MONTHLY',
+        departmentId: optionalString(departmentId),
+        visibility: optionalString(visibility),
+        statusLabel: optionalString(status),
+        projectType: optionalString(projectType),
         ownerId: req.user.id,
         milestones: milestoneCreates.length ? { create: milestoneCreates } : undefined,
         risks: riskCreates.length ? { create: riskCreates } : undefined,
         budgetLines: budgetLineCreates.length ? { create: budgetLineCreates } : undefined,
+        interfaces: interfaceCreates.length ? { create: interfaceCreates } : undefined,
+        approvals: approvals
+          ? {
+              create: {
+                projectResponsible: optionalString(approvals.projectResponsible),
+                gbl: optionalString(approvals.gbl),
+                projectLead: optionalString(approvals.projectLead),
+                approvalDate: optionalDate(approvals.approvalDate),
+              },
+            }
+          : undefined,
       },
       include: projectInclude,
     });
@@ -205,7 +245,7 @@ router.post('/', auth, async (req, res) => {
       },
     });
 
-    res.status(201).json(project);
+    res.status(201).json(serializeProject(project));
   } catch (error) {
     res.status(500).json({
       message: 'Fehler beim Erstellen des Projekts',
@@ -228,6 +268,7 @@ router.put('/:id/reporting', auth, async (req, res) => {
     const milestoneCreates = buildMilestoneCreates(req.body.milestones);
     const riskCreates = buildRiskCreates(req.body.risks);
     const budgetLineCreates = buildBudgetLineCreates(req.body.budgetLines);
+    const interfaceCreates = buildInterfaceCreates(req.body.interfaces);
 
     const project = await req.prisma.$transaction(async (prisma) => {
       if (Array.isArray(req.body.milestones)) {
@@ -239,10 +280,15 @@ router.put('/:id/reporting', auth, async (req, res) => {
       if (Array.isArray(req.body.budgetLines)) {
         await prisma.projectBudgetLine.deleteMany({ where: { projectId: currentProject.id } });
       }
+      if (Array.isArray(req.body.interfaces)) {
+        await prisma.projectInterface.deleteMany({ where: { projectId: currentProject.id } });
+      }
 
       return prisma.project.update({
         where: { id: currentProject.id },
         data: {
+          name: optionalString(req.body.name) || currentProject.name,
+          description: optionalString(req.body.description),
           businessArea: optionalString(req.body.businessArea),
           projectGoal: optionalString(req.body.projectGoal),
           plannedStart: optionalDate(req.body.plannedStart),
@@ -255,9 +301,32 @@ router.put('/:id/reporting', auth, async (req, res) => {
           keyInterfaces: toStringArray(req.body.keyInterfaces),
           collaborationQuality: optionalString(req.body.collaborationQuality),
           reportCycle: optionalString(req.body.reportCycle) || currentProject.reportCycle,
+          departmentId: optionalString(req.body.departmentId),
+          visibility: optionalString(req.body.visibility),
+          statusLabel: optionalString(req.body.status),
+          projectType: optionalString(req.body.projectType),
           milestones: Array.isArray(req.body.milestones) && milestoneCreates.length ? { create: milestoneCreates } : undefined,
           risks: Array.isArray(req.body.risks) && riskCreates.length ? { create: riskCreates } : undefined,
           budgetLines: Array.isArray(req.body.budgetLines) && budgetLineCreates.length ? { create: budgetLineCreates } : undefined,
+          interfaces: Array.isArray(req.body.interfaces) && interfaceCreates.length ? { create: interfaceCreates } : undefined,
+          approvals: req.body.approvals
+            ? {
+                upsert: {
+                  update: {
+                    projectResponsible: optionalString(req.body.approvals.projectResponsible),
+                    gbl: optionalString(req.body.approvals.gbl),
+                    projectLead: optionalString(req.body.approvals.projectLead),
+                    approvalDate: optionalDate(req.body.approvals.approvalDate),
+                  },
+                  create: {
+                    projectResponsible: optionalString(req.body.approvals.projectResponsible),
+                    gbl: optionalString(req.body.approvals.gbl),
+                    projectLead: optionalString(req.body.approvals.projectLead),
+                    approvalDate: optionalDate(req.body.approvals.approvalDate),
+                  },
+                },
+              }
+            : undefined,
         },
         include: projectInclude,
       });
@@ -274,7 +343,7 @@ router.put('/:id/reporting', auth, async (req, res) => {
       after: pickFields(project, ['id', 'businessArea', 'projectGoal', 'plannedStart', 'plannedEnd', 'plannedBudget', 'plannedEffortPt']),
     });
 
-    res.json(project);
+    res.json(serializeProject(project));
   } catch (error) {
     res.status(500).json({
       message: 'Fehler beim Aktualisieren der Berichtsdaten',

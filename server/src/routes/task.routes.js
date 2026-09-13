@@ -9,6 +9,7 @@ const {
 } = require('../utils/taskNotificationMailer');
 const { removeTaskCalendarSyncs, syncTaskCalendarEvent } = require('../utils/calendarIntegration');
 const { parseDate } = require('../utils/date');
+const { serializeTask } = require('../utils/contentSerializers');
 const router = express.Router();
 
 const parseTaskDate = (value) => parseDate(value, undefined);
@@ -47,6 +48,23 @@ const auditTaskFields = [
   'assigneeId',
 ];
 
+const taskDetailInclude = {
+  assignee: true,
+  assignmentSource: true,
+  compliance: true,
+  attachments: { orderBy: { createdAt: 'asc' } },
+  auditEntries: { orderBy: { order: 'asc' } },
+  personLinks: { orderBy: { createdAt: 'asc' } },
+  tags: { orderBy: { label: 'asc' } },
+  comments: {
+    include: { author: true },
+    orderBy: { createdAt: 'asc' },
+  },
+  project: {
+    select: { id: true, name: true, key: true, color: true, deadline: true, departmentId: true },
+  },
+};
+
 function normalizeStatus(status) {
   return statusMap[status] || 'OPEN';
 }
@@ -62,6 +80,109 @@ function parseOptionalNumber(value) {
 
   const parsed = Number(String(value).replace(',', '.'));
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toStringList(value) {
+  if (Array.isArray(value)) return value.map((entry) => String(entry).trim()).filter(Boolean);
+  if (typeof value === 'string') {
+    return value
+      .split(/\r?\n|,/)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+function buildTaskDetailWrites(taskId, body) {
+  const writes = [];
+
+  if (Array.isArray(body.tags)) {
+    writes.push(reqPrisma => reqPrisma.taskTag.deleteMany({ where: { taskId } }));
+    toStringList(body.tags).forEach((label) => {
+      writes.push(reqPrisma => reqPrisma.taskTag.create({ data: { taskId, label } }));
+    });
+  }
+
+  if (Array.isArray(body.linkedPeople)) {
+    writes.push(reqPrisma => reqPrisma.taskPersonLink.deleteMany({ where: { taskId } }));
+    toStringList(body.linkedPeople).forEach((name) => {
+      writes.push(reqPrisma => reqPrisma.taskPersonLink.create({ data: { taskId, name } }));
+    });
+  }
+
+  if (Array.isArray(body.attachments)) {
+    writes.push(reqPrisma => reqPrisma.taskAttachment.deleteMany({ where: { taskId } }));
+    body.attachments
+      .map((attachment) => ({
+        name: String(attachment.name || '').trim(),
+        type: String(attachment.type || 'Datei').trim(),
+        source: String(attachment.source || 'Upload').trim(),
+        owner: String(attachment.owner || '').trim() || null,
+        url: String(attachment.url || '').trim() || null,
+      }))
+      .filter((attachment) => attachment.name)
+      .forEach((attachment) => {
+        writes.push(reqPrisma => reqPrisma.taskAttachment.create({ data: { ...attachment, taskId } }));
+      });
+  }
+
+  if (body.compliance) {
+    writes.push(reqPrisma =>
+      reqPrisma.taskCompliance.upsert({
+        where: { taskId },
+        update: {
+          classification: String(body.compliance.classification || 'Intern').trim(),
+          risk: String(body.compliance.risk || 'Niedrig').trim(),
+          controlId: String(body.compliance.controlId || '').trim() || null,
+          approval: String(body.compliance.approval || '').trim() || null,
+          evidence: String(body.compliance.evidence || '').trim() || null,
+        },
+        create: {
+          taskId,
+          classification: String(body.compliance.classification || 'Intern').trim(),
+          risk: String(body.compliance.risk || 'Niedrig').trim(),
+          controlId: String(body.compliance.controlId || '').trim() || null,
+          approval: String(body.compliance.approval || '').trim() || null,
+          evidence: String(body.compliance.evidence || '').trim() || null,
+        },
+      }),
+    );
+  }
+
+  if (body.assignedBy?.name) {
+    writes.push(reqPrisma =>
+      reqPrisma.taskAssignmentSource.upsert({
+        where: { taskId },
+        update: {
+          name: String(body.assignedBy.name).trim(),
+          initials: String(body.assignedBy.initials || '').trim() || null,
+          tone: String(body.assignedBy.tone || '').trim() || null,
+        },
+        create: {
+          taskId,
+          name: String(body.assignedBy.name).trim(),
+          initials: String(body.assignedBy.initials || '').trim() || null,
+          tone: String(body.assignedBy.tone || '').trim() || null,
+        },
+      }),
+    );
+  }
+
+  if (Array.isArray(body.auditTrail)) {
+    writes.push(reqPrisma => reqPrisma.taskAuditEntry.deleteMany({ where: { taskId } }));
+    toStringList(body.auditTrail).forEach((content, order) => {
+      writes.push(reqPrisma => reqPrisma.taskAuditEntry.create({ data: { taskId, content, order } }));
+    });
+  }
+
+  return writes;
+}
+
+async function applyTaskDetailWrites(prisma, taskId, body) {
+  const writes = buildTaskDetailWrites(taskId, body);
+  for (const write of writes) {
+    await write(prisma);
+  }
 }
 
 async function getTaskNotificationContext(prisma, taskId) {
@@ -159,16 +280,10 @@ router.get('/project/:projectId', auth, async (req, res) => {
   try {
     const tasks = await req.prisma.task.findMany({
       where: { projectId: req.params.projectId },
-      include: {
-        assignee: true,
-        comments: {
-          include: { author: true },
-          orderBy: { createdAt: 'asc' },
-        },
-      },
+      include: taskDetailInclude,
       orderBy: [{ status: 'asc' }, { order: 'asc' }],
     });
-    res.json(tasks);
+    res.json(tasks.map(serializeTask));
   } catch (error) {
     res.status(500).json({
       message: 'Fehler beim Laden der Tasks',
@@ -193,6 +308,12 @@ router.post('/', auth, async (req, res) => {
       department,
       markerId,
       approvalLevel,
+      ticketNumber,
+      progress,
+      checklist,
+      note,
+      sourceTaskId,
+      parentTaskId,
     } = req.body;
     const normalizedStatus = normalizeStatus(status);
     const lastTask = await req.prisma.task.findFirst({
@@ -212,11 +333,18 @@ router.post('/', auth, async (req, res) => {
         dueDate: parseTaskDate(dueDate),
         endDate: parseTaskDate(endDate),
         estimatedHours: parseOptionalNumber(estimatedHours),
+        ticketNumber: ticketNumber || null,
+        progress: parseOptionalNumber(progress) ?? 0,
+        checklist: checklist || null,
+        note: note || null,
+        sourceTaskId: sourceTaskId || null,
         department: department || null,
         markerId: markerId || null,
         approvalLevel: approvalLevel || null,
+        parentTaskId: parentTaskId || null,
       },
     });
+    await applyTaskDetailWrites(req.prisma, createdTask.id, req.body);
     const task = await getTaskNotificationContext(req.prisma, createdTask.id);
 
     await writeAuditLog(req, {
@@ -239,7 +367,8 @@ router.post('/', auth, async (req, res) => {
 
     await syncTaskCalendarSafely(req, createdTask.id);
 
-    res.status(201).json(task);
+    const fullTask = await req.prisma.task.findUnique({ where: { id: createdTask.id }, include: taskDetailInclude });
+    res.status(201).json(serializeTask(fullTask || task));
   } catch (error) {
     res.status(500).json({
       message: 'Fehler beim Erstellen der Task',
@@ -263,6 +392,12 @@ router.put('/:id', auth, async (req, res) => {
       department,
       markerId,
       approvalLevel,
+      ticketNumber,
+      progress,
+      checklist,
+      note,
+      sourceTaskId,
+      parentTaskId,
     } = req.body;
     const before = await req.prisma.task.findUnique({ where: { id: req.params.id } });
     const updatedTask = await req.prisma.task.update({
@@ -277,11 +412,18 @@ router.put('/:id', auth, async (req, res) => {
         dueDate: parseTaskDate(dueDate),
         endDate: parseTaskDate(endDate),
         estimatedHours: parseOptionalNumber(estimatedHours),
+        ticketNumber,
+        progress: parseOptionalNumber(progress),
+        checklist,
+        note,
+        sourceTaskId,
         department,
         markerId: markerId === undefined ? undefined : markerId || null,
         approvalLevel: approvalLevel === undefined ? undefined : approvalLevel || null,
+        parentTaskId: parentTaskId === undefined ? undefined : parentTaskId || null,
       },
     });
+    await applyTaskDetailWrites(req.prisma, req.params.id, req.body);
     const updated = await getTaskNotificationContext(req.prisma, req.params.id);
 
     await writeAuditLog(req, {
@@ -305,7 +447,8 @@ router.put('/:id', auth, async (req, res) => {
 
     await syncTaskCalendarSafely(req, req.params.id);
 
-    res.json(updated);
+    const fullTask = await req.prisma.task.findUnique({ where: { id: req.params.id }, include: taskDetailInclude });
+    res.json(serializeTask(fullTask || updated));
   } catch (error) {
     res.status(500).json({
       message: 'Fehler beim Aktualisieren',

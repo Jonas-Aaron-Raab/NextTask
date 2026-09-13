@@ -1,6 +1,7 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const { parseDate } = require('../utils/date');
+const { serializeTask } = require('../utils/contentSerializers');
 
 const router = express.Router();
 
@@ -87,14 +88,24 @@ router.get('/tasks', auth, async (req, res) => {
         assignee: {
           select: { id: true, name: true, email: true, role: true, department: true },
         },
+        assignmentSource: true,
+        compliance: true,
+        attachments: { orderBy: { createdAt: 'asc' } },
+        auditEntries: { orderBy: { order: 'asc' } },
+        personLinks: { orderBy: { createdAt: 'asc' } },
+        tags: { orderBy: { label: 'asc' } },
+        comments: {
+          include: { author: { select: { id: true, name: true, email: true } } },
+          orderBy: { createdAt: 'asc' },
+        },
         project: {
-          select: { id: true, name: true, key: true, color: true, deadline: true },
+          select: { id: true, name: true, key: true, color: true, deadline: true, department: true, departmentId: true },
         },
       },
       orderBy: [{ dueDate: 'asc' }, { startDate: 'asc' }, { priority: 'desc' }],
     });
 
-    res.json(tasks);
+    res.json(tasks.map(serializeTask));
   } catch (error) {
     res.status(500).json({
       message: 'Fehler beim Laden der Kalenderaufgaben',
