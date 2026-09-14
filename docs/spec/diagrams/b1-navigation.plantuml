@@ -1,0 +1,55 @@
+@startuml b1-navigation
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 10
+skinparam state {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+skinparam nodesep 20
+skinparam ranksep 40
+
+title B1 Navigation zwischen den Masken
+
+state "Ohne Sitzung" as OUT #FFFFFF {
+  state "DLG-01 Anmeldung" as D01 #FDEBD0
+  state "DLG-02 Registrierung" as D02 #FDEBD0
+  D01 -right-> D02 : Registrieren
+  D02 -left-> D01 : Zum Login
+}
+
+state "Mit Sitzung (Seitenleiste auf jeder Maske)" as IN #FFFFFF {
+  state "DLG-03 Dashboard" as D03 #D5E8D4
+  state "DLG-04 Projekte\nund Backlog" as D04 #D5E8D4
+  state "DLG-05 Meine Aufgaben\n(Board)" as D05 #D5E8D4
+  state "DLG-06 Kalender" as D06 #D5E8D4
+  state "DLG-07 Reports" as D07 #D5E8D4
+  state "DLG-08 Freigaben" as D08 #D5E8D4
+  state "DLG-10 Dokumente" as D10 #D5E8D4
+  state "DLG-12 Einstellungen" as D12 #D5E8D4
+  state "DLG-11 Rollenverwaltung\n(nur mit Rollen verwalten)" as D11 #D0DEF5
+  state "DLG-09 Audit-Log\n(nur mit Rollen verwalten)" as D09 #D0DEF5
+
+  D03 --> D05 : Aufgabenkarte\n(?taskId)
+  D03 --> D04 : Abteilungskarte
+  D04 --> D04 : Abteilung > Projekt\n> Backlog > Ticket
+  D05 --> D08 : Freigabe anfragen\n(im Editor)
+  D06 --> D05 : Ticket oeffnen
+  D07 --> D07 : Statusbericht\n(DR-01)
+}
+
+[*] --> D01 : Aufruf ohne Token
+D01 --> D03 : Anmeldung, SSO\noder Registrierung
+D02 --> D03
+IN --> D01 : Abmelden,\nToken abgelaufen (401)
+
+note bottom of IN
+  Seitenleiste: Dashboard, Projekte, Aufgaben, Kalender, Dokumente,
+  Reports, Freigaben, Rollen, Einstellungen; Audit-Log nur mit
+  Berechtigung "Rollen verwalten". Globale Suche (Strg+K) springt
+  zu Aufgaben und Projekten. Profilmenue: Einstellungen, Abmelden.
+  Die Adresse /departments leitet auf Projekte um.
+end note
+@enduml

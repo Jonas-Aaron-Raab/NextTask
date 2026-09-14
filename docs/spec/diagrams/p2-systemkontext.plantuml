@@ -1,0 +1,43 @@
+@startuml p2-systemkontext
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 11
+skinparam rectangle {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+skinparam database {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+skinparam actorBorderColor #333333
+left to right direction
+
+title Systemkontext NextTask
+
+actor "Anwender\n(Mitarbeiter, Projektleitung,\nGBL, Administrator)" as USER
+rectangle "Authenticator-App\n(TOTP, auf dem Smartphone\ndes Anwenders)" as TOTP #FFFFFF
+
+rectangle "NextTask" as NT #DDEBF7
+
+rectangle "Identity Provider\nder Sparkasse\n(OpenID Connect)" as IDP
+rectangle "Google Calendar API" as GCAL
+rectangle "SMTP-Mailserver" as SMTP
+database "NextTask-Datenbank\n(intern, kein Nachbarsystem)" as DB
+
+USER --> NT : NB-01\nBrowser, HTTPS
+USER .right.> TOTP : liest Einmalcode ab
+NT <--> IDP : NB-02\nAnmeldung per SSO
+NT --> GCAL : NB-04\nFristen als Termine
+NT --> SMTP : NB-05\nBenachrichtigungen
+NT --> DB : Persistenz
+
+' NB-03 ist die Authenticator-App: sie teilt mit NextTask nur das
+' Geheimnis, das bei der Einrichtung per QR-Code uebertragen wird.
+
+
+
+
+@enduml

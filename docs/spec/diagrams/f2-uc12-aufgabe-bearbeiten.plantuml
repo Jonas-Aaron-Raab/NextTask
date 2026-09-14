@@ -1,0 +1,41 @@
+@startuml f2-uc12-aufgabe-bearbeiten
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam sequenceMessageAlign center
+skinparam sequence {
+  ArrowColor #555555
+  LifeLineBorderColor #999999
+  ParticipantBackgroundColor #F7F7F7
+  ParticipantBorderColor #333333
+  ActorBorderColor #333333
+}
+
+title UC-12 Aufgabe bearbeiten mit Benachrichtigung und Kalenderabgleich
+
+actor Anwender as A
+participant "Browser\n(DLG-05)" as B
+participant "NextTask" as S
+participant "SMTP-Mailserver" as M
+participant "Google Calendar" as G
+
+A -> B : Felder aendern, "Details speichern"
+B -> S : Aufgabe aktualisieren
+S -> S : Status und Prioritaet normalisieren (AF-04),\nDatumsangaben und Aufwand pruefen
+S -> S : Aufgabe speichern
+S -> S : Audit TASK_UPDATED mit\nVorher-Nachher-Differenz (AF-07)
+opt Bearbeiter geaendert und Versand konfiguriert
+  S -> M : "Ticket neu zugewiesen" an neuen Bearbeiter (AF-09)
+  M --> S : angenommen / Fehler nur protokolliert
+end
+opt Bearbeiter hat Kalender verbunden
+  S -> G : Termin fuer Frist anlegen, aktualisieren\noder entfernen (AF-08)
+  G --> S : Ereigniskennung / Fehler nur protokolliert
+end
+S --> B : gespeicherte Aufgabe
+B --> A : Karte im Board aktualisiert
+opt Freigabestufe neu gesetzt und noch keine Anfrage
+  B -> S : Freigabe anfragen (UC-18)
+  S --> B : Anfrage mit Status PENDING
+end
+@enduml

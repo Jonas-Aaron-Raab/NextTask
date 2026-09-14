@@ -1,0 +1,44 @@
+@startuml f2-uc03-sso
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam sequenceMessageAlign center
+skinparam sequence {
+  ArrowColor #555555
+  LifeLineBorderColor #999999
+  ParticipantBackgroundColor #F7F7F7
+  ParticipantBorderColor #333333
+  ActorBorderColor #333333
+}
+
+title UC-03 Anmelden per SSO (OpenID Connect, Authorization Code mit PKCE)
+
+actor Anwender as A
+participant "Browser\n(DLG-01)" as B
+participant "NextTask" as S
+participant "Identity Provider\nder Sparkasse" as IDP
+
+A -> B : "Mit SSO anmelden"
+B -> S : SSO-Anmeldung starten
+S -> S : Zustand (state) mit Nonce und\nPKCE-Verifier erzeugen, 10 Minuten gueltig
+S --> B : Umleitung zum Identity Provider
+B -> IDP : Autorisierungsanfrage\n(client_id, scope, state, nonce, code_challenge)
+IDP -> A : Anmeldung bei der Sparkasse
+A -> IDP : Zugangsdaten der Sparkasse\n(nie an NextTask)
+IDP --> B : Umleitung zurueck mit Code und state
+B -> S : Rueckleitung (code, state)
+S -> S : state entschluesseln und pruefen
+S -> IDP : Code gegen Token tauschen\n(code_verifier)
+IDP --> S : ID-Token, Zugriffstoken
+S -> IDP : Signaturschluessel (JWKS) abrufen
+IDP --> S : Schluessel
+S -> S : ID-Token pruefen (Signatur, Aussteller,\nZielgruppe, Nonce, Ablauf)
+S -> S : Profil lesen: Subjekt, E-Mail, Name, Gruppen\nE-Mail-Domaene pruefen
+S -> S : Konto suchen oder anlegen (AF-11),\nZugriffsrolle bestimmen
+S -> S : Einmalticket ausstellen (90 Sekunden)\nAudit SSO_CALLBACK_ACCEPTED
+S --> B : Umleitung zur Anmeldemaske mit Ticketcode
+B -> S : Ticket einloesen
+S -> S : Ticket pruefen und entwerten\nAudit SSO_LOGIN_SUCCESS
+S --> B : Zugriffstoken, Profil
+B --> A : Dashboard
+@enduml

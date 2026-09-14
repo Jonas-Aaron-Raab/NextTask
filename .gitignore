@@ -30,3 +30,6 @@ Thumbs.db
 # TypeScript / tooling cache
 *.tsbuildinfo
 .eslintcache
+
+# PlantUML-Bibliothek (wird von scripts/generate-diagrams.sh bei Bedarf geladen)
+scripts/plantuml.jar

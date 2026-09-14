@@ -1,0 +1,47 @@
+@startuml f1-gp01-projekt-berichten
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam ArrowColor #555555
+skinparam activity {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+  DiamondBackgroundColor #FFFFFF
+  DiamondBorderColor #333333
+}
+skinparam swimlaneBorderColor #999999
+
+title GP-01 Projekt steuern und berichten
+
+|Projektleitung|
+start
+:A1 Projektauftrag erhalten
+(ausserhalb von NextTask);
+:A2 Projekt mit Berichtsbasis anlegen
+Meilensteine, Risiken, Budget (UC-07);
+|NextTask|
+:Projektschluessel vergeben,
+Projekt speichern (AF-05);
+|Projektleitung|
+:A3 Aufgaben planen und zuweisen
+(GP-02);
+repeat
+  :A4 Berichtsbasis fortschreiben
+  Termine, Risiken, Ist-Werte (UC-08);
+  :A5 Statusbericht zum Stichtag erfassen
+  Ampeln, Fortschritt, naechste Schritte (UC-09);
+  |NextTask|
+  :Statusbericht speichern,
+  Audit-Eintrag schreiben;
+  :A6 Bericht als PDF ausgeben (UC-10, DR-01);
+  |GBL / Lenkungskreis|
+  :A7 Bericht besprechen
+  (ausserhalb von NextTask);
+  :A8 Massnahmen und ggf. Freigaben
+  beschliessen (GP-03);
+  |Projektleitung|
+repeat while (Projekt laeuft weiter?) is (ja, naechster Berichtszyklus)
+->nein;
+:A9 Projekt abschliessen;
+stop
+@enduml
