@@ -116,7 +116,7 @@ Ein Risiko eines Projekts. Tragweite und Eintrittswahrscheinlichkeit ergeben die
 | `description` | Text [0..1] | |
 | `impact` | Integer [0..1] | Tragweite. |
 | `probability` | Integer [0..1] | Eintrittswahrscheinlichkeit. |
-| `riskClass` | RiskClassDT [0..1] | Klassifizierung A, B oder C. |
+| `riskClass` | RiskClassDT [0..1] | Klassifizierung als Text, z. B. `A` oder `Hoch` ([D2.12](D2-datentypen.md#d212-werte-der-berichtsbasis)). |
 | `trend` | RiskTrendDT [0..1] | Entwicklung seit dem letzten Bericht. |
 | `active` | Boolean | Nur aktive Risiken erscheinen im Bericht. |
 

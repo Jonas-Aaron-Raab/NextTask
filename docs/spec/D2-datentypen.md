@@ -213,7 +213,7 @@ Werden als Text gespeichert; die Oberfläche gibt sie als Auswahllisten vor.
 | Typ | Werte | Bemerkung |
 |-----|-------|-----------|
 | MilestoneStatusDT | `Offen`, `In Arbeit`, `Erreicht`, `Gefährdet`, `Verschoben` | Der Server setzt `OPEN` als Vorgabe, wenn kein Wert übergeben wird. |
-| RiskClassDT | `A`, `B`, `C` | A ist die höchste Klasse. Im Risikograph aus Tragweite × Wahrscheinlichkeit abgeleitet (B3). |
+| RiskClassDT | Freitext; Konvention `A`, `B`, `C` oder `Hoch`, `Mittel`, `Niedrig` | Im Projektdialog ein Textfeld ohne Auswahlliste. Der Statusbericht zeigt den Text unverändert (leer → „C-Risiko") und wählt das Symbol danach: beginnt mit `A` oder enthält „hoch" → rot, beginnt mit `B` oder enthält „mittel" → gelb, sonst grün. Die Lage im Risikograph ergibt sich unabhängig davon aus Tragweite × Wahrscheinlichkeit (B3). |
 | RiskTrendDT | `Steigend`, `Stabil`, `Fallend`, `Neu` | Entwicklung seit dem letzten Bericht. |
 | ReportCycleDT | `MONTHLY` | Einziger definierter Wert; Vorgabe. |
 

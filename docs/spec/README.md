@@ -59,7 +59,6 @@ Wer wenig Zeit hat, liest P1, den Index in F2 und die Tabelle B1.5. Diese drei S
 | Symbol | Bedeutung |
 |--------|-----------|
 | ✅ | Baustein liegt vor. |
-| 🛠 | Baustein ist geplant, aber noch nicht geschrieben. |
 | ⛔ | Baustein ist für NextTask nicht anwendbar (Begründung unten). |
 
 ---
@@ -92,9 +91,9 @@ Wer wenig Zeit hat, liest P1, den Index in F2 und die Tabelle B1.5. Diese drei S
 
 | Baustein | Titel | Status | Datei |
 |----------|-------|--------|-------|
-| B1 | Dialogspezifikation | 🛠 | `B1-dialogspezifikation.md` |
+| B1 | Dialogspezifikation | ✅ | [`B1-dialogspezifikation.md`](B1-dialogspezifikation.md) |
 | B2 | Batch | ⛔ | — |
-| B3 | Druckausgaben | 🛠 | `B3-druckausgaben.md` |
+| B3 | Druckausgaben | ✅ | [`B3-druckausgaben.md`](B3-druckausgaben.md) |
 
 ### 5. Schnittstellen zu Alt- und Nachbarsystemen
 
@@ -183,8 +182,9 @@ Die Ziele aus P1 werden so abgedeckt: G-01 durch UC-11 bis UC-17, G-02 durch AF-
 | 9 | Informationsmodell | D1 | [`diagrams/d1-informationsmodell.plantuml`](diagrams/d1-informationsmodell.plantuml) |
 | 10 | Zustände einer Aufgabe (TaskStatusDT) | D2.3 | [`diagrams/d2-taskstatus-zustaende.plantuml`](diagrams/d2-taskstatus-zustaende.plantuml) |
 | 11 | Lebenszyklus einer Freigabeanfrage (ApprovalStatusDT) | D2.7 | [`diagrams/d2-freigabestatus-zustaende.plantuml`](diagrams/d2-freigabestatus-zustaende.plantuml) |
+| 12 | Navigation zwischen den Masken | B1.1 | [`diagrams/b1-navigation.plantuml`](diagrams/b1-navigation.plantuml) |
 
-Die Navigationskarte und die Bildschirmfotos der Masken kommen mit B1 hinzu.
+Bildschirmfotos der Masken (DLG-01 bis DLG-12 mit Ausnahme von DLG-08) und der Vorschau des Statusberichts (DR-01) liegen unter [`screenshots/`](screenshots/) und sind in B1 und B3 eingebunden.
 
 ---
 
@@ -207,3 +207,4 @@ Die Navigationskarte und die Bildschirmfotos der Masken kommen mit B1 hinzu.
 | 0.1 | 2026-09-10 | Wurzeldokument, Leseanleitung, P1, P2, D1, D2 mit Systemkontext, Informationsmodell und Zustandsdiagrammen; Render-Skript für Diagramme. |
 | 0.2 | 2026-09-11 | F1 mit zwei Aktivitätsdiagrammen, F2 mit 25 Anwendungsfällen und Use-Case-Diagramm, F3 mit elf Anwendungsfunktionen; Nachvollziehbarkeitsmatrix. |
 | 0.3 | 2026-09-11 | S1, S3, N1 mit 18 Anforderungen und Prüfkriterien, N2 mit acht Querschnittskonzepten, E2 Glossar. |
+| 0.4 | 2026-09-14 | B1 mit zwölf Masken, Navigationskarte und Bildschirmfotos; B3 Statusbericht. D1 und D2 zur Risikoklasse nach Abgleich mit der Oberfläche korrigiert. Alle anwendbaren Bausteine vollständig. |
