@@ -1,0 +1,164 @@
+@startuml d1-informationsmodell
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam ArrowColor #555555
+skinparam classAttributeIconSize 0
+skinparam nodesep 25
+skinparam ranksep 55
+skinparam class {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+skinparam package {
+  BorderColor #999999
+  BackgroundColor #FFFFFF
+}
+hide circle
+hide methods
+
+title D1 Informationsmodell NextTask
+
+' Reihenfolge der Pakete steuert die Anordnung: Organisation in der Mitte,
+' damit die Kanten vom Benutzer kurz bleiben.
+
+package "Projekte und Berichtswesen" {
+  class Project {
+    key : Text (eindeutig)
+    name : Text
+    businessArea : Text [0..1]
+    plannedStart, plannedEnd : Datum [0..1]
+    plannedEffortPt : PT [0..1]
+    plannedBudget : EUR [0..1]
+    reportCycle : ReportCycleDT
+  }
+  class ProjectMilestone {
+    title : Text
+    planDate, newDate : Datum [0..1]
+    status : MilestoneStatusDT
+    progress : Prozent
+  }
+  class ProjectRisk {
+    code : Text
+    impact, probability : Integer [0..1]
+    riskClass : RiskClassDT [0..1]
+    trend : RiskTrendDT [0..1]
+    active : Boolean
+  }
+  class ProjectBudgetLine {
+    category : Text
+    plannedAmount, actualAmount : EUR
+  }
+  class ProjectStatusReport {
+    reportDate : Datum
+    reportingPeriod : Text [0..1]
+    progress : Prozent
+    goalStatus, scheduleStatus,\nresourceStatus, budgetStatus : AmpelDT [0..1]
+    actualEffortPt : PT [0..1]
+    actualBudget : EUR [0..1]
+  }
+}
+
+package "Organisation und Zugang" {
+  class AccessRole {
+    code : Text (eindeutig)
+    kind : AccessRoleKindDT
+    businessAreas : Text[*]
+    departmentIds : Text[*]
+    permissions : PermissionSetDT
+    system : Boolean
+  }
+  class User {
+    email : Email (eindeutig)
+    name : Text
+    department : Text
+    role : UserRoleDT
+    authProvider : AuthProviderDT
+    twoFactorEnabled : Boolean
+    calendarSyncEnabled : Boolean
+  }
+  class SsoLoginTicket {
+    tokenHash : Text (eindeutig)
+    expiresAt : Zeitstempel
+    usedAt : Zeitstempel [0..1]
+  }
+}
+
+package "Aufgaben" {
+  class Task {
+    title : Text
+    status : TaskStatusDT
+    priority : PriorityDT
+    order : Integer
+    startDate, dueDate, endDate : Datum [0..1]
+    estimatedHours : Stunden [0..1]
+    department : Text [0..1]
+    approvalLevel : ApprovalLevelDT [0..1]
+  }
+  class Comment {
+    content : Text
+    createdAt : Zeitstempel
+  }
+  class TaskMarker {
+    label : Text
+    color : Farbe
+    matchField : MatchFieldDT
+    matchValue : Text
+  }
+  class CalendarSyncEvent {
+    provider : CalendarProviderDT
+    externalEventId : Text
+  }
+}
+
+package "Steuerung und Nachweis" {
+  class ApprovalRequest {
+    entityType : ApprovalEntityTypeDT
+    entityId : Identifier
+    title : Text
+    status : ApprovalStatusDT
+    evidence : Text [0..1]
+    decisionNote : Text [0..1]
+    requestedAt, decidedAt : Zeitstempel
+  }
+  class AuditLog {
+    action : Text
+    entityType : Text
+    summary : Text
+    severity : SeverityDT
+    before, after, metadata : JSON [0..1]
+    actorName, actorEmail, actorRole : Text
+    ipAddress : Text [0..1]
+    createdAt : Zeitstempel
+  }
+}
+
+' Zugang
+AccessRole "0..1" -- "*" User : hat Zugriffsrolle
+User "1" *-- "*" SsoLoginTicket : besitzt
+
+' Projekte
+User "1" -left- "*" Project : Eigentuemer\n(owner)
+Project "1" *-- "*" ProjectMilestone
+Project "1" *-- "*" ProjectRisk
+Project "1" *-- "*" ProjectBudgetLine
+Project "1" *-- "*" ProjectStatusReport
+
+' Aufgaben
+Project "1" *-- "*" Task
+User "0..1" -right- "*" Task : Bearbeiter\n(assignee)
+Task "1" *-- "*" Comment
+User "1" *-- "*" TaskMarker : eigene\nFarbstreifen
+Task "*" ..> "0..1" TaskMarker : markerId\n(lose Referenz)
+Task "1" *-- "*" CalendarSyncEvent
+
+' Steuerung
+ApprovalRequest "*" -- "1" User : Anfragender
+ApprovalRequest "*" -- "0..1" User : Genehmiger
+
+legend bottom right
+  Nicht gezeichnet (siehe Attributtabellen in D1): Autor von
+  ProjectStatusReport und Comment, Besitzer von CalendarSyncEvent,
+  Akteur eines AuditLog-Eintrags. Alle vier verweisen auf User.
+end legend
+@enduml
