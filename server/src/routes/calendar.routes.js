@@ -2,10 +2,9 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const { parseDate } = require('../utils/date');
 const { serializeTask } = require('../utils/contentSerializers');
+const { buildTaskScopeWhere, getCurrentUserWithAccessRole, mergeAnd } = require('../utils/accessScope');
 
 const router = express.Router();
-
-const elevatedRoles = new Set(['ADMIN', 'PROJECT_MANAGER']);
 
 function toBoolean(value) {
   return value === true || value === 'true';
@@ -27,11 +26,9 @@ router.get('/tasks', auth, async (req, res) => {
       search,
     } = req.query;
 
-    const currentUser = await req.prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: { id: true, role: true, department: true },
-    });
-    const isElevated = elevatedRoles.has(currentUser?.role);
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+
     const fromDate = parseDate(from);
     const toDate = parseDate(to);
     const now = new Date();
@@ -72,18 +69,10 @@ router.get('/tasks', auth, async (req, res) => {
       });
     }
 
-    if (!isElevated) {
-      filters.push({
-        OR: [
-          { assigneeId: req.user.id },
-          { project: { ownerId: req.user.id } },
-          { department: currentUser?.department || undefined },
-        ],
-      });
-    }
+    filters.push(buildTaskScopeWhere(currentUser));
 
     const tasks = await req.prisma.task.findMany({
-      where: filters.length ? { AND: filters } : {},
+      where: mergeAnd(...filters),
       include: {
         assignee: {
           select: { id: true, name: true, email: true, role: true, department: true },

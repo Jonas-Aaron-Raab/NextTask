@@ -2,6 +2,13 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const { pickFields, writeAuditLog } = require('../utils/auditLog');
 const { serializeProject } = require('../utils/contentSerializers');
+const {
+  buildDepartmentScopeWhere,
+  buildProjectScopeWhere,
+  getCurrentUserWithAccessRole,
+  mergeAnd,
+  userHasPermission,
+} = require('../utils/accessScope');
 const router = express.Router();
 
 const projectInclude = {
@@ -118,8 +125,11 @@ function buildBudgetLineCreates(budgetLines) {
 
 router.get('/', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+
     const projects = await req.prisma.project.findMany({
-      where: { ownerId: req.user.id },
+      where: buildProjectScopeWhere(currentUser),
       orderBy: { createdAt: 'desc' },
       include: projectInclude,
     });
@@ -134,6 +144,12 @@ router.get('/', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+    if (!userHasPermission(currentUser, 'editProjects')) {
+      return res.status(403).json({ message: 'Keine Berechtigung zum Erstellen von Projekten' });
+    }
+
     const {
       name,
       key,
@@ -165,6 +181,16 @@ router.post('/', auth, async (req, res) => {
     const trimmedName = normalizeString(name);
     if (!trimmedName) {
       return res.status(400).json({ message: 'Projektname ist erforderlich' });
+    }
+
+    const scopedDepartment = departmentId
+      ? await req.prisma.department.findFirst({
+          where: mergeAnd({ id: departmentId }, buildDepartmentScopeWhere(currentUser)),
+          select: { id: true },
+        })
+      : null;
+    if (departmentId && !scopedDepartment) {
+      return res.status(403).json({ message: 'Keine Berechtigung für diese Abteilung' });
     }
 
     const milestoneCreates = buildMilestoneCreates(milestones);
@@ -256,8 +282,14 @@ router.post('/', auth, async (req, res) => {
 
 router.put('/:id/reporting', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+    if (!userHasPermission(currentUser, 'editProjects')) {
+      return res.status(403).json({ message: 'Keine Berechtigung zum Bearbeiten von Projekten' });
+    }
+
     const currentProject = await req.prisma.project.findFirst({
-      where: { id: req.params.id, ownerId: req.user.id },
+      where: mergeAnd({ id: req.params.id }, buildProjectScopeWhere(currentUser)),
       include: projectInclude,
     });
 
@@ -269,6 +301,17 @@ router.put('/:id/reporting', auth, async (req, res) => {
     const riskCreates = buildRiskCreates(req.body.risks);
     const budgetLineCreates = buildBudgetLineCreates(req.body.budgetLines);
     const interfaceCreates = buildInterfaceCreates(req.body.interfaces);
+    const nextDepartmentId = optionalString(req.body.departmentId);
+
+    if (nextDepartmentId) {
+      const scopedDepartment = await req.prisma.department.findFirst({
+        where: mergeAnd({ id: nextDepartmentId }, buildDepartmentScopeWhere(currentUser)),
+        select: { id: true },
+      });
+      if (!scopedDepartment) {
+        return res.status(403).json({ message: 'Keine Berechtigung für diese Abteilung' });
+      }
+    }
 
     const project = await req.prisma.$transaction(async (prisma) => {
       if (Array.isArray(req.body.milestones)) {
@@ -301,7 +344,7 @@ router.put('/:id/reporting', auth, async (req, res) => {
           keyInterfaces: toStringArray(req.body.keyInterfaces),
           collaborationQuality: optionalString(req.body.collaborationQuality),
           reportCycle: optionalString(req.body.reportCycle) || currentProject.reportCycle,
-          departmentId: optionalString(req.body.departmentId),
+          departmentId: nextDepartmentId,
           visibility: optionalString(req.body.visibility),
           statusLabel: optionalString(req.body.status),
           projectType: optionalString(req.body.projectType),
@@ -354,8 +397,14 @@ router.put('/:id/reporting', auth, async (req, res) => {
 
 router.post('/:id/status-reports', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+    if (!userHasPermission(currentUser, 'viewReports')) {
+      return res.status(403).json({ message: 'Keine Berechtigung für Statusberichte' });
+    }
+
     const project = await req.prisma.project.findFirst({
-      where: { id: req.params.id, ownerId: req.user.id },
+      where: mergeAnd({ id: req.params.id }, buildProjectScopeWhere(currentUser)),
     });
 
     if (!project) {

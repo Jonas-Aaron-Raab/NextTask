@@ -10,6 +10,13 @@ const {
 const { removeTaskCalendarSyncs, syncTaskCalendarEvent } = require('../utils/calendarIntegration');
 const { parseDate } = require('../utils/date');
 const { serializeTask } = require('../utils/contentSerializers');
+const {
+  buildProjectScopeWhere,
+  buildTaskScopeWhere,
+  getCurrentUserWithAccessRole,
+  mergeAnd,
+  userHasPermission,
+} = require('../utils/accessScope');
 const router = express.Router();
 
 const parseTaskDate = (value) => parseDate(value, undefined);
@@ -278,6 +285,15 @@ async function notifyCommentMentions({ req, task, content }) {
 
 router.get('/project/:projectId', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+
+    const project = await req.prisma.project.findFirst({
+      where: mergeAnd({ id: req.params.projectId }, buildProjectScopeWhere(currentUser)),
+      select: { id: true },
+    });
+    if (!project) return res.status(404).json({ message: 'Projekt wurde nicht gefunden' });
+
     const tasks = await req.prisma.task.findMany({
       where: { projectId: req.params.projectId },
       include: taskDetailInclude,
@@ -294,6 +310,12 @@ router.get('/project/:projectId', auth, async (req, res) => {
 
 router.post('/', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+    if (!userHasPermission(currentUser, 'editTasks')) {
+      return res.status(403).json({ message: 'Keine Berechtigung zum Erstellen von Aufgaben' });
+    }
+
     const {
       title,
       description,
@@ -315,6 +337,12 @@ router.post('/', auth, async (req, res) => {
       sourceTaskId,
       parentTaskId,
     } = req.body;
+    const scopedProject = await req.prisma.project.findFirst({
+      where: mergeAnd({ id: projectId }, buildProjectScopeWhere(currentUser)),
+      select: { id: true },
+    });
+    if (!scopedProject) return res.status(404).json({ message: 'Projekt wurde nicht gefunden' });
+
     const normalizedStatus = normalizeStatus(status);
     const lastTask = await req.prisma.task.findFirst({
       where: { projectId, status: normalizedStatus },
@@ -379,6 +407,12 @@ router.post('/', auth, async (req, res) => {
 
 router.put('/:id', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+    if (!userHasPermission(currentUser, 'editTasks')) {
+      return res.status(403).json({ message: 'Keine Berechtigung zum Bearbeiten von Aufgaben' });
+    }
+
     const {
       title,
       description,
@@ -399,7 +433,19 @@ router.put('/:id', auth, async (req, res) => {
       sourceTaskId,
       parentTaskId,
     } = req.body;
-    const before = await req.prisma.task.findUnique({ where: { id: req.params.id } });
+    const before = await req.prisma.task.findFirst({
+      where: mergeAnd({ id: req.params.id }, buildTaskScopeWhere(currentUser)),
+    });
+    if (!before) return res.status(404).json({ message: 'Aufgabe wurde nicht gefunden' });
+
+    if (req.body.projectId && req.body.projectId !== before.projectId) {
+      const scopedProject = await req.prisma.project.findFirst({
+        where: mergeAnd({ id: req.body.projectId }, buildProjectScopeWhere(currentUser)),
+        select: { id: true },
+      });
+      if (!scopedProject) return res.status(403).json({ message: 'Keine Berechtigung für das Zielprojekt' });
+    }
+
     const updatedTask = await req.prisma.task.update({
       where: { id: req.params.id },
       data: {
@@ -459,8 +505,18 @@ router.put('/:id', auth, async (req, res) => {
 
 router.patch('/:id/move', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+    if (!userHasPermission(currentUser, 'editTasks')) {
+      return res.status(403).json({ message: 'Keine Berechtigung zum Verschieben von Aufgaben' });
+    }
+
     const { status, order } = req.body;
-    const before = await req.prisma.task.findUnique({ where: { id: req.params.id } });
+    const before = await req.prisma.task.findFirst({
+      where: mergeAnd({ id: req.params.id }, buildTaskScopeWhere(currentUser)),
+    });
+    if (!before) return res.status(404).json({ message: 'Aufgabe wurde nicht gefunden' });
+
     const updated = await req.prisma.task.update({
       where: { id: req.params.id },
       data: { status: normalizeStatus(status), order },
@@ -489,8 +545,18 @@ router.patch('/:id/move', auth, async (req, res) => {
 
 router.patch('/:id/schedule', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+    if (!userHasPermission(currentUser, 'editTasks')) {
+      return res.status(403).json({ message: 'Keine Berechtigung zum Planen von Aufgaben' });
+    }
+
     const { startDate, dueDate, endDate, assigneeId, estimatedHours } = req.body;
-    const before = await req.prisma.task.findUnique({ where: { id: req.params.id } });
+    const before = await req.prisma.task.findFirst({
+      where: mergeAnd({ id: req.params.id }, buildTaskScopeWhere(currentUser)),
+    });
+    if (!before) return res.status(404).json({ message: 'Aufgabe wurde nicht gefunden' });
+
     const updated = await req.prisma.task.update({
       where: { id: req.params.id },
       data: {
@@ -538,7 +604,17 @@ router.patch('/:id/schedule', auth, async (req, res) => {
 
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const task = await req.prisma.task.findUnique({ where: { id: req.params.id } });
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+    if (!userHasPermission(currentUser, 'editTasks')) {
+      return res.status(403).json({ message: 'Keine Berechtigung zum Löschen von Aufgaben' });
+    }
+
+    const task = await req.prisma.task.findFirst({
+      where: mergeAnd({ id: req.params.id }, buildTaskScopeWhere(currentUser)),
+    });
+    if (!task) return res.status(404).json({ message: 'Aufgabe wurde nicht gefunden' });
+
     await removeTaskCalendarSyncs(req.prisma, req.params.id);
     await req.prisma.task.delete({ where: { id: req.params.id } });
 
@@ -564,8 +640,15 @@ router.delete('/:id', auth, async (req, res) => {
 
 router.post('/:id/comments', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+
     const { content } = req.body;
-    const task = await req.prisma.task.findUnique({ where: { id: req.params.id } });
+    const task = await req.prisma.task.findFirst({
+      where: mergeAnd({ id: req.params.id }, buildTaskScopeWhere(currentUser)),
+    });
+    if (!task) return res.status(404).json({ message: 'Aufgabe wurde nicht gefunden' });
+
     const comment = await req.prisma.comment.create({
       data: {
         content,

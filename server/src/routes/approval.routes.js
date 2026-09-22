@@ -2,6 +2,14 @@ const express = require('express');
 const auth = require('../middleware/auth');
 const { pickFields, summarizeChanges, writeAuditLog } = require('../utils/auditLog');
 const { userCanApproveRequests } = require('../utils/accessRoles');
+const {
+  buildApprovalScopeWhere,
+  buildDocumentScopeWhere,
+  buildProjectScopeWhere,
+  buildTaskScopeWhere,
+  getCurrentUserWithAccessRole,
+  mergeAnd,
+} = require('../utils/accessScope');
 
 const router = express.Router();
 
@@ -90,13 +98,7 @@ const approvalInclude = {
 };
 
 async function getCurrentUser(req) {
-  const currentUser = await req.prisma.user.findUnique({
-    where: { id: req.user.id },
-    include: { accessRole: true },
-  });
-
-  req.currentUser = currentUser;
-  return currentUser;
+  return getCurrentUserWithAccessRole(req);
 }
 
 async function findFallbackApprover(prisma, requesterId) {
@@ -163,7 +165,7 @@ async function getEntityContext(prisma, entityType, entityId) {
   return null;
 }
 
-function buildListWhere({ currentUser, role, status, search }) {
+function buildListWhere({ currentUser, role, status, search, approvalScopeWhere }) {
   const canApprove = userCanApproveRequests(currentUser);
   const scope =
     role === 'sent'
@@ -176,6 +178,7 @@ function buildListWhere({ currentUser, role, status, search }) {
           ? {}
           : { OR: [{ requesterId: currentUser.id }, { approverId: currentUser.id }] };
   const filters = [
+    approvalScopeWhere && Object.keys(approvalScopeWhere).length ? approvalScopeWhere : null,
     Object.keys(scope).length ? scope : null,
     status ? { status } : null,
     search
@@ -195,6 +198,48 @@ function buildListWhere({ currentUser, role, status, search }) {
   return filters.length ? { AND: filters } : {};
 }
 
+async function userCanAccessEntity(prisma, currentUser, entityType, entityId) {
+  if (!entityId || entityType === 'OTHER') return true;
+
+  if (entityType === 'PROJECT') {
+    return Boolean(
+      await prisma.project.findFirst({
+        where: mergeAnd({ id: entityId }, buildProjectScopeWhere(currentUser)),
+        select: { id: true },
+      }),
+    );
+  }
+
+  if (entityType === 'TASK') {
+    return Boolean(
+      await prisma.task.findFirst({
+        where: mergeAnd({ id: entityId }, buildTaskScopeWhere(currentUser)),
+        select: { id: true },
+      }),
+    );
+  }
+
+  if (entityType === 'STATUS_REPORT') {
+    return Boolean(
+      await prisma.projectStatusReport.findFirst({
+        where: mergeAnd({ id: entityId }, { project: buildProjectScopeWhere(currentUser) }),
+        select: { id: true },
+      }),
+    );
+  }
+
+  if (entityType === 'DOCUMENT') {
+    return Boolean(
+      await prisma.document.findFirst({
+        where: mergeAnd({ id: entityId }, buildDocumentScopeWhere(currentUser)),
+        select: { id: true },
+      }),
+    );
+  }
+
+  return false;
+}
+
 router.get('/context', auth, async (req, res) => {
   try {
     const currentUser = await getCurrentUser(req);
@@ -206,16 +251,19 @@ router.get('/context', auth, async (req, res) => {
         select: { id: true, name: true, email: true, department: true, role: true, accessRole: true },
       }),
       req.prisma.project.findMany({
+        where: buildProjectScopeWhere(currentUser),
         orderBy: { createdAt: 'desc' },
         take: 100,
         select: { id: true, name: true, key: true, ownerId: true },
       }),
       req.prisma.task.findMany({
+        where: buildTaskScopeWhere(currentUser),
         orderBy: { updatedAt: 'desc' },
         take: 100,
         select: { id: true, title: true, status: true, projectId: true, project: { select: { name: true } } },
       }),
       req.prisma.projectStatusReport.findMany({
+        where: { project: buildProjectScopeWhere(currentUser) },
         orderBy: { reportDate: 'desc' },
         take: 100,
         select: { id: true, reportingPeriod: true, reportDate: true, project: { select: { id: true, name: true } } },
@@ -260,7 +308,8 @@ router.get('/', auth, async (req, res) => {
     const role = normalizeString(req.query.role);
     const search = normalizeString(req.query.search);
     const limit = Math.min(Math.max(Number(req.query.limit) || 150, 10), 250);
-    const where = buildListWhere({ currentUser, role, status, search });
+    const approvalScopeWhere = await buildApprovalScopeWhere(req.prisma, currentUser);
+    const where = buildListWhere({ currentUser, role, status, search, approvalScopeWhere });
 
     const [approvals, total, facets] = await Promise.all([
       req.prisma.approvalRequest.findMany({
@@ -301,6 +350,9 @@ router.post('/', auth, async (req, res) => {
     const entityContext = await getEntityContext(req.prisma, entityType, entityId);
     if (['TASK', 'PROJECT', 'STATUS_REPORT'].includes(entityType) && !entityContext) {
       return res.status(404).json({ message: 'Bezugsobjekt wurde nicht gefunden' });
+    }
+    if (!(await userCanAccessEntity(req.prisma, currentUser, entityType, entityId))) {
+      return res.status(403).json({ message: 'Keine Berechtigung für dieses Bezugsobjekt' });
     }
 
     let approverId = normalizeString(req.body.approverId) || entityContext?.ownerId || null;
@@ -358,6 +410,9 @@ async function decideApproval(req, res, status) {
       include: approvalInclude,
     });
     if (!before) return res.status(404).json({ message: 'Freigabe wurde nicht gefunden' });
+    if (!(await userCanAccessEntity(req.prisma, currentUser, before.entityType, before.entityId))) {
+      return res.status(404).json({ message: 'Freigabe wurde nicht gefunden' });
+    }
     if (before.status !== 'PENDING') {
       return res.status(400).json({ message: 'Diese Freigabe ist bereits entschieden' });
     }
@@ -412,6 +467,9 @@ router.patch('/:id/cancel', auth, async (req, res) => {
       include: approvalInclude,
     });
     if (!before) return res.status(404).json({ message: 'Freigabe wurde nicht gefunden' });
+    if (!(await userCanAccessEntity(req.prisma, currentUser, before.entityType, before.entityId))) {
+      return res.status(404).json({ message: 'Freigabe wurde nicht gefunden' });
+    }
     if (before.status !== 'PENDING') {
       return res.status(400).json({ message: 'Nur offene Freigaben können abgebrochen werden' });
     }

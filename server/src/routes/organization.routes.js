@@ -1,6 +1,12 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const { serializeDepartment, serializeProject, serializeTask } = require('../utils/contentSerializers');
+const {
+  buildDepartmentScopeWhere,
+  buildProjectScopeWhere,
+  getCurrentUserWithAccessRole,
+  userHasPermission,
+} = require('../utils/accessScope');
 
 const router = express.Router();
 
@@ -33,14 +39,19 @@ const projectInclude = {
 
 router.get('/', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+
     const [departments, projects] = await Promise.all([
       req.prisma.department.findMany({
+        where: buildDepartmentScopeWhere(currentUser),
         include: {
           members: { orderBy: { order: 'asc' } },
         },
         orderBy: [{ businessArea: 'asc' }, { name: 'asc' }],
       }),
       req.prisma.project.findMany({
+        where: buildProjectScopeWhere(currentUser),
         include: projectInclude,
         orderBy: [{ createdAt: 'asc' }],
       }),
@@ -73,7 +84,11 @@ router.get('/', auth, async (req, res) => {
 
 router.get('/departments', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+
     const departments = await req.prisma.department.findMany({
+      where: buildDepartmentScopeWhere(currentUser),
       include: { members: { orderBy: { order: 'asc' } } },
       orderBy: [{ businessArea: 'asc' }, { name: 'asc' }],
     });
@@ -86,6 +101,12 @@ router.get('/departments', auth, async (req, res) => {
 
 router.post('/departments', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+    if (!userHasPermission(currentUser, 'manageRoles')) {
+      return res.status(403).json({ message: 'Keine Berechtigung zum Erstellen von Abteilungen' });
+    }
+
     const name = String(req.body.name || '').trim();
     if (!name) return res.status(400).json({ message: 'Abteilungsname ist erforderlich' });
 

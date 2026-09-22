@@ -1,6 +1,7 @@
 const express = require('express');
 const auth = require('../middleware/auth');
 const { serializeDocument } = require('../utils/contentSerializers');
+const { buildDocumentScopeWhere, getCurrentUserWithAccessRole } = require('../utils/accessScope');
 
 const router = express.Router();
 
@@ -14,8 +15,12 @@ const documentInclude = {
 
 router.get('/', auth, async (req, res) => {
   try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+
     const [documents, templates] = await Promise.all([
       req.prisma.document.findMany({
+        where: buildDocumentScopeWhere(currentUser),
         include: documentInclude,
         orderBy: [{ updatedAt: 'desc' }, { title: 'asc' }],
       }),
