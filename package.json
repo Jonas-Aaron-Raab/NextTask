@@ -3,9 +3,11 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
-    "start": "concurrently \"npm --prefix server start\" \"npm --prefix client run dev\""
+    "start": "concurrently \"npm --prefix server start\" \"npm --prefix client run dev\"",
+    "test:e2e": "playwright test tests/smoke.spec.js"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "concurrently": "^9.2.1"
   }
 }
