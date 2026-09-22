@@ -147,8 +147,6 @@ export default function RoleManagementPage() {
   }, []);
 
   useEffect(() => {
-    // Initial API load for the database-backed role editor.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshConfig();
   }, [refreshConfig]);
 
@@ -355,6 +353,10 @@ export default function RoleManagementPage() {
               <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#b84758]">Adminbereich</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Rollen bearbeiten und vergeben</h1>
             </div>
+            <button type="button" onClick={handleReset} className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+              <RotateCcw className="h-4 w-4" />
+              Neu laden
+            </button>
           </div>
         </section>
 
@@ -370,6 +372,18 @@ export default function RoleManagementPage() {
             })}
           </div>
         </nav>
+
+        {status ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+            {status}
+          </div>
+        ) : null}
+
+        {error ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+            {error}
+          </div>
+        ) : null}
 
         {activeTab === 'manage' ? <div className="grid gap-5 xl:grid-cols-[360px_1fr]">
           <section className="rounded-[30px] border border-slate-300 bg-white p-5 shadow-[0_18px_45px_rgba(15,23,42,0.04)]">

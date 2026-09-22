@@ -268,6 +268,7 @@ export default function SettingsPage() {
   const [taskMarkersOpen, setTaskMarkersOpen] = useState(false);
   const [expandedTaskMarkerIds, setExpandedTaskMarkerIds] = useState(() => new Set());
   const [isLoadingTaskMarkers, setIsLoadingTaskMarkers] = useState(false);
+  const [taskMarkerError, setTaskMarkerError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
@@ -442,8 +443,9 @@ export default function SettingsPage() {
       try {
         const markers = await loadTaskMarkersFromApi();
         if (!ignore) setTaskMarkers(markers);
-      } catch (error) {
+      } catch {
         if (!ignore) {
+          setTaskMarkerError('Aufgabenfarben konnten nicht aus der Datenbank geladen werden. Lokale Einstellungen werden verwendet.');
           setTaskMarkers(getStoredTaskMarkers());
         }
       } finally {
@@ -991,6 +993,11 @@ export default function SettingsPage() {
                 {isLoadingTaskMarkers ? (
                   <p className="mt-4 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-500">
                     Aufgabenfarben werden geladen ...
+                  </p>
+                ) : null}
+                {taskMarkerError ? (
+                  <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-700">
+                    {taskMarkerError}
                   </p>
                 ) : null}
                 <div className="mt-4 space-y-3">

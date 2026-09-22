@@ -54,13 +54,6 @@ const initialForm = {
   approverId: '',
 };
 
-function getApprovalFacets(approvals) {
-  return approvals.reduce((facets, approval) => {
-    facets[approval.status] = (facets[approval.status] || 0) + 1;
-    return facets;
-  }, {});
-}
-
 function formatDate(value) {
   if (!value) return 'Noch offen';
   return new Intl.DateTimeFormat('de-DE', {

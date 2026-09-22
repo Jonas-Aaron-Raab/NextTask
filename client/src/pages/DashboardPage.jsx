@@ -194,8 +194,8 @@ export default function DashboardPage() {
   const currentAssignee = user?.name || 'Teammitglied';
   const effectiveRole = useMemo(() => getEffectiveRoleForUser(user), [user]);
   const showDepartmentFilter = canFilterDepartments(effectiveRole);
-  const departments = organizationData.departments || [];
-  const organizationProjects = organizationData.projects || [];
+  const departments = useMemo(() => organizationData.departments || [], [organizationData.departments]);
+  const organizationProjects = useMemo(() => organizationData.projects || [], [organizationData.projects]);
   const userDepartmentScopes = useMemo(() => getUserDepartmentScopes(user, effectiveRole, departments), [departments, effectiveRole, user]);
   const activeDepartmentScopes = useMemo(
     () => (showDepartmentFilter ? [selectedDepartment] : userDepartmentScopes),
@@ -251,7 +251,7 @@ export default function DashboardPage() {
   }, []);
 
   const searchTerm = searchValue.trim().toLowerCase();
-  const dashboardTasks = apiTasks || [];
+  const dashboardTasks = useMemo(() => apiTasks || [], [apiTasks]);
   const departmentByProjectName = useMemo(() => {
     return Object.fromEntries(
       organizationProjects.map((project) => {
@@ -642,9 +642,12 @@ export default function DashboardPage() {
                     <p className="text-[1rem] font-bold text-slate-950">{task.title}</p>
                     <p className="mt-1 text-sm font-semibold text-slate-400">{task.project}</p>
                   </div>
-                  <span className={`ml-auto rounded-full px-3 py-1 text-xs font-semibold ${priorityStyles[task.priority] || priorityStyles.mittel}`}>
-                    {task.priority}
-                  </span>
+                  <div className="ml-auto flex flex-none flex-col items-end gap-2">
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${priorityStyles[task.priority] || priorityStyles.mittel}`}>
+                      {task.priority}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-500">{getDeadlineLabel(task)}</span>
+                  </div>
                 </button>
               ))}
 

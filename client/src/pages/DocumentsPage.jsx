@@ -202,8 +202,11 @@ export default function DocumentsPage() {
     };
   }, []);
 
-  const activeDocuments = apiDocuments || [];
-  const activeTemplates = apiTemplates?.length ? apiTemplates.map((template) => template.title || template) : [];
+  const activeDocuments = useMemo(() => apiDocuments || [], [apiDocuments]);
+  const activeTemplates = useMemo(
+    () => (apiTemplates?.length ? apiTemplates.map((template) => template.title || template) : []),
+    [apiTemplates],
+  );
   const activeKnowledgeSpaces = useMemo(
     () =>
       departments.map((department, index) => ({
@@ -246,7 +249,6 @@ export default function DocumentsPage() {
     });
   }, [activeDocuments, searchValue, selectedDepartment, selectedStatus, selectedType]);
 
-  const policyCount = activeDocuments.filter((document) => document.type === 'Richtlinie' || document.type === 'Prozessdokument').length;
   const searchSuggestions = useMemo(() => {
     const query = searchValue.trim().toLowerCase();
     if (!query) return [];

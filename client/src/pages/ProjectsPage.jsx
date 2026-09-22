@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import { createElement, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -100,7 +99,7 @@ function DetailBlock({ title, icon, children, action }) {
   );
 }
 
-function getSourceTask(task) {
+function getSourceTask() {
   return null;
 }
 
@@ -268,8 +267,6 @@ function mapApiTaskToBacklogTask(task) {
     source: 'api',
     sourceTaskId: null,
     controlId: task.project?.key ? `${task.project.key}-${String(task.id).slice(-4)}` : task.id,
-    creatorInitials: 'API',
-    creatorName: 'NextTask',
     projectId: task.projectId,
     title: task.title,
     status: normalizeLiveTaskStatus(task.status),

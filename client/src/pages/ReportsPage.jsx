@@ -17,8 +17,6 @@ import { DonutChart, ReportFilterField } from '../components/reports/ReportWidge
 import ReportsContent from '../components/reports/ReportsContent';
 
 const periods = ['Diese Woche', 'Dieser Monat', 'Dieses Jahr'];
-const reportSelectClass =
-  'h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#b84758] focus:ring-4 focus:ring-[#b84758]/12';
 const dayInMs = 86400000;
 
 
@@ -199,15 +197,6 @@ function formatReportPeriod(inputDate) {
     month: 'long',
     year: 'numeric',
   }).format(new Date(`${inputDate}T00:00:00`));
-}
-
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 }
 
 export default function ReportsPage() {
@@ -395,7 +384,6 @@ export default function ReportsPage() {
     });
   }, [filteredProjects]);
 
-  const visibleProjectCount = filteredProjects.length;
   const activeProject = filteredProjects.find((project) => project.id === activeProjectId) || filteredProjects[0] || null;
   const selectedReportProject = projectCards.find((project) => project.id === selectedReportProjectId) || projectCards[0] || null;
   const statusReport = useMemo(() => {

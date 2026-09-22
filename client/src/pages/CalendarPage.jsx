@@ -17,13 +17,11 @@ import { CalendarFilterPanel, CalendarToolbar, FilterSelect as CalendarFilterSel
 import { DayAgendaModal, DayView, MonthView, PlanningListView, WeekView } from '../components/calendar/CalendarViews';
 import { CreateTaskModal, DetailPanel } from '../components/calendar/CalendarDialogs';
 import { addDays, fromDateKey, formatDateRangeTitle, formatFullDate, getRange, toDateKey } from '../utils/calendar';
-import { priorityLabels, statusColors, statusLabels } from '../data/calendarConstants';
+import { priorityLabels, statusLabels } from '../data/calendarConstants';
 import { normalizeTaskPriority, normalizeTaskStatus, toTaskDateValue } from '../utils/task';
 
 const projectColors = ['#4f46e5', '#0f766e', '#b45309', '#be123c', '#6d28d9', '#15803d'];
 const calendarScheduleStorageKey = 'nexttask-calendar-schedule-overrides';
-const monthPreviewLimit = 2;
-
 function normalizeTask(task, index = 0) {
   const dueDate = toTaskDateValue(task.dueDateValue || task.dueDate);
   const projectName = task.project?.name || task.project || 'Ohne Projekt';

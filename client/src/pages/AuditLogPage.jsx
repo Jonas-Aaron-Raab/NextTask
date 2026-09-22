@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { createElement, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   CalendarClock,
@@ -87,7 +87,7 @@ function formatJson(value) {
   return JSON.stringify(value, null, 2);
 }
 
-function StatCard({ icon: Icon, label, value, tone }) {
+function StatCard({ icon, label, value, tone }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
       <div className="flex items-center justify-between gap-3">
@@ -96,7 +96,7 @@ function StatCard({ icon: Icon, label, value, tone }) {
           <p className="mt-2 text-2xl font-black text-slate-950">{value}</p>
         </div>
         <span className={`inline-flex h-11 w-11 items-center justify-center rounded-xl ${tone}`}>
-          <Icon className="h-5 w-5" />
+          {createElement(icon, { className: 'h-5 w-5' })}
         </span>
       </div>
     </section>

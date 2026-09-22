@@ -135,7 +135,7 @@ export default function DepartmentsPage() {
   const [accessConfig, setAccessConfig] = useState(() => loadAccessConfig());
   const [organizationData, setOrganizationData] = useState(null);
   const effectiveRole = useMemo(() => getEffectiveRoleForUser(user, accessConfig), [accessConfig, user]);
-  const departments = organizationData?.departments || [];
+  const departments = useMemo(() => organizationData?.departments || [], [organizationData?.departments]);
   const organizationProjects = useMemo(() => {
     if (!organizationData?.projects?.length) return [];
 

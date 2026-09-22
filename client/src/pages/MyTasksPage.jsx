@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { createElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -25,7 +25,7 @@ import {
 import AppShell from '../components/AppShell';
 import { CreateProjectModal as ProjectsCreateProjectModal } from './ProjectsPage';
 import api from '../api/axios';
-import { formatEffort, getEffortHoursFromInput, getEffortInputValue } from '../utils/effort';
+import { getEffortHoursFromInput, getEffortInputValue } from '../utils/effort';
 import { getStoredTaskMarkers, getTaskMarker } from '../utils/taskMarkers';
 
 const columns = [
@@ -36,15 +36,7 @@ const columns = [
   { id: 'done', title: 'Erledigt', dot: 'bg-emerald-500' },
 ];
 
-const teamMembers = [
-  'Lisa Wagner',
-  'Markus Klein',
-  'Anna Becker',
-  'Tom Becker',
-  'Sarah Nguyen',
-];
-
-const teamProfiles = {
+const TEAM_PROFILES = {
   'Lisa Wagner': {
     email: 'lisa.wagner@sparkasse-nexttask.de',
     role: 'Produktmanagerin',
@@ -72,7 +64,7 @@ const teamProfiles = {
   },
 };
 
-const controlFeed = [
+const CONTROL_FEED = [
   {
     taskId: 'my-task-5',
     title: 'Vier-Augen-Freigabe offen',
@@ -123,7 +115,7 @@ const performancePeriods = [
   { id: 'month', label: 'Monat', days: 31 },
   { id: 'year', label: 'Jahr', days: 365 },
 ];
-const performancePresets = {
+const PERFORMANCE_PRESETS = {
   day: {
     label: 'Tag',
     progress: 68,
@@ -492,12 +484,12 @@ function PriorityBadge({ priority }) {
   );
 }
 
-function StatCard({ title, value, subtitle, icon: Icon, iconTone }) {
+function StatCard({ title, value, subtitle, icon, iconTone }) {
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-2.5 shadow-[0_14px_34px_rgba(15,23,42,0.06)]">
       <div className="flex items-start justify-between gap-3">
         <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${iconTone}`}>
-          <Icon className="h-4 w-4" />
+          {createElement(icon, { className: 'h-4 w-4' })}
         </span>
         <p className="flex items-center gap-1 text-[11px] font-bold text-slate-500">
           <ArrowUpRight className="h-3 w-3" />
@@ -1000,12 +992,12 @@ function PerformanceCard({ period, onPeriodChange, data }) {
   );
 }
 
-function DetailBlock({ title, icon: Icon, children, action }) {
+function DetailBlock({ title, icon, children, action }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
       <div className="flex items-center justify-between gap-3">
         <h3 className="inline-flex items-center gap-2 text-sm font-bold text-slate-900">
-          <Icon className="h-4 w-4 text-[#c95767]" />
+          {createElement(icon, { className: 'h-4 w-4 text-[#c95767]' })}
           {title}
         </h3>
         {action}
@@ -1067,7 +1059,6 @@ function TaskEditorModal({
   teamMembers = [],
   parentTask,
   childTasks = [],
-  assignedByName,
   headerEyebrow,
   headerTitle,
   headerTicketNumber,
@@ -1097,13 +1088,13 @@ function TaskEditorModal({
   submitLabel,
   taskMarkers,
 }) {
-  if (!form) return null;
-
   const [activeTab, setActiveTab] = useState('core');
-  const projectOptions = [...new Set([...projects.map((project) => project.name), form.project].filter(Boolean))];
   useEffect(() => {
     setActiveTab('core');
   }, [resetKey]);
+  if (!form) return null;
+
+  const projectOptions = [...new Set([...projects.map((project) => project.name), form.project].filter(Boolean))];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/35 p-4 backdrop-blur-sm">
@@ -1815,7 +1806,7 @@ export default function MyTasksPage() {
   const parentTask = selectedTask?.parentTaskId ? tasks.find((task) => task.id === selectedTask.parentTaskId) : null;
   const childTasks = selectedTask ? tasks.filter((task) => task.parentTaskId === selectedTask.id) : [];
 
-  const openTask = (task) => {
+  const openTask = useCallback((task) => {
     setActivePopup(null);
     setSelectedTaskId(task.id);
     setDetailForm({
@@ -1842,7 +1833,7 @@ export default function MyTasksPage() {
     setPersonDraft(teamMembers[0] || '');
     setAttachmentSource('SharePoint');
     setAttachmentType('Excel');
-  };
+  }, [teamMembers]);
 
   useEffect(() => {
     if (routeSearch) {
@@ -1901,7 +1892,7 @@ export default function MyTasksPage() {
     if (!task) return;
 
     openTask(task);
-  }, [routeTaskId, taskFocusToken, tasks]);
+  }, [openTask, routeTaskId, taskFocusToken, tasks]);
 
   const searchSuggestions = normalizedSearch
     ? visibleTasks.map((task) => ({

@@ -23,6 +23,7 @@ function readStoredUser() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
+  const userId = user?.id;
 
   const login = (token, userData) => {
     clearStoredTaskMarkers();
@@ -39,10 +40,10 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    if (!user || !localStorage.getItem('token')) return;
+    if (!userId || !localStorage.getItem('token')) return;
 
     loadTaskMarkersFromApi().catch(() => {});
-  }, [user?.id]);
+  }, [userId]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
