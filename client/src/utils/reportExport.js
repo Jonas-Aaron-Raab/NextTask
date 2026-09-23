@@ -429,10 +429,133 @@ function downloadDepartmentReportCsv(report) {
   );
 }
 
-function addPdfLine(pdf, text, x, y, options = {}) {
-  const lines = pdf.splitTextToSize(String(text ?? ''), options.maxWidth || 170);
-  pdf.text(lines, x, y);
-  return y + lines.length * (options.lineHeight || 6);
+const sparkasseRed = '#e30613';
+const reportRose = '#b84758';
+const reportInk = '#172033';
+const reportMuted = '#667085';
+const reportLine = '#d8dee8';
+const reportSoft = '#f7f9fc';
+
+function drawSparkasseLogo(pdf, x, y) {
+  pdf.setFillColor(sparkasseRed);
+  pdf.circle(x + 3.4, y + 2.5, 2.4, 'F');
+  pdf.roundedRect(x, y + 6, 10.5, 13, 2, 2, 'F');
+  pdf.setFillColor('#ffffff');
+  pdf.rect(x + 2.4, y + 10.1, 8.1, 1.4, 'F');
+  pdf.rect(x, y + 15.1, 8.1, 1.4, 'F');
+  pdf.setTextColor(sparkasseRed);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(10);
+  pdf.text('Sparkasse', x + 13, y + 11);
+  pdf.text('Oberhessen', x + 13, y + 16);
+}
+
+function drawDepartmentReportHeader(pdf, report, title, subtitle) {
+  pdf.setFillColor('#ffffff');
+  pdf.rect(0, 0, 210, 34, 'F');
+  pdf.setFillColor(sparkasseRed);
+  pdf.rect(0, 0, 210, 3, 'F');
+  drawSparkasseLogo(pdf, 158, 7);
+  pdf.setTextColor(reportInk);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(18);
+  pdf.text(title, 14, 15);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(9);
+  pdf.setTextColor(reportMuted);
+  pdf.text(subtitle, 14, 21);
+  pdf.setDrawColor(sparkasseRed);
+  pdf.setLineWidth(0.6);
+  pdf.line(14, 29, 196, 29);
+  pdf.setFontSize(7);
+  pdf.text(`Abteilung: ${report.department || 'Alle'}`, 14, 33);
+  pdf.text(`Zeitraum: ${report.period || 'Aktuell'}`, 78, 33);
+  pdf.text(`Projektfilter: ${report.projectFilter || 'Alle Projekte'}`, 125, 33);
+}
+
+function drawDepartmentReportFooter(pdf, pageNumber, createdAt) {
+  pdf.setDrawColor(reportLine);
+  pdf.setLineWidth(0.2);
+  pdf.line(14, 287, 196, 287);
+  pdf.setTextColor(reportMuted);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7);
+  pdf.text('NextTask Abteilungsbericht', 14, 292);
+  pdf.text(`Erstellt: ${createdAt}`, 82, 292);
+  pdf.text(`Seite ${pageNumber}`, 184, 292);
+}
+
+function ensureDepartmentReportPage(pdf, y, report, createdAt, pageNumberRef, requiredHeight = 20) {
+  if (y + requiredHeight <= 280) return y;
+
+  drawDepartmentReportFooter(pdf, pageNumberRef.current, createdAt);
+  pdf.addPage();
+  pageNumberRef.current += 1;
+  drawDepartmentReportHeader(pdf, report, 'Abteilungsbericht', 'Projekt-, Aufgaben- und Kontrollsicht');
+  return 43;
+}
+
+function drawSectionTitle(pdf, title, y) {
+  pdf.setTextColor(reportInk);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(11);
+  pdf.text(title, 14, y);
+  pdf.setDrawColor(sparkasseRed);
+  pdf.setLineWidth(0.35);
+  pdf.line(14, y + 2.5, 54, y + 2.5);
+  return y + 8;
+}
+
+function drawMetricCard(pdf, x, y, width, label, value, accentColor = reportRose) {
+  pdf.setFillColor(reportSoft);
+  pdf.setDrawColor(reportLine);
+  pdf.roundedRect(x, y, width, 24, 2.4, 2.4, 'FD');
+  pdf.setFillColor(accentColor);
+  pdf.roundedRect(x, y, 3, 24, 1.5, 1.5, 'F');
+  pdf.setTextColor(reportMuted);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(6.5);
+  pdf.text(String(label).toUpperCase(), x + 7, y + 8);
+  pdf.setTextColor(reportInk);
+  pdf.setFontSize(18);
+  pdf.text(String(value ?? 0), x + 7, y + 18);
+}
+
+function drawProgressBar(pdf, x, y, width, value, color = reportRose) {
+  const normalized = Math.min(Math.max(Number(value) || 0, 0), 100);
+  pdf.setFillColor('#edf1f7');
+  pdf.roundedRect(x, y, width, 3.2, 1.6, 1.6, 'F');
+  pdf.setFillColor(color);
+  pdf.roundedRect(x, y, Math.max(2, (width * normalized) / 100), 3.2, 1.6, 1.6, 'F');
+}
+
+function drawTableHeader(pdf, y, columns) {
+  pdf.setFillColor(reportInk);
+  pdf.roundedRect(14, y, 182, 8, 1.5, 1.5, 'F');
+  pdf.setTextColor('#ffffff');
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(7);
+  columns.reduce((x, column) => {
+    pdf.text(column.label, x + 1.5, y + 5.4);
+    return x + column.width;
+  }, 14);
+  return y + 8;
+}
+
+function drawTableRow(pdf, y, columns, values, options = {}) {
+  const rowHeight = options.height || 10;
+  pdf.setFillColor(options.index % 2 === 0 ? '#ffffff' : reportSoft);
+  pdf.setDrawColor(reportLine);
+  pdf.rect(14, y, 182, rowHeight, 'FD');
+  pdf.setTextColor(reportInk);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7);
+  columns.reduce((x, column, index) => {
+    const cellText = pdf.splitTextToSize(String(values[index] ?? ''), column.width - 3);
+    pdf.text(cellText.slice(0, 2), x + 1.5, y + 4.2);
+    return x + column.width;
+  }, 14);
+  return y + rowHeight;
 }
 
 function downloadDepartmentReportPdf(report) {
@@ -444,72 +567,144 @@ function downloadDepartmentReportPdf(report) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date());
-  let y = 16;
 
+  const metrics = report.metrics || {};
+  const projects = report.projects || [];
+  const teamLoad = report.teamLoad || [];
+  const pageNumberRef = { current: 1 };
+  let y = 43;
+
+  drawDepartmentReportHeader(pdf, report, 'Abteilungsbericht', 'Projekt-, Aufgaben- und Kontrollsicht');
+
+  pdf.setFillColor(reportSoft);
+  pdf.setDrawColor(reportLine);
+  pdf.roundedRect(14, y, 182, 28, 3, 3, 'FD');
+  pdf.setTextColor(reportInk);
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(16);
-  pdf.text('Abteilungsbericht', 14, y);
-  y += 9;
-
+  pdf.setFontSize(12);
+  pdf.text(report.department || 'Alle Abteilungen', 20, y + 9);
+  pdf.setTextColor(reportMuted);
   pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(10);
-  y = addPdfLine(pdf, `Abteilung: ${report.department}`, 14, y);
-  y = addPdfLine(pdf, `Zeitraum: ${report.period}`, 14, y);
-  y = addPdfLine(pdf, `Projektfilter: ${report.projectFilter}`, 14, y);
-  y = addPdfLine(pdf, `Erstellt: ${createdAt}`, 14, y);
-  y += 4;
-
+  pdf.setFontSize(8);
+  pdf.text(`Zeitraum: ${report.period || 'Aktuell'}`, 20, y + 17);
+  pdf.text(`Projektfilter: ${report.projectFilter || 'Alle Projekte'}`, 75, y + 17);
+  pdf.text(`Erstellt: ${createdAt}`, 138, y + 17);
+  pdf.setFillColor(sparkasseRed);
+  pdf.roundedRect(168, y + 7, 17, 14, 2, 2, 'F');
+  pdf.setTextColor('#ffffff');
   pdf.setFont('helvetica', 'bold');
-  pdf.text('Kennzahlen', 14, y);
-  y += 7;
-  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(12);
+  pdf.text(String(projects.length), 176.5, y + 16, { align: 'center' });
+  pdf.setFontSize(6);
+  pdf.text('Projekte', 176.5, y + 21, { align: 'center' });
+  y += 38;
+
+  y = drawSectionTitle(pdf, 'Kennzahlen', y);
   [
-    ['Offene Freigaben', report.metrics.openApprovals],
-    ['Nachweise offen', report.metrics.evidenceOpen],
-    ['Kritische Risiken', report.metrics.criticalRisks],
-    ['Erledigte Aufgaben', report.metrics.done],
-  ].forEach(([label, value]) => {
-    pdf.text(`${label}: ${value}`, 18, y);
-    y += 6;
+    ['Offene Freigaben', metrics.openApprovals, reportRose],
+    ['Nachweise offen', metrics.evidenceOpen, '#b76c12'],
+    ['Kritische Risiken', metrics.criticalRisks, sparkasseRed],
+    ['Erledigt', metrics.done, '#1f7a4f'],
+  ].forEach(([label, value, color], index) => {
+    drawMetricCard(pdf, 14 + index * 46.5, y, 42, label, value, color);
   });
+  y += 34;
 
-  y += 4;
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Team-Auslastung', 14, y);
-  y += 7;
-  pdf.setFont('helvetica', 'normal');
-  report.teamLoad.forEach((member) => {
-    if (y > 280) {
-      pdf.addPage();
-      y = 16;
-    }
-    pdf.text(`${member.name} - ${member.role} - ${member.load}%`, 18, y);
-    y += 6;
-  });
-
-  y += 4;
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('Projekte', 14, y);
-  y += 7;
-  pdf.setFont('helvetica', 'normal');
-  report.projects.forEach((project) => {
-    if (y > 270) {
-      pdf.addPage();
-      y = 16;
-    }
-    pdf.setFont('helvetica', 'bold');
-    y = addPdfLine(pdf, `${project.name} (${project.progress ?? 0}%, ${project.signal?.label || 'ohne Signal'})`, 18, y, { maxWidth: 176 });
+  y = drawSectionTitle(pdf, 'Team-Auslastung', y);
+  if (teamLoad.length === 0) {
+    pdf.setTextColor(reportMuted);
     pdf.setFont('helvetica', 'normal');
-    y = addPdfLine(pdf, `Owner: ${project.owner || 'Noch offen'} | offene Aufgaben: ${project.openTasks ?? 0}`, 20, y, { maxWidth: 172, lineHeight: 5 });
-    (project.tasks || []).slice(0, 6).forEach((task) => {
-      if (y > 280) {
-        pdf.addPage();
-        y = 16;
-      }
-      y = addPdfLine(pdf, `- ${task.title} | ${task.status} | ${task.priority} | ${task.assignee || 'ohne Person'}`, 22, y, { maxWidth: 168, lineHeight: 5 });
+    pdf.setFontSize(8);
+    pdf.text('Keine Teamdaten fuer den gewaehlten Zeitraum vorhanden.', 14, y);
+    y += 9;
+  } else {
+    teamLoad.forEach((member) => {
+      y = ensureDepartmentReportPage(pdf, y, report, createdAt, pageNumberRef, 12);
+      pdf.setTextColor(reportInk);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.text(member.name || 'Unbekannt', 14, y);
+      pdf.setTextColor(reportMuted);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(member.role || 'Rolle offen', 66, y);
+      pdf.text(`${member.load ?? 0}%`, 188, y, { align: 'right' });
+      drawProgressBar(pdf, 118, y - 3.2, 52, member.load, member.load >= 85 ? sparkasseRed : reportRose);
+      y += 9;
     });
-    y += 3;
+  }
+
+  y += 5;
+  y = ensureDepartmentReportPage(pdf, y, report, createdAt, pageNumberRef, 34);
+  y = drawSectionTitle(pdf, 'Projektuebersicht', y);
+  const projectColumns = [
+    { label: 'Projekt', width: 58 },
+    { label: 'Owner', width: 34 },
+    { label: 'Fortschritt', width: 24 },
+    { label: 'Signal', width: 22 },
+    { label: 'Offen', width: 16 },
+    { label: 'Meilenstein', width: 28 },
+  ];
+  y = drawTableHeader(pdf, y, projectColumns);
+
+  if (projects.length === 0) {
+    y = drawTableRow(pdf, y, projectColumns, ['Keine Projekte', '', '', '', '', ''], { index: 0 });
+  } else {
+    projects.forEach((project, index) => {
+      y = ensureDepartmentReportPage(pdf, y, report, createdAt, pageNumberRef, 18);
+      y = drawTableRow(pdf, y, projectColumns, [
+        project.name || 'Unbenannt',
+        project.owner || 'Noch offen',
+        `${project.progress ?? 0}%`,
+        project.signal?.label || 'ohne Signal',
+        project.openTasks ?? 0,
+        project.milestone || '-',
+      ], { index });
+    });
+  }
+
+  y += 9;
+  y = ensureDepartmentReportPage(pdf, y, report, createdAt, pageNumberRef, 34);
+  y = drawSectionTitle(pdf, 'Aufgaben nach Projekt', y);
+  const taskColumns = [
+    { label: 'Projekt', width: 42 },
+    { label: 'Aufgabe', width: 62 },
+    { label: 'Status', width: 24 },
+    { label: 'Prio', width: 18 },
+    { label: 'Zustaendig', width: 36 },
+  ];
+  y = drawTableHeader(pdf, y, taskColumns);
+  let taskRowIndex = 0;
+  projects.forEach((project) => {
+    (project.tasks || []).slice(0, 8).forEach((task) => {
+      y = ensureDepartmentReportPage(pdf, y, report, createdAt, pageNumberRef, 14);
+      y = drawTableRow(pdf, y, taskColumns, [
+        project.name || 'Unbenannt',
+        task.title || 'Ohne Titel',
+        task.status || '-',
+        task.priority || '-',
+        task.assignee || 'ohne Person',
+      ], { index: taskRowIndex });
+      taskRowIndex += 1;
+    });
   });
+  if (taskRowIndex === 0) {
+    y = drawTableRow(pdf, y, taskColumns, ['Keine Aufgaben', '', '', '', ''], { index: 0 });
+  }
+
+  y = ensureDepartmentReportPage(pdf, y + 10, report, createdAt, pageNumberRef, 25);
+  pdf.setFillColor('#fff5f6');
+  pdf.setDrawColor('#f0c7ce');
+  pdf.roundedRect(14, y, 182, 20, 2.5, 2.5, 'FD');
+  pdf.setTextColor(reportRose);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(8);
+  pdf.text('Hinweis', 20, y + 7);
+  pdf.setTextColor(reportInk);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(7.5);
+  pdf.text('Dieser Bericht wurde aus den aktuellen NextTask-Daten generiert und bildet den gespeicherten Stand der App ab.', 20, y + 14);
+
+  drawDepartmentReportFooter(pdf, pageNumberRef.current, createdAt);
 
   pdf.save(`abteilungsbericht-${sanitizeFilename(report.department)}.pdf`);
 }
