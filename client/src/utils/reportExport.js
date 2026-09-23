@@ -352,6 +352,177 @@ function sanitizeFilename(value) {
     .replace(/^-+|-+$/g, '') || 'statusbericht';
 }
 
+function downloadBlob(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(value) {
+  return `"${String(value ?? '').replace(/"/g, '""')}"`;
+}
+
+function getDepartmentExportRows(report) {
+  const projects = report.projects || [];
+
+  return projects.flatMap((project) => {
+    const tasks = project.tasks?.length ? project.tasks : [null];
+
+    return tasks.map((task) => ({
+      department: report.department,
+      period: report.period,
+      project: project.name,
+      owner: project.owner,
+      progress: `${project.progress ?? 0}%`,
+      signal: project.signal?.label || '',
+      task: task?.title || '',
+      taskStatus: task?.status || '',
+      taskPriority: task?.priority || '',
+      taskAssignee: task?.assignee || '',
+      dueDate: task?.dueDate || '',
+    }));
+  });
+}
+
+function downloadDepartmentReportCsv(report) {
+  const headers = [
+    'Abteilung',
+    'Zeitraum',
+    'Projekt',
+    'Verantwortung',
+    'Fortschritt',
+    'Signal',
+    'Aufgabe',
+    'Aufgabenstatus',
+    'Prioritaet',
+    'Zustaendig',
+    'Faelligkeit',
+  ];
+  const rows = getDepartmentExportRows(report).map((row) => [
+    row.department,
+    row.period,
+    row.project,
+    row.owner,
+    row.progress,
+    row.signal,
+    row.task,
+    row.taskStatus,
+    row.taskPriority,
+    row.taskAssignee,
+    row.dueDate,
+  ]);
+  const csv = [
+    headers.map(csvCell).join(';'),
+    ...rows.map((row) => row.map(csvCell).join(';')),
+  ].join('\r\n');
+
+  downloadBlob(
+    `\ufeff${csv}`,
+    `abteilungsbericht-${sanitizeFilename(report.department)}.csv`,
+    'text/csv;charset=utf-8',
+  );
+}
+
+function addPdfLine(pdf, text, x, y, options = {}) {
+  const lines = pdf.splitTextToSize(String(text ?? ''), options.maxWidth || 170);
+  pdf.text(lines, x, y);
+  return y + lines.length * (options.lineHeight || 6);
+}
+
+function downloadDepartmentReportPdf(report) {
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const createdAt = new Intl.DateTimeFormat('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date());
+  let y = 16;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(16);
+  pdf.text('Abteilungsbericht', 14, y);
+  y += 9;
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(10);
+  y = addPdfLine(pdf, `Abteilung: ${report.department}`, 14, y);
+  y = addPdfLine(pdf, `Zeitraum: ${report.period}`, 14, y);
+  y = addPdfLine(pdf, `Projektfilter: ${report.projectFilter}`, 14, y);
+  y = addPdfLine(pdf, `Erstellt: ${createdAt}`, 14, y);
+  y += 4;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Kennzahlen', 14, y);
+  y += 7;
+  pdf.setFont('helvetica', 'normal');
+  [
+    ['Offene Freigaben', report.metrics.openApprovals],
+    ['Nachweise offen', report.metrics.evidenceOpen],
+    ['Kritische Risiken', report.metrics.criticalRisks],
+    ['Erledigte Aufgaben', report.metrics.done],
+  ].forEach(([label, value]) => {
+    pdf.text(`${label}: ${value}`, 18, y);
+    y += 6;
+  });
+
+  y += 4;
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Team-Auslastung', 14, y);
+  y += 7;
+  pdf.setFont('helvetica', 'normal');
+  report.teamLoad.forEach((member) => {
+    if (y > 280) {
+      pdf.addPage();
+      y = 16;
+    }
+    pdf.text(`${member.name} - ${member.role} - ${member.load}%`, 18, y);
+    y += 6;
+  });
+
+  y += 4;
+  pdf.setFont('helvetica', 'bold');
+  pdf.text('Projekte', 14, y);
+  y += 7;
+  pdf.setFont('helvetica', 'normal');
+  report.projects.forEach((project) => {
+    if (y > 270) {
+      pdf.addPage();
+      y = 16;
+    }
+    pdf.setFont('helvetica', 'bold');
+    y = addPdfLine(pdf, `${project.name} (${project.progress ?? 0}%, ${project.signal?.label || 'ohne Signal'})`, 18, y, { maxWidth: 176 });
+    pdf.setFont('helvetica', 'normal');
+    y = addPdfLine(pdf, `Owner: ${project.owner || 'Noch offen'} | offene Aufgaben: ${project.openTasks ?? 0}`, 20, y, { maxWidth: 172, lineHeight: 5 });
+    (project.tasks || []).slice(0, 6).forEach((task) => {
+      if (y > 280) {
+        pdf.addPage();
+        y = 16;
+      }
+      y = addPdfLine(pdf, `- ${task.title} | ${task.status} | ${task.priority} | ${task.assignee || 'ohne Person'}`, 22, y, { maxWidth: 168, lineHeight: 5 });
+    });
+    y += 3;
+  });
+
+  pdf.save(`abteilungsbericht-${sanitizeFilename(report.department)}.pdf`);
+}
+
+function downloadDepartmentReport(report, format) {
+  if (format === 'Excel') {
+    downloadDepartmentReportCsv(report);
+    return;
+  }
+
+  downloadDepartmentReportPdf(report);
+}
+
 function waitForReportFrame(frame, frameDocument) {
   return new Promise((resolve) => {
     let settled = false;
@@ -434,4 +605,4 @@ async function downloadStatusReportPdf(report) {
   }
 }
 
-export { downloadStatusReportPdf, getReportHtml };
+export { downloadDepartmentReport, downloadStatusReportPdf, getReportHtml };

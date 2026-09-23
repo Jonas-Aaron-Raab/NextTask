@@ -5,6 +5,7 @@ import { DonutChart, ReportFilterField } from './ReportWidgets';
 import StatusReportPreview from './StatusReportPreview';
 import { reportSelectClass } from './styles';
 import { formatLongDate, formatReportShortDate, getTimelineSpan } from '../../utils/calendar';
+import { downloadDepartmentReport } from '../../utils/reportExport';
 
 export default function ReportsContent(props) {
   const {
@@ -48,6 +49,7 @@ export default function ReportsContent(props) {
   const [activeReportTab, setActiveReportTab] = useState('department-report');
   const [taskStatusDepartment, setTaskStatusDepartment] = useState(selectedDepartment);
   const [taskStatusProject, setTaskStatusProject] = useState('Alle Projekte');
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     setTaskStatusDepartment(selectedDepartment);
@@ -97,6 +99,27 @@ export default function ReportsContent(props) {
     { id: 'task-status', label: 'Aufgabenstatus', icon: CircleDot, count: visibleTaskCount },
     { id: 'project-progress', label: 'Projektfortschritt', icon: BarChart3, count: filteredProjects.length },
   ];
+
+  const handleDepartmentExport = async () => {
+    if (!filteredProjects.length || isExporting) return;
+
+    setIsExporting(true);
+    try {
+      downloadDepartmentReport(
+        {
+          department: selectedDepartment,
+          period: selectedPeriod,
+          projectFilter: selectedProject,
+          projects: filteredProjects,
+          teamLoad,
+          metrics: taskMetrics,
+        },
+        exportFormat,
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const renderStatusReportPanel = () => (
     <section className="rounded-[30px] border border-slate-300 bg-white p-6 shadow-[0_18px_45px_rgba(15,23,42,0.05)]">
@@ -189,10 +212,12 @@ export default function ReportsContent(props) {
             <span className="block text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400">Export</span>
             <button
               type="button"
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white transition hover:bg-[#a23d4d]"
+              onClick={handleDepartmentExport}
+              disabled={!filteredProjects.length || isExporting}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#b84758] px-4 text-sm font-bold text-white transition hover:bg-[#a23d4d] disabled:cursor-not-allowed disabled:bg-slate-300"
             >
               <Download className="h-4 w-4" />
-              Als {exportFormat} exportieren
+              {isExporting ? 'Export wird erstellt' : `Als ${exportFormat} exportieren`}
             </button>
           </div>
         </div>
