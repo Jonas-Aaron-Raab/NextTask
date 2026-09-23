@@ -21,7 +21,6 @@ import { priorityLabels, statusLabels } from '../data/calendarConstants';
 import { normalizeTaskPriority, normalizeTaskStatus, toTaskDateValue } from '../utils/task';
 
 const projectColors = ['#4f46e5', '#0f766e', '#b45309', '#be123c', '#6d28d9', '#15803d'];
-const calendarScheduleStorageKey = 'nexttask-calendar-schedule-overrides';
 function normalizeTask(task, index = 0) {
   const dueDate = toTaskDateValue(task.dueDateValue || task.dueDate);
   const projectName = task.project?.name || task.project || 'Ohne Projekt';
@@ -74,50 +73,6 @@ function applyTaskSchedule(task, dateKey) {
     endDate: dateKey,
     startDate: task.startDate || dateKey,
   };
-}
-
-function readScheduleOverrides() {
-  if (typeof window === 'undefined') return {};
-
-  try {
-    const stored = window.localStorage.getItem(calendarScheduleStorageKey);
-    return stored ? JSON.parse(stored) : {};
-  } catch {
-    return {};
-  }
-}
-
-function storeScheduleOverride(taskId, dateKey) {
-  if (typeof window === 'undefined') return;
-
-  try {
-    const current = readScheduleOverrides();
-    window.localStorage.setItem(
-      calendarScheduleStorageKey,
-      JSON.stringify({ ...current, [taskId]: dateKey }),
-    );
-  } catch {
-    // Local persistence is a convenience; the visible calendar state is already updated.
-  }
-}
-
-function removeScheduleOverride(taskId) {
-  if (typeof window === 'undefined') return;
-
-  try {
-    const current = readScheduleOverrides();
-    if (!current[taskId]) return;
-    const { [taskId]: _removed, ...next } = current;
-    window.localStorage.setItem(calendarScheduleStorageKey, JSON.stringify(next));
-  } catch {
-    // Server-saved tasks still keep their updated API schedule.
-  }
-}
-
-function applyScheduleOverrides(tasks) {
-  const overrides = readScheduleOverrides();
-
-  return tasks.map((task) => (overrides[task.id] ? applyTaskSchedule(task, overrides[task.id]) : task));
 }
 
 function isOverdue(task) {
@@ -175,7 +130,7 @@ export default function CalendarPage() {
           return result.value.data.map(normalizeTask);
         });
 
-        setTasks(applyScheduleOverrides(apiTasks));
+        setTasks(apiTasks);
       } catch {
         setTasks([]);
       }
@@ -249,71 +204,64 @@ export default function CalendarPage() {
     });
   };
 
-  const handleDrop = (event, dateKey) => {
+  const handleDrop = async (event, dateKey) => {
     event.preventDefault();
     const taskId = draggedTaskId || event.dataTransfer.getData('text/plain');
     if (!taskId) return;
 
-    setTasks((current) =>
-      current.map((task) => (task.id === taskId ? applyTaskSchedule(task, dateKey) : task)),
-    );
-    setSelectedTask((current) => (current?.id === taskId ? applyTaskSchedule(current, dateKey) : current));
-
     const task = tasks.find((item) => item.id === taskId);
     const updatedTask = task ? applyTaskSchedule(task, dateKey) : null;
-    if (task?.source === 'api') {
-      api.patch(`/tasks/${taskId}/schedule`, {
+    if (!updatedTask || task?.source !== 'api') {
+      setDraggedTaskId(null);
+      return;
+    }
+
+    try {
+      const { data } = await api.patch(`/tasks/${taskId}/schedule`, {
         startDate: updatedTask.startDate,
         dueDate: dateKey,
         endDate: updatedTask.endDate,
-      })
-        .then(() => removeScheduleOverride(taskId))
-        .catch(() => {
-          storeScheduleOverride(taskId, dateKey);
-        });
-    } else {
-      storeScheduleOverride(taskId, dateKey);
+      });
+      const savedTask = normalizeTask(data);
+      setTasks((current) =>
+        current.map((entry) => (entry.id === taskId ? savedTask : entry)),
+      );
+      setSelectedTask((current) => (current?.id === taskId ? savedTask : current));
+    } catch {
+      setTasks((current) =>
+        current.map((entry) => (entry.id === taskId ? task : entry)),
+      );
+      setSelectedTask((current) => (current?.id === taskId ? task : current));
+    } finally {
+      setDraggedTaskId(null);
     }
-    setDraggedTaskId(null);
   };
 
-  const handleCreateTask = (form) => {
+  const handleCreateTask = async (form) => {
     if (!form.title.trim()) return;
     const projectMatch = tasks.find((task) => task.project === form.project && task.source === 'api');
     const assigneeMatch = tasks.find((task) => task.assignee === form.assignee && task.source === 'api');
-    const nextTask = normalizeTask({
-      id: `calendar-task-${Date.now()}`,
-      title: form.title.trim(),
-      description: form.description.trim(),
-      project: form.project,
-      assignee: form.assignee,
-      dueDateValue: form.dueDate,
-      status: form.status,
-      priority: form.priority,
-    });
-    setTasks((current) => [nextTask, ...current]);
-    setCreateDate(null);
-    setSelectedDayKey(form.dueDate);
+    if (!projectMatch?.projectId) return;
 
-    if (projectMatch?.projectId) {
-      api
-        .post('/tasks', {
-          title: form.title.trim(),
-          description: form.description.trim(),
-          projectId: projectMatch.projectId,
-          assigneeId: assigneeMatch?.assigneeId,
-          dueDate: form.dueDate,
-          startDate: form.dueDate,
-          endDate: form.dueDate,
-          priority: form.priority,
-          status: form.status,
-          department: nextTask.department,
-        })
-        .then((response) => {
-          const savedTask = normalizeTask(response.data);
-          setTasks((current) => current.map((task) => (task.id === nextTask.id ? savedTask : task)));
-        })
-        .catch(() => {});
+    try {
+      const { data } = await api.post('/tasks', {
+        title: form.title.trim(),
+        description: form.description.trim(),
+        projectId: projectMatch.projectId,
+        assigneeId: assigneeMatch?.assigneeId,
+        dueDate: form.dueDate,
+        startDate: form.dueDate,
+        endDate: form.dueDate,
+        priority: form.priority,
+        status: form.status,
+        department: projectMatch.department,
+      });
+      const savedTask = normalizeTask(data);
+      setTasks((current) => [savedTask, ...current]);
+      setCreateDate(null);
+      setSelectedDayKey(form.dueDate);
+    } catch {
+      // Keep the calendar backed by the database only.
     }
   };
 
