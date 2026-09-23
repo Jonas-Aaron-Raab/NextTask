@@ -455,16 +455,18 @@ const reportSoft = '#f7f9fc';
 
 function drawSparkasseLogo(pdf, x, y) {
   pdf.setFillColor(sparkasseRed);
-  pdf.circle(x + 3.4, y + 2.5, 2.4, 'F');
-  pdf.roundedRect(x, y + 6, 10.5, 13, 2, 2, 'F');
+  pdf.circle(x + 5.2, y + 2.7, 2.7, 'F');
+  pdf.roundedRect(x, y + 7, 13.2, 15.2, 2.2, 2.2, 'F');
   pdf.setFillColor('#ffffff');
-  pdf.rect(x + 2.4, y + 10.1, 8.1, 1.4, 'F');
-  pdf.rect(x, y + 15.1, 8.1, 1.4, 'F');
+  pdf.rect(x + 3.4, y + 11.7, 9.8, 2, 'F');
+  pdf.rect(x, y + 17.3, 10.8, 2, 'F');
+  pdf.setFillColor(sparkasseRed);
+  pdf.rect(x + 10.6, y + 13.5, 2.6, 4.2, 'F');
   pdf.setTextColor(sparkasseRed);
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(10);
-  pdf.text('Sparkasse', x + 13, y + 11);
-  pdf.text('Oberhessen', x + 13, y + 16);
+  pdf.setFontSize(9.2);
+  pdf.text('Sparkasse', x + 16.2, y + 11.5);
+  pdf.text('Oberhessen', x + 16.2, y + 17);
 }
 
 function drawDepartmentReportHeader(pdf, report, title, subtitle) {
@@ -472,7 +474,7 @@ function drawDepartmentReportHeader(pdf, report, title, subtitle) {
   pdf.rect(0, 0, 210, 34, 'F');
   pdf.setFillColor(sparkasseRed);
   pdf.rect(0, 0, 210, 3, 'F');
-  drawSparkasseLogo(pdf, 158, 7);
+  drawSparkasseLogo(pdf, 150, 6.8);
   pdf.setTextColor(reportInk);
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(18);
