@@ -355,6 +355,8 @@ model Task {
   department  String?
   markerId    String?
   approvalLevel String?
+  favoriteBy  String[]    @default([])
+  favoriteReturnIndexBy Json @default("{}")
   projectId   String
   assigneeId  String?
   parentTaskId String?

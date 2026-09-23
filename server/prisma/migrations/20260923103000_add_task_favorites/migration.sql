@@ -1,0 +1,3 @@
+ALTER TABLE "Task"
+ADD COLUMN "favoriteBy" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+ADD COLUMN "favoriteReturnIndexBy" JSONB NOT NULL DEFAULT '{}';

@@ -51,6 +51,8 @@ const auditTaskFields = [
   'department',
   'markerId',
   'approvalLevel',
+  'favoriteBy',
+  'favoriteReturnIndexBy',
   'projectId',
   'assigneeId',
 ];
@@ -103,6 +105,16 @@ function toStringList(value) {
       .filter(Boolean);
   }
   return [];
+}
+
+function normalizeFavoriteReturnIndexBy(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([key, index]) => [String(key), Number.parseInt(index, 10)])
+      .filter(([key, index]) => key && Number.isInteger(index) && index >= 0),
+  );
 }
 
 function buildTaskDetailWrites(taskId, body) {
@@ -341,6 +353,8 @@ router.post('/', auth, async (req, res) => {
       note,
       sourceTaskId,
       parentTaskId,
+      favoriteBy,
+      favoriteReturnIndexBy,
     } = req.body;
     const scopedProject = await req.prisma.project.findFirst({
       where: mergeAnd({ id: projectId }, buildProjectScopeWhere(currentUser)),
@@ -374,6 +388,8 @@ router.post('/', auth, async (req, res) => {
         department: department || null,
         markerId: markerId || null,
         approvalLevel: approvalLevel || null,
+        favoriteBy: toStringList(favoriteBy),
+        favoriteReturnIndexBy: normalizeFavoriteReturnIndexBy(favoriteReturnIndexBy),
         parentTaskId: parentTaskId || null,
       },
     });
@@ -471,6 +487,9 @@ router.put('/:id', auth, async (req, res) => {
         department,
         markerId: markerId === undefined ? undefined : markerId || null,
         approvalLevel: approvalLevel === undefined ? undefined : approvalLevel || null,
+        favoriteBy: favoriteBy === undefined ? undefined : toStringList(favoriteBy),
+        favoriteReturnIndexBy:
+          favoriteReturnIndexBy === undefined ? undefined : normalizeFavoriteReturnIndexBy(favoriteReturnIndexBy),
         parentTaskId: parentTaskId === undefined ? undefined : parentTaskId || null,
       },
     });
@@ -503,6 +522,67 @@ router.put('/:id', auth, async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: 'Fehler beim Aktualisieren',
+      error: error.message,
+    });
+  }
+});
+
+router.patch('/project/:projectId/order', auth, async (req, res) => {
+  try {
+    const currentUser = await getCurrentUserWithAccessRole(req);
+    if (!currentUser) return res.status(404).json({ message: 'Benutzer wurde nicht gefunden' });
+    if (!userHasPermission(currentUser, 'editTasks')) {
+      return res.status(403).json({ message: 'Keine Berechtigung zum Sortieren von Aufgaben' });
+    }
+
+    const taskIds = Array.isArray(req.body.taskIds) ? req.body.taskIds.map((id) => String(id)).filter(Boolean) : [];
+    if (!taskIds.length) return res.status(400).json({ message: 'Aufgabenreihenfolge ist erforderlich' });
+
+    const project = await req.prisma.project.findFirst({
+      where: mergeAnd({ id: req.params.projectId }, buildProjectScopeWhere(currentUser)),
+      select: { id: true, name: true },
+    });
+    if (!project) return res.status(404).json({ message: 'Projekt wurde nicht gefunden' });
+
+    const scopedTasks = await req.prisma.task.findMany({
+      where: mergeAnd({ projectId: project.id, id: { in: taskIds } }, buildTaskScopeWhere(currentUser)),
+      select: { id: true, order: true, title: true },
+    });
+    if (scopedTasks.length !== taskIds.length) {
+      return res.status(403).json({ message: 'Keine Berechtigung fuer alle Aufgaben in dieser Reihenfolge' });
+    }
+
+    await req.prisma.$transaction(
+      taskIds.map((id, order) =>
+        req.prisma.task.update({
+          where: { id },
+          data: { order },
+        }),
+      ),
+    );
+
+    const updatedTasks = await req.prisma.task.findMany({
+      where: { projectId: project.id },
+      include: taskDetailInclude,
+      orderBy: [{ status: 'asc' }, { order: 'asc' }],
+    });
+
+    await writeAuditLog(req, {
+      action: 'TASKS_REORDERED',
+      entityType: 'PROJECT',
+      entityId: project.id,
+      entityLabel: project.name,
+      summary: `Backlog-Reihenfolge fuer ${project.name} wurde aktualisiert.`,
+      severity: 'INFO',
+      before: { tasks: scopedTasks },
+      after: { taskIds },
+      metadata: { projectId: project.id },
+    });
+
+    res.json({ tasks: updatedTasks.map(serializeTask) });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Fehler beim Sortieren',
       error: error.message,
     });
   }
