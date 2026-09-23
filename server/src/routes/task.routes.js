@@ -453,6 +453,8 @@ router.put('/:id', auth, async (req, res) => {
       note,
       sourceTaskId,
       parentTaskId,
+      favoriteBy,
+      favoriteReturnIndexBy,
     } = req.body;
     const before = await req.prisma.task.findFirst({
       where: mergeAnd({ id: req.params.id }, buildTaskScopeWhere(currentUser)),
