@@ -297,6 +297,11 @@ function mapApiTaskToBacklogTask(task) {
         ],
     creatorInitials: task.assignedBy?.initials || 'API',
     creatorName: task.assignedBy?.name || 'NextTask',
+    favoriteBy: Array.isArray(task.favoriteBy) ? task.favoriteBy : [],
+    favoriteReturnIndexBy:
+      task.favoriteReturnIndexBy && typeof task.favoriteReturnIndexBy === 'object'
+        ? task.favoriteReturnIndexBy
+        : {},
   };
 }
 
@@ -2680,40 +2685,37 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleToggleFavorite = (taskId) => {
-    setBacklogTasks((current) => {
-      const targetTask = current.find((task) => task.id === taskId);
-      if (!targetTask) return current;
+  const handleToggleFavorite = async (taskId) => {
+    const targetTask = backlogTasks.find((task) => task.id === taskId);
+    if (!targetTask?.source || targetTask.source !== 'api') return;
 
-      const projectTasks = current.filter((task) => task.projectId === targetTask.projectId);
-      const currentProjectIndex = projectTasks.findIndex((task) => task.id === taskId);
-      if (currentProjectIndex === -1) return current;
+    const projectTasks = backlogTasks.filter((task) => task.projectId === targetTask.projectId);
+    const currentProjectIndex = projectTasks.findIndex((task) => task.id === taskId);
+    if (currentProjectIndex === -1) return;
 
-      const currentFavorites = getTaskFavorites(targetTask);
-      const currentReturnIndexes = getFavoriteReturnIndexes(targetTask);
-      const isCurrentlyFavorite = currentFavorites.includes(favoriteUserKey);
-      const nextFavorites = isCurrentlyFavorite
-        ? currentFavorites.filter((personKey) => personKey !== favoriteUserKey)
-        : [...currentFavorites, favoriteUserKey];
-      const nextReturnIndexes = { ...currentReturnIndexes };
+    const currentFavorites = getTaskFavorites(targetTask);
+    const currentReturnIndexes = getFavoriteReturnIndexes(targetTask);
+    const isCurrentlyFavorite = currentFavorites.includes(favoriteUserKey);
+    const nextFavorites = isCurrentlyFavorite
+      ? currentFavorites.filter((personKey) => personKey !== favoriteUserKey)
+      : [...currentFavorites, favoriteUserKey];
+    const nextReturnIndexes = { ...currentReturnIndexes };
 
-      if (isCurrentlyFavorite) {
-        delete nextReturnIndexes[favoriteUserKey];
-      } else {
-        nextReturnIndexes[favoriteUserKey] = currentProjectIndex;
-      }
+    if (isCurrentlyFavorite) {
+      delete nextReturnIndexes[favoriteUserKey];
+    } else {
+      nextReturnIndexes[favoriteUserKey] = currentProjectIndex;
+    }
 
-      const nextTasks = current.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              favoriteBy: nextFavorites,
-              favoriteReturnIndexBy: nextReturnIndexes,
-            }
-          : task,
-      );
+    try {
+      const { data } = await api.put(`/tasks/${taskId}`, {
+        favoriteBy: nextFavorites,
+        favoriteReturnIndexBy: nextReturnIndexes,
+      });
+      const savedTask = mapApiTaskToBacklogTask(data);
+      const nextTasks = backlogTasks.map((task) => (task.id === taskId ? savedTask : task));
       const updatedTarget = nextTasks.find((task) => task.id === taskId);
-      if (!updatedTarget) return nextTasks;
+      if (!updatedTarget) return;
 
       const projectTasksWithoutTarget = projectTasks.filter((task) => task.id !== taskId);
       let reorderedProjectTasks;
@@ -2739,43 +2741,47 @@ export default function ProjectsPage() {
       }
 
       let nextProjectTaskIndex = 0;
-      return nextTasks.map((task) => {
-        if (task.projectId !== targetTask.projectId) return task;
-        const nextTask = reorderedProjectTasks[nextProjectTaskIndex];
-        nextProjectTaskIndex += 1;
-        return nextTask;
-      });
-    });
+      setBacklogTasks(
+        nextTasks.map((task) => {
+          if (task.projectId !== targetTask.projectId) return task;
+          const nextTask = reorderedProjectTasks[nextProjectTaskIndex];
+          nextProjectTaskIndex += 1;
+          return nextTask;
+        }),
+      );
+    } catch {
+      // Favorites are persisted by the backend before the UI changes.
+    }
   };
 
-  const handleBacklogDragEnd = ({ active, over }) => {
+  const handleBacklogDragEnd = async ({ active, over }) => {
     if (!over || active.id === over.id) return;
 
     const activeId = String(active.id);
     const overId = String(over.id);
 
-    setBacklogTasks((current) => {
-      const activeTask = current.find((task) => task.id === activeId);
-      const overTask = current.find((task) => task.id === overId);
+    const activeTask = backlogTasks.find((task) => task.id === activeId);
+    const overTask = backlogTasks.find((task) => task.id === overId);
 
-      if (!activeTask || !overTask || activeTask.projectId !== overTask.projectId) return current;
+    if (!activeTask || !overTask || activeTask.projectId !== overTask.projectId) return;
 
-      const projectTasks = current.filter((task) => task.projectId === activeTask.projectId);
-      const oldIndex = projectTasks.findIndex((task) => task.id === activeId);
-      const newIndex = projectTasks.findIndex((task) => task.id === overId);
+    const projectTasks = backlogTasks.filter((task) => task.projectId === activeTask.projectId);
+    const oldIndex = projectTasks.findIndex((task) => task.id === activeId);
+    const newIndex = projectTasks.findIndex((task) => task.id === overId);
 
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return current;
+    if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
 
-      const reorderedProjectTasks = arrayMove(projectTasks, oldIndex, newIndex);
-      let nextProjectTaskIndex = 0;
+    const reorderedProjectTasks = arrayMove(projectTasks, oldIndex, newIndex);
 
-      return current.map((task) => {
-        if (task.projectId !== activeTask.projectId) return task;
-        const nextTask = reorderedProjectTasks[nextProjectTaskIndex];
-        nextProjectTaskIndex += 1;
-        return nextTask;
+    try {
+      const { data } = await api.patch(`/tasks/project/${activeTask.projectId}/order`, {
+        taskIds: reorderedProjectTasks.map((task) => task.id),
       });
-    });
+      const savedTasksById = new Map((data.tasks || []).map((task) => [task.id, mapApiTaskToBacklogTask(task)]));
+      setBacklogTasks((current) => current.map((task) => savedTasksById.get(task.id) || task));
+    } catch {
+      // Backlog order is persisted by the backend before the UI changes.
+    }
   };
 
   const handleFilterMenuOpen = () => {
