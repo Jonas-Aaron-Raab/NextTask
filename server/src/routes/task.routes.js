@@ -77,7 +77,12 @@ function normalizeStatus(status) {
 }
 
 function normalizePriority(priority) {
-  const value = String(priority || 'MEDIUM').toUpperCase();
+  const priorityMap = {
+    niedrig: 'LOW',
+    mittel: 'MEDIUM',
+    hoch: 'HIGH',
+  };
+  const value = priorityMap[String(priority || '').trim().toLowerCase()] || String(priority || 'MEDIUM').toUpperCase();
   return ['LOW', 'MEDIUM', 'HIGH', 'URGENT'].includes(value) ? value : 'MEDIUM';
 }
 
