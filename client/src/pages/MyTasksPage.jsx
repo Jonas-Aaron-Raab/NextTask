@@ -270,6 +270,31 @@ function normalizeFallbackTaskForMyTasks(task) {
   };
 }
 
+function normalizeApiProjectForMyTasks(project) {
+  return {
+    id: project.id,
+    name: project.name,
+    scope: project.visibility === 'Abteilung' ? 'abteilung' : 'persoenlich',
+    departmentId: project.departmentId || '',
+    department: project.businessArea || project.departmentName || project.department?.name || 'Digitales Banking',
+    owner: project.owner || 'Projektteam',
+    description: project.summary || project.projectGoal || '',
+  };
+}
+
+function toApiTaskPriority(priority) {
+  const priorityMap = {
+    niedrig: 'LOW',
+    mittel: 'MEDIUM',
+    hoch: 'HIGH',
+    LOW: 'LOW',
+    MEDIUM: 'MEDIUM',
+    HIGH: 'HIGH',
+    URGENT: 'URGENT',
+  };
+  return priorityMap[priority] || 'MEDIUM';
+}
+
 function buildProjectKey(projectName) {
   const words = String(projectName || '')
     .normalize('NFD')
@@ -1665,14 +1690,7 @@ export default function MyTasksPage() {
           ? withProjectTicketNumbers(data.tasks.map(normalizeApiTaskForMyTasks))
           : [];
         const nextProjects = Array.isArray(data.projects)
-          ? data.projects.map((project) => ({
-              id: project.id,
-              name: project.name,
-              scope: project.visibility === 'Abteilung' ? 'abteilung' : 'persoenlich',
-              department: project.businessArea || project.departmentName || 'Digitales Banking',
-              owner: project.owner || 'Projektteam',
-              description: project.summary || project.projectGoal || '',
-            }))
+          ? data.projects.map(normalizeApiProjectForMyTasks)
           : [];
 
         if (nextTasks.length) setTasks(nextTasks);
@@ -1691,7 +1709,15 @@ export default function MyTasksPage() {
   const normalizedSearch = searchValue.trim().toLowerCase();
   const currentUserName = user?.name || 'Mara Stein';
   const projectDepartments = useMemo(
-    () => [...new Set(projects.map((project) => project.department || 'Digitales Banking'))].map((name) => ({ id: name, name })),
+    () => {
+      const departmentMap = new Map();
+      projects.forEach((project) => {
+        const id = project.departmentId || project.department || 'Digitales Banking';
+        const name = project.department || 'Digitales Banking';
+        if (!departmentMap.has(id)) departmentMap.set(id, { id, name });
+      });
+      return [...departmentMap.values()];
+    },
     [projects],
   );
   const assignees = useMemo(
@@ -1976,7 +2002,7 @@ export default function MyTasksPage() {
           title: nextTask.title,
           description: nextTask.description,
           status: nextTask.status,
-          priority: nextTask.priority,
+          priority: toApiTaskPriority(nextTask.priority),
           dueDate: nextTask.dueDateValue,
           estimatedHours: nextTask.estimatedHours,
           markerId: nextTask.markerId,
@@ -1994,7 +2020,7 @@ export default function MyTasksPage() {
           auditTrail: nextTask.auditTrail,
         });
       } catch {
-        // Die lokale Änderung wird trotzdem gespeichert.
+        return;
       }
     }
 
@@ -2006,6 +2032,13 @@ export default function MyTasksPage() {
     if (!selectedTaskId || !commentDraft.trim()) return;
     const currentComment = commentDraft.trim();
     const selectedTask = tasks.find((task) => task.id === selectedTaskId);
+    if (selectedTask?.source === 'backend') {
+      try {
+        await api.post(`/tasks/${selectedTask.id}/comments`, { content: currentComment });
+      } catch {
+        return;
+      }
+    }
     updateSelectedTask((task) => ({
       ...task,
       comments: [
@@ -2015,13 +2048,6 @@ export default function MyTasksPage() {
       auditTrail: [`${formatDateLabel('2026-05-16')}: Kommentar hinzugefuegt.`, ...task.auditTrail],
     }));
     setCommentDraft('');
-    if (selectedTask?.source === 'backend') {
-      try {
-        await api.post(`/tasks/${selectedTask.id}/comments`, { content: currentComment });
-      } catch {
-        // The optimistic local comment remains visible.
-      }
-    }
   };
 
   const handleInsertMention = (member) => {
@@ -2230,7 +2256,7 @@ export default function MyTasksPage() {
     setCreateProjectForm((current) => ({ ...current, [field]: value }));
   };
 
-  const handleCreateProjectSubmit = () => {
+  const handleCreateProjectSubmit = async () => {
     const trimmedName = createProjectForm.name.trim();
     if (!trimmedName) return;
 
@@ -2240,23 +2266,30 @@ export default function MyTasksPage() {
       return;
     }
 
-    const nextProject = {
-      id: `project-${Date.now()}`,
-      name: trimmedName,
-      scope: createProjectForm.visibility === 'Abteilung' ? 'abteilung' : 'persönlich',
-      department: createProjectForm.departmentId || 'Digitales Banking',
-      owner: createProjectForm.owner.trim() || 'Elisabeth Bezverkha',
-      deputyLead: createProjectForm.deputyLead.trim(),
-      projectSponsor: createProjectForm.projectSponsor.trim(),
-      description: createProjectForm.summary.trim(),
-      projectData: createProjectForm,
-    };
-
-    setProjects((current) => [nextProject, ...current]);
-    setCreateTaskForm((current) => ({ ...current, project: nextProject.name }));
-    setCreateMode(null);
+    try {
+      const { data } = await api.post('/projects', {
+        name: trimmedName,
+        departmentId: createProjectForm.departmentId || null,
+        owner: createProjectForm.owner.trim() || 'Elisabeth Bezverkha',
+        deputyLead: createProjectForm.deputyLead.trim(),
+        projectSponsor: createProjectForm.projectSponsor.trim(),
+        visibility: createProjectForm.visibility,
+        statusLabel: createProjectForm.status,
+        plannedStart: createProjectForm.plannedStart,
+        plannedEnd: createProjectForm.dueDate,
+        summary: createProjectForm.summary.trim(),
+        projectGoal: createProjectForm.projectGoal.trim() || createProjectForm.summary.trim(),
+        plannedEffortPt: createProjectForm.plannedEffortPt,
+        plannedBudget: createProjectForm.plannedBudget,
+      });
+      const savedProject = normalizeApiProjectForMyTasks(data);
+      setProjects((current) => [savedProject, ...current]);
+      setCreateTaskForm((current) => ({ ...current, project: savedProject.name }));
+      setCreateMode(null);
+    } catch {
+      // Projects created here must be persisted by the backend.
+    }
   };
-
   const handleCreateTaskSubmit = async () => {
     const trimmedTitle = createTaskForm.title.trim();
     if (!trimmedTitle || !createTaskForm.project) return;
@@ -2297,9 +2330,6 @@ export default function MyTasksPage() {
       auditTrail: [`${formatDateLabel('2026-08-19')}: Aufgabe neu erstellt.`, ...(createTaskForm.auditTrail || [])],
     };
 
-    setTasks((current) => [nextTask, ...current]);
-    setCreateMode(null);
-
     const projectMatch = projects.find((project) => project.name === createTaskForm.project);
     if (!projectMatch?.id) return;
 
@@ -2309,7 +2339,7 @@ export default function MyTasksPage() {
         title: nextTask.title,
         description: nextTask.description,
         status: nextTask.status,
-        priority: nextTask.priority,
+        priority: toApiTaskPriority(nextTask.priority),
         projectId: projectMatch.id,
         assigneeId: assigneeMatch?.assigneeId || null,
         dueDate: nextTask.dueDateValue,
@@ -2329,9 +2359,10 @@ export default function MyTasksPage() {
         auditTrail: nextTask.auditTrail,
       });
       const savedTask = normalizeApiTaskForMyTasks(data);
-      setTasks((current) => current.map((task) => (task.id === nextTask.id ? savedTask : task)));
+      setTasks((current) => [savedTask, ...current]);
+      setCreateMode(null);
     } catch {
-      // The optimistic task remains visible until the next successful API refresh.
+      // Tasks created here must be persisted by the backend.
     }
   };
 

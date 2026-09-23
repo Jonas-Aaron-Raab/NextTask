@@ -2535,7 +2535,6 @@ export default function ProjectsPage() {
       members: [departmentForm.lead.trim() || 'Elisabeth Bezverkha'],
     };
 
-    let savedDepartment = nextDepartment;
     try {
       const { data } = await api.post('/organization/departments', {
         name: trimmedName,
@@ -2545,16 +2544,14 @@ export default function ProjectsPage() {
         accent: nextDepartment.accent,
         badgeTone: nextDepartment.badgeTone,
       });
-      savedDepartment = data;
+      setDepartments((current) => [data, ...current.filter((department) => department.id !== data.id)]);
+      setSelectedDepartmentId(data.id);
+      setViewMode('projects');
+      setSelectedBacklogTaskId(null);
+      setCreateMode(null);
     } catch {
-      // Keep the optimistic department if the API is not available.
+      return;
     }
-
-    setDepartments((current) => [savedDepartment, ...current.filter((department) => department.id !== savedDepartment.id)]);
-    setSelectedDepartmentId(savedDepartment.id);
-    setViewMode('projects');
-    setSelectedBacklogTaskId(null);
-    setCreateMode(null);
   };
 
   const handleProjectSubmit = async () => {
@@ -2566,19 +2563,16 @@ export default function ProjectsPage() {
       ...createProjectPayload(projectForm, departments),
     };
 
-    let savedProject = nextProject;
     try {
       const { data } = await api.post('/projects', createProjectApiPayload(nextProject));
-      savedProject = data;
+      setProjects((current) => [data, ...current.filter((project) => project.id !== data.id)]);
+      setSelectedDepartmentId(data.departmentId || projectForm.departmentId);
+      setSelectedProjectId(null);
+      setViewMode('projects');
+      setCreateMode(null);
     } catch {
-      // Keep the optimistic project if the API is not available.
+      return;
     }
-
-    setProjects((current) => [savedProject, ...current.filter((project) => project.id !== savedProject.id)]);
-    setSelectedDepartmentId(savedProject.departmentId || projectForm.departmentId);
-    setSelectedProjectId(null);
-    setViewMode('projects');
-    setCreateMode(null);
   };
 
   const handleProjectEditSubmit = async () => {
@@ -2587,30 +2581,27 @@ export default function ProjectsPage() {
 
     const updates = createProjectPayload(projectForm, departments);
 
-    let savedUpdates = { ...updates, id: editingProjectId };
     try {
       const { data } = await api.put(`/projects/${editingProjectId}/reporting`, createProjectApiPayload({ ...updates, name: trimmedName }));
-      savedUpdates = data;
+      setProjects((current) =>
+        current.map((project) =>
+          project.id === editingProjectId
+            ? {
+                ...project,
+                ...data,
+                id: project.id,
+              }
+            : project,
+        ),
+      );
+      setSelectedDepartmentId(data.departmentId || projectForm.departmentId);
+      setSelectedProjectId(editingProjectId);
+      setViewMode('backlog');
+      setCreateMode(null);
+      setEditingProjectId(null);
     } catch {
-      // Keep the optimistic update if the API is not available.
+      return;
     }
-
-    setProjects((current) =>
-      current.map((project) =>
-        project.id === editingProjectId
-          ? {
-              ...project,
-              ...savedUpdates,
-              id: project.id,
-            }
-          : project,
-      ),
-    );
-    setSelectedDepartmentId(savedUpdates.departmentId || projectForm.departmentId);
-    setSelectedProjectId(editingProjectId);
-    setViewMode('backlog');
-    setCreateMode(null);
-    setEditingProjectId(null);
   };
 
   const handleBacklogTaskOpen = (taskId) => {
@@ -2651,27 +2642,38 @@ export default function ProjectsPage() {
       ]
     : [];
 
-  const handleBacklogTaskSave = (taskId, updates) => {
+  const handleBacklogTaskSave = async (taskId, updates) => {
     const currentTask = backlogTasks.find((task) => task.id === taskId);
-    setBacklogTasks((current) =>
-      current.map((task) => (task.id === taskId ? { ...task, ...updates } : task)),
-    );
     if (currentTask?.source === 'api') {
-      api.put(`/tasks/${taskId}`, {
-        title: updates.title,
-        description: updates.description,
-        status: toApiTaskStatus(updates.status),
-        priority: toApiTaskPriority(updates.priority),
-        dueDate: updates.dueDateValue,
-        estimatedHours: updates.estimatedHours,
-        markerId: updates.markerId,
-        approvalLevel: updates.approvalLevel,
-        tags: updates.tags,
-        linkedPeople: updates.linkedPeople,
-        attachments: updates.attachments,
-        compliance: updates.compliance,
-        auditTrail: updates.auditTrail,
-      }).catch(() => {});
+      try {
+        const { data } = await api.put(`/tasks/${taskId}`, {
+          title: updates.title,
+          description: updates.description,
+          status: toApiTaskStatus(updates.status),
+          priority: toApiTaskPriority(updates.priority),
+          dueDate: updates.dueDateValue,
+          estimatedHours: updates.estimatedHours,
+          markerId: updates.markerId,
+          approvalLevel: updates.approvalLevel,
+          tags: updates.tags,
+          linkedPeople: updates.linkedPeople,
+          attachments: updates.attachments,
+          compliance: updates.compliance,
+          auditTrail: updates.auditTrail,
+        });
+        const savedTask = mapApiTaskToBacklogTask(data);
+        setBacklogTasks((current) =>
+          current.map((task) =>
+            task.id === taskId
+              ? { ...savedTask, favoriteBy: task.favoriteBy, favoriteReturnIndexBy: task.favoriteReturnIndexBy }
+              : task,
+          ),
+        );
+      } catch {
+        return;
+      }
+    } else {
+      return;
     }
     if (updates.projectId && updates.projectId !== selectedProjectId) {
       setSelectedProjectId(updates.projectId);
