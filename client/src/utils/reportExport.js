@@ -391,6 +391,13 @@ function getDepartmentExportRows(report) {
 }
 
 function downloadDepartmentReportCsv(report) {
+  const createdAt = new Intl.DateTimeFormat('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date());
   const headers = [
     'Abteilung',
     'Zeitraum',
@@ -417,7 +424,17 @@ function downloadDepartmentReportCsv(report) {
     row.taskAssignee,
     row.dueDate,
   ]);
+  const metadata = [
+    ['Sparkasse Oberhessen'],
+    ['Abteilungsbericht'],
+    ['Abteilung', report.department || 'Alle'],
+    ['Zeitraum', report.period || 'Aktuell'],
+    ['Projektfilter', report.projectFilter || 'Alle Projekte'],
+    ['Erstellt', createdAt],
+    [],
+  ];
   const csv = [
+    ...metadata.map((row) => row.map(csvCell).join(';')),
     headers.map(csvCell).join(';'),
     ...rows.map((row) => row.map(csvCell).join(';')),
   ].join('\r\n');
