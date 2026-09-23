@@ -455,26 +455,26 @@ const reportSoft = '#f7f9fc';
 
 function drawSparkasseLogo(pdf, x, y) {
   pdf.setFillColor(sparkasseRed);
-  pdf.circle(x + 5.2, y + 2.7, 2.7, 'F');
-  pdf.roundedRect(x, y + 7, 13.2, 15.2, 2.2, 2.2, 'F');
+  pdf.circle(x + 4.1, y + 2.1, 2.1, 'F');
+  pdf.roundedRect(x, y + 5.5, 10.5, 12.2, 1.8, 1.8, 'F');
   pdf.setFillColor('#ffffff');
-  pdf.rect(x + 3.4, y + 11.7, 9.8, 2, 'F');
-  pdf.rect(x, y + 17.3, 10.8, 2, 'F');
+  pdf.rect(x + 2.7, y + 9.2, 7.8, 1.5, 'F');
+  pdf.rect(x, y + 13.6, 8.6, 1.5, 'F');
   pdf.setFillColor(sparkasseRed);
-  pdf.rect(x + 10.6, y + 13.5, 2.6, 4.2, 'F');
+  pdf.rect(x + 8.5, y + 10.6, 2, 3.5, 'F');
   pdf.setTextColor(sparkasseRed);
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(9.2);
-  pdf.text('Sparkasse', x + 16.2, y + 11.5);
-  pdf.text('Oberhessen', x + 16.2, y + 17);
+  pdf.setFontSize(7.4);
+  pdf.text('Sparkasse', x + 13.5, y + 9.7);
+  pdf.text('Oberhessen', x + 13.5, y + 14.3);
 }
 
 function drawDepartmentReportHeader(pdf, report, title, subtitle) {
   pdf.setFillColor('#ffffff');
-  pdf.rect(0, 0, 210, 34, 'F');
+  pdf.rect(0, 0, 210, 39, 'F');
   pdf.setFillColor(sparkasseRed);
   pdf.rect(0, 0, 210, 3, 'F');
-  drawSparkasseLogo(pdf, 150, 6.8);
+  drawSparkasseLogo(pdf, 156, 8);
   pdf.setTextColor(reportInk);
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(18);
@@ -485,11 +485,11 @@ function drawDepartmentReportHeader(pdf, report, title, subtitle) {
   pdf.text(subtitle, 14, 21);
   pdf.setDrawColor(sparkasseRed);
   pdf.setLineWidth(0.6);
-  pdf.line(14, 29, 196, 29);
+  pdf.line(14, 31, 196, 31);
   pdf.setFontSize(7);
-  pdf.text(`Abteilung: ${report.department || 'Alle'}`, 14, 33);
-  pdf.text(`Zeitraum: ${report.period || 'Aktuell'}`, 78, 33);
-  pdf.text(`Projektfilter: ${report.projectFilter || 'Alle Projekte'}`, 125, 33);
+  pdf.text(`Abteilung: ${report.department || 'Alle'}`, 14, 36);
+  pdf.text(`Zeitraum: ${report.period || 'Aktuell'}`, 78, 36);
+  pdf.text(`Projektfilter: ${report.projectFilter || 'Alle Projekte'}`, 125, 36);
 }
 
 function drawDepartmentReportFooter(pdf, pageNumber, createdAt) {
@@ -511,7 +511,7 @@ function ensureDepartmentReportPage(pdf, y, report, createdAt, pageNumberRef, re
   pdf.addPage();
   pageNumberRef.current += 1;
   drawDepartmentReportHeader(pdf, report, 'Abteilungsbericht', 'Projekt-, Aufgaben- und Kontrollsicht');
-  return 43;
+  return 47;
 }
 
 function drawSectionTitle(pdf, title, y) {
@@ -591,7 +591,7 @@ function downloadDepartmentReportPdf(report) {
   const projects = report.projects || [];
   const teamLoad = report.teamLoad || [];
   const pageNumberRef = { current: 1 };
-  let y = 43;
+  let y = 47;
 
   drawDepartmentReportHeader(pdf, report, 'Abteilungsbericht', 'Projekt-, Aufgaben- und Kontrollsicht');
 
@@ -607,15 +607,15 @@ function downloadDepartmentReportPdf(report) {
   pdf.setFontSize(8);
   pdf.text(`Zeitraum: ${report.period || 'Aktuell'}`, 20, y + 17);
   pdf.text(`Projektfilter: ${report.projectFilter || 'Alle Projekte'}`, 75, y + 17);
-  pdf.text(`Erstellt: ${createdAt}`, 138, y + 17);
+  pdf.text(`Erstellt: ${createdAt}`, 118, y + 17);
   pdf.setFillColor(sparkasseRed);
-  pdf.roundedRect(168, y + 7, 17, 14, 2, 2, 'F');
+  pdf.roundedRect(174, y + 7, 16, 14, 2, 2, 'F');
   pdf.setTextColor('#ffffff');
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(12);
-  pdf.text(String(projects.length), 176.5, y + 16, { align: 'center' });
+  pdf.text(String(projects.length), 182, y + 16, { align: 'center' });
   pdf.setFontSize(6);
-  pdf.text('Projekte', 176.5, y + 21, { align: 'center' });
+  pdf.text('Projekte', 182, y + 21, { align: 'center' });
   y += 38;
 
   y = drawSectionTitle(pdf, 'Kennzahlen', y);
