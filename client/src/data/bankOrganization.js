@@ -1,5 +1,3 @@
-const rolesStorageKey = 'nexttask:bank-access-config';
-
 export const bankDepartments = [
   {
     id: 'or-it',
@@ -251,26 +249,11 @@ export function getDefaultAccessConfig() {
 }
 
 export function loadAccessConfig() {
-  if (typeof window === 'undefined') return getDefaultAccessConfig();
-
-  const fallback = getDefaultAccessConfig();
-  const raw = window.localStorage.getItem(rolesStorageKey);
-  if (!raw) return fallback;
-
-  try {
-    const parsed = JSON.parse(raw);
-    return {
-      roles: Array.isArray(parsed.roles) && parsed.roles.length ? parsed.roles : fallback.roles,
-      users: Array.isArray(parsed.users) && parsed.users.length ? parsed.users : fallback.users,
-    };
-  } catch {
-    return fallback;
-  }
+  return getDefaultAccessConfig();
 }
 
 export function saveAccessConfig(config) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(rolesStorageKey, JSON.stringify(config));
   window.dispatchEvent(new CustomEvent('nexttask:roles-change', { detail: config }));
 }
 
