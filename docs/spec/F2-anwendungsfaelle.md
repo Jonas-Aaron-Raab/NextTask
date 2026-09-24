@@ -67,10 +67,10 @@ Alle Anwendungsfälle außer UC-01, UC-02 und UC-03 setzen eine angemeldete Sitz
 | **Akteure** | Anwender (primär). |
 | **Vorbedingung** | Keine. Die E-Mail-Adresse ist noch nicht vergeben. |
 | **Nachbedingung** | Konto existiert mit grober Rolle `DEVELOPER`, Abteilung `Development` und Zugriffsrolle Mitarbeiter OR-IT (`M-OR-IT`). Sitzung ist aktiv. Audit-Eintrag `USER_REGISTERED`. |
-| **Hauptszenario** | 1. Anwender öffnet die Registrierung ([DLG-02](B1-dialogspezifikation.md#dlg-02--registrierung)).<br>2. Anwender gibt Name, E-Mail und Passwort ein.<br>3. System prüft, dass alle drei Felder gefüllt sind und die E-Mail nicht vergeben ist.<br>4. System legt das Konto an, speichert das Passwort als Hash, setzt die Benachrichtigungsadresse auf die E-Mail und ordnet die Standardrolle zu.<br>5. System stellt ein Zugriffstoken aus und zeigt das Dashboard. |
-| **Ausnahmeszenarien** | *E-Mail bereits vergeben:* Meldung „E-Mail existiert bereits"; kein Konto.<br>*Feld leer:* Meldung „Name, E-Mail und Passwort sind erforderlich". |
+| **Hauptszenario** | 1. Anwender öffnet die Registrierung ([DLG-02](B1-dialogspezifikation.md#dlg-02--registrierung)).<br>2. Anwender gibt Name, E-Mail und Passwort ein.<br>3. System prüft, dass alle drei Felder gefüllt sind, das Passwort mindestens acht Zeichen hat und die E-Mail nicht vergeben ist.<br>4. System legt das Konto an, speichert das Passwort als Hash, setzt die Benachrichtigungsadresse auf die E-Mail und ordnet die Standardrolle zu.<br>5. System stellt ein Zugriffstoken aus und zeigt das Dashboard. |
+| **Ausnahmeszenarien** | *E-Mail bereits vergeben:* Meldung „E-Mail existiert bereits"; kein Konto.<br>*Feld leer:* Meldung „Name, E-Mail und Passwort sind erforderlich".<br>*Passwort zu kurz:* „Das Passwort muss mindestens 8 Zeichen lang sein". |
 | **Akzeptanzkriterien** | A1. Zwei Registrierungen mit derselben E-Mail, auch in unterschiedlicher Groß-/Kleinschreibung, führen zu genau einem Konto.<br>A2. Das neue Konto hat die Zugriffsrolle `M-OR-IT` und sieht im Kalender nur eigene und abteilungsbezogene Aufgaben (AF-02).<br>A3. Im Audit-Log steht ein Eintrag `USER_REGISTERED` mit Name und E-Mail, ohne Passwort. |
-| **Qualitäten** | Passwort-Hashing [NFR-15b-02](N1-nichtfunktional.md). Keine Mindestlänge und keine Bestätigung des Passworts bei der Registrierung; die Mindestlänge von acht Zeichen gilt erst beim Ändern (UC-05). Diese Lücke ist in N1 vermerkt. |
+| **Qualitäten** | Passwort-Hashing und Mindestlänge [NFR-15b-02](N1-nichtfunktional.md). Keine Bestätigung des Passworts durch Wiederholung. |
 
 ### UC-02 — Anmelden mit Passwort
 
@@ -383,11 +383,11 @@ Alle Anwendungsfälle dieser Gruppe verlangen die Berechtigung „Aufgaben bearb
 | **Beschreibung** | Genehmiger genehmigt oder lehnt eine offene Anfrage ab, mit Vermerk. |
 | **Auslöser** | Offene Anfrage im Eingang (GP-03 A4, A5). |
 | **Akteure** | Genehmiger (primär): eingetragener Genehmiger, Projektleitung, GBL oder Administrator. |
-| **Vorbedingung** | Anfrage im Status `PENDING`; Anwender ist Genehmiger oder hat „Freigaben entscheiden" (AF-01); Bezugsobjekt im Sichtbereich (AF-02). |
+| **Vorbedingung** | Anfrage im Status `PENDING`; Anwender ist Genehmiger oder hat „Freigaben entscheiden" (AF-01) und ist nicht der Anfragende (SC-02); Bezugsobjekt im Sichtbereich (AF-02). |
 | **Nachbedingung** | Status `APPROVED` oder `REJECTED`; Entscheider, Zeitpunkt, Vermerk gesetzt; Audit `APPROVAL_APPROVED` (`NOTICE`) oder `APPROVAL_REJECTED` (`WARNING`). |
 | **Hauptszenario** | 1. Genehmiger öffnet das Freigaben-Cockpit ([DLG-08](B1-dialogspezifikation.md#dlg-08--freigaben)) und liest Beschreibung und Nachweis.<br>2. Genehmiger trägt einen Vermerk ein und wählt „Genehmigen" oder „Ablehnen".<br>3. System prüft Status und Berechtigung, setzt Entscheidung, Entscheider und Zeitpunkt und schreibt den Audit-Eintrag.<br><br>![UC-19 Freigabe entscheiden](diagrams-png/f2-uc19-freigabe-entscheiden.png) |
-| **Ausnahmeszenarien** | *Anfrage bereits entschieden:* „Diese Freigabe ist bereits entschieden".<br>*Keine Berechtigung:* „Keine Berechtigung für diese Freigabe". |
-| **Akzeptanzkriterien** | A1. Ein Mitarbeiter ohne „Freigaben entscheiden", der nicht Genehmiger ist, kann die Anfrage nicht entscheiden.<br>A2. Eine entschiedene Anfrage lässt sich nicht erneut entscheiden.<br>A3. Entscheider und Zeitpunkt sind in der Anfrage und im Audit-Log identisch. |
+| **Ausnahmeszenarien** | *Anfrage bereits entschieden:* „Diese Freigabe ist bereits entschieden".<br>*Eigene Anfrage:* „Eigene Freigabeanfragen koennen nicht selbst entschieden werden"; das Cockpit zeigt für eigene Anfragen keine Entscheidungsschaltflächen.<br>*Keine Berechtigung:* „Keine Berechtigung für diese Freigabe". |
+| **Akzeptanzkriterien** | A1. Ein Mitarbeiter ohne „Freigaben entscheiden", der nicht Genehmiger ist, kann die Anfrage nicht entscheiden.<br>A2. Eine entschiedene Anfrage lässt sich nicht erneut entscheiden.<br>A3. Entscheider und Zeitpunkt sind in der Anfrage und im Audit-Log identisch.<br>A4. Der Anfragende kann seine eigene Anfrage nicht entscheiden, auch nicht mit „Freigaben entscheiden". |
 | **Qualitäten** | [NFR-15d-01](N1-nichtfunktional.md). Der Anfragende wird nicht benachrichtigt (F1.3). |
 
 ### UC-20 — Freigabe abbrechen
@@ -416,9 +416,9 @@ Alle Anwendungsfälle dieser Gruppe verlangen die Berechtigung „Aufgaben bearb
 | **Vorbedingung** | Berechtigung „Rollen verwalten" (AF-01). |
 | **Nachbedingung** | Rolle gespeichert oder gelöscht; Audit `ROLE_CREATED`, `ROLE_UPDATED` (`WARNING`) oder `ROLE_DELETED` (`CRITICAL`). |
 | **Hauptszenario** | 1. Administrator öffnet die Rollenverwaltung ([DLG-11](B1-dialogspezifikation.md#dlg-11--rollenverwaltung)) und wählt eine Rolle oder „Neue Rolle".<br>2. Administrator setzt Name, Kurzcode, Rollenart, Beschreibung, Geschäftsbereiche (bei GBL) oder Abteilungen (bei Mitarbeiter) und die sechs Berechtigungen.<br>3. System prüft Name und Kurzcode, normalisiert Kurzcode und Geschäftsbereiche in Großschreibung, erzwingt „Rollen verwalten" bei Rollenart Admin und speichert. |
-| **Alternativszenarien** | *Rolle löschen:* nur bei Rollen ohne `system`; betroffene Benutzer erhalten die Rolle Admin (R-04).<br>*Systemrolle ändern:* Rollenart bleibt unverändert; Name, Beschreibung und Berechtigungen sind änderbar. |
-| **Ausnahmeszenarien** | *Name oder Kurzcode leer:* „Name und Kurzcode sind erforderlich".<br>*Kurzcode bereits vergeben:* Fehler beim Speichern.<br>*Systemrolle löschen:* „Systemrollen können nicht gelöscht werden". |
-| **Akzeptanzkriterien** | A1. Ein Anwender ohne „Rollen verwalten" erhält beim Aufruf der Rollenverwaltung die Sperrseite und vom Server „Keine Berechtigung für die Rollenverwaltung".<br>A2. Eine Rolle der Art Admin kann nicht ohne „Rollen verwalten" gespeichert werden.<br>A3. Nach dem Löschen einer Rolle hat keiner ihrer Benutzer eine leere Rolle. |
+| **Alternativszenarien** | *Rolle löschen:* nur bei Rollen ohne `system` und ohne zugeordnete Benutzer.<br>*Systemrolle ändern:* Rollenart bleibt unverändert; Name, Beschreibung und Berechtigungen sind änderbar. |
+| **Ausnahmeszenarien** | *Name oder Kurzcode leer:* „Name und Kurzcode sind erforderlich".<br>*Kurzcode bereits vergeben:* Fehler beim Speichern.<br>*Systemrolle löschen:* „Systemrollen können nicht gelöscht werden".<br>*Rolle mit zugeordneten Benutzern löschen:* „Rolle kann nicht geloescht werden, solange Benutzer zugeordnet sind". |
+| **Akzeptanzkriterien** | A1. Ein Anwender ohne „Rollen verwalten" erhält beim Aufruf der Rollenverwaltung die Sperrseite und vom Server „Keine Berechtigung für die Rollenverwaltung".<br>A2. Eine Rolle der Art Admin kann nicht ohne „Rollen verwalten" gespeichert werden.<br>A3. Eine Rolle, der noch Benutzer zugeordnet sind, lässt sich nicht löschen; die Zuordnungen bleiben unverändert. |
 | **Qualitäten** | [NFR-15d-01](N1-nichtfunktional.md), [NFR-15d-02](N1-nichtfunktional.md). |
 
 ### UC-22 — Benutzer anlegen und zuordnen
@@ -433,8 +433,8 @@ Alle Anwendungsfälle dieser Gruppe verlangen die Berechtigung „Aufgaben bearb
 | **Vorbedingung** | Berechtigung „Rollen verwalten". |
 | **Nachbedingung** | Konto angelegt oder Zuordnung gespeichert; grobe Rolle aus der Rollenart abgeleitet ([D2.4](D2-datentypen.md#d24-userroledt)); Audit `USER_CREATED` oder `USER_ROLE_ASSIGNED` (`WARNING`). |
 | **Hauptszenario (Zuordnen)** | 1. Administrator wählt im Reiter Zuweisungen einen Benutzer, eine Zugriffsrolle und eine Abteilung; die Abteilungen kommen vom Server (UC-27).<br>2. System prüft, dass die Rolle existiert, leitet die grobe Rolle ab und speichert. Die Abteilung ist ein Anzeigetext am Konto; der Sichtbereich folgt allein aus der Zugriffsrolle (D1.6). |
-| **Hauptszenario (Anlegen)** | 1. Administrator gibt Name, E-Mail, Startpasswort, Abteilung und Zugriffsrolle ein.<br>2. System prüft Pflichtfelder und Eindeutigkeit der E-Mail, speichert das Passwort als Hash und legt das Konto an. |
-| **Ausnahmeszenarien** | *E-Mail vergeben:* „E-Mail existiert bereits".<br>*Rolle unbekannt:* „Rolle wurde nicht gefunden". |
+| **Hauptszenario (Anlegen)** | 1. Administrator gibt Name, E-Mail, Startpasswort, Abteilung und Zugriffsrolle ein.<br>2. System prüft Pflichtfelder, Mindestlänge des Passworts (acht Zeichen) und Eindeutigkeit der E-Mail, speichert das Passwort als Hash und legt das Konto an. |
+| **Ausnahmeszenarien** | *E-Mail vergeben:* „E-Mail existiert bereits".<br>*Passwort zu kurz:* „Das Passwort muss mindestens 8 Zeichen lang sein".<br>*Rolle unbekannt:* „Rolle wurde nicht gefunden". |
 | **Akzeptanzkriterien** | A1. Nach Zuordnung einer Rolle der Art GBL hat der Benutzer die grobe Rolle `PROJECT_MANAGER` und sieht die Aufgaben aller Abteilungen seiner Geschäftsbereiche (AF-02).<br>A2. Der neue Benutzer kann sich sofort mit dem Startpasswort anmelden und es unter UC-05 ändern.<br>A3. Das Startpasswort steht nicht im Audit-Log. |
 | **Qualitäten** | [NFR-15b-02](N1-nichtfunktional.md), [NFR-15b-03](N1-nichtfunktional.md). |
 

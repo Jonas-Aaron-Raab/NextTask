@@ -40,13 +40,13 @@ Drei Ebenen wirken zusammen:
 - Berechtigungen und Sichtbereich werden bei jeder Anfrage aus der Datenbank gelesen, nicht aus dem Token. Eine Rollenänderung wirkt sofort.
 - Ein Objekt außerhalb des Sichtbereichs wird wie ein nicht vorhandenes behandelt („… wurde nicht gefunden"), damit die Antwort nichts über fremde Abteilungen verrät.
 - Systemrollen sind unlöschbar; die Rolle Admin hat immer alle Berechtigungen.
-- Das Vier-Augen-Prinzip wird durch die Genehmigerbestimmung gesichert (Anfragender ist nie Genehmiger), nicht durch ein Verbot: Wer „Freigaben entscheiden" hat, kann jede offene Anfrage seines Sichtbereichs entscheiden.
+- Das Vier-Augen-Prinzip wird zweifach gesichert: Beim Anlegen ist der Anfragende nie Genehmiger (AF-03), und bei der Entscheidung weist der Server den Anfragenden ab, auch wenn er „Freigaben entscheiden" hat (seit 24. September 2026). Wer „Freigaben entscheiden" hat, kann jede andere offene Anfrage seines Sichtbereichs entscheiden.
 
 **Grenzen (Stand September 2026)**
 
 - Der Schalter „Abteilungen sehen" wird nur in der Oberfläche ausgewertet; der Server begrenzt den Sichtbereich unabhängig davon.
 - Ein Anwender ohne Zugriffsrolle sieht nichts; das Textfeld `User.department` spielt für den Sichtbereich keine Rolle ([D1.6](D1-datenmodell.md#d16-organisationsstruktur)).
-- Das Löschen einer Rolle hebt ihre Benutzer auf Admin (R-04).
+- Eine Rolle mit zugeordneten Benutzern lässt sich nicht löschen (seit 24. September 2026; vorher erhielten die Benutzer die Rolle Admin, R-04).
 - Das Seed-Skript vergibt dem Konto „Gast" die Rolle Admin mit bekanntem Passwort (R-07); es darf nur in Entwicklung und Test laufen.
 
 ---
@@ -114,7 +114,7 @@ Jeder Eintrag trägt den Akteur als Text (Name, E-Mail, Rollenname), damit er au
 - **Freie Statuswerte** der Berichtsbasis (Meilensteinstatus, Risikoklasse, Tendenz, Ampeln, Freigabestufe) werden als Text übernommen; die Oberfläche gibt sie als Auswahllisten vor (R-06).
 - **Zahlen und Daten:** ungültige Werte werden leer, nicht abgewiesen. Ein Tippfehler in einem Datum führt also zu einer Aufgabe ohne Datum, nicht zu einer Fehlermeldung.
 - **Längen:** Farbstreifen (80/180/120 Zeichen), Audit-Felder (80/120/160/300 Zeichen) werden abgeschnitten. Andere Textfelder haben keine Längenbegrenzung.
-- **Passwörter:** Mindestlänge acht Zeichen nur beim Ändern ([NFR-15b-02](N1-nichtfunktional.md)).
+- **Passwörter:** Mindestlänge acht Zeichen bei Registrierung, Anlegen durch Administratoren und Ändern ([NFR-15b-02](N1-nichtfunktional.md)).
 
 ---
 

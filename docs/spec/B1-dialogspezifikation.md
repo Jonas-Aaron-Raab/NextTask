@@ -93,7 +93,7 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 |------|-----|-----------|---------|
 | Name | Eingabe (Pflicht) | `User.name` | leer |
 | E-Mail | Eingabe (Pflicht) | `User.email` | leer |
-| Passwort | Eingabe (Pflicht) | — (Hash) | leer; keine Mindestlänge, keine Wiederholung |
+| Passwort | Eingabe (Pflicht) | — (Hash) | leer; mindestens acht Zeichen (vom Server geprüft), keine Wiederholung |
 
 **GUI Dynamik**
 
@@ -282,11 +282,11 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 | Suche | Eingabe (optional) | Filter über Titel, Beschreibung, Bezeichnung, Nachweis, Namen | leer; 250 ms verzögert |
 | Entscheidungsvermerk | Eingabe (optional) | `ApprovalRequest.decisionNote` | leer |
 | Karte: Titel, Typ, Status, Bezugsobjekt, Beschreibung, Nachweis, Anfragender, Genehmiger, Zeitpunkte | Anzeige | `ApprovalRequest` | — |
-| Dialog *Freigabe anfragen*: Typ ([D2.8](D2-datentypen.md#d28-approvalentitytypedt)); Bezugsobjekt oder Bezug (Text); Titel; Beschreibung; Genehmiger („Automatisch bestimmen"); Evidenzhinweis | Titel Pflicht | `ApprovalRequest` | — |
+| Dialog *Freigabe anfragen*: Typ ([D2.8](D2-datentypen.md#d28-approvalentitytypedt)); Bezugsobjekt oder Bezug (Text); Titel; Beschreibung; Genehmiger („Automatisch bestimmen", Auswahl ohne den Anwender selbst); Evidenzhinweis | Titel Pflicht | `ApprovalRequest` | — |
 
 **GUI Dynamik**
 
-- **Genehmigen, Ablehnen** — Vorbedingung: Anfrage offen; Anwender ist Genehmiger oder hat „Freigaben entscheiden". Wirkung: UC-19 Schritt 3.
+- **Genehmigen, Ablehnen** — Vorbedingung: Anfrage offen; Anwender ist Genehmiger oder hat „Freigaben entscheiden" und ist nicht der Anfragende (bei eigenen Anfragen werden die Schaltflächen nicht angezeigt). Wirkung: UC-19 Schritt 3.
 - **Suchen** — Wirkung: Liste wird vom Server neu geladen.
 
 ### DLG-09 — Audit-Log

@@ -18,6 +18,7 @@ Adresse der Schnittstelle bei Bedarf über `NEXTTASK_API_URL` setzen (Vorgabe `h
 | `api/approvals.spec.js` | Anfragender wird nie Genehmiger; Genehmiger entscheidet mit Vermerk; zweite Entscheidung wird abgelehnt; Mitarbeiter ohne Berechtigung bekommt 403; Anfragender kann abbrechen, nur einmal; Liste zeigt Mitarbeitern nur eigene und zugewiesene Anfragen; niemand genehmigt die eigene Anfrage. | UC-18 (A1, A3), UC-19 (A1 bis A3), UC-20, AF-03, SC-02 |
 | `api/two-factor.spec.js` | Einrichtung liefert Geheimnis und verlangt gültigen Code; Anmeldung verlangt danach den Code; ein Code gilt nur einmal; falscher Code wird abgelehnt; Abschalten verlangt Passwort und Code. | NFR-15a-01, AF-06, UC-02, UC-04 |
 | `api/audit.spec.js` | Audit-Log nur mit "Rollen verwalten"; Aufgabenänderung erzeugt genau einen Eintrag mit altem und neuem Wert und ohne unveränderte Felder; Löschen und fehlgeschlagene Anmeldung mit passender Kritikalität; keine Aufrufe zum Ändern oder Löschen von Einträgen. | NFR-15d-01, NFR-15d-02, AF-07, UC-23, QK-03 |
+| `api/security-hardening.spec.js` | Anmeldung meldet für unbekannte E-Mail und falsches Passwort dieselbe Meldung; Registrierung und Anlegen durch Administratoren lehnen Passwörter unter acht Zeichen ab; eine Rolle mit zugeordneten Benutzern lässt sich nicht löschen. | UC-02, UC-01, UC-22, UC-21, NFR-15a-01, NFR-15b-02, R-04 |
 
 `tests/approval-api.spec.js` (Jonas, 24.09.2026) prüft das Vier-Augen-Prinzip zusätzlich mit dem Admin-Konto; `api/approvals.spec.js` deckt denselben Fall mit einer GBL-Rolle ab.
 
