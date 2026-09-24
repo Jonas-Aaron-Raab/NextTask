@@ -98,9 +98,8 @@ function PersonPill({ person, fallback }) {
 }
 
 function ApprovalCard({ approval, currentUserId, canApprove, note, onNoteChange, onApprove, onReject, isBusy }) {
-  const isLocalApproval = approval.id?.startsWith('local-approval-');
   const isOwnRequest = approval.requesterId === currentUserId;
-  const canDecide = approval.status === 'PENDING' && !isOwnRequest && (isLocalApproval || canApprove || approval.approverId === currentUserId);
+  const canDecide = approval.status === 'PENDING' && !isOwnRequest && (canApprove || approval.approverId === currentUserId);
 
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
