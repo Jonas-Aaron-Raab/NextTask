@@ -21,15 +21,15 @@ Jeder Baustein entspricht einem Verzeichnis oder einer Datei im Repository; nich
 
 | Baustein | Verantwortung | Code |
 |----------|---------------|------|
-| **Browser-Anwendung** | Alle Masken (B1), Routing im Browser, Sitzung im Local Storage, Aufruf der Schnittstelle, Erzeugung des Statusbericht-PDF (B3). | `client/` (rund 16.000 Zeilen, davon 11.800 in den Masken) |
-| **API-Server** | Fachliche Regeln (F3), Zugriffsschutz, Audit-Log, Anbindung der Nachbarsysteme, Datenzugriff. Schnittstelle unter `/api`. | `server/src/` (rund 4.900 Zeilen) |
-| **Datenbank** | Dauerhafte Ablage aller Entitäten aus D1. Schema wird vom Server vorgegeben (Prisma), der Prozess läuft außerhalb des Projekts. | `server/prisma/` (Schema und 14 Migrationen) |
+| **Browser-Anwendung** | Alle Masken (B1), Routing im Browser, Sitzung im Local Storage, Aufruf der Schnittstelle, Erzeugung der Druckausgaben (B3). | `client/` (rund 16.700 Zeilen, davon 11.900 in den Masken) |
+| **API-Server** | Fachliche Regeln (F3), Zugriffsschutz mit Berechtigungen und Sichtbereich, Audit-Log, Anbindung der Nachbarsysteme, Datenzugriff. Schnittstelle unter `/api`. | `server/src/` (rund 5.950 Zeilen) |
+| **Datenbank** | Dauerhafte Ablage aller Entitäten aus D1. Schema wird vom Server vorgegeben (Prisma), der Prozess läuft außerhalb des Projekts. Seed-Skript für Beispieldaten. | `server/prisma/` (Schema, 16 Migrationen, `seed.js`) |
 
-**Beziehungen.** Die Browser-Anwendung kennt den Server nur über HTTP-Aufrufe an `/api/*` mit JSON und Bearer-Token; sie importiert keinen Servercode und teilt keine Module mit ihm. Der Server kennt die Browser-Anwendung nicht; er liefert sie auch nicht aus (in der Entwicklung tut das Vite). Nur der Server spricht mit der Datenbank und mit den Nachbarsystemen. Damit gibt es genau eine Richtung: Browser → Server → Datenbank/Nachbarn.
+**Beziehungen.** Die Browser-Anwendung kennt den Server nur über HTTP-Aufrufe an `/api/*` mit JSON und Bearer-Token; sie importiert keinen Servercode und teilt keine Module mit ihm. Der Server kennt die Browser-Anwendung nicht; er liefert sie auch nicht aus (in der Entwicklung tut das Vite). Nur der Server spricht mit der Datenbank und mit den Nachbarsystemen. Damit gibt es genau eine Richtung: Browser → Server → Datenbank/Nachbarn. Das Seed-Skript ist die einzige Stelle, an der Server-Code Dateien der Browser-Anwendung liest: Es importiert die Beispieldaten aus `client/src/data/` und schreibt sie in die Datenbank.
 
-**Entwurfsentscheidungen.** Die Dreiteilung ist [ADR-001](A09-architekturentscheidungen.md#adr-001-getrennte-browser-anwendung-und-rest-api); die gemeinsame Sprache [ADR-002](A09-architekturentscheidungen.md#adr-002-javascript-durchgängig-react-im-browser-express-auf-dem-server); die Datenbank [ADR-003](A09-architekturentscheidungen.md#adr-003-postgresql-mit-prisma-als-persistenz). Kein gemeinsames Paket für Typen oder Validierung zwischen Browser und Server: Die Enum-Werte aus D2 sind auf beiden Seiten als Zeichenketten bekannt, der Server normalisiert ([AF-04](../spec/F3-anwendungsfunktionen.md#af-04--status-priorität-und-eingaben-normalisieren)).
+**Entwurfsentscheidungen.** Die Dreiteilung ist [ADR-001](A09-architekturentscheidungen.md#adr-001-getrennte-browser-anwendung-und-rest-api); die gemeinsame Sprache [ADR-002](A09-architekturentscheidungen.md#adr-002-javascript-durchgängig-react-im-browser-express-auf-dem-server); die Datenbank [ADR-003](A09-architekturentscheidungen.md#adr-003-postgresql-mit-prisma-als-persistenz). Kein gemeinsames Paket für Typen oder Validierung zwischen Browser und Server: Die Enum-Werte aus D2 sind auf beiden Seiten als Zeichenketten bekannt, der Server normalisiert ([AF-04](../spec/F3-anwendungsfunktionen.md#af-04--status-priorität-und-eingaben-normalisieren)) und serialisiert die Antworten in die Form, die die Masken erwarten (`utils/contentSerializers.js`).
 
-**Offener Punkt.** Die Browser-Anwendung hält Projekte, Backlog und Board in mehreren Masken selbst (Local Storage, [B1.5](../spec/B1-dialogspezifikation.md#b15-stand-der-anbindung)). Die Beziehung Browser → Server ist für diese Daten nicht durchgängig; siehe [8.9](A08-querschnittliche-konzepte.md#89-zustand-im-browser).
+**Offener Punkt.** Bis zum Stand vom 13. September hielt die Browser-Anwendung Projekte, Backlog und Board selbst im Local Storage. Seit dem 23. September laden alle Masken vom Server; die Beziehung Browser → Server ist damit für alle Fachdaten durchgängig ([8.9](A08-querschnittliche-konzepte.md#89-zustand-im-browser)). Offen bleibt, dass die Masken Fehler beim Anlegen nicht anzeigen ([B1.5](../spec/B1-dialogspezifikation.md#b15-stand-der-anbindung)).
 
 ### 5.1.1 Blackbox Browser-Anwendung
 
@@ -39,8 +39,8 @@ Jeder Baustein entspricht einem Verzeichnis oder einer Datei im Repository; nich
 | **Angebotene Schnittstelle** | Die Adressen aus [B1.1](../spec/B1-dialogspezifikation.md#b11-dialogindex) (`/login`, `/`, `/projects`, `/my-tasks`, …) im Browser; Tiefe Verweise über `?taskId`, `?section`. |
 | **Benötigte Schnittstelle** | `/api/*` des Servers (Basisadresse fest in `api/axios.js`); Umleitungsziele von Identity Provider und Google. |
 | **Abhängigkeiten** | React 19, React Router 7, axios, Tailwind 4, lucide-react (Icons), @dnd-kit (Ziehen im Backlog), html2canvas und jspdf (PDF). Bauen mit Vite 8. |
-| **Erfüllte Anforderungen** | Alle DLG-xx; UC-10 vollständig; UC-06 vollständig (Abmelden ist reine Browserlogik). |
-| **Offene Punkte** | Beispieldaten und Local-Storage-Persistenz in Dashboard, Projekte, Board, Kalender, Reports, Dokumente (B1.5); Farbstreifen-Laden fehlerhaft (B1.5 Nr. 1). |
+| **Erfüllte Anforderungen** | Alle DLG-xx; UC-10 und UC-26 vollständig (Druckausgaben entstehen im Browser); UC-06 vollständig (Abmelden ist reine Browserlogik). |
+| **Offene Punkte** | Fehler beim Anlegen ohne Meldung; Backlog-Reihenfolge erst nach Neuladen sichtbar; Kennzahlen „In Arbeit" und „Offen" im Abteilungsbericht immer 0 (B1.5). |
 | **Verfeinert in** | [5.2.1](#521-whitebox-browser-anwendung) |
 
 ### 5.1.2 Blackbox API-Server
@@ -59,7 +59,7 @@ Jeder Baustein entspricht einem Verzeichnis oder einer Datei im Repository; nich
 
 | Feld | Inhalt |
 |------|--------|
-| **Zweck** | Hält die 14 Entitäten aus [D1](../spec/D1-datenmodell.md) als 14 Tabellen mit sechs Enum-Typen, Fremdschlüsseln, Eindeutigkeiten und Löschregeln. |
+| **Zweck** | Hält die 29 Entitäten aus [D1](../spec/D1-datenmodell.md) als 29 Tabellen mit sechs Enum-Typen, Fremdschlüsseln, Eindeutigkeiten und Löschregeln. |
 | **Angebotene Schnittstelle** | SQL über den PostgreSQL-Treiber `pg`; im Code nur über den generierten Prisma-Client sichtbar. |
 | **Abhängigkeiten** | PostgreSQL-Server außerhalb des Repositories (lokal oder bei einem Anbieter); `sslmode=require` bei entfernten Instanzen. |
 | **Erfüllte Anforderungen** | D1.6 Eindeutigkeiten und Löschregeln als Datenbankregeln; NFR-15d-01 (Einträge in `AuditLog` haben keinen Update- oder Delete-Pfad im Code). |
@@ -78,17 +78,17 @@ Jeder Baustein entspricht einem Verzeichnis oder einer Datei im Repository; nich
 |----------|---------|---------------|
 | **Einstieg und Routing** | `main.jsx`, `App.jsx`, `context/AuthContext.jsx` | `main.jsx` wendet die gespeicherten Anzeigeeinstellungen an und rendert `App`. `App.jsx` definiert die Routen und drei Wächter: `RequireAuth` (ohne Token → `/login` mit Merken des Ziels), `PublicOnly` (mit Token → Ziel), `RequireAuditAccess` (nur mit `canManageRoles`). `AuthContext` hält Benutzer und Token aus dem Local Storage und bietet `login`, `logout`, `updateUser`. |
 | **Anwendungsrahmen** | `components/AppShell.jsx` (513 Zeilen) | Seitenleiste mit den zehn Einträgen, Kopfzeile mit globaler Suche (Strg+K), Erstellen-Menü, Benachrichtigungen (drei feste Beispielmeldungen), Profilmenü. Nimmt je Maske Titel, Suchvorschläge und Menüeinträge entgegen. Verteilt Rollen- und Darstellungsänderungen über `CustomEvent`s (`nexttask:roles-change`, `nexttask:appearance-change`, `nexttask:task-markers-change`). |
-| **Masken** | `pages/*Page.jsx`, 13 Dateien | Eine Datei je Maske aus B1 (`ProjectBoardPage.jsx` exportiert nur `ProjectsPage` erneut). Die drei größten: `ProjectsPage` (3.234 Zeilen, inkl. Projektdialog mit sechs Reitern und Ticketdetails), `MyTasksPage` (2.405, Board und Ticket-Editor mit acht Reitern), `SettingsPage` (1.689). |
+| **Masken** | `pages/*Page.jsx`, 14 Dateien | Eine Datei je Maske aus B1 (`ProjectBoardPage.jsx` exportiert nur `ProjectsPage` erneut; `DepartmentsPage.jsx` ist nicht geroutet). Die drei größten: `ProjectsPage` (3.264 Zeilen, inkl. Projektdialog mit sechs Reitern, Ticketdetails, Abteilungsdialog), `MyTasksPage` (2.583, Board und Ticket-Editor mit acht Reitern), `SettingsPage` (1.696). |
 | **Bausteine** | `components/calendar/` (3), `components/reports/` (4) | Aus Kalender und Reports herausgelöste Teile: Werkzeugleiste, Dialoge und Raster des Kalenders; Kennzahlen, Inhalte und Statusbericht-Vorschau der Reports. |
 | **Zugriffsschicht** | `api/axios.js` | Eine axios-Instanz: Basisadresse, Request-Interceptor setzt `Authorization: Bearer` aus `localStorage.token`, Response-Interceptor löscht bei 401 Token und Profil und leitet hart auf `/login`. |
-| **Regeln und Speicher** | `utils/` (8 Dateien, 949 Zeilen) | Reine Funktionen: `task.js` (Statuslabels, Fälligkeitsklassen), `effort.js` (Stunden↔Tage, 8 h/Tag), `calendar.js` (Datumsraster), `taskMarkers.js` (Farbstreifen-Zuordnung nach AF-10, Local-Storage-Kopie), `approvalStorage.js` (lokal vorgemerkte Freigaben), `appearance.js` (Darstellung, Datenattribute am `<html>`), `reportExport.js` (HTML-Vorlage des Statusberichts und PDF-Erzeugung, 437 Zeilen). |
-| **Beispieldaten** | `data/` (4 Dateien, 1.225 Zeilen) | `bankOrganization.js` (Abteilungen OR-IT/ID/OE, Standardrollen, `canManageRoles`, Local-Storage-Rückfall), `projectFixtures.js` und `taskFixtures.js` (Startbestand für Projekte, Backlog, Board), `calendarConstants.js` (Anzeigetexte für Status und Priorität). |
+| **Regeln und Speicher** | `utils/` (6 Dateien, 1.305 Zeilen) | Reine Funktionen: `task.js` (Statuslabels, Fälligkeitsklassen), `effort.js` (Stunden↔Tage, 8 h/Tag), `calendar.js` (Datumsraster), `taskMarkers.js` (Farbstreifen-Zuordnung nach AF-10, Local-Storage-Kopie), `appearance.js` (Darstellung, Datenattribute am `<html>`), `reportExport.js` (HTML-Vorlage und PDF des Statusberichts, gezeichnetes PDF und CSV des Abteilungsberichts, 822 Zeilen). |
+| **Anzeigedaten** | `data/` (5 Dateien, rund 1.300 Zeilen) | `bankOrganization.js` (Standardrollen, Anzeigetexte für Rollenarten und Berechtigungen, `canManageRoles`, `getEffectiveRoleForUser`), `calendarConstants.js` (Anzeigetexte für Status und Priorität), `projectFixtures.js`, `taskFixtures.js`, `documentFixtures.js` (Beispieldaten; von keiner Maske mehr importiert, nur noch vom Seed-Skript des Servers gelesen). |
 
-**Beziehungen.** `App.jsx` importiert alle Masken; jede Maske importiert `AppShell`, meist `axios`, `AuthContext` und die benötigten `utils` und `data`. Masken importieren einander nur an einer Stelle: `MyTasksPage` nutzt den Projektdialog aus `ProjectsPage`. `AppShell` importiert `bankOrganization` (Sichtbarkeit des Audit-Log-Eintrags) und `appearance`. Es gibt keinen globalen Zustand außer `AuthContext`; jede Maske lädt ihre Daten selbst.
+**Beziehungen.** `App.jsx` importiert alle Masken; jede Maske importiert `AppShell`, `axios`, `AuthContext` und die benötigten `utils`. Masken importieren einander nur an einer Stelle: `MyTasksPage` nutzt den Projektdialog aus `ProjectsPage`. `AppShell` importiert `bankOrganization` (Sichtbarkeit des Audit-Log-Eintrags) und `appearance`. Es gibt keinen globalen Zustand außer `AuthContext`; jede Maske lädt ihre Daten selbst. Dashboard, Projekte, Board und Reports laden dieselbe Organisationsübersicht (`GET /api/organization`: Abteilungen, Projekte mit Berichtsbasis, Aufgaben des Sichtbereichs) und leiten daraus ihre Anzeige ab.
 
-**Entwurfsentscheidungen.** Kein Zustandsmanagement-Paket (kein Redux, kein Query-Cache): Jede Maske hält ihren Zustand mit `useState`/`useEffect` und lädt beim Öffnen. Das ist für zwölf Masken ohne geteilte Live-Daten ausreichend und hält die Abhängigkeiten flach; der Preis ist, dass Masken voneinander nichts mitbekommen und über `CustomEvent`s benachrichtigt werden müssen. Die Anzeigetexte der Enums liegen in `calendarConstants.js` und `task.js` doppelt (Kalender- und Board-Schreibweise, [D2.3](../spec/D2-datentypen.md#d23-taskstatusdt)).
+**Entwurfsentscheidungen.** Kein Zustandsmanagement-Paket (kein Redux, kein Query-Cache): Jede Maske hält ihren Zustand mit `useState`/`useEffect` und lädt beim Öffnen. Das ist für zwölf Masken ohne geteilte Live-Daten ausreichend und hält die Abhängigkeiten flach; der Preis ist, dass Masken voneinander nichts mitbekommen und über `CustomEvent`s benachrichtigt werden müssen, und dass die Organisationsübersicht bei jedem Maskenwechsel neu geladen wird. Die Anzeigetexte der Enums liegen in `calendarConstants.js` und `task.js` doppelt (Kalender- und Board-Schreibweise, [D2.3](../spec/D2-datentypen.md#d23-taskstatusdt)).
 
-**Offene Punkte.** `DepartmentsPage.jsx` ist vorhanden, aber nicht geroutet (`/departments` leitet um). `data/` und die Local-Storage-Persistenz in `ProjectsPage`, `MyTasksPage`, `ReportsPage` sind der Grund für R-01.
+**Offene Punkte.** `DepartmentsPage.jsx` ist vorhanden, aber nicht geroutet (`/departments` leitet um). Die Fixture-Dateien unter `data/` gehören fachlich zum Seed-Skript und könnten nach `server/prisma/` wandern. `ReportsPage` vergleicht den Aufgabenstatus an zwei Stellen mit Werten (`in-progress`, `today`), die der Serialisierer nie liefert (`progress`, `todo`); die Kennzahlen bleiben 0 (B1.5 Nr. 3).
 
 ### 5.2.2 Whitebox API-Server
 
@@ -96,30 +96,34 @@ Jeder Baustein entspricht einem Verzeichnis oder einer Datei im Repository; nich
 
 | Baustein | Dateien | Verantwortung |
 |----------|---------|---------------|
-| **Einstieg** | `index.js` (40 Zeilen) | Erzeugt die Express-App, aktiviert `cors()` und `express.json()`, erzeugt einen `PrismaClient` mit `PrismaPg`-Adapter und hängt ihn als `req.prisma` an jede Anfrage, bindet neun Router unter `/api/<bereich>` ein, lauscht auf `PORT`. |
-| **Zugriffsschutz** | `middleware/auth.js` (23 Zeilen) | Liest `Authorization: Bearer`, prüft das JWT mit `JWT_SECRET`, verlangt `id` und `purpose === 'access'`, legt die Nutzdaten als `req.user` ab. Antwortet sonst mit 401. |
-| **Routenmodule** | `routes/<bereich>.routes.js` (9 Dateien, 2.670 Zeilen) | Je Bereich ein Express-Router. Jeder Handler: Eingaben normalisieren, Regeln prüfen, Prisma aufrufen, Audit schreiben, Nebenwirkungen anstoßen, antworten. Details unten. |
-| **Hilfsmodule** | `utils/` (8 Dateien, 1.960 Zeilen) | Regeln, die mehrere Routen brauchen; entsprechen den Anwendungsfunktionen aus F3 (Zuordnung in [5.4](#54-zuordnung-zur-spezifikation)). |
-| **Persistenzschicht** | `prisma/schema.prisma`, `prisma/migrations/`, `prisma.config.ts` | Schema als Quelle der Wahrheit; der generierte Client ist die einzige Datenbankschnittstelle im Code. |
+| **Einstieg** | `index.js` (44 Zeilen) | Erzeugt die Express-App, aktiviert `cors()` und `express.json()`, erzeugt einen `PrismaClient` mit `PrismaPg`-Adapter und hängt ihn als `req.prisma` an jede Anfrage, bindet elf Router unter `/api/<bereich>` ein, lauscht auf `PORT`. |
+| **Zugriffsschutz** | `middleware/auth.js` (23 Zeilen) | Liest `Authorization: Bearer`, prüft das JWT mit `JWT_SECRET`, verlangt `id` und `purpose === 'access'`, legt die Nutzdaten als `req.user` ab. Antwortet sonst mit 401. Berechtigung und Sichtbereich prüft nicht die Middleware, sondern jeder Handler über `utils/accessScope.js` ([8.3](A08-querschnittliche-konzepte.md#83-berechtigungen)). |
+| **Routenmodule** | `routes/<bereich>.routes.js` (11 Dateien, 3.383 Zeilen) | Je Bereich ein Express-Router. Jeder Handler: Anwender mit Zugriffsrolle laden, Berechtigung und Sichtbereich prüfen, Eingaben normalisieren, Prisma aufrufen, Audit schreiben, Nebenwirkungen anstoßen, serialisiert antworten. Details unten. |
+| **Hilfsmodule** | `utils/` (10 Dateien, 2.337 Zeilen) | Regeln, die mehrere Routen brauchen; entsprechen den Anwendungsfunktionen aus F3 (Zuordnung in [5.4](#54-zuordnung-zur-spezifikation)). |
+| **Persistenzschicht** | `prisma/schema.prisma`, `prisma/migrations/`, `prisma/seed.js`, `prisma.config.ts` | Schema als Quelle der Wahrheit; der generierte Client ist die einzige Datenbankschnittstelle im Code. `seed.js` (718 Zeilen) liest die Fixtures aus `client/src/data/` und schreibt sie per `upsert` in die Datenbank (`npm run db:seed`). |
 
-**Die neun Routenmodule**
+**Die elf Routenmodule**
 
 | Modul | Präfix | Handler | Nutzt Hilfsmodule | Realisiert |
 |-------|--------|---------|-------------------|------------|
 | `auth.routes.js` (800 Zeilen) | `/api/auth` | register, login, login/2fa, sso/config, sso/login, sso/callback, sso/exchange, me, me (PUT), me/password, me/2fa/setup, me/2fa/confirm, me/2fa/disable, me/notifications/test | accessRoles, auditLog, twoFactor, sso, taskNotificationMailer, calendarIntegration | UC-01 bis UC-05 |
-| `project.routes.js` | `/api/projects` | list (nur eigene), create, :id/reporting (PUT), :id/status-reports (POST) | auditLog | UC-07 bis UC-09 |
-| `task.routes.js` | `/api/tasks` | project/:projectId (GET), create, :id (PUT), :id/move, :id/schedule, :id (DELETE), :id/comments | auditLog, taskNotificationMailer, calendarIntegration, date | UC-11 bis UC-16 |
-| `calendar.routes.js` | `/api/calendar` | tasks (GET mit Filtern) | date | UC-17, AF-02 |
-| `approval.routes.js` | `/api/approvals` | context, list, create, :id/approve, :id/reject, :id/cancel | accessRoles, auditLog | UC-18 bis UC-20 |
-| `role.routes.js` | `/api/roles` | list, create, :id (PUT), :id (DELETE), users/:id (PUT), users (POST) | accessRoles, auditLog | UC-21, UC-22 |
-| `auditLog.routes.js` | `/api/audit-logs` | list (GET mit Filtern) | accessRoles, date | UC-23 |
-| `taskMarker.routes.js` | `/api/task-markers` | list, replace (PUT) | auditLog | UC-24 |
-| `calendarIntegration.routes.js` | `/api/calendar-integration` | connect-url, callback, sync, disconnect | auditLog, calendarIntegration | UC-25 |
+| `organization.routes.js` (142) | `/api/organization` | Übersicht (GET: Abteilungen mit Mitgliedern, Projekte mit Berichtsbasis, Aufgaben des Sichtbereichs), departments (GET), departments (POST) | accessScope, contentSerializers | UC-17, UC-27, AF-02 |
+| `project.routes.js` (460) | `/api/projects` | list (Sichtbereich), create, :id/reporting (PUT), :id/status-reports (POST) | accessScope, auditLog, contentSerializers | UC-07 bis UC-09 |
+| `task.routes.js` (777) | `/api/tasks` | project/:projectId (GET), create, :id (PUT), project/:projectId/order (PATCH), :id/move, :id/schedule, :id (DELETE), :id/comments | accessScope, auditLog, contentSerializers, taskNotificationMailer, calendarIntegration, date | UC-11 bis UC-16, AF-12 |
+| `calendar.routes.js` (106) | `/api/calendar` | tasks (GET mit Filtern) | accessScope, date | UC-17, AF-02 |
+| `document.routes.js` (44) | `/api/documents` | list (Sichtbereich, plus alle Vorlagen) | accessScope, contentSerializers | UC-28 |
+| `approval.routes.js` (510) | `/api/approvals` | context, list, create, :id/approve, :id/reject, :id/cancel | accessRoles, accessScope, auditLog | UC-18 bis UC-20 |
+| `role.routes.js` (269) | `/api/roles` | list, create, :id (PUT), :id (DELETE), users/:id (PUT), users (POST) | accessRoles, auditLog | UC-21, UC-22 |
+| `auditLog.routes.js` (100) | `/api/audit-logs` | list (GET mit Filtern) | accessRoles, date | UC-23 |
+| `taskMarker.routes.js` (162) | `/api/task-markers` | list, replace (PUT) | auditLog | UC-24 |
+| `calendarIntegration.routes.js` (175) | `/api/calendar-integration` | connect-url, callback, sync, disconnect | auditLog, calendarIntegration | UC-25 |
 
-**Die acht Hilfsmodule**
+**Die zehn Hilfsmodule**
 
 | Modul | Zeilen | Inhalt | Nutzt |
 |-------|--------|--------|-------|
+| `accessScope.js` | 157 | `getCurrentUserWithAccessRole` (Anwender mit Zugriffsrolle je Anfrage laden), `userHasPermission`, `getDepartmentScope`, `buildDepartmentScopeWhere`/`buildProjectScopeWhere`/`buildTaskScopeWhere`/`buildDocumentScopeWhere` (Prisma-`where`-Fragmente für den Sichtbereich), `buildApprovalScopeWhere` | Prisma |
+| `contentSerializers.js` | 220 | `serializeDepartment`, `serializeProject`, `serializeTask`, `serializeDocument`: bringen Datensätze mit Detailentitäten in die Form der Masken (Anzeigestatus wie `progress`/`todo`, deutsche Prioritäten, Datumsfelder) | — |
 | `accessRoles.js` | 173 | Standardrollen, `ensureDefaultAccessRoles`, `normalizePermissions`, `serializeRole`/`serializeUser`, `userCanManageRoles`, `userCanApproveRequests` | Prisma |
 | `auditLog.js` | 91 | `writeAuditLog`, `summarizeChanges`, `pickFields`; Akteur aus `req`, IP aus `X-Forwarded-For` | Prisma |
 | `twoFactor.js` | 200 | Base32, TOTP (HMAC-SHA-1), `encryptSecret`/`decryptSecret` (AES-256-GCM), Wiederherstellungscodes (bcrypt), `otpauth://`-Adresse | `crypto`, bcryptjs |
@@ -129,11 +133,11 @@ Jeder Baustein entspricht einem Verzeichnis oder einer Datei im Repository; nich
 | `date.js` | 7 | `parseDate` mit Leerwert | — |
 | `guestUser.js` | 39 | `getOrCreateGuestUser`; von keinem Modul importiert (NG-08) | Prisma |
 
-**Beziehungen.** Alle Routen hängen von `auth.js` ab (außer den öffentlichen Handlern in `auth.routes.js` und den beiden Rückleitungen). Hilfsmodule kennen keine Routen und keine Anfragen, mit einer Ausnahme: `writeAuditLog(req, …)` liest Akteur und Herkunft aus der Anfrage. Untereinander hängen nur `sso → accessRoles` und `calendarIntegration → twoFactor` (für die Verschlüsselung des Refresh-Tokens). Kein Modul importiert `index.js`.
+**Beziehungen.** Alle Routen hängen von `auth.js` ab (außer den öffentlichen Handlern in `auth.routes.js` und den beiden Rückleitungen). Die fachlichen Routen (organization, projects, tasks, calendar, documents, approvals) hängen zusätzlich von `accessScope.js` ab. Hilfsmodule kennen keine Routen und keine Anfragen, mit zwei Ausnahmen: `writeAuditLog(req, …)` liest Akteur und Herkunft aus der Anfrage, `getCurrentUserWithAccessRole(req)` die Anwenderkennung. Untereinander hängen nur `sso → accessRoles` und `calendarIntegration → twoFactor` (für die Verschlüsselung des Refresh-Tokens). Kein Modul importiert `index.js`.
 
-**Entwurfsentscheidungen.** Keine Service-Schicht: Routen rufen Prisma direkt. Das hält jeden Handler in einer Datei lesbar; die Kehrseite ist, dass Regeln wie „nur eigene Projekte" (`where: { ownerId: req.user.id }`) in mehreren Handlern wiederholt werden. Der Prisma-Client hängt an der Anfrage statt als Modul-Import, damit Routen ohne Verbindungsaufbau testbar wären. Fehler werden je Handler mit `try/catch` gefangen und als 500 mit deutscher Meldung beantwortet ([8.5](A08-querschnittliche-konzepte.md#85-fehlerbehandlung)).
+**Entwurfsentscheidungen.** Keine Service-Schicht: Routen rufen Prisma direkt. Das hält jeden Handler in einer Datei lesbar. Die Wiederholung der Zugriffsregeln, die in der ersten Fassung als Kehrseite genannt war, ist mit `accessScope.js` behoben: Der Sichtbereich ist ein `where`-Fragment, das jeder Handler an seine Abfrage hängt (`findFirst({ where: { id, ...scope } })` statt `findUnique`), und ein Objekt außerhalb wird so zur 404. Der Prisma-Client hängt an der Anfrage statt als Modul-Import, damit Routen ohne Verbindungsaufbau testbar wären. Fehler werden je Handler mit `try/catch` gefangen und als 500 mit deutscher Meldung beantwortet ([8.5](A08-querschnittliche-konzepte.md#85-fehlerbehandlung)).
 
-**Offene Punkte.** `guestUser.js` ist toter Code. `auth.routes.js` trägt mit 14 Handlern und 800 Zeilen die meiste Last; [5.3](#53-ebene-3-zugang) öffnet es.
+**Offene Punkte.** `guestUser.js` ist toter Code. `auth.routes.js` trägt mit 14 Handlern und 800 Zeilen die meiste Last; [5.3](#53-ebene-3-zugang) öffnet es. `organization.routes.js` und `document.routes.js` schreiben keine Audit-Einträge, obwohl `POST /departments` eine ändernde Aktion ist.
 
 ---
 
@@ -162,17 +166,19 @@ Damit der Weg von der Anforderung zum Code in beide Richtungen nachvollziehbar i
 | Spezifikation | Browser-Anwendung | API-Server |
 |---------------|-------------------|------------|
 | UC-01 bis UC-06, DLG-01, DLG-02, DLG-12 (Profil, Sicherheit) | `LoginPage`, `RegisterPage`, `SettingsPage`, `AuthContext` | `auth.routes.js`, `twoFactor.js`, `sso.js` |
-| UC-07 bis UC-10, DLG-04, DLG-07, DR-01 | `ProjectsPage`, `ReportsPage`, `components/reports/`, `utils/reportExport.js` | `project.routes.js` (von der Oberfläche nicht aufgerufen, R-01) |
-| UC-11 bis UC-17, DLG-03, DLG-05, DLG-06 | `DashboardPage`, `MyTasksPage`, `CalendarPage`, `components/calendar/`, `utils/task.js`, `utils/effort.js`, `utils/calendar.js` | `task.routes.js`, `calendar.routes.js` |
-| UC-18 bis UC-20, DLG-08 | `ApprovalsPage`, `utils/approvalStorage.js` | `approval.routes.js` |
+| UC-07 bis UC-10, UC-26, DLG-04, DLG-07, DR-01, DR-02 | `ProjectsPage`, `ReportsPage`, `components/reports/`, `utils/reportExport.js` | `project.routes.js`, `organization.routes.js` (Übersicht) |
+| UC-11 bis UC-17, DLG-03, DLG-05, DLG-06 | `DashboardPage`, `MyTasksPage`, `CalendarPage`, `components/calendar/`, `utils/task.js`, `utils/effort.js`, `utils/calendar.js` | `task.routes.js`, `calendar.routes.js`, `organization.routes.js` |
+| UC-18 bis UC-20, DLG-08 | `ApprovalsPage` | `approval.routes.js` |
 | UC-21, UC-22, DLG-11 | `RoleManagementPage`, `data/bankOrganization.js` | `role.routes.js`, `accessRoles.js` |
 | UC-23, DLG-09 | `AuditLogPage` | `auditLog.routes.js` |
 | UC-24, DLG-12 (Farben) | `SettingsPage`, `utils/taskMarkers.js` | `taskMarker.routes.js` |
 | UC-25, DLG-12 (Kalender) | `SettingsPage` | `calendarIntegration.routes.js`, `calendarIntegration.js` |
-| AF-01 Berechtigung | `bankOrganization.canManageRoles` (nur Anzeige) | `accessRoles.userCanManageRoles`, `userCanApproveRequests` |
-| AF-02 Sichtbarkeit | — | `calendar.routes.js` (Filteraufbau) |
-| AF-03 Genehmiger | — | `approval.routes.js` (`findFallbackApprover`, `getEntityContext`, `buildListWhere`) |
-| AF-04 Normalisierung | — | `task.routes.js` (`normalizeStatus`, `normalizePriority`, `parseOptionalNumber`), `project.routes.js` (`optionalString`, `optionalDate`, `toStringArray`) |
+| UC-27, DLG-04 (Abteilungsdialog) | `ProjectsPage` | `organization.routes.js` (`POST /departments`) |
+| UC-28, DLG-10 | `DocumentsPage` | `document.routes.js` |
+| AF-01 Berechtigung | `bankOrganization.canManageRoles` (nur Anzeige) | `accessScope.userHasPermission`, `accessRoles.userCanManageRoles`, `userCanApproveRequests` |
+| AF-02 Sichtbereich | — | `accessScope.js` (`build*ScopeWhere`), `calendar.routes.js` (Filteraufbau) |
+| AF-03 Genehmiger | — | `approval.routes.js` (`findFallbackApprover`, `getEntityContext`, `buildListWhere`), `accessScope.buildApprovalScopeWhere` |
+| AF-04 Normalisierung | — | `task.routes.js` (`normalizeStatus`, `normalizePriority`, `parseOptionalNumber`, `toStringList`, `buildTaskDetailWrites`), `project.routes.js` (`optionalString`, `optionalDate`, `toStringArray`, `build*Creates`) |
 | AF-05 Projektschlüssel | — | `project.routes.js` (`generateProjectKey`) |
 | AF-06 Zweiter Faktor | — | `twoFactor.js`, `auth.routes.js` (`verifySecondFactor`) |
 | AF-07 Audit | — | `auditLog.js` |
@@ -180,4 +186,7 @@ Damit der Weg von der Anforderung zum Code in beide Richtungen nachvollziehbar i
 | AF-09 Benachrichtigung | — | `taskNotificationMailer.js`, `task.routes.js` (`notifyTaskAssignment`, `notifyCommentMentions`) |
 | AF-10 Farbstreifen | `utils/taskMarkers.js` (`resolveTaskMarker`) | `taskMarker.routes.js` (Standardstreifen, Normalisierung) |
 | AF-11 SSO-Konto | — | `sso.js` (`findOrCreateSsoUser`, `resolveAccessRole`) |
-| D1, D2 | `data/calendarConstants.js` (Anzeigetexte) | `prisma/schema.prisma` |
+| AF-12 Backlog-Reihenfolge | `ProjectsPage` (`@dnd-kit`, `PATCH …/order`) | `task.routes.js` (`PATCH /project/:projectId/order`) |
+| D1, D2 | `data/calendarConstants.js`, `utils/task.js` (Anzeigetexte) | `prisma/schema.prisma`, `contentSerializers.js` (Abbildung auf Anzeigewerte) |
+| S3.3 Seed | `data/*Fixtures.js` (Quelle) | `prisma/seed.js` |
+

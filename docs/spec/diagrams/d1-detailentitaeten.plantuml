@@ -1,0 +1,111 @@
+@startuml d1-detailentitaeten
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam ArrowColor #555555
+skinparam classAttributeIconSize 0
+skinparam nodesep 30
+skinparam ranksep 50
+skinparam class {
+  BackgroundColor #F7F7F7
+  BorderColor #333333
+}
+skinparam package {
+  BorderColor #999999
+  BackgroundColor #FFFFFF
+}
+hide circle
+hide methods
+
+title D1 Informationsmodell NextTask: Detailentitaeten der Aufgabe (D1.3) und Dokumente (D1.4)
+
+package "Details einer Aufgabe" as AUF {
+  class Task {
+    title : Text
+    ticketNumber : Text [0..1]
+    checklist, note : Text [0..1]
+    sourceTaskId : Identifier [0..1]
+  }
+  class TaskTag {
+    label : Text
+  }
+  class TaskPersonLink {
+    name : Text
+    email : Email [0..1]
+  }
+  class TaskAttachment {
+    name : Text
+    type : AttachmentTypeDT
+    source : AttachmentSourceDT
+    url : URL [0..1]
+  }
+  class TaskCompliance {
+    classification : ClassificationDT
+    risk : ComplianceRiskDT
+    controlId : Text [0..1]
+    approval, evidence : Text [0..1]
+  }
+  class TaskAssignmentSource {
+    name : Text
+    initials : Text [0..1]
+  }
+  class TaskAuditEntry {
+    content : Text
+    order : Integer
+  }
+
+  Task "1" *-- "*" TaskTag : Schlagwoerter\n(eindeutig je Aufgabe)
+  Task "1" *-- "*" TaskPersonLink : verlinkte Personen
+  Task "1" *-- "*" TaskAttachment : Anhaenge\n(nur Metadaten)
+  Task "1" *-- "0..1" TaskCompliance : Banking Ready
+  Task "1" *-- "0..1" TaskAssignmentSource : Ersteller
+  Task "1" *-- "*" TaskAuditEntry : Audit-Spur\n(Freitext)
+}
+
+package "Dokumente" as DOK {
+  class Document {
+    title : Text
+    type : DocumentTypeDT
+    status : DocumentStatusDT
+    classification : ClassificationDT
+    ownerName : Text
+    version : Text [0..1]
+    reviewDate, retentionDate : Datum [0..1]
+    summary : Text
+  }
+  class DocumentTaskLink {
+    taskTitle : Text
+    taskId : Identifier [0..1]
+  }
+  class DocumentControl {
+    controlId : Text
+  }
+  class DocumentAuditEntry {
+    content : Text
+    order : Integer
+  }
+  class DocumentTemplate {
+    title : Text (eindeutig)
+    type : Text
+  }
+
+  Document "1" *-- "*" DocumentTaskLink : verknuepfte Aufgaben\n(lose Referenz)
+  Document "1" *-- "*" DocumentControl : Kontroll-IDs
+  Document "1" *-- "*" DocumentAuditEntry : Audit-Trail\n(Freitext)
+}
+
+class "Department, siehe D1.1" as Dep
+class "Project, siehe D1.2" as Prj
+Dep "0..1" -- "*" Document : Abteilung
+Prj "0..1" -- "*" Document : Projekt
+
+AUF -[hidden]right- DOK
+
+legend bottom left
+  Alle Detailentitaeten werden mit ihrer Aufgabe bzw. ihrem
+  Dokument geloescht (Cascade). Anhaenge halten nur Name, Typ,
+  Quelle und Adresse; Dateiinhalte speichert NextTask nicht.
+  Audit-Spur und Audit-Trail sind vom Anwender gepflegter
+  Freitext und nicht das systemseitige Audit-Log (D1.5).
+end legend
+@enduml

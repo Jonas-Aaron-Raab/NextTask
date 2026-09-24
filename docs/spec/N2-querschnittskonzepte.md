@@ -11,7 +11,7 @@ Einheitliche Lösungen für Fragen, die nicht zu einem einzelnen Anwendungsfall 
 | QK-05 | Validierung und Normalisierung | alle Eingaben |
 | QK-06 | Benachrichtigungen | Aufgaben, Kommentare |
 | QK-07 | Geheimnisse | Konfiguration, Datenbank |
-| QK-08 | Daten im Browser | Oberfläche |
+| QK-08 | Daten im Browser | Oberfläche (Sitzung, Anzeigeeinstellungen) |
 
 ---
 
@@ -31,27 +31,29 @@ Drei Ebenen wirken zusammen:
 
 | Ebene | Grundlage | Wer prüft |
 |-------|-----------|-----------|
-| **Berechtigung** | Sechs Schalter der Zugriffsrolle ([D2.6](D2-datentypen.md#d26-permissionsetdt)); „Rollen verwalten" und „Freigaben entscheiden" haben feste Ableitungen aus Rollenart und grober Rolle ([AF-01](F3-anwendungsfunktionen.md#af-01--berechtigung-prüfen)). | Server bei Rollen, Benutzern, Audit-Log, Freigabeentscheidungen; Oberfläche zusätzlich für Sperrseiten und die vier übrigen Schalter. |
-| **Sichtbereich** | Grobe Rolle, Bearbeiter, Projekteigentum, Abteilung ([AF-02](F3-anwendungsfunktionen.md#af-02--sichtbare-aufgaben-bestimmen)). | Server bei Aufgabenlisten; Oberfläche für Abteilungsfilter im Dashboard. |
-| **Eigentum** | Eigentümer eines Projekts pflegt Berichtsbasis und Statusberichte; Eigentümer des Bezugsobjekts ist Standard-Genehmiger ([AF-03](F3-anwendungsfunktionen.md#af-03--genehmiger-bestimmen)). | Server. |
+| **Berechtigung** | Sechs Schalter der Zugriffsrolle ([D2.6](D2-datentypen.md#d26-permissionsetdt)); „Rollen verwalten" und „Freigaben entscheiden" haben feste Ableitungen aus Rollenart und grober Rolle ([AF-01](F3-anwendungsfunktionen.md#af-01--berechtigung-prüfen)). | Server bei Projekten, Aufgaben, Statusberichten, Abteilungen, Rollen, Benutzern, Audit-Log und Freigabeentscheidungen; Oberfläche zusätzlich für Sperrseiten und Schaltflächen. |
+| **Sichtbereich** | Rollenart, Geschäftsbereiche und Abteilungen der Zugriffsrolle; Projekte gehören über ihre Abteilung zum Sichtbereich ([AF-02](F3-anwendungsfunktionen.md#af-02--sichtbereich-und-sichtbare-aufgaben-bestimmen)). | Server bei jedem Lesen und Schreiben von Abteilungen, Projekten, Aufgaben, Dokumenten und Freigaben. |
+| **Eigentum** | Eigentümer des Bezugsobjekts ist Standard-Genehmiger ([AF-03](F3-anwendungsfunktionen.md#af-03--genehmiger-bestimmen)); Anfragender darf seine Anfrage abbrechen. | Server. |
 
 **Regeln**
 
-- Berechtigungen werden bei jeder Anfrage aus der Datenbank gelesen, nicht aus dem Token. Eine Rollenänderung wirkt sofort.
+- Berechtigungen und Sichtbereich werden bei jeder Anfrage aus der Datenbank gelesen, nicht aus dem Token. Eine Rollenänderung wirkt sofort.
+- Ein Objekt außerhalb des Sichtbereichs wird wie ein nicht vorhandenes behandelt („… wurde nicht gefunden"), damit die Antwort nichts über fremde Abteilungen verrät.
 - Systemrollen sind unlöschbar; die Rolle Admin hat immer alle Berechtigungen.
-- Das Vier-Augen-Prinzip wird durch die Genehmigerbestimmung gesichert (Anfragender ist nie Genehmiger), nicht durch ein Verbot: Wer „Freigaben entscheiden" hat, kann jede offene Anfrage entscheiden.
+- Das Vier-Augen-Prinzip wird durch die Genehmigerbestimmung gesichert (Anfragender ist nie Genehmiger), nicht durch ein Verbot: Wer „Freigaben entscheiden" hat, kann jede offene Anfrage seines Sichtbereichs entscheiden.
 
 **Grenzen (Stand September 2026)**
 
-- Der Server prüft bei Aufgaben, Kommentaren, Verschieben, Terminieren und Löschen keine Berechtigung über die Anmeldung hinaus. Jeder Anwender kann über die Schnittstelle Aufgaben in jedem Projekt ändern. Die Schalter „Aufgaben bearbeiten", „Projekte bearbeiten", „Abteilungen sehen" und „Reports sehen" wirken nur in der Oberfläche.
-- Der Sichtbereich nach Abteilung beruht auf einem Textvergleich ([D1.5](D1-datenmodell.md#d15-organisationsstruktur)).
+- Der Schalter „Abteilungen sehen" wird nur in der Oberfläche ausgewertet; der Server begrenzt den Sichtbereich unabhängig davon.
+- Ein Anwender ohne Zugriffsrolle sieht nichts; das Textfeld `User.department` spielt für den Sichtbereich keine Rolle ([D1.6](D1-datenmodell.md#d16-organisationsstruktur)).
 - Das Löschen einer Rolle hebt ihre Benutzer auf Admin (R-04).
+- Das Seed-Skript vergibt dem Konto „Gast" die Rolle Admin mit bekanntem Passwort (R-07); es darf nur in Entwicklung und Test laufen.
 
 ---
 
 ## QK-03 Audit-Logging
 
-Jede ändernde Aktion und jeder Anmeldeversuch schreibt einen Eintrag nach [AF-07](F3-anwendungsfunktionen.md#af-07--audit-eintrag-mit-differenz-schreiben) in `AuditLog` ([D1.4](D1-datenmodell.md#d14-steuerung-und-nachweis)). Lesezugriffe werden nicht protokolliert.
+Jede ändernde Aktion und jeder Anmeldeversuch schreibt einen Eintrag nach [AF-07](F3-anwendungsfunktionen.md#af-07--audit-eintrag-mit-differenz-schreiben) in `AuditLog` ([D1.5](D1-datenmodell.md#d15-steuerung-und-nachweis)). Lesezugriffe werden nicht protokolliert.
 
 | Bereich | Aktion | Kritikalität | Anwendungsfall |
 |---------|--------|--------------|----------------|
@@ -77,12 +79,15 @@ Jede ändernde Aktion und jeder Anmeldeversuch schreibt einen Eintrag nach [AF-0
 | Projekt | `PROJECT_CREATED`, `PROJECT_REPORTING_UPDATED`, `PROJECT_STATUS_REPORT_CREATED` | NOTICE | UC-07, UC-08, UC-09 |
 | Aufgabe | `TASK_CREATED`, `TASK_UPDATED`, `TASK_SCHEDULED` | NOTICE | UC-11, UC-12, UC-14 |
 | | `TASK_MOVED` | INFO, WARNING bei Ziel `BLOCKED` | UC-13 |
+| | `TASKS_REORDERED` | INFO | UC-13 (Backlog, AF-12) |
 | | `TASK_DELETED` | WARNING | UC-16 |
 | Kommentar | `COMMENT_CREATED` | INFO | UC-15 |
 | Freigabe | `APPROVAL_REQUESTED`, `APPROVAL_APPROVED` | NOTICE | UC-18, UC-19 |
 | | `APPROVAL_REJECTED` | WARNING | UC-19 |
 | | `APPROVAL_CANCELLED` | INFO | UC-20 |
 | Aufgabenfarben | `TASK_MARKERS_UPDATED` | NOTICE | UC-24 |
+
+Damit sind 39 Aktionen protokolliert. Nicht protokolliert werden das Anlegen von Abteilungen (UC-27) und das Lesen von Dokumenten und Organisationsübersicht; Ersteres ist eine Lücke ([B1.5](B1-dialogspezifikation.md#b15-stand-der-anbindung) Nr. 10).
 
 Jeder Eintrag trägt den Akteur als Text (Name, E-Mail, Rollenname), damit er auch nach Löschung oder Umbenennung des Kontos lesbar bleibt. Einträge werden nur angefügt ([NFR-15d-01](N1-nichtfunktional.md)). Lesen nur mit „Rollen verwalten" ([NFR-15d-02](N1-nichtfunktional.md), [UC-23](F2-anwendungsfaelle.md#uc-23--audit-log-einsehen)).
 
@@ -95,14 +100,16 @@ Jeder Eintrag trägt den Akteur als Text (Name, E-Mail, Rollenname), damit er au
 - **Nicht gefunden** (404): „… wurde nicht gefunden". Wird auch verwendet, wenn ein Objekt existiert, aber nicht dem Anwender gehört (Projekte), damit die Existenz fremder Objekte nicht verraten wird.
 - **Serverfehler** (500): „Serverfehler" oder „Fehler beim …" mit technischer Ursache in `error`. Die Oberfläche zeigt `message`.
 - **Nachbarsysteme:** Fehler bei Kalender und E-Mail werden im Serverprotokoll vermerkt und brechen die Aktion nicht ab ([NFR-12d-01](N1-nichtfunktional.md)). Fehler beim Identity Provider brechen nur die SSO-Anmeldung ab.
-- **Oberfläche:** Fehler erscheinen als rote Zeile in der Maske (B1.4.4). Einige Masken (Dashboard, Kalender, Board) fangen Serverfehler still ab und zeigen lokale oder Beispieldaten; das ist in B1.5 vermerkt und für den Anwender nicht erkennbar.
+- **Oberfläche:** Fehler erscheinen als rote Zeile in der Maske (B1.4.4). Einige Masken (Dashboard, Kalender, Board, Projekte) fangen Serverfehler beim Laden und Anlegen still ab und zeigen dann eine leere Anzeige oder keine Reaktion; das ist in B1.5 vermerkt und für den Anwender nicht erkennbar (R-01).
 
 ---
 
 ## QK-05 Validierung und Normalisierung
 
 - **Pflichtfelder** werden in der Oberfläche (Schaltfläche gesperrt, Hinweis) und auf dem Server geprüft. Der Server ist maßgeblich.
-- **Texte** werden getrimmt; leere Texte gelten als nicht angegeben. E-Mail-Adressen werden in Kleinschreibung gespeichert und verglichen. Kurzcodes und Geschäftsbereiche in Großschreibung.
+- **Texte** werden getrimmt; leere Texte gelten als nicht angegeben. E-Mail-Adressen werden in Kleinschreibung gespeichert und verglichen. Kurzcodes, Abteilungskürzel und Geschäftsbereiche in Großschreibung.
+- **Listen** (Tags, verlinkte Personen, Anhänge, Audit-Spur, Schnittstellen, Favoriten) werden als Liste oder als Text mit Trennzeichen angenommen und ersetzen beim Speichern den Bestand vollständig; nicht übergebene Listen bleiben unverändert (AF-04).
+- **Deutsche Anzeigewerte** der Masken (Priorität „hoch", Status „review") werden auf die Werte aus D2 abgebildet; die Antworten des Servers tragen wieder die Anzeigewerte (D2.2, D2.3).
 - **Aufzählungen** mit festem Wertebereich (Status, Priorität, Rollenart, Freigabetyp, Freigabestatus, Merkmal der Farbstreifen, Kritikalität) werden auf die Werte aus [D2](D2-datentypen.md) normalisiert; unbekannte Werte fallen auf die Vorgabe zurück ([AF-04](F3-anwendungsfunktionen.md#af-04--status-priorität-und-eingaben-normalisieren)).
 - **Freie Statuswerte** der Berichtsbasis (Meilensteinstatus, Risikoklasse, Tendenz, Ampeln, Freigabestufe) werden als Text übernommen; die Oberfläche gibt sie als Auswahllisten vor (R-06).
 - **Zahlen und Daten:** ungültige Werte werden leer, nicht abgewiesen. Ein Tippfehler in einem Datum führt also zu einer Aufgabe ohne Datum, nicht zu einer Fehlermeldung.
@@ -148,10 +155,11 @@ Die Oberfläche hält Daten aus drei Gründen im Local Storage des Browsers:
 |-------|-----------|-----------|
 | Sitzung | `token`, `user` | Siehe QK-01. |
 | Anzeigeeinstellungen | `nexttask:appearance`, `nexttask:dismissed-notifications` | Nur Komfort; Verlust folgenlos. |
-| Kopie serverseitiger Daten | `nexttask:task-marker-settings` (Farbstreifen), `nexttask:bank-access-config` (Rollen als Rückfall), `nexttask:local-approvals` (vorgemerkte Freigaben) | Wird beim Laden vom Server überschrieben bzw. mit ihm zusammengeführt. |
-| Fachdaten ohne Serverentsprechung | `nexttask:projects` (Projekte, Berichtsbasis, Backlog), `nexttask:my-tasks` (Board), `nexttask-calendar-schedule-overrides` (nicht speicherbare Verschiebungen) | Bleiben an Browser und Gerät gebunden; andere Anwender sehen sie nicht; ein Leeren des Browserspeichers löscht sie (R-01). |
+| Kopie serverseitiger Daten | `nexttask:task-marker-settings` (Farbstreifen) | Wird beim Laden vom Server überschrieben; bei der Anmeldung gelöscht. |
 
-Die vierte Gruppe ist eine Übergangslösung aus der Entwicklung. Zielbild ist, dass alle Fachdaten über die Schnittstelle des Servers laufen ([P1.8](P1-ziele-rahmenbedingungen.md#p18-risiken), [B1.5](B1-dialogspezifikation.md#b15-stand-der-anbindung)).
+Fachdaten (Projekte, Berichtsbasis, Backlog, Board, Freigaben, Kalenderverschiebungen) liegen seit dem Stand vom 23. September 2026 ausschließlich auf dem Server. Die früheren Schlüssel `nexttask:projects`, `nexttask:my-tasks`, `nexttask:local-approvals`, `nexttask:bank-access-config` und `nexttask-calendar-schedule-overrides` werden nicht mehr geschrieben oder gelesen; ein Browser, der sie aus einer älteren Version noch enthält, ignoriert sie. Die Spaltenreihenfolge im Board (DLG-05) hält die Maske nur für die laufende Sitzung im Speicher.
+
+Weil es keinen gemeinsamen Zustand zwischen den Masken gibt, melden sie Änderungen an Rollen, Darstellung und Farbstreifen über Browser-Ereignisse (`nexttask:roles-change`, `nexttask:appearance-change`, `nexttask:task-markers-change`) an den Rahmen und an geöffnete Masken.
 
 ---
 
@@ -159,7 +167,7 @@ Die vierte Gruppe ist eine Übergangslösung aus der Entwicklung. Zielbild ist, 
 
 | Baustein | Bezug zu N2 |
 |----------|-------------|
-| [F3](F3-anwendungsfunktionen.md) | AF-01 (QK-02), AF-04 (QK-05), AF-06 (QK-07), AF-07 (QK-03), AF-08 und AF-09 (QK-06). |
+| [F3](F3-anwendungsfunktionen.md) | AF-01 und AF-02 (QK-02), AF-04 (QK-05), AF-06 (QK-07), AF-07 und AF-12 (QK-03), AF-08 und AF-09 (QK-06). |
 | [N1](N1-nichtfunktional.md) | Anforderungen mit Prüfkriterium zu QK-01, QK-03, QK-07. |
 | [S1](S1-nachbarsysteme.md), [S3](S3-inbetriebnahme.md) | Nachbarsysteme und Konfiguration. |
 | [B1](B1-dialogspezifikation.md) | Dialogmuster und Stand der Anbindung. |

@@ -28,7 +28,7 @@ Die Inbetriebnahme aus Sicht des Anwenders (Voraussetzungen, Konfiguration, Schr
 
 **Zuordnung der Bausteine.** Browser-Anwendung: Quelle im Vite-Prozess, Ausführung im Browser. API-Server mit allen Routen- und Hilfsmodulen: Node-Prozess. Persistenzschicht: Schema und Client im Node-Prozess, Daten in PostgreSQL. Local Storage des Browsers hält Sitzung, Einstellungen und die in [8.9](A08-querschnittliche-konzepte.md#89-zustand-im-browser) beschriebenen Fachdaten.
 
-**Was fehlt.** Kein Test-Runner, keine CI (kein `.github/`-Verzeichnis), kein Docker, kein Prozessmanager, keine Protokollrotation. Der Server schreibt mit `console.log` und `console.error` auf die Konsole des Terminals. Für ein Studienprojekt mit sechs Personen und einer Entwicklungsumgebung ist das die kleinste lauffähige Verteilung; für einen Betrieb außerhalb der Entwicklung gilt 7.2.
+**Was fehlt.** Keine Unit-Tests (nur der Playwright-Rauchtest `npm run test:e2e` gegen die laufende Entwicklungsumgebung mit geladenem Seed), keine CI (kein `.github/`-Verzeichnis), kein Docker, kein Prozessmanager, keine Protokollrotation. Der Server schreibt mit `console.log` und `console.error` auf die Konsole des Terminals. Für ein Studienprojekt mit sechs Personen und einer Entwicklungsumgebung ist das die kleinste lauffähige Verteilung; für einen Betrieb außerhalb der Entwicklung gilt 7.2.
 
 ---
 

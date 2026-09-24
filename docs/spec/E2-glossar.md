@@ -6,7 +6,11 @@ Fachbegriffe, wie sie in dieser Spezifikation und in der Oberfläche von NextTas
 
 ### Abteilung
 
-Organisationseinheit unterhalb eines Geschäftsbereichs. Im Anwendungsszenario die drei Abteilungen OR-IT (Informationstechnologie), OR-ID (Interne Dienste) und OR-OE (Organisationsentwicklung). Keine Entität; als Text an Benutzer, Aufgabe und Zugriffsrolle ([D1.5](D1-datenmodell.md#d15-organisationsstruktur)).
+Organisationseinheit unterhalb eines Geschäftsbereichs, seit dem 13. September 2026 eine eigene Entität mit Leitung und Mitgliedern ([D1.1](D1-datenmodell.md#d11-organisation-und-zugang)). Im Anwendungsszenario die drei Abteilungen OR-IT (Informationstechnologie), OR-ID (Interne Dienste) und OR-OE (Organisationsentwicklung). Projekte gehören zu einer Abteilung; darüber bestimmt sich der [Sichtbereich](#sichtbereich). Die Textfelder „Abteilung" an Benutzer und Aufgabe sind nur Anzeige ([D1.6](D1-datenmodell.md#d16-organisationsstruktur)).
+
+### Abteilungsbericht
+
+Export der Kennzahlen, Team-Auslastung, Projekte und Aufgaben einer Abteilung als PDF oder CSV aus der Maske Reports ([UC-26](F2-anwendungsfaelle.md#uc-26--abteilungsbericht-exportieren), [DR-02](B3-druckausgaben.md#dr-02--abteilungsbericht)).
 
 ### Ampel
 
@@ -30,7 +34,7 @@ App auf dem Smartphone des Anwenders, die aus einem geteilten Geheimnis Einmalco
 
 ### Backlog
 
-Liste der Aufgaben eines Projekts in der Maske Projekte ([DLG-04](B1-dialogspezifikation.md#dlg-04--projekte-und-backlog)), sortierbar per Ziehen.
+Liste der Aufgaben eines Projekts in der Maske Projekte ([DLG-04](B1-dialogspezifikation.md#dlg-04--projekte-und-backlog)), sortierbar per Ziehen; die Reihenfolge wird auf dem Server gespeichert ([AF-12](F3-anwendungsfunktionen.md#af-12--backlog-reihenfolge-setzen)).
 
 ### Bearbeiter (assignee)
 
@@ -52,6 +56,10 @@ Kurzlebiges Token (fünf Minuten), das nach erfolgreicher Passwortprüfung ausge
 
 Maske der Oberfläche; beschrieben in [B1](B1-dialogspezifikation.md).
 
+### Dokument
+
+Eintrag der Dokumentenbibliothek mit Titel, Typ, Status, Klassifizierung, Aufbewahrung, verknüpften Aufgaben, Kontroll-IDs und Audit-Trail ([D1.4](D1-datenmodell.md#d14-dokumente)). NextTask speichert nur diese Metadaten, keine Dateiinhalte (NG-01); die Bibliothek ist lesend ([UC-28](F2-anwendungsfaelle.md#uc-28--dokumente-einsehen)).
+
 ### Eigentümer (owner)
 
 Anwender, der ein Projekt angelegt hat. Entspricht der Projektleitung; einzige Person, die Berichtsbasis und Statusberichte des Projekts pflegt.
@@ -67,6 +75,10 @@ Freitext an einer Freigabeanfrage, der auf Unterlagen oder Protokolle verweist, 
 ### Farbstreifen (TaskMarker)
 
 Persönliche Regel eines Anwenders, nach der Karten im Board farbig markiert werden, z. B. alle Aufgaben mit Priorität hoch in Rot ([AF-10](F3-anwendungsfunktionen.md#af-10--farbstreifen-zuordnen)).
+
+### Favorit
+
+Aufgabe, die ein Anwender im Backlog mit dem Stern markiert hat; sie wird für ihn oben einsortiert. Je Anwender gespeichert (`Task.favoriteBy`, [D1.3](D1-datenmodell.md#d13-aufgaben)), für andere Anwender ohne Wirkung.
 
 ### Freigabe (ApprovalRequest)
 
@@ -110,7 +122,7 @@ Einstufung eines Audit-Eintrags: Info, Hinweis, Prüfpflichtig, Kritisch ([D2.10
 
 ### Local Storage
 
-Speicher des Browsers, in dem NextTask Sitzung, Einstellungen und derzeit auch Teile der Fachdaten hält ([QK-08](N2-querschnittskonzepte.md#qk-08-daten-im-browser)).
+Speicher des Browsers, in dem NextTask Sitzung und Anzeigeeinstellungen hält, keine Fachdaten ([QK-08](N2-querschnittskonzepte.md#qk-08-daten-im-browser)).
 
 ### Meilenstein
 
@@ -144,9 +156,13 @@ Rasterdarstellung der Projektrisiken nach Tragweite und Eintrittswahrscheinlichk
 
 Art einer Zugriffsrolle: Admin, GBL, Mitarbeiter ([D2.5](D2-datentypen.md#d25-accessrolekinddt)).
 
+### Seed-Skript
+
+Skript `npm run db:seed`, das Beispieldaten (Abteilungen, Projekte, Aufgaben, Dokumente, Vorlagen, Demo-Konten) in die Datenbank schreibt ([S3.3](S3-inbetriebnahme.md#s33-erstinbetriebnahme)). Nur für Entwicklung und Test; die Demo-Konten haben ein bekanntes Passwort (R-07).
+
 ### Sichtbereich
 
-Ausschnitt der Organisation, den ein Anwender sieht: bei GBL Geschäftsbereiche, bei Mitarbeitern Abteilungen, bei Admin alles. Für Aufgaben umgesetzt in [AF-02](F3-anwendungsfunktionen.md#af-02--sichtbare-aufgaben-bestimmen).
+Ausschnitt der Organisation, den ein Anwender sieht: bei GBL Geschäftsbereiche, bei Mitarbeitern Abteilungen, bei Admin alles, ohne Zugriffsrolle nichts. Gilt für Abteilungen, Projekte, Aufgaben, Dokumente und Freigaben ([AF-02](F3-anwendungsfunktionen.md#af-02--sichtbereich-und-sichtbare-aufgaben-bestimmen)).
 
 ### SSO — Single Sign-on
 

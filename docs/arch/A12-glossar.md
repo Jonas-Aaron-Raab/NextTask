@@ -80,6 +80,10 @@ Node-Bibliothek für SMTP-Versand. Ein Transport je Prozess, faul beim ersten Ve
 
 Startet den Server in der Entwicklung neu, wenn sich Dateien ändern (`npm run dev` in `server/`).
 
+### Playwright
+
+Test-Werkzeug, das einen Browser fernsteuert. Im Repository ein Rauchtest (`tests/smoke.spec.js`), der sich anmeldet und alle Masken öffnet; Start mit `npm run test:e2e`.
+
 ### Prisma
 
 ORM und Migrationswerkzeug. Schema in `schema.prisma`, generierter Client `@prisma/client`, Treiberadapter `@prisma/adapter-pg` für PostgreSQL.

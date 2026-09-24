@@ -11,11 +11,12 @@ skinparam sequence {
   ActorBorderColor #333333
 }
 
-title Laufzeitsicht 6.3: Aufgabe speichern mit Audit, Mail und Kalender (UC-12)
+title Laufzeitsicht 6.3: Aufgabe speichern mit Sichtbereich, Audit, Mail und Kalender (UC-12)
 
-participant "MyTasksPage.jsx\nvia api/axios.js" as UI
+participant "MyTasksPage.jsx / ProjectsPage.jsx\nvia api/axios.js" as UI
 participant "middleware/auth.js" as MW
 participant "task.routes.js\nPUT /api/tasks/:id" as R
+participant "accessScope.js" as AS
 participant "auditLog.js" as AL
 participant "taskNotificationMailer.js" as M
 participant "calendarIntegration.js" as C
@@ -26,10 +27,27 @@ participant "Google Calendar" as G
 UI -> MW : PUT /api/tasks/:id\nAuthorization: Bearer <JWT>
 MW -> MW : jwt.verify, purpose = access
 MW -> R : next(), req.user
-R -> DB : task.findUnique({ id })  [before]
-R -> R : normalizeStatus, normalizePriority,\nparseTaskDate x3, parseOptionalNumber
+R -> AS : getCurrentUserWithAccessRole(req)
+AS -> DB : user.findUnique(include accessRole)
+AS --> R : currentUser
+R -> AS : userHasPermission(currentUser, 'editTasks')
+alt keine Berechtigung
+  R --> UI : 403 "Keine Berechtigung zum Bearbeiten von Aufgaben"
+end
+R -> AS : buildTaskScopeWhere(currentUser)
+AS --> R : { project: { departmentId in ... } }
+R -> DB : task.findFirst({ id, ...scope })  [before]
+alt Aufgabe fehlt oder ausserhalb des Sichtbereichs
+  R --> UI : 404 "Aufgabe wurde nicht gefunden"
+end
+opt projectId geaendert
+  R -> DB : project.findFirst({ id: projectId, ...buildProjectScopeWhere })
+  R --> UI : 403 "Keine Berechtigung fuer das Zielprojekt" (falls nicht gefunden)
+end
+R -> R : normalizeStatus, normalizePriority,\nparseTaskDate x3, parseOptionalNumber,\ntoStringList (Tags, Personen, Favoriten)
 R -> DB : task.update({ data })
-R -> DB : task.findUnique(include assignee, project)  [updated]
+R -> DB : applyTaskDetailWrites:\ntaskTag/taskPersonLink/taskAttachment/\ntaskAuditEntry deleteMany + createMany,\ntaskCompliance/taskAssignmentSource upsert
+R -> DB : task.findUnique(include assignee, project, details)  [updated]
 R -> AL : writeAuditLog(TASK_UPDATED,\nbefore = summarizeChanges(before, updated),\nafter = pickFields(updated))
 AL -> AL : compactValue: password/token entfernen,\nDates -> ISO
 AL -> DB : auditLog.create (Fehler nur console.error)
@@ -52,5 +70,5 @@ else sonst
   C -> DB : calendarSyncEvent.deleteMany
 end
 note over C : jeder Fehler: console.error,\nAktion bleibt erfolgreich
-R --> UI : 200 updated task
+R --> UI : 200 serializeTask(updated)
 @enduml

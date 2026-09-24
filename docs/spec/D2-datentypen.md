@@ -24,6 +24,7 @@ Wertebereiche, Aufzählungen und Formate, die in [D1](D1-datenmodell.md) als Att
 | MilestoneStatusDT, RiskClassDT, RiskTrendDT, ReportCycleDT | Aufzählung (Text) | Berichtsbasis | D2.12 |
 | MatchFieldDT | Aufzählung | TaskMarker | D2.13 |
 | AuthProviderDT, CalendarProviderDT | Aufzählung | User, CalendarSyncEvent | D2.14 |
+| InterfaceStatusDT, ClassificationDT, ComplianceRiskDT, AttachmentTypeDT, AttachmentSourceDT, DocumentTypeDT, DocumentStatusDT | Aufzählung (Text) | Berichtsbasis, Aufgabendetails, Dokumente | D2.16 |
 
 **Formate**
 
@@ -48,7 +49,7 @@ Priorität einer Aufgabe. Vorgabe `MEDIUM`; unbekannte Werte werden auf `MEDIUM`
 | `HIGH` | Hoch | Hoch | 3 |
 | `URGENT` | Kritisch | — | 4 |
 
-Board und Ticket-Editor bieten nur drei Stufen an (`hoch`, `mittel`, `niedrig`, in Kleinschreibung); `URGENT` ist nur über Kalender und Schnittstelle erreichbar. Farbstreifen mit `matchField = priority` vergleichen gegen die dreistufige Schreibweise (D2.13).
+Board und Ticket-Editor bieten nur drei Stufen an (`hoch`, `mittel`, `niedrig`, in Kleinschreibung); der Server bildet diese Eingaben auf `HIGH`, `MEDIUM`, `LOW` ab (AF-04). `URGENT` ist nur über Kalender und Schnittstelle erreichbar. Farbstreifen mit `matchField = priority` vergleichen gegen die dreistufige Schreibweise (D2.13).
 
 ---
 
@@ -249,7 +250,25 @@ Bei mehreren passenden Streifen gilt die Reihenfolge in den Einstellungen (`orde
 
 ---
 
-## D2.15 Querverweise
+## D2.16 Werte der Detailentitäten und Dokumente
+
+Seit dem 13. September gespeichert; alle als Text ohne Prüfung durch den Server. Die Oberfläche gibt die Werte als Auswahllisten vor.
+
+| Typ | Werte | Verwendet in |
+|-----|-------|--------------|
+| InterfaceStatusDT | `Offen`, `In Klärung`, `Abgestimmt`, `Blockiert` | `ProjectInterface.status`, Vorgabe `Offen` |
+| ClassificationDT | `Intern`, `Vertraulich`, `Reguliert`, `Streng vertraulich` | `TaskCompliance.classification` (Vorgabe `Intern`), `Document.classification` |
+| ComplianceRiskDT | `Niedrig`, `Mittel`, `Hoch` | `TaskCompliance.risk`, Vorgabe `Niedrig` |
+| AttachmentTypeDT | `Excel`, `Word`, `PDF`, `Link`, `Screenshot`, `Notiz`; Vorgabe `Datei` | `TaskAttachment.type` |
+| AttachmentSourceDT | `SharePoint`, `OneDrive`, `DMS`, `Audit-Ablage`; Vorgabe `Upload` | `TaskAttachment.source` |
+| DocumentTypeDT | `Richtlinie`, `Kontrollnachweis`, `Projektunterlage`, `Vorlage`, `Prozessdokument` | `Document.type`, `DocumentTemplate.type` |
+| DocumentStatusDT | `Entwurf`, `In Prüfung`, `Freigegeben`, `Abgelaufen` | `Document.status`; die Filterliste in DLG-10 wird aus den vorhandenen Werten gebildet |
+| Projektart | `Persönlich`, `Abteilung` | `Project.projectType` |
+| Projektstatus (Karte) | `Konzept`, `In Planung`, `In Arbeit`, `Review` u. a. | `Project.statusLabel`, Freitext |
+
+---
+
+## D2.17 Querverweise
 
 | Baustein | Bezug zu D2 |
 |----------|-------------|
