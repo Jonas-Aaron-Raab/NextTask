@@ -60,7 +60,7 @@ Laut Vorgabe der Vorlesung entfallen die Kapitel 10 (Qualitätsanforderungen) un
 | Nr. | Abbildung | Kapitel | Quelle |
 |-----|-----------|---------|--------|
 | 1 | Technischer Kontext | 3.2 | [`diagrams/a03-technischer-kontext.plantuml`](diagrams/a03-technischer-kontext.plantuml) |
-| 2 | Bausteinsicht Ebene 1 und 2 | 5 | [`diagrams/a05-bausteine.plantuml`](diagrams/a05-bausteine.plantuml) |
+| 2 | Bausteinsicht Ebene 1 und 2 (Stand 24.09.2026) | 5 | [`diagrams/a05-bausteine.plantuml`](diagrams/a05-bausteine.plantuml) |
 | 3 | Laufzeit: Anmeldung mit zweitem Faktor | 6.1 | [`diagrams/a06-anmeldung.plantuml`](diagrams/a06-anmeldung.plantuml) |
 | 4 | Laufzeit: SSO-Rückleitung | 6.2 | [`diagrams/a06-sso-rueckleitung.plantuml`](diagrams/a06-sso-rueckleitung.plantuml) |
 | 5 | Laufzeit: Aufgabe speichern mit Audit, Mail und Kalender | 6.3 | [`diagrams/a06-aufgabe-speichern.plantuml`](diagrams/a06-aufgabe-speichern.plantuml) |
@@ -81,3 +81,4 @@ Siehe den gleichnamigen Abschnitt in [`../spec/README.md`](../spec/README.md#ein
 | Version | Datum | Änderung |
 |---------|-------|----------|
 | 0.1 | 2026-09-10 | Erste Fassung der Kapitel 1 bis 9 und 12 mit fünf ADRs. |
+| 0.2 | 2026-09-24 | Abgleich mit dem Code vom 13. bis 24. September: elf Routenmodule, zehn Hilfsmodule (`accessScope`, `contentSerializers`), 29 Modelle und 16 Migrationen, Seed-Skript und Playwright-Rauchtest; Berechtigung und Sichtbereich serverseitig (8.3, 6.3, 6.4); kein Fachzustand mehr im Browser (8.9, 4); Bausteindiagramm und Laufzeitdiagramme angepasst; Abschnitt zu KI-Werkzeugen. |

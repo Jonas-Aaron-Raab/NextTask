@@ -19,11 +19,13 @@ Konzepte, die mehrere Bausteine betreffen. Die Regeln sind implementierungsfrei 
 
 ## 8.1 Domänenmodell und Persistenz
 
-Das Informationsmodell aus [D1](../spec/D1-datenmodell.md) ist eins zu eins als Prisma-Schema umgesetzt: 14 `model`-Blöcke in `server/prisma/schema.prisma`, sechs `enum`-Blöcke. Das Schema ist die einzige Quelle für Tabellen, Spalten, Beziehungen und Löschregeln; die Datenbank wird ausschließlich über Migrationen verändert.
+Das Informationsmodell aus [D1](../spec/D1-datenmodell.md) ist eins zu eins als Prisma-Schema umgesetzt: 29 `model`-Blöcke in `server/prisma/schema.prisma` (14 bis zum 13. September, seitdem 15 weitere für Abteilungen, Schnittstellen, Freigabezeile, Detailangaben der Aufgabe und Dokumente), sechs `enum`-Blöcke. Das Schema ist die einzige Quelle für Tabellen, Spalten, Beziehungen und Löschregeln; die Datenbank wird ausschließlich über Migrationen verändert.
 
 ![Informationsmodell (Spezifikation D1)](../spec/diagrams-png/d1-informationsmodell.png)
 
-*Quelle: [`../spec/diagrams/d1-informationsmodell.plantuml`](../spec/diagrams/d1-informationsmodell.plantuml). Die Entitätsnamen sind die Modellnamen im Schema; Tabellennamen entsprechen ihnen (Prisma-Vorgabe ohne `@@map`).*
+![Detailentitäten der Aufgabe und Dokumente (Spezifikation D1)](../spec/diagrams-png/d1-detailentitaeten.png)
+
+*Quelle: [`../spec/diagrams/d1-informationsmodell.plantuml`](../spec/diagrams/d1-informationsmodell.plantuml) und [`../spec/diagrams/d1-detailentitaeten.plantuml`](../spec/diagrams/d1-detailentitaeten.plantuml). Die Entitätsnamen sind die Modellnamen im Schema; Tabellennamen entsprechen ihnen (Prisma-Vorgabe ohne `@@map`).*
 
 **Abbildungsregeln**
 
@@ -33,19 +35,21 @@ Das Informationsmodell aus [D1](../spec/D1-datenmodell.md) ist eins zu eins als 
 | Aufzählungen mit festem Wertebereich (`PriorityDT`, `TaskStatusDT`, `UserRoleDT`, `AccessRoleKindDT`, `ApprovalStatusDT`, `ApprovalEntityTypeDT`) | Prisma-`enum`, in PostgreSQL als Enum-Typ. Ein ungültiger Wert scheitert an der Datenbank; die Routen normalisieren vorher ([8.6](#86-validierung-und-normalisierung)). |
 | Aufzählungen ohne Prüfung (`AmpelDT`, `MilestoneStatusDT`, `RiskClassDT`, `RiskTrendDT`, `ApprovalLevelDT`, `SeverityDT`, `MatchFieldDT`, `AuthProviderDT`, `CalendarProviderDT`) | `String`, teils mit `@default`. Prüfung nur in den Routen (`SeverityDT` beim Lesen, `MatchFieldDT` beim Schreiben) oder gar nicht (R-06). |
 | `PermissionSetDT` | `Json` an `AccessRole.permissions`; `normalizePermissions` in `accessRoles.js` ergänzt fehlende Schlüssel beim Lesen und Schreiben. |
-| Listen (`businessAreas`, `departmentIds`, `keyInterfaces`, `twoFactorRecoveryCodes`) | `String[]` (PostgreSQL-Array) mit `@default([])`. |
+| Listen (`businessAreas`, `departmentIds`, `keyInterfaces`, `twoFactorRecoveryCodes`, `favoriteBy`) | `String[]` (PostgreSQL-Array) mit `@default([])`; `favoriteReturnIndexBy` als `Json`. |
+| Detailentitäten der Aufgabe und des Dokuments (D1.3, D1.4) | Eigene Modelle mit `onDelete: Cascade` zur Aufgabe bzw. zum Dokument; beim Speichern durch `deleteMany` und `createMany` ersetzt (`applyTaskDetailWrites`), Compliance und Ersteller per `upsert`. |
+| Abteilung (D1.1) | `Department` mit `@unique` auf `name`; `DepartmentMember` mit `@@unique([departmentId, userId])`; `Project.departmentId` als Fremdschlüssel, über den der Sichtbereich läuft ([8.3](#83-berechtigungen)). |
 | Audit-Differenz und Zusatzdaten | `Json?` an `AuditLog.before`, `after`, `metadata`. |
 | `EncryptedSecretDT` | `String?` mit Präfix `v1:`; Ver- und Entschlüsselung nur in `twoFactor.js` ([8.8](#88-geheimnisse)). |
-| Eindeutigkeiten aus D1.6 | `@unique` an `User.email`, `AccessRole.code`, `Project.key`, `SsoLoginTicket.tokenHash`; `@@unique([ssoProvider, ssoSubject])`, `@@unique([provider, userId, taskId])`. |
-| Löschregeln aus D1.6 | `onDelete: Cascade` an Task→Project, Comment→Task, Milestone/Risk/BudgetLine/StatusReport→Project, TaskMarker→User, CalendarSyncEvent→Task und →User, ApprovalRequest.requester→User, SsoLoginTicket→User. `onDelete: SetNull` an StatusReport.author, ApprovalRequest.approver, AuditLog.user. Ohne Regel (Standard: Löschen verhindern): Task.assignee, Comment.author, Project.owner, User.accessRole. |
+| Eindeutigkeiten aus D1.6 | `@unique` an `User.email`, `AccessRole.code`, `Project.key`, `SsoLoginTicket.tokenHash`; `@@unique([ssoProvider, ssoSubject])`, `@@unique([provider, userId, taskId])`, `@@unique([departmentId, userId])` an `DepartmentMember`, `@unique` an `Department.name` und `DocumentTemplate.title`. |
+| Löschregeln aus D1.6 | `onDelete: Cascade` an Task→Project, Comment→Task, Milestone/Risk/Interface/Approval/BudgetLine/StatusReport→Project, DepartmentMember→Department und →User, allen Task-Detailentitäten→Task, allen Document-Detailentitäten→Document, TaskMarker→User, CalendarSyncEvent→Task und →User, ApprovalRequest.requester→User, SsoLoginTicket→User (23 Stellen). `onDelete: SetNull` an StatusReport.author, ApprovalRequest.approver, AuditLog.user, Project.department, Department.lead, Document.department und .project, Task.parentTask (8 Stellen). Ohne Regel (Standard: Löschen verhindern): Task.assignee, Comment.author, Project.owner, User.accessRole. |
 | Lose Referenz | `Task.markerId String?` ohne `@relation`, bewusst, damit ein gelöschter Farbstreifen keine Aufgabe blockiert. |
 | Zeitstempel | `createdAt DateTime @default(now())`, `updatedAt DateTime @updatedAt`; `Comment` und `AuditLog` ohne `updatedAt`. |
 
 **Indizes.** Ausschließlich an Tabellen mit Listen- oder Filterzugriff: `AuditLog` (createdAt, userId+createdAt, entityType+entityId, action, severity), `ApprovalRequest` (entityType+entityId, status+requestedAt, requesterId+requestedAt, approverId+requestedAt), `ProjectMilestone`/`ProjectBudgetLine` (projectId+order), `ProjectRisk` (projectId+active), `ProjectStatusReport` (projectId+reportDate, authorId+createdAt), `TaskMarker` (userId+order), `CalendarSyncEvent` (taskId+provider, userId+provider), `SsoLoginTicket` (expiresAt, userId+createdAt). `Task` hat keinen Index über `status`/`order` hinaus dem Primärschlüssel; die Kalenderabfrage filtert über Datum und Bearbeiter ohne Index. Bei AS-06 unkritisch.
 
-**Migrationen.** 14 Verzeichnisse unter `server/prisma/migrations/`, benannt mit Zeitstempel und Zweck. Sie zeigen die Reihenfolge, in der das System gewachsen ist: `init` und `update_task_status_enum` (April 2026: Benutzer, Projekt, Aufgabe, Kommentar), `add_calendar_planning_fields` (Mai), dann im August in zwei Wochen `add_access_roles`, `add_task_markers`, `add_task_marker_id`, `add_audit_logs`, `add_user_email_notifications`, `add_project_reporting`, `add_two_factor_auth`, `add_sso_support`, `add_calendar_connections`, `add_approval_workflow`, `add_task_approval_level`. Jede Migration ist reines SQL, von Prisma erzeugt, mit `prisma migrate deploy` angewendet ([S3](../spec/S3-inbetriebnahme.md)); `migration_lock.toml` bindet auf PostgreSQL.
+**Migrationen.** 16 Verzeichnisse unter `server/prisma/migrations/`, benannt mit Zeitstempel und Zweck. Sie zeigen die Reihenfolge, in der das System gewachsen ist: `init` und `update_task_status_enum` (April 2026: Benutzer, Projekt, Aufgabe, Kommentar), `add_calendar_planning_fields` (Mai), dann im August in zwei Wochen `add_access_roles`, `add_task_markers`, `add_task_marker_id`, `add_audit_logs`, `add_user_email_notifications`, `add_project_reporting`, `add_two_factor_auth`, `add_sso_support`, `add_calendar_connections`, `add_approval_workflow`, `add_task_approval_level`; dann `persist_display_content` (13. September: 15 Tabellen für Abteilungen, Schnittstellen, Freigabezeile, Aufgabendetails, Dokumente) und `add_task_favorites` (23. September). Jede Migration ist reines SQL, von Prisma erzeugt, mit `prisma migrate deploy` angewendet ([S3](../spec/S3-inbetriebnahme.md)); `migration_lock.toml` bindet auf PostgreSQL.
 
-**Zugriff.** `index.js` erzeugt einen `PrismaClient` mit `PrismaPg`-Adapter (Verbindung über `DATABASE_URL`) und hängt ihn als `req.prisma` an jede Anfrage. Hilfsmodule erhalten den Client als Parameter (`ensureDefaultAccessRoles(prisma)`, `syncTaskCalendarEvent(prisma, taskId)`). Transaktionen nur an zwei Stellen: `project.routes.js` beim Ersetzen der Berichtsbasis (`$transaction(async …)`: erst `deleteMany`, dann `update` mit `create`) und `taskMarker.routes.js` beim Ersetzen der Farbstreifen (`$transaction([...])`). Alle anderen Handler sind einzelne Prisma-Aufrufe ohne Transaktion; ein Fehler zwischen `task.update` und `auditLog.create` hinterlässt eine Änderung ohne Eintrag ([NFR-15d-01](../spec/N1-nichtfunktional.md), Stand).
+**Zugriff.** `index.js` erzeugt einen `PrismaClient` mit `PrismaPg`-Adapter (Verbindung über `DATABASE_URL`) und hängt ihn als `req.prisma` an jede Anfrage. Hilfsmodule erhalten den Client als Parameter (`ensureDefaultAccessRoles(prisma)`, `syncTaskCalendarEvent(prisma, taskId)`). Transaktionen an drei Stellen: `project.routes.js` beim Ersetzen der Berichtsbasis (`$transaction(async …)`: erst `deleteMany`, dann `update` mit `create`), `task.routes.js` beim Sortieren des Backlogs (`$transaction` über alle `update`-Aufrufe, AF-12) und `taskMarker.routes.js` beim Ersetzen der Farbstreifen (`$transaction([...])`). Das Ersetzen der Detailentitäten einer Aufgabe läuft dagegen ohne Transaktion; ein Fehler zwischen `deleteMany` und `createMany` hinterlässt eine Aufgabe ohne Tags. Alle anderen Handler sind einzelne Prisma-Aufrufe ohne Transaktion; ein Fehler zwischen `task.update` und `auditLog.create` hinterlässt eine Änderung ohne Eintrag ([NFR-15d-01](../spec/N1-nichtfunktional.md), Stand).
 
 ## 8.2 Authentifizierung und Sitzung
 
@@ -67,20 +71,34 @@ Das Zugriffstoken (`createToken` in `auth.routes.js`) trägt `id`, `email`, `nam
 
 ## 8.3 Berechtigungen
 
-Zwei Funktionen in `accessRoles.js` bündeln die Regel aus [AF-01](../spec/F3-anwendungsfunktionen.md#af-01--berechtigung-prüfen):
+Zwei Hilfsmodule setzen [AF-01](../spec/F3-anwendungsfunktionen.md#af-01--berechtigung-prüfen) und [AF-02](../spec/F3-anwendungsfunktionen.md#af-02--sichtbereich-und-sichtbare-aufgaben-bestimmen) um. `accessRoles.js` bündelt die beiden Berechtigungen mit fester Ableitung:
 
 ```js
 userCanManageRoles(user)     // permissions.manageRoles || kind ADMIN || role ADMIN
 userCanApproveRequests(user) // permissions.approveRequests || kind ADMIN || kind GBL || role ADMIN || role PROJECT_MANAGER
 ```
 
-Beide erwarten einen Benutzer mit geladener Zugriffsrolle. Deshalb laden die prüfenden Handler den Anwender neu: `requireRoleManager` (Middleware in `role.routes.js`) und `requireAuditAccess` (in `auditLog.routes.js`) mit `findUnique({ include: { accessRole: true } })`, `getCurrentUser` in `approval.routes.js`. Das JWT wird nicht befragt. Sichtbereich für Aufgaben ([AF-02](../spec/F3-anwendungsfunktionen.md#af-02--sichtbare-aufgaben-bestimmen)) in `calendar.routes.js`: `elevatedRoles = new Set(['ADMIN', 'PROJECT_MANAGER'])` gegen `user.role`, sonst `OR: [assigneeId, project.ownerId, department]`. Projekte: `where: { ownerId: req.user.id }` in `project.routes.js`.
+`accessScope.js` (seit 13. September) trägt die übrigen Schalter und den Sichtbereich:
+
+```js
+getCurrentUserWithAccessRole(req)   // user.findUnique({ id: req.user.id }, include accessRole)
+userHasPermission(user, 'editTasks') // kind ADMIN || role ADMIN || permissions[name] === true
+getDepartmentScope(user)            // { all } | { businessAreas } | { departmentIds } | { none }
+buildProjectScopeWhere(user)        // Prisma-where: department.businessArea in … | departmentId in … | { id: '' } bei none
+buildTaskScopeWhere(user)           // { project: buildProjectScopeWhere(user) }
+buildDocumentScopeWhere(user)       // Abteilung im Bereich oder Projekt sichtbar
+buildApprovalScopeWhere(prisma, user) // asynchron: sichtbare Projekt-, Aufgaben-, Berichts- und Dokumentkennungen
+```
+
+Jeder fachliche Handler beginnt gleich: Anwender mit Zugriffsrolle laden (404 „Benutzer wurde nicht gefunden", falls das Konto verschwunden ist), Berechtigung prüfen (403 mit deutscher Meldung), dann das Zielobjekt mit `findFirst({ where: { id, ...scope } })` suchen. Ein Objekt außerhalb des Sichtbereichs ist damit vom nicht vorhandenen nicht zu unterscheiden (404). Das JWT wird für keine dieser Prüfungen befragt; eine Rollenänderung wirkt mit der nächsten Anfrage. `requireRoleManager` (Middleware in `role.routes.js`) und `requireAuditAccess` (in `auditLog.routes.js`) folgen demselben Muster als Middleware.
+
+Der Sichtbereich hängt an der Abteilung des Projekts (`Project.departmentId`), nicht mehr an Textfeldern: Für Rollenart `MEMBER` zählen die `departmentIds` der Rolle, für `GBL` die `businessAreas`, verglichen mit `Department.businessArea` oder `Project.businessArea`; `ADMIN` sieht alles, ein Konto ohne Zugriffsrolle nichts ([D1.6](../spec/D1-datenmodell.md#d16-organisationsstruktur)). Zuweisung und Eigentum erweitern den Sichtbereich nicht.
 
 Die grobe Rolle wird bei Zuordnung abgeleitet (`role.routes.js`: `role.kind === 'ADMIN' ? 'ADMIN' : kind === 'GBL' ? 'PROJECT_MANAGER' : 'DEVELOPER'`) und bei SSO aus den Gruppen (`sso.js`, `resolveAccessRole`).
 
-**Browserseite.** `data/bankOrganization.js` exportiert `canManageRoles(user, config)` mit Rückfall auf eine Local-Storage-Konfiguration (`nexttask:bank-access-config`) und `getEffectiveRoleForUser`. Sie steuert Seitenleiste und Wächter `RequireAuditAccess`; sie ist eine Anzeigeentscheidung, keine Sicherheitsgrenze.
+**Browserseite.** `data/bankOrganization.js` exportiert `canManageRoles(user)` und `getEffectiveRoleForUser(user)` auf Basis einer festen Standardkonfiguration im Speicher (kein Local Storage mehr). Sie steuern Seitenleiste und Wächter `RequireAuditAccess`; sie sind eine Anzeigeentscheidung, keine Sicherheitsgrenze. Die Masken sehen ohnehin nur, was der Server liefert.
 
-**Abweichungen von QK-02.** (1) `task.routes.js` prüft keine Berechtigung über `auth` hinaus; jeder Angemeldete kann jede Aufgabe ändern oder löschen. (2) Die vier Schalter `viewDepartments`, `editProjects`, `editTasks`, `viewReports` werden auf dem Server nirgends gelesen. (3) `role.routes.js` weist beim Löschen einer Rolle die Rolle mit Code `A` als Ersatz zu (R-04). Alle drei sind Kandidaten für die nächste Iteration; die Prüfung gehört als Middleware je Routenmodul vor die Handler, analog zu `requireRoleManager`.
+**Abweichungen von QK-02.** (1) `viewDepartments` wird auf dem Server nirgends gelesen; der Sichtbereich gilt unabhängig davon. (2) `organization.routes.js` (Abteilung anlegen) und `document.routes.js` schreiben keine Audit-Einträge. (3) `role.routes.js` weist beim Löschen einer Rolle die Rolle mit Code `A` als Ersatz zu (R-04). (4) Das Seed-Skript legt ein Admin-Konto mit bekanntem Passwort an (R-07).
 
 ## 8.4 Audit-Logging
 
@@ -110,7 +128,7 @@ Fachliche Ablehnungen antworten vor dem `catch` mit `400` (Eingabe), `401` (nur 
 
 **Nachbarsysteme.** Fehler beim Versand und beim Kalenderabgleich werden in `task.routes.js` (`notifyTaskAssignment`, `notifyCommentMentions`, `syncTaskCalendarSafely`) gefangen und mit `console.error` vermerkt; die Antwort bleibt 200/201. Beim manuellen Vollabgleich (`calendar-integration/sync`) wird der Fehler dagegen als 400 gemeldet und in `User.calendarSyncError` gespeichert, weil der Anwender die Aktion ausdrücklich angestoßen hat. SSO-Fehler enden in einer Umleitung mit `?error=`-Parameter zur Anmeldemaske (`buildFrontendRedirectUrl`), Kalender-Rückleitungen mit `?calendar_status=error&calendar_message=`.
 
-**Browser.** Masken zeigen `error.response?.data?.message` oder einen festen Text in einer roten Zeile. Vier Masken fangen Fehler still: Dashboard, Kalender und Board fallen auf Beispieldaten zurück, Freigaben auf die lokal vorgemerkten Anfragen. Der Anwender sieht dann Daten, die nicht vom Server stammen, ohne Hinweis ([B1.5](../spec/B1-dialogspezifikation.md#b15-stand-der-anbindung)).
+**Browser.** Masken zeigen `error.response?.data?.message` oder einen festen Text in einer roten Zeile. Dashboard, Kalender, Board und Projekte fangen Fehler beim Laden still (leere Anzeige) und beim Anlegen ohne Meldung; der Anwender sieht dann nur, dass nichts erscheint ([B1.5](../spec/B1-dialogspezifikation.md#b15-stand-der-anbindung) Nr. 1).
 
 ## 8.6 Validierung und Normalisierung
 
@@ -119,8 +137,9 @@ Keine Validierungsbibliothek (kein zod, joi, express-validator). Jedes Routenmod
 | Modul | Funktionen | Regel |
 |-------|------------|-------|
 | `auth.routes.js`, `role.routes.js` | `isBlank(value)` | Pflichtfeld: Zeichenkette mit Inhalt nach `trim`. |
-| `task.routes.js` | `normalizeStatus` (Tabelle `statusMap` nach [D2.3](../spec/D2-datentypen.md#d23-taskstatusdt)), `normalizePriority`, `parseOptionalNumber` (Komma → Punkt), `parseTaskDate` | [AF-04](../spec/F3-anwendungsfunktionen.md#af-04--status-priorität-und-eingaben-normalisieren) |
-| `project.routes.js` | `normalizeString`, `optionalString`, `optionalDate`, `optionalNumber`, `toStringArray` (Liste oder Text mit Komma/Zeilenumbruch), `buildMilestoneCreates`/`buildRiskCreates`/`buildBudgetLineCreates` (Zeilen ohne Titel entfallen) | [AF-04](../spec/F3-anwendungsfunktionen.md#af-04--status-priorität-und-eingaben-normalisieren), [UC-07](../spec/F2-anwendungsfaelle.md#uc-07--projekt-anlegen) |
+| `task.routes.js` | `normalizeStatus` (Tabelle `statusMap` nach [D2.3](../spec/D2-datentypen.md#d23-taskstatusdt)), `normalizePriority` (auch `hoch`/`mittel`/`niedrig`), `parseOptionalNumber` (Komma → Punkt), `parseTaskDate`, `toStringList`, `normalizeFavoriteReturnIndexBy`, `buildTaskDetailWrites` (Tags, Personen, Anhänge, Compliance, Ersteller, Audit-Spur) | [AF-04](../spec/F3-anwendungsfunktionen.md#af-04--status-priorität-und-eingaben-normalisieren) |
+| `project.routes.js` | `normalizeString`, `optionalString`, `optionalDate`, `optionalNumber`, `toStringArray` (Liste oder Text mit Komma/Zeilenumbruch), `buildMilestoneCreates`/`buildRiskCreates`/`buildInterfaceCreates`/`buildBudgetLineCreates` (Zeilen ohne Titel entfallen) |
+| `organization.routes.js` | Name Pflicht; Kürzel und Geschäftsbereich in Großschreibung; Leitung Vorgabe: anlegender Anwender | [UC-27](../spec/F2-anwendungsfaelle.md#uc-27--abteilung-anlegen) | [AF-04](../spec/F3-anwendungsfunktionen.md#af-04--status-priorität-und-eingaben-normalisieren), [UC-07](../spec/F2-anwendungsfaelle.md#uc-07--projekt-anlegen) |
 | `approval.routes.js` | `normalizeEntityType` (unbekannt → `OTHER`), `normalizeStatus` (unbekannt → leer, also kein Filter) | [D2.8](../spec/D2-datentypen.md#d28-approvalentitytypedt) |
 | `role.routes.js` | `toRoleData` (Kurzcode und Geschäftsbereiche in Großschreibung, `M` → `MEMBER`, `manageRoles` bei Admin erzwungen), `normalizeList` | [UC-21](../spec/F2-anwendungsfaelle.md#uc-21--rollen-pflegen) |
 | `taskMarker.routes.js` | `normalizeMarker` (Längen 80/180/120, Farbe `#rrggbb` sonst `#3b82f6`, `matchField` aus Menge), `slice(0, 60)` | [AF-10](../spec/F3-anwendungsfunktionen.md#af-10--farbstreifen-zuordnen) |
@@ -164,16 +183,13 @@ Was der Browser über die Sitzung hinaus speichert, und wie es mit dem Server zu
 | `token`, `user` | `AuthContext.login`, `SettingsPage` (neues Token nach Profiländerung) | Abbild; Server ist maßgeblich. |
 | `nexttask:appearance` | `utils/appearance.js` | Nur Browser. `applyAppearanceSettings` setzt `data-theme`, `data-density`, `data-motion`, Schriftskala am `<html>`. |
 | `nexttask:dismissed-notifications` | `AppShell` | Nur Browser; bezieht sich auf drei feste Beispielmeldungen. |
-| `nexttask:task-marker-settings` | `utils/taskMarkers.js` | Kopie der Serverdaten; bei Anmeldung gelöscht; wegen des Ladefehlers in `SettingsPage` (B1.5 Nr. 1) derzeit die tatsächlich benutzte Quelle im Board. |
-| `nexttask:bank-access-config` | `data/bankOrganization.js` | Rückfall für Rollen und Zuordnungen, wenn `/api/roles` nicht antwortet; Startbestand mit fünf Demo-Nutzern. |
-| `nexttask:local-approvals` | `utils/approvalStorage.js` | Vormerkung von Anfragen aus den Ticket-Editoren; `ApprovalsPage.mergeApprovals` führt sie mit Serverdaten zusammen; Entscheidungen zu lokalen Anfragen bleiben lokal. |
-| `nexttask:projects` | `data/projectFixtures.js` (`mergeProjectsWithDefaults`), `ProjectsPage`, `ReportsPage` | **Kein Serverabgleich.** Projekte, Berichtsbasis und Backlog leben hier; `ReportsPage` liest sie über einen `storage`-Listener auch aus anderen Tabs. |
-| `nexttask:my-tasks` | `MyTasksPage` | **Kein Serverabgleich** für lokal angelegte Aufgaben; Serveraufgaben werden über `?taskId` nachgeladen und mit `source: 'backend'` markiert, nur diese werden per `PUT /api/tasks/:id` gespeichert. |
-| `nexttask-calendar-schedule-overrides` | `CalendarPage` | Verschiebungen, die der Server nicht angenommen hat; bei erfolgreichem `PATCH` entfernt. |
+| `nexttask:task-marker-settings` | `utils/taskMarkers.js` | Kopie der Serverdaten; bei Anmeldung gelöscht; Rückfall, wenn `GET /api/task-markers` scheitert. |
+
+Mehr gibt es nicht. Die Schlüssel `nexttask:projects`, `nexttask:my-tasks`, `nexttask:local-approvals`, `nexttask:bank-access-config` und `nexttask-calendar-schedule-overrides` aus der Fassung vom 13. September sind mit den Umbauten vom 13. und 23. September entfallen: `ProjectsPage`, `MyTasksPage`, `DashboardPage` und `ReportsPage` laden `GET /api/organization`, `CalendarPage` `GET /api/calendar/tasks`, `DocumentsPage` `GET /api/documents`; Änderungen gehen an `POST /api/projects`, `PUT /api/projects/:id/reporting`, `POST /api/organization/departments`, `POST /api/tasks`, `PUT /api/tasks/:id`, `PATCH /api/tasks/project/:id/order`, `POST /api/tasks/:id/comments`, `POST /api/approvals`. Die Konstante `projectStorageKey` in `data/projectFixtures.js` existiert noch, wird aber nicht mehr benutzt. Die Spaltenreihenfolge des Boards liegt nur im React-Zustand der Maske.
 
 **Ereignisse zwischen Masken.** Weil es keinen gemeinsamen Zustand gibt, senden Masken `window.dispatchEvent(new CustomEvent('nexttask:…'))`, wenn sich Rollen, Darstellung oder Farbstreifen ändern; `AppShell` und geöffnete Masken hören darauf.
 
-**Bewertung.** Die letzten drei Schlüssel sind der technische Kern von R-01: Die Masken wurden mit Beispieldaten entwickelt, und die Anbindung an `project.routes.js` und den Rest von `task.routes.js` ist nicht erfolgt. Der Umbau ist begrenzt, weil die Serverseite existiert: `ProjectsPage` müsste `GET/POST /api/projects` und `PUT /api/projects/:id/reporting` rufen, `MyTasksPage` `GET /api/tasks/project/:id` und `POST /api/tasks`; die Beispieldaten in `data/` würden zu einem Seed-Skript für die Datenbank.
+**Bewertung.** Der Umbau, den die erste Fassung dieses Kapitels als „begrenzt" beschrieb, ist vollzogen; die Beispieldaten sind zum Seed-Skript geworden (`server/prisma/seed.js`). Was bleibt, ist die fehlende Rückmeldung bei Fehlern in den anlegenden Masken (B1.5 Nr. 1) und die doppelte Ladung der Organisationsübersicht bei jedem Maskenwechsel; ein gemeinsamer Cache wäre der nächste Schritt, wenn die Datenmenge wächst.
 
 ## 8.10 Oberfläche
 
@@ -182,4 +198,4 @@ Was der Browser über die Sitzung hinaus speichert, und wie es mit dem Server zu
 - **Anzeigetexte.** Enum-Werte werden über Konstanten übersetzt: `data/calendarConstants.js` (Kalender), `utils/task.js` (Board), `RoleManagementPage` und `AuditLogPage` (eigene Tabellen). Die Doppelung ist in [D2.3](../spec/D2-datentypen.md#d23-taskstatusdt) dokumentiert.
 - **Tiefe Verweise.** `useSearchParams` in Board, Kalender, Backlog (`taskId`) und Einstellungen (`section`, `calendar_status`); Parameter werden nach Verarbeitung aus der Adresse entfernt.
 - **Ziehen und Ablegen.** `@dnd-kit` im Backlog (Zeilen), natives HTML5-Drag im Board (Spalten) und Kalender (Karten auf Tage). Drei Mechanismen für drei Masken; eine Vereinheitlichung auf `@dnd-kit` wäre die naheliegende Bereinigung.
-- **PDF.** `utils/reportExport.js` baut eine vollständige HTML-Seite mit eingebettetem CSS (`@page { size: A4 }`, drei `section.report-page`), lädt sie in ein verstecktes `<iframe>`, rastert jede Sektion mit `html2canvas` und fügt die Bilder mit `jsPDF` (A4, `addPage` ab der zweiten Seite) zusammen ([ADR-005](A09-architekturentscheidungen.md#adr-005-statusbericht-als-pdf-im-browser-erzeugen)).
+- **PDF.** Für den Statusbericht (DR-01) baut `utils/reportExport.js` eine vollständige HTML-Seite mit eingebettetem CSS (`@page { size: A4 }`, drei `section.report-page`), lädt sie in ein verstecktes `<iframe>`, rastert jede Sektion mit `html2canvas` und fügt die Bilder mit `jsPDF` (A4, `addPage` ab der zweiten Seite) zusammen ([ADR-005](A09-architekturentscheidungen.md#adr-005-statusbericht-als-pdf-im-browser-erzeugen)). Der Abteilungsbericht (DR-02) wird dagegen direkt mit den Zeichenfunktionen von jsPDF aufgebaut (`drawDepartmentReportHeader`, `drawTableRow`, Seitenumbruch ab 280 mm mit wiederholtem Kopf); Text bleibt Text. Die CSV-Variante entsteht aus denselben Zeilen mit Semikolon als Trenner und wird über einen `Blob` heruntergeladen.
