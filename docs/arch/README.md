@@ -70,6 +70,12 @@ Laut Vorgabe der Vorlesung entfallen die Kapitel 10 (Qualitätsanforderungen) un
 
 Das Systemkontextdiagramm (Kapitel 3.1) und das Informationsmodell (Kapitel 8.1) werden aus der Spezifikation übernommen, nicht dupliziert.
 
+---
+
+## Eingesetzte KI-Werkzeuge
+
+Siehe den gleichnamigen Abschnitt in [`../spec/README.md`](../spec/README.md#eingesetzte-ki-werkzeuge); er gilt für Spezifikation und Architekturdokumentation gemeinsam.
+
 ## Änderungshistorie
 
 | Version | Datum | Änderung |

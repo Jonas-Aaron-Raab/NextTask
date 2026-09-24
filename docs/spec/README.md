@@ -188,6 +188,12 @@ Bildschirmfotos der Masken (DLG-01 bis DLG-12 mit Ausnahme von DLG-08) und der V
 
 ---
 
+## Eingesetzte KI-Werkzeuge
+
+Für Code und Refactoring wurde Codex unterstützend eingesetzt, für die Erstentwürfe von Spezifikation und Architekturdokumentation Claude Code auf Basis des Quellcodes. Alle Dokumente wurden vor dem Einchecken von Teammitgliedern gegen Code und laufende Anwendung gelesen und an mehreren Stellen korrigiert; die Freigabe erfolgte über Pull Requests. Die Begründungen der Architekturentscheidungen stammen vom Team.
+
+---
+
 ## Quellen
 
 - SIEDERSLEBEN, J. (Hrsg.) 2003. *Softwaretechnik — Praxiswissen für Softwareingenieure.* München: Carl Hanser Verlag. Kapitel 4 „Bausteine der Spezifikation".
