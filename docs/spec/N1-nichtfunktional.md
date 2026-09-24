@@ -167,7 +167,7 @@ Jede Anforderung hat eine Kennung `NFR-<Volere-Abschnitt>-<Nr.>`, eine Beschreib
 
 **NFR-15d-01: Vollständiger, unveränderlicher Audit-Trail.** Jede der in [N2](N2-querschnittskonzepte.md) aufgeführten Aktionen erzeugt genau einen Audit-Eintrag mit Akteur, Zeitpunkt, Herkunft, Kritikalität und, bei Änderungen, den geänderten Feldern mit altem und neuem Wert. Einträge werden nie geändert oder gelöscht; es gibt keine Schnittstelle dafür.
 
-*Prüfkriterium:* Ein Testlauf über alle 38 Aktionen erzeugt 38 Einträge; für `TASK_UPDATED` mit geändertem Titel enthält `before` genau den Schlüssel `title` mit altem und neuem Wert. Die Schnittstelle bietet keinen Aufruf zum Ändern oder Löschen von Einträgen.
+*Prüfkriterium:* Ein Testlauf über alle 39 Aktionen aus QK-03 erzeugt 39 Einträge; für `TASK_UPDATED` mit geändertem Titel enthält `before` genau den Schlüssel `title` mit altem und neuem Wert. Die Schnittstelle bietet keinen Aufruf zum Ändern oder Löschen von Einträgen.
 
 *Stand:* Das Schreiben des Eintrags bricht die fachliche Aktion bei einem Datenbankfehler nicht ab (AF-07). Ein Eintrag kann also im Fehlerfall fehlen; der Fehler steht dann im Serverprotokoll.
 

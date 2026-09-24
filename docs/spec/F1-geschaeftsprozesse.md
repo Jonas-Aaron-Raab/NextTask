@@ -47,7 +47,7 @@ A4 bis A8 wiederholen sich je Berichtszyklus (`Project.reportCycle`, Vorgabe mon
 
 | Dokument | Entsteht in | Gehalten in |
 |----------|-------------|-------------|
-| Berichtsbasis (Meilensteine, Risiken, Budgetpositionen, Schnittstellen) | A2, A4 | `Project` mit `ProjectMilestone`, `ProjectRisk`, `ProjectBudgetLine` ([D1.2](D1-datenmodell.md#d12-projekte-und-berichtswesen)) |
+| Berichtsbasis (Meilensteine, Risiken, Budgetpositionen, Schnittstellen, Freigabezeile) | A2, A4 | `Project` mit `ProjectMilestone`, `ProjectRisk`, `ProjectBudgetLine`, `ProjectInterface`, `ProjectApproval` ([D1.2](D1-datenmodell.md#d12-projekte-und-berichtswesen)) |
 | Statusbericht zum Stichtag | A5 | `ProjectStatusReport` |
 | Statusbericht als PDF | A6 | Datei beim Anwender; NextTask hält keine Kopie. |
 | Sitzungsprotokoll des Lenkungskreises | A7 | außerhalb von NextTask |
@@ -56,7 +56,7 @@ A4 bis A8 wiederholen sich je Berichtszyklus (`Project.reportCycle`, Vorgabe mon
 
 - Auftragserteilung, Budgetfreigabe durch die Linie und Projektabschluss laufen außerhalb von NextTask.
 - NextTask versendet den Statusbericht nicht; die Verteilung übernimmt die Projektleitung.
-- Die Berichtsbasis ist im Server umgesetzt. Die Maske „Projekte" hält die Berichtsbasis derzeit im Browser und ruft die Projektschnittstelle nicht auf (R-01 in [P1](P1-ziele-rahmenbedingungen.md)); das PDF wird aus den Daten im Browser erzeugt.
+- Die Berichtsbasis liegt auf dem Server; die Maske „Projekte" pflegt sie über die Projektschnittstelle (UC-07, UC-08), und das PDF wird aus den vom Server geladenen Daten erzeugt. Ein eigener Statusbericht je Stichtag (UC-09) ist nur über die Schnittstelle erreichbar; der Reiter Status schreibt in die Berichtsbasis.
 
 ---
 
@@ -81,7 +81,7 @@ Der tägliche Ablauf: Eine Aufgabe wird angelegt, zugewiesen, bearbeitet, geprü
 | A1 | Arbeitsbedarf erkennen | keine | Aus Projektplanung (GP-01, A3), Besprechung oder laufender Arbeit. |
 | A2 | Aufgabe anlegen | NextTask ([UC-11](F2-anwendungsfaelle.md#uc-11--aufgabe-anlegen)) | Titel, Projekt, Priorität, Frist, Aufwand, Bearbeiter, Abteilung, Freigabestufe. Status `OPEN`. |
 | A3 | Bearbeiter informieren | NextTask ([AF-09](F3-anwendungsfunktionen.md#af-09--benachrichtigung-per-e-mail), [AF-08](F3-anwendungsfunktionen.md#af-08--kalenderabgleich)) | E-Mail „Neues Ticket für dich", Termin im Kalender des Bearbeiters. Beides nur, wenn konfiguriert und vom Bearbeiter gewünscht. |
-| A4 | Aufgabe bearbeiten | NextTask ([UC-12](F2-anwendungsfaelle.md#uc-12--aufgabe-bearbeiten), [UC-13](F2-anwendungsfaelle.md#uc-13--aufgabe-im-board-verschieben), [UC-15](F2-anwendungsfaelle.md#uc-15--aufgabe-kommentieren)) | Status `IN_PROGRESS`; Rückfragen als Kommentare mit Erwähnung; Frist bei Bedarf verschieben ([UC-14](F2-anwendungsfaelle.md#uc-14--aufgabe-terminieren)). Hindernisse: Status `BLOCKED`, Eskalation an die Projektleitung. |
+| A4 | Aufgabe bearbeiten | NextTask ([UC-12](F2-anwendungsfaelle.md#uc-12--aufgabe-bearbeiten), [UC-13](F2-anwendungsfaelle.md#uc-13--aufgabe-verschieben-und-sortieren), [UC-15](F2-anwendungsfaelle.md#uc-15--aufgabe-kommentieren)) | Status `IN_PROGRESS`; Rückfragen als Kommentare mit Erwähnung; Frist bei Bedarf verschieben ([UC-14](F2-anwendungsfaelle.md#uc-14--aufgabe-terminieren)). Hindernisse: Status `BLOCKED`, Eskalation an die Projektleitung. |
 | A5 | Freigabe einholen | NextTask (GP-03) | Nur wenn die Aufgabe eine Freigabestufe trägt. |
 | A6 | Ergebnis prüfen | NextTask | Status `QA`; Prüfer nimmt ab oder gibt zur Nacharbeit zurück. |
 | A7 | Aufgabe erledigen | NextTask | Status `DONE`. Die Aufgabe bleibt mit Kommentaren und Audit-Spur erhalten. |
@@ -135,7 +135,7 @@ Eine Entscheidung, die eine zweite Person treffen muss, wird als Freigabe angefr
 
 | Dokument | Entsteht in | Gehalten in |
 |----------|-------------|-------------|
-| Freigabeanfrage mit Nachweis | A2 | `ApprovalRequest` ([D1.4](D1-datenmodell.md#d14-steuerung-und-nachweis)) |
+| Freigabeanfrage mit Nachweis | A2 | `ApprovalRequest` ([D1.5](D1-datenmodell.md#d15-steuerung-und-nachweis)) |
 | Entscheidung mit Vermerk, Entscheider, Zeitpunkt | A5 | dieselbe `ApprovalRequest` |
 | Audit-Einträge zu Anfrage und Entscheidung | A2, A5 | `AuditLog` |
 | Nachweisdokumente (Protokolle, Konzepte) | vor A2 | außerhalb von NextTask; nur als Text referenziert |

@@ -25,12 +25,13 @@ title F2 Anwendungsfaelle NextTask
 actor "Administrator" as ADM
 actor "Mitarbeiter" as MA
 actor "GBL" as GBL
-actor "Projektleitung\n(Eigentuemer\neines Projekts)" as PL
+actor "Projektleitung\n(Berechtigung Projekte\nbearbeiten, Eigentuemer\neines Projekts)" as PL
 
 rectangle "NextTask" {
   package "Verwaltung" #F3EEFB {
     usecase "UC-21 Rollen pflegen" as UC21
     usecase "UC-22 Benutzer anlegen und zuordnen" as UC22
+    usecase "UC-27 Abteilung anlegen" as UC27
     usecase "UC-23 Audit-Log einsehen" as UC23
   }
   package "Konto und Einstellungen" #EEF4FB {
@@ -46,11 +47,14 @@ rectangle "NextTask" {
   package "Aufgaben" as AUF #FFF6E8 {
     usecase "UC-11 Aufgabe anlegen" as UC11
     usecase "UC-12 Aufgabe bearbeiten" as UC12
-    usecase "UC-13 Aufgabe im Board verschieben" as UC13
+    usecase "UC-13 Aufgabe verschieben\nund sortieren" as UC13
     usecase "UC-14 Aufgabe terminieren" as UC14
     usecase "UC-15 Aufgabe kommentieren" as UC15
     usecase "UC-16 Aufgabe loeschen" as UC16
     usecase "UC-17 Aufgabenuebersicht einsehen" as UC17
+  }
+  package "Dokumente" as DOK #F1F7F9 {
+    usecase "UC-28 Dokumente einsehen" as UC28
   }
   package "Freigaben" as FRE #FBEEEE {
     usecase "UC-18 Freigabe anfragen" as UC18
@@ -62,12 +66,14 @@ rectangle "NextTask" {
     usecase "UC-08 Berichtsbasis pflegen" as UC08
     usecase "UC-09 Statusbericht erfassen" as UC09
     usecase "UC-10 Statusbericht als PDF ausgeben" as UC10
+    usecase "UC-26 Abteilungsbericht exportieren" as UC26
   }
 }
 
 ' Administrator
 ADM -- UC21
 ADM -- UC22
+ADM -- UC27
 ADM -- UC23
 
 ' Mitarbeiter
@@ -86,8 +92,10 @@ MA -- UC14
 MA -- UC15
 MA -- UC16
 MA -- UC17
+MA -- UC28
 MA -- UC18
 MA -- UC20
+MA -- UC26
 
 ' GBL
 GBL -- UC19
@@ -107,12 +115,12 @@ ADM --|> MA
 GBL --|> MA
 PL --|> MA
 
-AUF -[hidden]down- FRE
+AUF -[hidden]down- DOK
+DOK -[hidden]down- FRE
 FRE -[hidden]down- PRJ
 
-' Beziehungen zwischen Anwendungsfaellen
-UC02 ..> UC04 : <<extend>>\n[erste Einrichtung]
-UC11 ..> UC12 : <<extend>>
-UC12 ..> UC18 : <<include>>\n[Freigabestufe gesetzt]
-UC09 ..> UC10 : <<precedes>>
+' Beziehungen zwischen Anwendungsfaellen: extend zeigt vom
+' erweiternden auf den erweiterten Anwendungsfall
+UC12 ..> UC11 : <<extend>>\n[Aufgabe angelegt]
+UC18 ..> UC12 : <<extend>>\n[Freigabestufe gesetzt]
 @enduml

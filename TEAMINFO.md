@@ -12,12 +12,12 @@ NextTask ist eine webbasierte Projekt- und Aufgabenverwaltung fuer Studierende u
 
 | Name | Studiengang | Rolle | Git-Handle |
 |---|---|---|---|
-| Jonas Raab | Wirtschaftsinformatik B.Sc. | Projektleiter | GitHub: `Jonas-Aaron-Raab` |
+| Jonas Raab | Wirtschaftsinformatik B.Sc. | Projektleiter, Entwickler | GitHub: `Jonas-Aaron-Raab` |
 | Elisabeth Bezverkha | Wirtschaftsinformatik B.Sc. | Entwickler | GitHub: `ebzvk22` |
-| Sesina Habtemichael | Wirtschaftsinformatik B.Sc. | Software Architect | GitHub: `Sesinaa` |
-| Fatma Ipkin | Wirtschaftsinformatik B.Sc. | Spec/Requirements Lead | GitHub: `fatmaipk` |
-| Ewa Posnjak | Wirtschaftsinformatik B.Sc. | QA/Test Lead | GitHub: `ewaposnjak` |
-| Marlon Ullrich | Wirtschaftsinformatik B.Sc. | DevOps/Build Lead | GitHub: `MarlonMND` |
+| Sesina Habtemichael | Wirtschaftsinformatik B.Sc. | Software Architect, Architekturdokumentation | GitHub: `Sesinaa` |
+| Fatma Ipkin | Wirtschaftsinformatik B.Sc. | Requirements Lead | GitHub: `fatmaipk` |
+| Ewa Posnjak | Wirtschaftsinformatik B.Sc. | Spezifikation | GitHub: `ewaposnjak` |
+| Marlon Ullrich | Wirtschaftsinformatik B.Sc. | Review und Präsentation | GitHub: `MarlonMND` |
 
 
 ## Technologien (voraussichtlich)
@@ -34,7 +34,14 @@ NextTask ist eine webbasierte Projekt- und Aufgabenverwaltung fuer Studierende u
 - **URL:** <https://github.com/Jonas-Aaron-Raab/NextTask>
 - **Sichtbarkeit:** noch festzulegen / Betreuer als Member: `carstenlucke` / `clucke`
 
-## Eingesetzte KI-Werkzeuge (vorlaeufige Planung)
+## Eingesetzte KI-Werkzeuge
 
-- ChatGPT / Codex fuer Refactoring, Dokumentationsentwuerfe und Unterstuetzung bei der Codeanalyse
-- GitHub Copilot fuer Code-Vervollstaendigung, sofern im Projektteam verfuegbar
+Planung zu Projektbeginn: ChatGPT / Codex fuer Refactoring, Dokumentationsentwuerfe und Codeanalyse; GitHub Copilot fuer Code-Vervollstaendigung.
+
+Tatsaechlich eingesetzt:
+
+- Codex fuer Code und Refactoring
+- Claude Code fuer die Erstentwuerfe von Spezifikation und Architekturdokumentation auf Basis des Quellcodes
+- GitHub Copilot wurde nicht eingesetzt
+
+Alle Ergebnisse wurden von Teammitgliedern gegen Code und laufende Anwendung geprueft und ueber Pull Requests freigegeben.
