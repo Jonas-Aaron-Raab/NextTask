@@ -12,12 +12,12 @@ NextTask ist eine webbasierte Projekt- und Aufgabenverwaltung fuer Studierende u
 
 | Name | Studiengang | Rolle | Git-Handle |
 |---|---|---|---|
-| Jonas Raab | Wirtschaftsinformatik B.Sc. | Projektleiter | GitHub: `Jonas-Aaron-Raab` |
+| Jonas Raab | Wirtschaftsinformatik B.Sc. | Projektleiter, Entwickler | GitHub: `Jonas-Aaron-Raab` |
 | Elisabeth Bezverkha | Wirtschaftsinformatik B.Sc. | Entwickler | GitHub: `ebzvk22` |
-| Sesina Habtemichael | Wirtschaftsinformatik B.Sc. | Software Architect | GitHub: `Sesinaa` |
-| Fatma Ipkin | Wirtschaftsinformatik B.Sc. | Spec/Requirements Lead | GitHub: `fatmaipk` |
-| Ewa Posnjak | Wirtschaftsinformatik B.Sc. | QA/Test Lead | GitHub: `ewaposnjak` |
-| Marlon Ullrich | Wirtschaftsinformatik B.Sc. | DevOps/Build Lead | GitHub: `MarlonMND` |
+| Sesina Habtemichael | Wirtschaftsinformatik B.Sc. | Software Architect, Architekturdokumentation | GitHub: `Sesinaa` |
+| Fatma Ipkin | Wirtschaftsinformatik B.Sc. | Requirements Lead | GitHub: `fatmaipk` |
+| Ewa Posnjak | Wirtschaftsinformatik B.Sc. | Spezifikation | GitHub: `ewaposnjak` |
+| Marlon Ullrich | Wirtschaftsinformatik B.Sc. | Review und Präsentation | GitHub: `MarlonMND` |
 
 
 ## Technologien (voraussichtlich)
@@ -44,4 +44,4 @@ Tatsaechlich eingesetzt:
 - Claude Code fuer die Erstentwuerfe von Spezifikation und Architekturdokumentation auf Basis des Quellcodes
 - GitHub Copilot wurde nicht eingesetzt
 
-Alle Ergebnisse wurden von Teammitgliedern gegen Code und laufende Anwendung geprueft und ueber Pull Requests freigegeben. Details in `docs/spec/README.md`, Abschnitt "Eingesetzte KI-Werkzeuge".
+Alle Ergebnisse wurden von Teammitgliedern gegen Code und laufende Anwendung geprueft und ueber Pull Requests freigegeben.
