@@ -117,7 +117,7 @@ Jede Anforderung hat eine Kennung `NFR-<Volere-Abschnitt>-<Nr.>`, eine Beschreib
 
 *Prüfkriterium:* Das Umstellen von `SSO_ENABLED` auf `true` mit gültigen Providerdaten lässt die SSO-Schaltfläche in DLG-01 erscheinen; das Zurückstellen entfernt sie. Beides ohne Neubau der Anwendung.
 
-*Stand:* Die Adresse des Servers ist in der Browser-Anwendung fest eingetragen (S1.2); für einen anderen Betriebsort ist ein Neubau nötig.
+*Stand:* Die Adresse des Servers wird beim Bauen der Browser-Anwendung aus der Umgebungsvariable `VITE_API_URL` übernommen (S1.2, S3.2); ohne sie gilt die Entwicklungsadresse. Vite schreibt den Wert fest in das gebaute Bundle: Für einen anderen Betriebsort ist weiterhin ein Neubau nötig, aber keine Codeänderung mehr.
 
 ---
 
@@ -129,7 +129,7 @@ Jede Anforderung hat eine Kennung `NFR-<Volere-Abschnitt>-<Nr.>`, eine Beschreib
 
 *Prüfkriterium:* Nach Aktivierung führt ein korrektes Passwort ohne Code nicht zu einer Sitzung. Derselbe Einmalcode wird beim zweiten Versuch abgelehnt. Nach Verbrauch aller zehn Wiederherstellungscodes wird ein bereits verwendeter abgelehnt.
 
-*Stand:* Der zweite Faktor ist freiwillig; das System erzwingt ihn nicht für bestimmte Rollen. Es gibt keine Begrenzung fehlgeschlagener Anmeldeversuche, und die Fehlermeldungen unterscheiden zwischen unbekannter E-Mail und falschem Passwort (UC-02). Beides ist eine bekannte Schwäche.
+*Stand:* Der zweite Faktor ist freiwillig; das System erzwingt ihn nicht für bestimmte Rollen. Es gibt keine Begrenzung fehlgeschlagener Anmeldeversuche; das ist eine bekannte Schwäche. Die Fehlermeldung bei unbekannter E-Mail und bei falschem Passwort ist seit dem 24. September 2026 dieselbe (UC-02).
 
 **NFR-15a-02: Sitzungsdauer.** Ein Zugriffstoken ist sieben Tage gültig; ein Challenge-Token für den zweiten Faktor fünf Minuten; ein SSO-Zustand zehn Minuten; ein SSO-Einmalticket 90 Sekunden. Nach Ablauf antwortet der Server mit 401 und die Oberfläche kehrt zur Anmeldung zurück.
 
@@ -147,11 +147,11 @@ Jede Anforderung hat eine Kennung `NFR-<Volere-Abschnitt>-<Nr.>`, eine Beschreib
 
 *Prüfkriterium:* Die Spalten `User.twoFactorSecret` und `User.calendarRefreshToken` enthalten ausschließlich Werte mit dem Präfix `v1:`; `User.twoFactorRecoveryCodes` und `SsoLoginTicket.tokenHash` enthalten keinen Wert, mit dem sich anmelden lässt.
 
-**NFR-15b-02: Passwort-Hashing.** Passwörter werden mit bcrypt (Kostenfaktor 10) gehasht; der Klartext wird nie gespeichert oder protokolliert. Beim Ändern gilt eine Mindestlänge von acht Zeichen.
+**NFR-15b-02: Passwort-Hashing.** Passwörter werden mit bcrypt (Kostenfaktor 10) gehasht; der Klartext wird nie gespeichert oder protokolliert. Bei Registrierung, Anlegen durch Administratoren und Ändern gilt eine Mindestlänge von acht Zeichen.
 
 *Prüfkriterium:* `User.password` enthält nur bcrypt-Hashes. Ein neues Passwort mit sieben Zeichen wird in UC-05 abgelehnt.
 
-*Stand:* Bei der Registrierung (UC-01) und beim Anlegen durch Administratoren (UC-22) gilt keine Mindestlänge.
+*Stand:* Die Mindestlänge gilt seit dem 24. September 2026 an allen drei Stellen (UC-01, UC-05, UC-22). Eine Prüfung auf Komplexität oder bekannte Passwörter gibt es nicht.
 
 **NFR-15b-03: Keine Geheimnisse im Audit-Log.** Felder mit den Namen `password` und `token` werden vor dem Schreiben aus Vorher-, Nachher- und Zusatzdaten entfernt ([AF-07](F3-anwendungsfunktionen.md#af-07--audit-eintrag-mit-differenz-schreiben)).
 

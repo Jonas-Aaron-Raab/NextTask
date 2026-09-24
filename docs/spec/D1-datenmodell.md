@@ -65,7 +65,7 @@ Eine Abteilung der Sparkasse. Seit dem Stand vom 13. September eine eigene Entit
 | `businessArea` | Text [0..1] | Geschäftsbereich, z. B. `OR`; Grundlage des Sichtbereichs für GBL-Rollen (AF-02). |
 | `leadName` | Text | Name der Abteilungsleitung als Text, auch wenn kein Konto existiert. |
 | `lead` | → User [0..1] | Konto der Abteilungsleitung, falls vorhanden; wird bei Löschung des Kontos geleert. |
-| `memberCount` | Integer | Anzahl der Mitarbeitenden für die Kartenansicht. |
+| `memberCount` | Integer | Kopfzahl der Abteilung laut Organigramm, für die Kartenansicht. Unabhängig von der Zahl der erfassten `DepartmentMember`; wird beim Anlegen (UC-27) eingegeben (Vorgabe 1) bzw. aus den Beispieldaten übernommen. |
 | `description` | Text | Beschreibung. |
 | `accent`, `badgeTone` | Text | Darstellungsklassen für Karten und Kennzeichen in der Oberfläche. Ein Darstellungsattribut im Datenmodell, übernommen aus den früheren Beispieldaten. |
 | `members` | → DepartmentMember [*] | Mitglieder mit Reihenfolge. |
@@ -410,6 +410,13 @@ Seit dem 13. September ist die Abteilung eine Entität (`Department`), der Gesch
 Die Textfelder `User.department` und `Task.department` bleiben als Anzeigename bestehen und werden für keine Berechtigungsprüfung mehr verwendet. Das Seed-Skript legt die drei Abteilungen des Geschäftsbereichs OR (`or-it`, `or-id`, `or-oe`) mit denselben Kennungen an, die die Systemrollen in `departmentIds` tragen; eine neue Abteilung braucht daher keine Codeänderung mehr, nur eine Rolle, die auf sie zeigt.
 
 Personen sind an mehreren Stellen als Name statt als Konto geführt: `Department.leadName`, `DepartmentMember.name`, `Project.deputyLead`, `Project.projectSponsor`, `ProjectApproval.*`, `TaskPersonLink.name`, `Document.ownerName`. Das Seed-Skript legt für jeden vorkommenden Namen ein Konto an und verknüpft, wo ein Fremdschlüssel existiert (`Department.lead`, `Project.owner`, `Task.assignee`); die Namensfelder bleiben die Anzeigequelle.
+
+**Bewusste Abweichungen von der Normalisierung.** Vier Stellen des Modells sind absichtlich redundant oder ohne Fremdschlüssel; sie sind gewollt und in Kauf genommen:
+
+- `Department.leadName` und `DepartmentMember.name` als Text neben den Fremdschlüsseln `lead` und `userId`, weil Abteilungen auch Personen ohne NextTask-Konto führen (Anzeige aus dem Organigramm, nicht aus der Kontenliste).
+- `AccessRole.departmentIds` ohne Fremdschlüssel, weil die Systemrollen feste Kennungen (`or-it`, `or-id`, `or-oe`) tragen und beim ersten Zugriff angelegt werden, bevor Abteilungen existieren; ein Fremdschlüssel würde die Registrierung auf einer leeren Datenbank blockieren.
+- `Department.memberCount` wird nicht mit den Mitgliedern abgeglichen: Die Kopfzahl kommt aus der Eingabe beim Anlegen (UC-27, dort entsteht genau ein Mitglied, die Leitung) oder aus den Beispieldaten; die Mitgliederliste ist eine Auswahl, keine vollständige Personalliste.
+- `User.department` nur als Anzeigetext; maßgeblich für den Sichtbereich ist die Zugriffsrolle (AF-02).
 
 ---
 

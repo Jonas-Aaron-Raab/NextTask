@@ -29,7 +29,7 @@ Der Server liest seine Konfiguration aus einer Datei `server/.env`; eine Vorlage
 | Kalender | `APP_BASE_URL`, `GOOGLE_CALENDAR_CLIENT_ID`, `GOOGLE_CALENDAR_CLIENT_SECRET` | nein | Ohne Google-Zugangsdaten ist die Verbindung in den Einstellungen gesperrt (S1.5). |
 | E-Mail | `EMAIL_NOTIFICATIONS_ENABLED`, `EMAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` | nein | Versand nur, wenn `EMAIL_NOTIFICATIONS_ENABLED=true` und alle SMTP-Werte gesetzt sind (S1.6). |
 
-Die Browser-Anwendung hat keine eigene Konfigurationsdatei. Die Adresse des Servers ist fest eingetragen (S1.2).
+Die Browser-Anwendung liest beim Bauen die Umgebungsvariable `VITE_API_URL` mit der Adresse der Schnittstelle (S1.2); fehlt sie, gilt `http://localhost:5001/api`. Vite übernimmt den Wert fest in das gebaute Bundle; eine Änderung erfordert einen Neubau.
 
 ---
 
@@ -43,7 +43,7 @@ Die Browser-Anwendung hat keine eigene Konfigurationsdatei. Die Adresse des Serv
 6. Erstes Konto anlegen, wenn kein Seed geladen wurde: über die Registrierung ([UC-01](F2-anwendungsfaelle.md#uc-01--registrieren)). Beim ersten Zugriff auf Rollen oder bei der ersten Registrierung legt der Server die fünf Systemrollen an ([D2.6](D2-datentypen.md#d26-permissionsetdt)). Ein registriertes Konto ohne Zugriffsrolle sieht keine Abteilungen, Projekte oder Aufgaben ([AF-02](F3-anwendungsfunktionen.md#af-02--sichtbereich-und-sichtbare-aufgaben-bestimmen)).
 7. Ersten Administrator bestimmen: Das System vergibt die Administratorrolle nicht automatisch. Ein Konto wird Administrator über das Seed-Skript (Schritt 4), indem es per SSO mit einer konfigurierten Administratorgruppe anmeldet ([AF-11](F3-anwendungsfunktionen.md#af-11--sso-konto-abgleichen)) oder indem in der Datenbank `User.accessRoleId` auf die Rolle mit Code `A` und `User.role` auf `ADMIN` gesetzt wird. Danach legt dieser Administrator Abteilungen ([UC-27](F2-anwendungsfaelle.md#uc-27--abteilung-anlegen)), weitere Benutzer und Zuordnungen in der Rollenverwaltung an ([UC-22](F2-anwendungsfaelle.md#uc-22--benutzer-anlegen-und-zuordnen)).
 8. Optional SSO, Kalender und E-Mail konfigurieren und den Server neu starten. Prüfen: SSO-Schaltfläche auf der Anmeldemaske, Statusanzeige „Server bereit" in den Einstellungen, Testmail.
-9. Optional Rauchtest: Bei laufender Anwendung mit geladenem Seed führt `npm run test:e2e` im Wurzelverzeichnis einen Playwright-Test aus, der sich als „Gast" anmeldet, alle zehn Einträge der Seitenleiste öffnet und bei Fehlern in der Browserkonsole fehlschlägt. Vorher einmalig `npx playwright install chromium`.
+9. Optional Tests: Bei laufender Anwendung mit geladenem Seed führt `npm run test:api` im Wurzelverzeichnis die Schnittstellentests unter `tests/api/` ohne Browser aus (Sichtbereich, Freigaben, zweiter Faktor, Audit-Log, Sicherheitsregeln; Zuordnung zu den Anforderungen in `tests/README.md`). `npm run test:e2e` führt den Klicktest aus, der sich als „Gast" anmeldet und alle zehn Einträge der Seitenleiste öffnet; `npm test` beides. Vorher einmalig `npx playwright install chromium`.
 
 ---
 
@@ -71,7 +71,7 @@ Sitzungen bleiben über eine Aktualisierung hinweg gültig, solange `JWT_SECRET`
 
 Nicht Teil des Projekts, aber für eine Übernahme durch die Sparkassen-IT relevant:
 
-- Die Browser-Anwendung muss gebaut (`npm run build` in `client`) und über einen Webserver ausgeliefert werden; die Serveradresse muss vorher angepasst werden (S1.2).
+- Die Browser-Anwendung muss gebaut (`npm run build` in `client`) und über einen Webserver ausgeliefert werden; die Adresse der Schnittstelle muss vorher über `VITE_API_URL` gesetzt werden (S3.2).
 - Der Server muss hinter einem HTTPS-Endpunkt laufen; die Rückleitungsadressen für SSO und Kalender müssen auf die öffentliche Adresse zeigen und beim jeweiligen Provider registriert sein.
 - Die offene CORS-Regel sollte auf die Adresse der Browser-Anwendung eingeschränkt werden.
 - Der Server läuft als ein Prozess ohne Prozessmanager; Neustart bei Absturz und Protokollrotation muss die Umgebung leisten.

@@ -79,7 +79,7 @@ Legt beim Anlegen einer Freigabeanfrage (UC-18) fest, wer entscheiden soll, und 
 
 Ein angegebener Genehmiger muss als Konto existieren, sonst wird die Anfrage abgewiesen. Das Bezugsobjekt muss im Sichtbereich des Anfragenden liegen (AF-02), sonst „Keine Berechtigung für dieses Bezugsobjekt".
 
-**Wer entscheiden darf:** der eingetragene Genehmiger oder jeder mit „Freigaben entscheiden" (AF-01), sofern das Bezugsobjekt in seinem Sichtbereich liegt. Entscheidet jemand anderes als der eingetragene Genehmiger, wird er nachträglich als Genehmiger eingetragen, wenn vorher keiner gesetzt war.
+**Wer entscheiden darf:** der eingetragene Genehmiger oder jeder mit „Freigaben entscheiden" (AF-01), sofern das Bezugsobjekt in seinem Sichtbereich liegt und er nicht selbst der Anfragende ist; die eigene Anfrage wird mit „Eigene Freigabeanfragen koennen nicht selbst entschieden werden" abgewiesen (SC-02). Entscheidet jemand anderes als der eingetragene Genehmiger, wird er nachträglich als Genehmiger eingetragen, wenn vorher keiner gesetzt war.
 
 **Wer abbrechen darf:** zusätzlich der Anfragende.
 
