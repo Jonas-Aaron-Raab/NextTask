@@ -416,6 +416,9 @@ async function decideApproval(req, res, status) {
     if (before.status !== 'PENDING') {
       return res.status(400).json({ message: 'Diese Freigabe ist bereits entschieden' });
     }
+    if (before.requesterId === currentUser.id) {
+      return res.status(403).json({ message: 'Eigene Freigabeanfragen koennen nicht selbst entschieden werden' });
+    }
 
     const canDecide = before.approverId === currentUser.id || userCanApproveRequests(currentUser);
     if (!canDecide) {
