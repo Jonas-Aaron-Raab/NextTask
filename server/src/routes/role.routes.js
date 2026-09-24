@@ -11,11 +11,16 @@ const {
 const { pickFields, summarizeChanges, writeAuditLog } = require('../utils/auditLog');
 
 const router = express.Router();
+const MIN_PASSWORD_LENGTH = 8;
 const auditRoleFields = ['id', 'name', 'code', 'kind', 'description', 'businessAreas', 'departmentIds', 'permissions', 'system'];
 const auditUserFields = ['id', 'name', 'email', 'role', 'department', 'accessRoleId'];
 
 function isBlank(value) {
   return typeof value !== 'string' || value.trim().length === 0;
+}
+
+function isTooShortPassword(value) {
+  return typeof value !== 'string' || value.length < MIN_PASSWORD_LENGTH;
 }
 
 function normalizeList(value) {
@@ -160,11 +165,11 @@ router.delete('/:id', auth, requireRoleManager, async (req, res) => {
       return res.status(400).json({ message: 'Systemrollen können nicht gelöscht werden' });
     }
 
-    const fallbackRole = await req.prisma.accessRole.findUnique({ where: { code: 'A' } });
-    await req.prisma.user.updateMany({
-      where: { accessRoleId: role.id },
-      data: { accessRoleId: fallbackRole?.id || null },
-    });
+    const assignedUsers = await req.prisma.user.count({ where: { accessRoleId: role.id } });
+    if (assignedUsers > 0) {
+      return res.status(400).json({ message: 'Rolle kann nicht geloescht werden, solange Benutzer zugeordnet sind' });
+    }
+
     await req.prisma.accessRole.delete({ where: { id: role.id } });
 
     await writeAuditLog(req, {
@@ -175,7 +180,7 @@ router.delete('/:id', auth, requireRoleManager, async (req, res) => {
       summary: `Rolle ${role.name} wurde gelöscht.`,
       severity: 'CRITICAL',
       before: pickFields(role, auditRoleFields),
-      metadata: { fallbackRoleId: fallbackRole?.id || null },
+      metadata: { assignedUsers },
     });
 
     res.json({ message: 'Rolle wurde gelöscht' });
@@ -226,6 +231,9 @@ router.post('/users', auth, requireRoleManager, async (req, res) => {
     const { name, email, password, department, accessRoleId } = req.body;
     if (isBlank(name) || isBlank(email) || isBlank(password)) {
       return res.status(400).json({ message: 'Name, E-Mail und Passwort sind erforderlich' });
+    }
+    if (isTooShortPassword(password)) {
+      return res.status(400).json({ message: 'Das Passwort muss mindestens 8 Zeichen lang sein' });
     }
 
     const existing = await req.prisma.user.findUnique({ where: { email: String(email).trim().toLowerCase() } });
