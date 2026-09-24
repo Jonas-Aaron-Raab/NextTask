@@ -4,8 +4,8 @@ skinparam defaultFontName Helvetica
 skinparam defaultFontSize 11
 skinparam ArrowColor #555555
 skinparam classAttributeIconSize 0
-skinparam nodesep 25
-skinparam ranksep 55
+skinparam nodesep 30
+skinparam ranksep 60
 skinparam class {
   BackgroundColor #F7F7F7
   BorderColor #333333
@@ -19,9 +19,88 @@ hide methods
 
 title D1 Informationsmodell NextTask: Kernentitaeten (Detailentitaeten in D1.3 und D1.4)
 
-package "Projekte und Berichtswesen" {
+package "Organisation und Zugang" as ORG {
+  class AccessRole {
+    code : Text {eindeutig}
+    kind : AccessRoleKindDT
+    businessAreas : Text[*]
+    departmentIds : Identifier[*]
+    permissions : PermissionSetDT
+    system : Boolean
+  }
+  class User {
+    email : Email {eindeutig}
+    name : Text
+    department : Text
+    role : UserRoleDT
+    authProvider : AuthProviderDT
+    twoFactorEnabled : Boolean
+  }
+  class Department {
+    code : Text {eindeutig} [0..1]
+    name : Text
+    businessArea : Text [0..1]
+    leadName : Text
+    memberCount : Integer
+  }
+  class DepartmentMember {
+    name : Text
+    roleLabel : Text [0..1]
+    order : Integer
+  }
+  class SsoLoginTicket {
+    tokenHash : Text {eindeutig}
+    expiresAt : Zeitstempel
+  }
+}
+
+package "Steuerung und Nachweis" as STG {
+  class ApprovalRequest {
+    entityType : ApprovalEntityTypeDT
+    entityId : Identifier
+    status : ApprovalStatusDT
+    evidence, decisionNote : Text [0..1]
+    requestedAt, decidedAt : Zeitstempel
+  }
+  class AuditLog {
+    action : Text
+    severity : SeverityDT
+    before, after : JSON [0..1]
+    actorName : Text
+    createdAt : Zeitstempel
+  }
+}
+
+package "Aufgaben" as AUF {
+  class Task {
+    title : Text
+    ticketNumber : Text [0..1]
+    status : TaskStatusDT
+    priority : PriorityDT
+    order : Integer
+    progress : Prozent
+    startDate, dueDate, endDate : Datum [0..1]
+    estimatedHours : Stunden [0..1]
+    approvalLevel : ApprovalLevelDT [0..1]
+    favoriteBy : Text[*]
+  }
+  class Comment {
+    content : Text
+  }
+  class CalendarSyncEvent {
+    provider : CalendarProviderDT
+    externalEventId : Text
+  }
+  class TaskMarker {
+    label : Text
+    color : Farbe
+    matchField : MatchFieldDT
+  }
+}
+
+package "Projekte und Berichtswesen" as PRJ {
   class Project {
-    key : Text (eindeutig)
+    key : Text {eindeutig}
     name : Text
     projectType, visibility, statusLabel : Text [0..1]
     plannedStart, plannedEnd : Datum [0..1]
@@ -64,120 +143,46 @@ package "Projekte und Berichtswesen" {
   }
 }
 
-package "Organisation und Zugang" {
-  class Department {
-    code : Text (eindeutig) [0..1]
-    name : Text
-    businessArea : Text [0..1]
-    leadName : Text
-    memberCount : Integer
-  }
-  class DepartmentMember {
-    name : Text
-    roleLabel : Text [0..1]
-    order : Integer
-  }
-  class AccessRole {
-    code : Text (eindeutig)
-    kind : AccessRoleKindDT
-    businessAreas : Text[*]
-    departmentIds : Identifier[*]
-    permissions : PermissionSetDT
-    system : Boolean
-  }
-  class User {
-    email : Email (eindeutig)
-    name : Text
-    department : Text
-    role : UserRoleDT
-    authProvider : AuthProviderDT
-    twoFactorEnabled : Boolean
-  }
-  class SsoLoginTicket {
-    tokenHash : Text (eindeutig)
-    expiresAt : Zeitstempel
-  }
-}
-
-package "Aufgaben" {
-  class Task {
-    title : Text
-    ticketNumber : Text [0..1]
-    status : TaskStatusDT
-    priority : PriorityDT
-    order : Integer
-    progress : Prozent
-    startDate, dueDate, endDate : Datum [0..1]
-    estimatedHours : Stunden [0..1]
-    approvalLevel : ApprovalLevelDT [0..1]
-    favoriteBy : Text[*]
-  }
-  class Comment {
-    content : Text
-  }
-  class TaskMarker {
-    label : Text
-    color : Farbe
-    matchField : MatchFieldDT
-  }
-  class CalendarSyncEvent {
-    provider : CalendarProviderDT
-    externalEventId : Text
-  }
-}
-
-package "Steuerung und Nachweis" {
-  class ApprovalRequest {
-    entityType : ApprovalEntityTypeDT
-    entityId : Identifier
-    status : ApprovalStatusDT
-    evidence, decisionNote : Text [0..1]
-    requestedAt, decidedAt : Zeitstempel
-  }
-  class AuditLog {
-    action : Text
-    severity : SeverityDT
-    before, after : JSON [0..1]
-    actorName : Text
-    createdAt : Zeitstempel
-  }
-}
+' Anordnung: oben Organisation und Steuerung, unten Aufgaben und Projekte
+ORG -[hidden]right- STG
+ORG -[hidden]down- AUF
+AUF -[hidden]right- PRJ
+STG -[hidden]down- PRJ
 
 ' Organisation
-AccessRole "0..1" -- "*" User : hat Zugriffsrolle
-User "1" *-- "*" SsoLoginTicket
-Department "1" *-- "*" DepartmentMember
-User "0..1" -- "*" Department : Leitung
-AccessRole "*" ..> "*" Department : departmentIds\n(lose Referenz)
+AccessRole "0..1" -right- "*" User : hat Zugriffsrolle
+User "1" *-down- "*" SsoLoginTicket
+Department "1" *-down- "*" DepartmentMember
+User "0..1" -right- "*" Department : Leitung
+AccessRole "*" .down.> "*" Department : departmentIds\n(lose Referenz)
 
-' Projekte
-User "1" -left- "*" Project : Eigentuemer
-Department "0..1" -- "*" Project : gehoert zu
-Project "1" *-- "*" ProjectMilestone
-Project "1" *-- "*" ProjectRisk
-Project "1" *-- "*" ProjectInterface
-Project "1" *-- "0..1" ProjectApproval
-Project "1" *-- "*" ProjectBudgetLine
-Project "1" *-- "*" ProjectStatusReport
+' Steuerung: zwei Assoziationen zu User
+User "1\nAnfragender" -[norank]- "*" ApprovalRequest
+ApprovalRequest "*" -[norank]- "0..1\nGenehmiger" User
 
 ' Aufgaben
-Project "1" *-- "*" Task
-User "0..1" -right- "*" Task : Bearbeiter
-Task "0..1" -- "*" Task : parentTask
-Task "1" *-- "*" Comment
-User "1" *-- "*" TaskMarker
-Task "*" ..> "0..1" TaskMarker : markerId\n(lose Referenz)
-Task "1" *-- "*" CalendarSyncEvent
+User "0..1" -down- "*" Task : Bearbeiter
+Task "0..1" -up- "*" Task : parentTask
+Task "1" *-down- "*" Comment
+Task "1" *-down- "*" CalendarSyncEvent
+Task "*" .down.> "0..1" TaskMarker : markerId\n(lose Referenz)
 
-' Steuerung
-ApprovalRequest "*" -- "1" User : Anfragender
-ApprovalRequest "*" -- "0..1" User : Genehmiger
+' Projekte: Eigentuemer von oben, Abteilung von links, Aufgaben von links
+User "1" -down- "*" Project : Eigentuemer
+Department "0..1" -- "*" Project : gehoert zu
+Task "*" -right-* "1" Project
+Project "1" *-down- "*" ProjectMilestone
+Project "1" *-down- "*" ProjectRisk
+Project "1" *-down- "*" ProjectInterface
+Project "1" *-down- "0..1" ProjectApproval
+Project "1" *-down- "*" ProjectBudgetLine
+Project "1" *-down- "*" ProjectStatusReport
 
 legend bottom right
-  Nicht gezeichnet (siehe Attributtabellen): Autor von Statusbericht
-  und Kommentar, Besitzer eines Kalenderabgleichs, Akteur eines
-  Audit-Eintrags (alle -> User). Die Detailentitaeten der Aufgabe
-  (Tags, Anhaenge, Compliance, ...) und die Dokumente stehen im
+  Nicht gezeichnet (siehe Attributtabellen): Besitzer eines Farbstreifens,
+  Autor von Statusbericht und Kommentar, Besitzer eines Kalenderabgleichs,
+  Akteur eines Audit-Eintrags (alle -> User). Die Detailentitaeten der
+  Aufgabe (Tags, Anhaenge, Compliance, ...) und die Dokumente stehen im
   zweiten Diagramm (D1.3, D1.4).
 end legend
 @enduml

@@ -90,7 +90,7 @@ Grobe Rolle eines Anwenders. Sie wird bei jeder Rollenzuordnung (UC-22) aus der 
 | `ADMIN` | `ADMIN` | |
 | `PROJECT_MANAGER` | `GBL` | |
 | `DEVELOPER` | `MEMBER` | Vorgabe bei Registrierung. |
-| `QA`, `DESIGNER`, `MARKETING` | — | Nur über die Registrierungsschnittstelle setzbar; in der Oberfläche nicht auswählbar. Verhalten wie `DEVELOPER`. |
+| `QA`, `DESIGNER`, `MARKETING` | — | Altwerte aus der ersten Projektphase, fachlich ohne Bedeutung. Nur über die Registrierungsschnittstelle setzbar, in der Oberfläche nicht auswählbar; Verhalten wie `DEVELOPER`. Bleiben im Enum, weil Bestandsdaten sie tragen. |
 
 ---
 
