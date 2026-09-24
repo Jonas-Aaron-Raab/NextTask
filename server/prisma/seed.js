@@ -155,6 +155,7 @@ async function ensureUser(name, rolesByCode, passwordHash) {
     where: { email: profile.email },
     update: {
       name,
+      password: passwordHash,
       role: profile.role,
       department: profile.department,
       accessRoleId: accessRole?.id || null,
