@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
     "start": "concurrently \"npm --prefix server start\" \"npm --prefix client run dev\"",
-    "test:api": "playwright test tests/approval-api.spec.js",
+    "test": "npm run test:api && npm run test:e2e",
+    "test:api": "playwright test tests/api tests/approval-api.spec.js",
     "test:e2e": "playwright test tests/smoke.spec.js"
   },
   "devDependencies": {
