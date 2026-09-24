@@ -1,10 +1,11 @@
 # B3 — Druckausgaben
 
-Druckausgaben nach Siedersleben (Kapitel 4.7): Dokumente, die NextTask für den Ausdruck oder die Weitergabe erzeugt. NextTask hat eine Druckausgabe, den Projektstatusbericht. Listen und Kennzahlen der Masken sind keine Druckausgaben; sie sind in [B1](B1-dialogspezifikation.md) beschrieben.
+Druckausgaben nach Siedersleben (Kapitel 4.7): Dokumente, die NextTask für den Ausdruck oder die Weitergabe erzeugt. NextTask hat zwei Druckausgaben: den Projektstatusbericht und den Abteilungsbericht. Listen und Kennzahlen der Masken sind keine Druckausgaben; sie sind in [B1](B1-dialogspezifikation.md) beschrieben.
 
 | ID | Druckausgabe | Erzeugt in | Format |
 |----|--------------|------------|--------|
 | [DR-01](#dr-01--projektstatusbericht) | Projektstatusbericht | DLG-07 Reports ([UC-10](F2-anwendungsfaelle.md#uc-10--statusbericht-als-pdf-ausgeben)) | PDF, DIN A4 hoch, drei Seiten |
+| [DR-02](#dr-02--abteilungsbericht) | Abteilungsbericht | DLG-07 Reports ([UC-26](F2-anwendungsfaelle.md#uc-26--abteilungsbericht-exportieren)) | PDF, DIN A4 hoch, Seitenzahl nach Inhalt; oder CSV |
 
 ---
 
@@ -65,12 +66,42 @@ Fünf der acht Erläuterungszeilen auf Seite 1 werden nicht aus den Notizfeldern
 
 ---
 
+## DR-02 — Abteilungsbericht
+
+Projekt-, Aufgaben- und Kontrollsicht einer Abteilung für einen Zeitraum, als Export aus dem Reiter *Abteilungsbericht* in DLG-07 ([UC-26](F2-anwendungsfaelle.md#uc-26--abteilungsbericht-exportieren)). Anders als DR-01 wird das PDF nicht aus einer HTML-Vorschau gerastert, sondern direkt gezeichnet: Text bleibt Text, und die Seitenzahl ergibt sich aus dem Inhalt.
+
+### PDF
+
+| Bereich | Inhalt |
+|---------|--------|
+| Kopf (jede Seite) | „Abteilungsbericht", Untertitel „Projekt-, Aufgaben- und Kontrollsicht"; Fuß mit „NextTask Abteilungsbericht", Erstellungsdatum und Seitenzahl |
+| Kopfkasten (Seite 1) | Abteilung (oder „Alle Abteilungen"), Zeitraum, Projektfilter, Erstellungsdatum, Anzahl Projekte |
+| Kennzahlen | Vier Kacheln: Offene Freigaben, Nachweise offen, Kritische Risiken, Erledigt |
+| Team-Auslastung | Zeile je Person: Name, Rolle, Auslastung in Prozent; sonst „Keine Teamdaten fuer den gewaehlten Zeitraum vorhanden." |
+| Projektübersicht | Tabelle je Projekt: Projekt, Owner, Fortschritt, Signal (Ampelwort), Offen (Anzahl), nächster Meilenstein; sonst „Keine Projekte" |
+| Aufgaben nach Projekt | Tabelle je Aufgabe: Projekt, Aufgabe, Status, Prio, Zuständig; sonst „Keine Aufgaben" |
+| Hinweis | Kasten mit dem Satz, dass der Bericht aus den aktuellen NextTask-Daten erzeugt wurde und den gespeicherten Stand abbildet |
+
+Reicht der Platz einer Seite nicht (ab 280 mm), wird die Seite mit Fußzeile abgeschlossen und der Kopf auf der neuen Seite wiederholt. Dateiname `abteilungsbericht-<abteilung>.pdf`, DIN A4 hoch.
+
+### CSV („Excel")
+
+Die Auswahl *Excel* erzeugt eine CSV-Datei (`text/csv`, UTF-8, Semikolon als Trenner, Werte in Anführungszeichen, Zeilenende CRLF): zuerst ein Vorspann mit „Abteilungsbericht", Abteilung, Zeitraum, Projektfilter und Erstellungsdatum, dann die Kopfzeile und je Aufgabe der gefilterten Projekte eine Zeile mit Abteilung, Projekt, Owner, Signal, Aufgabe, Status, Priorität, Zuständig und Fälligkeit. Ein Projekt ohne Aufgaben ergibt eine Zeile mit leeren Aufgabenfeldern. Excel öffnet die Datei direkt; eine Arbeitsmappe mit Formatierung ist es nicht. Dateiname `abteilungsbericht-<abteilung>.csv`.
+
+### Regeln
+
+- Beide Exporte nehmen dieselben Daten wie die Maske: Projekte mit Berichtsbasis und Aufgaben des Sichtbereichs aus der Organisationsübersicht, gefiltert nach Zeitraum, Abteilung und Projekt.
+- Umlaute in den festen Texten des PDF sind als `ue`, `ae` geschrieben (N1, Sprache).
+- Ohne Projekt im Filter ist der Export gesperrt.
+
+---
+
 ## Querverweise
 
 | Baustein | Bezug zu B3 |
 |----------|-------------|
 | [F1](F1-geschaeftsprozesse.md) | GP-01, Tätigkeit A6. |
-| [F2](F2-anwendungsfaelle.md) | UC-09 liefert die Bewertung, UC-10 erzeugt die Ausgabe. |
+| [F2](F2-anwendungsfaelle.md) | UC-08 liefert die Bewertung in der Berichtsbasis, UC-10 erzeugt DR-01, UC-26 erzeugt DR-02. |
 | [D1](D1-datenmodell.md), [D2](D2-datentypen.md) | Felder und Wertebereiche des Berichts. |
 | [B1](B1-dialogspezifikation.md) | DLG-07 (Aufruf), DLG-04 (Pflege der Berichtsbasis). |
 | [P1](P1-ziele-rahmenbedingungen.md) | G-04, SC-05, R-01. |

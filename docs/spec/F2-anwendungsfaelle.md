@@ -18,15 +18,16 @@ Die Spalte *Stand* im Index unterscheidet, ob ein Anwendungsfall vollständig be
 | [UC-04](#uc-04--zweiten-faktor-verwalten) | Zweiten Faktor verwalten | Konto | — | vollständig |
 | [UC-05](#uc-05--profil-pflegen) | Profil pflegen | Konto | — | vollständig |
 | [UC-06](#uc-06--abmelden) | Abmelden | Konto | — | vollständig |
-| [UC-07](#uc-07--projekt-anlegen) | Projekt anlegen | Projekte | GP-01 A2 | nur Server; Maske hält Projekte im Browser |
-| [UC-08](#uc-08--berichtsbasis-pflegen) | Berichtsbasis pflegen | Projekte | GP-01 A4 | nur Server; Maske hält Projekte im Browser |
-| [UC-09](#uc-09--statusbericht-erfassen) | Statusbericht erfassen | Projekte | GP-01 A5 | nur Server; Maske hält Berichte im Browser |
-| [UC-10](#uc-10--statusbericht-als-pdf-ausgeben) | Statusbericht als PDF ausgeben | Projekte | GP-01 A6 | nur Oberfläche, aus Daten im Browser |
-| [UC-11](#uc-11--aufgabe-anlegen) | Aufgabe anlegen | Aufgaben | GP-02 A2 | vollständig über Kalender; Board legt lokal an |
-| [UC-12](#uc-12--aufgabe-bearbeiten) | Aufgabe bearbeiten | Aufgaben | GP-02 A4 | vollständig für Aufgaben des Servers |
-| [UC-13](#uc-13--aufgabe-im-board-verschieben) | Aufgabe im Board verschieben | Aufgaben | GP-02 A4 | nur Server; Board verschiebt lokal |
+| [UC-07](#uc-07--projekt-anlegen) | Projekt anlegen | Projekte | GP-01 A2 | vollständig |
+| [UC-08](#uc-08--berichtsbasis-pflegen) | Berichtsbasis pflegen | Projekte | GP-01 A4 | vollständig |
+| [UC-09](#uc-09--statusbericht-erfassen) | Statusbericht erfassen | Projekte | GP-01 A5 | nur Server; die Maske schreibt die Bewertung in die Berichtsbasis |
+| [UC-10](#uc-10--statusbericht-als-pdf-ausgeben) | Statusbericht als PDF ausgeben | Projekte | GP-01 A6 | vollständig |
+| [UC-26](#uc-26--abteilungsbericht-exportieren) | Abteilungsbericht exportieren | Projekte | GP-01 A6 | vollständig |
+| [UC-11](#uc-11--aufgabe-anlegen) | Aufgabe anlegen | Aufgaben | GP-02 A2 | vollständig |
+| [UC-12](#uc-12--aufgabe-bearbeiten) | Aufgabe bearbeiten | Aufgaben | GP-02 A4 | vollständig |
+| [UC-13](#uc-13--aufgabe-verschieben-und-sortieren) | Aufgabe verschieben und sortieren | Aufgaben | GP-02 A4 | Backlog vollständig; Statuswechsel per Ziehen im Board nur Server |
 | [UC-14](#uc-14--aufgabe-terminieren) | Aufgabe terminieren | Aufgaben | GP-02 A4 | vollständig |
-| [UC-15](#uc-15--aufgabe-kommentieren) | Aufgabe kommentieren | Aufgaben | GP-02 A4 | nur Server; Masken halten Kommentare lokal |
+| [UC-15](#uc-15--aufgabe-kommentieren) | Aufgabe kommentieren | Aufgaben | GP-02 A4 | vollständig |
 | [UC-16](#uc-16--aufgabe-löschen) | Aufgabe löschen | Aufgaben | — | nur Server; keine Schaltfläche in der Oberfläche |
 | [UC-17](#uc-17--aufgabenübersicht-einsehen) | Aufgabenübersicht einsehen | Aufgaben | GP-02 | vollständig |
 | [UC-18](#uc-18--freigabe-anfragen) | Freigabe anfragen | Freigaben | GP-03 A2 | vollständig aus dem Ticket-Editor |
@@ -34,13 +35,15 @@ Die Spalte *Stand* im Index unterscheidet, ob ein Anwendungsfall vollständig be
 | [UC-20](#uc-20--freigabe-abbrechen) | Freigabe abbrechen | Freigaben | GP-03 A5' | nur Server; keine Schaltfläche in der Oberfläche |
 | [UC-21](#uc-21--rollen-pflegen) | Rollen pflegen | Verwaltung | — | vollständig |
 | [UC-22](#uc-22--benutzer-anlegen-und-zuordnen) | Benutzer anlegen und zuordnen | Verwaltung | — | vollständig |
+| [UC-27](#uc-27--abteilung-anlegen) | Abteilung anlegen | Verwaltung | — | vollständig |
 | [UC-23](#uc-23--audit-log-einsehen) | Audit-Log einsehen | Verwaltung | — | vollständig |
-| [UC-24](#uc-24--farbstreifen-pflegen) | Farbstreifen pflegen | Konto | — | vollständig, Laden in der Maske fehlerhaft (siehe B1) |
+| [UC-24](#uc-24--farbstreifen-pflegen) | Farbstreifen pflegen | Konto | — | vollständig |
 | [UC-25](#uc-25--kalender-verbinden) | Kalender verbinden | Konto | — | vollständig, Google-Zugang muss konfiguriert sein |
+| [UC-28](#uc-28--dokumente-einsehen) | Dokumente einsehen | Dokumente | — | vollständig, nur lesend |
 
 ![F2 Anwendungsfälle NextTask](diagrams-png/f2-anwendungsfaelle.png)
 
-Das Diagramm ordnet die Anwendungsfälle nach Paketen. Die drei Akteure Projektleitung, GBL und Administrator sind Spezialisierungen von Mitarbeiter: Sie können alles, was ein Mitarbeiter kann, und zusätzlich die an ihnen gezeichneten Fälle. Projektleitung ist keine Rolle im System, sondern die Person, die ein Projekt angelegt hat und damit sein Eigentümer ist. Die Beziehungen zwischen Anwendungsfällen:
+Das Diagramm ordnet die Anwendungsfälle nach Paketen. Die drei Akteure Projektleitung, GBL und Administrator sind Spezialisierungen von Mitarbeiter: Sie können alles, was ein Mitarbeiter kann, und zusätzlich die an ihnen gezeichneten Fälle. Projektleitung ist keine Rolle im System, sondern ein Anwender mit der Berechtigung „Projekte bearbeiten", der ein Projekt angelegt hat und damit sein Eigentümer ist. Der Abteilungsbericht (UC-26) und das Lesen der Dokumente (UC-28) stehen jedem Mitarbeiter offen; das Anlegen von Abteilungen (UC-27) dem Administrator. Die Beziehungen zwischen Anwendungsfällen:
 
 - **UC-02 `<<extend>>` UC-04:** Bei der ersten Anmeldung eines Kontos ohne zweiten Faktor bleibt es beim Passwort; der zweite Faktor wird in den Einstellungen eingerichtet. Danach verlangt jede Anmeldung den Code.
 - **UC-11 `<<extend>>` UC-12:** Nach dem Anlegen wird eine Aufgabe im selben Editor weiterbearbeitet.
@@ -151,7 +154,7 @@ Alle Anwendungsfälle außer UC-01, UC-02 und UC-03 setzen eine angemeldete Sitz
 
 ## F2.3 Projekte und Berichte
 
-Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Projekte" ([DLG-04](B1-dialogspezifikation.md#dlg-04--projekte-und-backlog)) hält Projekte und Berichtsbasis derzeit im Browser und ruft die Projektschnittstelle nicht auf; UC-10 arbeitet auf diesen Daten. Die Anbindung ist offene Entwicklungsarbeit (R-01).
+Die Berichtsbasis liegt seit dem Stand vom 23. September vollständig auf dem Server: Die Maske „Projekte" ([DLG-04](B1-dialogspezifikation.md#dlg-04--projekte-und-backlog)) legt Projekte über die Schnittstelle an und speichert alle Reiter des Projektdialogs mit einem Aufruf. Der Reiter „Status" schreibt die Bewertung dabei in die Berichtsbasis des Projekts; eigene Statusberichte je Stichtag (UC-09) erzeugt die Maske noch nicht.
 
 ### UC-07 — Projekt anlegen
 
@@ -159,14 +162,14 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 |-----------|--------|
 | **Kennung** | UC-07 |
 | **Name** | Projekt anlegen |
-| **Beschreibung** | Eine Projektleitung legt ein Projekt mit Stammdaten und optionaler Berichtsbasis an und wird sein Eigentümer. |
+| **Beschreibung** | Ein Anwender mit der Berechtigung „Projekte bearbeiten" legt in einer Abteilung seines Sichtbereichs ein Projekt mit Stammdaten und Berichtsbasis an und wird sein Eigentümer. |
 | **Auslöser** | Projektauftrag liegt vor (GP-01 A2). |
 | **Akteure** | Projektleitung (primär). |
-| **Vorbedingung** | Sitzung aktiv. |
-| **Nachbedingung** | `Project` mit eindeutigem Schlüssel und Eigentümer; Meilensteine, Risiken und Budgetpositionen angelegt, sofern übergeben. Audit `PROJECT_CREATED`. |
-| **Hauptszenario** | 1. Anwender öffnet „Neues Projekt" und füllt die Reiter Projektbasis, Status, Meilensteine, Risiken, Budget, Schnittstellen.<br>2. Anwender speichert.<br>3. System prüft, dass der Name gefüllt ist, erzeugt den Schlüssel ([AF-05](F3-anwendungsfunktionen.md#af-05--projektschlüssel-erzeugen)), übernimmt Fälligkeit aus dem geplanten Ende, legt Berichtsbasis-Zeilen an, deren Titel gefüllt ist, und setzt den Berichtszyklus auf monatlich, wenn keiner angegeben ist. |
-| **Ausnahmeszenarien** | *Name leer:* „Projektname ist erforderlich".<br>*Schlüssel bereits vergeben (nur bei manuell angegebenem Schlüssel):* Fehler beim Speichern. |
-| **Akzeptanzkriterien** | A1. Ein Projekt ohne angegebenen Schlüssel erhält einen Schlüssel nach AF-05.<br>A2. Berichtsbasis-Zeilen ohne Titel werden nicht angelegt.<br>A3. Der Anleger ist Eigentümer und sieht das Projekt in seiner Projektliste; andere Anwender sehen es dort nicht (AF-02). |
+| **Vorbedingung** | Berechtigung „Projekte bearbeiten" (AF-01); die gewählte Abteilung liegt im Sichtbereich (AF-02). |
+| **Nachbedingung** | `Project` mit eindeutigem Schlüssel, Eigentümer und Abteilung; Meilensteine, Risiken, Budgetpositionen, Schnittstellen und Freigabezeile angelegt, sofern übergeben. Audit `PROJECT_CREATED`. |
+| **Hauptszenario** | 1. Anwender öffnet „Neues Projekt" in [DLG-04](B1-dialogspezifikation.md#dlg-04--projekte-und-backlog) oder [DLG-05](B1-dialogspezifikation.md#dlg-05--meine-aufgaben) und füllt die Reiter Projektbasis, Status, Meilensteine, Risiken, Budget, Schnittstellen & Freigabe.<br>2. Anwender speichert.<br>3. System prüft Berechtigung und Sichtbereich der Abteilung, verlangt einen Namen, erzeugt den Schlüssel ([AF-05](F3-anwendungsfunktionen.md#af-05--projektschlüssel-erzeugen)), übernimmt Fälligkeit aus dem geplanten Ende, legt Zeilen der Berichtsbasis an, deren Titel gefüllt ist, und setzt den Berichtszyklus auf monatlich, wenn keiner angegeben ist.<br>4. Die Maske zeigt das neue Projekt in seiner Abteilung. |
+| **Ausnahmeszenarien** | *Name leer:* „Projektname ist erforderlich".<br>*Keine Berechtigung:* „Keine Berechtigung zum Erstellen von Projekten".<br>*Abteilung außerhalb des Sichtbereichs:* „Keine Berechtigung für diese Abteilung".<br>*Server lehnt ab oder ist nicht erreichbar:* Die Maske zeigt keine Meldung; das Projekt wird nicht angelegt (R-01). |
+| **Akzeptanzkriterien** | A1. Ein Projekt ohne angegebenen Schlüssel erhält einen Schlüssel nach AF-05.<br>A2. Berichtsbasis-Zeilen ohne Titel werden nicht angelegt.<br>A3. Ein Mitarbeiter mit Sichtbereich OR-ID kann kein Projekt in OR-IT anlegen.<br>A4. Das Projekt ist nach dem Neuladen der Maske weiterhin vorhanden; es liegt auf dem Server. |
 | **Qualitäten** | [NFR-15d-01](N1-nichtfunktional.md). |
 
 ### UC-08 — Berichtsbasis pflegen
@@ -175,14 +178,14 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 |-----------|--------|
 | **Kennung** | UC-08 |
 | **Name** | Berichtsbasis pflegen |
-| **Beschreibung** | Der Eigentümer aktualisiert Berichtskopf, Meilensteine, Risiken und Budgetpositionen seines Projekts. |
+| **Beschreibung** | Ein Anwender mit „Projekte bearbeiten" aktualisiert Stammdaten, Berichtskopf, Meilensteine, Risiken, Budgetpositionen, Schnittstellen und Freigabezeile eines Projekts in seinem Sichtbereich. |
 | **Auslöser** | Vor einem Berichtsstichtag oder bei Änderungen im Projekt (GP-01 A4). |
 | **Akteure** | Projektleitung (primär). |
-| **Vorbedingung** | Anwender ist Eigentümer des Projekts. |
+| **Vorbedingung** | Berechtigung „Projekte bearbeiten"; Projekt im Sichtbereich. |
 | **Nachbedingung** | Berichtsbasis ersetzt; Audit `PROJECT_REPORTING_UPDATED` mit Differenz der Kopfdaten. |
-| **Hauptszenario** | 1. Anwender öffnet „Projekt bearbeiten" und ändert die Reiter.<br>2. Anwender speichert.<br>3. System ersetzt die Listen Meilensteine, Risiken und Budgetpositionen vollständig durch die übergebenen Zeilen (Listen, die nicht übergeben werden, bleiben unverändert) und speichert die Kopfdaten in einer Transaktion. |
-| **Ausnahmeszenarien** | *Projekt gehört einem anderen Anwender oder existiert nicht:* „Projekt wurde nicht gefunden". |
-| **Akzeptanzkriterien** | A1. Nach dem Speichern enthält das Projekt genau die übergebenen Meilensteine in der übergebenen Reihenfolge.<br>A2. Ein Nicht-Eigentümer kann die Berichtsbasis nicht ändern, auch nicht mit Administratorrolle. |
+| **Hauptszenario** | 1. Anwender öffnet „Projekt bearbeiten" in [DLG-04](B1-dialogspezifikation.md#dlg-04--projekte-und-backlog) und ändert die Reiter.<br>2. Anwender speichert.<br>3. System prüft Berechtigung und Sichtbereich (auch für eine neu gewählte Abteilung), ersetzt die Listen Meilensteine, Risiken, Budgetpositionen und Schnittstellen vollständig durch die übergebenen Zeilen (Listen, die nicht übergeben werden, bleiben unverändert), aktualisiert die Freigabezeile und speichert die Kopfdaten in einer Transaktion. |
+| **Ausnahmeszenarien** | *Projekt außerhalb des Sichtbereichs oder nicht vorhanden:* „Projekt wurde nicht gefunden".<br>*Keine Berechtigung:* „Keine Berechtigung zum Bearbeiten von Projekten".<br>*Neue Abteilung außerhalb des Sichtbereichs:* „Keine Berechtigung für diese Abteilung". |
+| **Akzeptanzkriterien** | A1. Nach dem Speichern enthält das Projekt genau die übergebenen Meilensteine in der übergebenen Reihenfolge.<br>A2. Ein Anwender ohne „Projekte bearbeiten" kann die Berichtsbasis nicht ändern, auch nicht als Eigentümer.<br>A3. Eine GBL-Rolle für den Bereich OR kann Projekte aller drei OR-Abteilungen bearbeiten, ein Mitarbeiter OR-IT nur die seiner Abteilung. |
 | **Qualitäten** | [NFR-15d-01](N1-nichtfunktional.md). Statuswerte werden nicht geprüft (R-06). |
 
 ### UC-09 — Statusbericht erfassen
@@ -191,13 +194,14 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 |-----------|--------|
 | **Kennung** | UC-09 |
 | **Name** | Statusbericht erfassen |
-| **Beschreibung** | Der Eigentümer hält die Bewertung des Projekts zum Stichtag fest: Ampeln, Fortschritt, Erläuterungen, nächste Schritte, Ist-Werte. |
+| **Beschreibung** | Ein Anwender mit „Reports sehen" hält die Bewertung eines Projekts zum Stichtag als eigenen Datensatz fest: Ampeln, Fortschritt, Erläuterungen, nächste Schritte, Ist-Werte. |
 | **Auslöser** | Berichtsstichtag (GP-01 A5). |
 | **Akteure** | Projektleitung (primär). |
-| **Vorbedingung** | Anwender ist Eigentümer des Projekts. |
+| **Vorbedingung** | Berechtigung „Reports sehen"; Projekt im Sichtbereich. |
 | **Nachbedingung** | Neuer `ProjectStatusReport` mit Autor; Audit `PROJECT_STATUS_REPORT_CREATED`. Frühere Berichte bleiben erhalten. |
-| **Hauptszenario** | 1. Anwender füllt den Reiter Status: Fortschritt in Prozent, Ampeln für Ziel, Termine, Ressourcen, Budget, Erläuterungen, nächste Schritte, Ist-Aufwand, Ist-Budget, Berichtsversion.<br>2. Anwender speichert den Bericht.<br>3. System legt den Bericht mit Stichtag (Vorgabe: jetzt) und dem Anwender als Autor an. |
-| **Ausnahmeszenarien** | *Projekt gehört einem anderen Anwender:* „Projekt wurde nicht gefunden". |
+| **Hauptszenario** | 1. Anwender übergibt Stichtag (Vorgabe: jetzt), Fortschritt in Prozent, Ampeln für Ziel, Termine, Ressourcen, Budget, Erläuterungen, nächste Schritte, Ist-Aufwand, Ist-Budget, Berichtsversion.<br>2. System legt den Bericht mit dem Anwender als Autor an. |
+| **Alternativszenarien** | *Bewertung im Projektdialog, Reiter Status:* Die Maske schreibt Fortschritt, Ampeln und Notizen in die Berichtsbasis des Projekts (UC-08) statt einen eigenen Stichtagsdatensatz anzulegen; der Statusbericht (UC-10) liest diese Werte. Der Aufruf dieses Anwendungsfalls aus der Oberfläche ist offen. |
+| **Ausnahmeszenarien** | *Projekt außerhalb des Sichtbereichs:* „Projekt wurde nicht gefunden".<br>*Keine Berechtigung:* „Keine Berechtigung für Statusberichte". |
 | **Akzeptanzkriterien** | A1. Jeder gespeicherte Bericht ist ein eigener Datensatz; zwei Berichte am selben Tag sind möglich.<br>A2. Der Bericht trägt den Anwender als Autor. |
 | **Qualitäten** | [NFR-15d-01](N1-nichtfunktional.md). |
 
@@ -210,16 +214,34 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 | **Beschreibung** | Anwender erzeugt aus einem Projekt den dreiseitigen Statusbericht im Format der Sparkasse und lädt ihn als PDF herunter. |
 | **Auslöser** | Bericht soll verteilt oder besprochen werden (GP-01 A6). |
 | **Akteure** | Projektleitung (primär). |
-| **Vorbedingung** | Projekt mit Berichtsbasis liegt in der Maske „Reports" vor. |
+| **Vorbedingung** | Projekt mit Berichtsbasis im Sichtbereich des Anwenders. |
 | **Nachbedingung** | PDF-Datei `statusbericht-<projekt>.pdf` im Download-Ordner des Anwenders. Kein Datensatz, kein Audit-Eintrag. |
-| **Hauptszenario** | 1. Anwender wählt in „Reports" ([DLG-07](B1-dialogspezifikation.md#dlg-07--reports)) das Projekt und „Statusbericht erstellen".<br>2. System zeigt die Vorschau ([DR-01](B3-druckausgaben.md#dr-01--projektstatusbericht)).<br>3. Anwender wählt „PDF herunterladen".<br>4. System rendert drei Seiten im Browser und startet den Download. |
-| **Ausnahmeszenarien** | *Kein Projekt vorhanden:* „Kein Projekt fuer einen Statusbericht verfuegbar." |
-| **Akzeptanzkriterien** | A1. Das PDF hat drei Seiten mit Seitenzähler „Seite x von 3".<br>A2. Ampelwerte, Meilensteine, Risiken und Budget im PDF stimmen mit den Daten des gewählten Projekts überein.<br>A3. Die Erzeugung braucht keine Verbindung zum Server. |
-| **Qualitäten** | Layout in [B3](B3-druckausgaben.md). Datenquelle sind die Projekte im Browser (R-01). |
+| **Hauptszenario** | 1. Anwender wählt in „Reports" ([DLG-07](B1-dialogspezifikation.md#dlg-07--reports)) das Projekt und „Statusbericht erstellen".<br>2. System zeigt die Vorschau aus Projekt und Berichtsbasis vom Server ([DR-01](B3-druckausgaben.md#dr-01--projektstatusbericht)).<br>3. Anwender wählt „PDF herunterladen".<br>4. System rendert drei Seiten im Browser und startet den Download. |
+| **Ausnahmeszenarien** | *Kein Projekt im Sichtbereich:* „Kein Projekt fuer einen Statusbericht verfuegbar." |
+| **Akzeptanzkriterien** | A1. Das PDF hat drei Seiten mit Seitenzähler „Seite x von 3".<br>A2. Ampelwerte, Meilensteine, Risiken und Budget im PDF stimmen mit der Berichtsbasis des Projekts auf dem Server überein.<br>A3. Die Erzeugung selbst braucht keine Verbindung zum Server; nur das Laden der Daten. |
+| **Qualitäten** | Layout in [B3](B3-druckausgaben.md). |
+
+### UC-26 — Abteilungsbericht exportieren
+
+| Abschnitt | Inhalt |
+|-----------|--------|
+| **Kennung** | UC-26 |
+| **Name** | Abteilungsbericht exportieren |
+| **Beschreibung** | Anwender exportiert Kennzahlen, Team-Auslastung, Projekte und Aufgaben einer Abteilung als PDF oder als CSV-Datei. |
+| **Auslöser** | Bericht für die Abteilungsleitung oder den Lenkungskreis (GP-01 A6). |
+| **Akteure** | Projektleitung, GBL (primär). |
+| **Vorbedingung** | Mindestens ein Projekt im gewählten Filter. |
+| **Nachbedingung** | Datei `abteilungsbericht-<abteilung>.pdf` oder `.csv` im Download-Ordner. Kein Datensatz, kein Audit-Eintrag. |
+| **Hauptszenario** | 1. Anwender wählt in [DLG-07](B1-dialogspezifikation.md#dlg-07--reports), Reiter Abteilungsbericht, Zeitraum, Abteilung, Projektfilter und Exportformat.<br>2. Anwender wählt „Als PDF/Excel exportieren".<br>3. System erzeugt die Datei im Browser aus den geladenen Daten ([DR-02](B3-druckausgaben.md#dr-02--abteilungsbericht)) und startet den Download. |
+| **Ausnahmeszenarien** | *Keine Projekte im Filter:* Schaltfläche gesperrt. |
+| **Akzeptanzkriterien** | A1. Die CSV-Datei enthält je Aufgabe der gefilterten Projekte eine Zeile mit Abteilung, Projekt, Aufgabe, Status, Priorität, Zuständigkeit und Fälligkeit und lässt sich in Excel öffnen.<br>A2. Das PDF trägt Kopfzeile, Seitenzahl und dieselben Kennzahlen wie die Maske. |
+| **Qualitäten** | Layout in [B3](B3-druckausgaben.md). Das Format „Excel" ist eine CSV-Datei, keine Arbeitsmappe (DR-02). |
 
 ---
 
 ## F2.4 Aufgaben
+
+Alle Anwendungsfälle dieser Gruppe verlangen die Berechtigung „Aufgaben bearbeiten" (AF-01), außer dem Einsehen (UC-17). Der Server bearbeitet nur Aufgaben, deren Projekt im Sichtbereich des Anwenders liegt (AF-02); eine Aufgabe außerhalb wird mit „Aufgabe wurde nicht gefunden" beantwortet, als gäbe es sie nicht.
 
 ### UC-11 — Aufgabe anlegen
 
@@ -227,15 +249,15 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 |-----------|--------|
 | **Kennung** | UC-11 |
 | **Name** | Aufgabe anlegen |
-| **Beschreibung** | Anwender legt in einem Projekt eine neue Aufgabe an, optional mit Bearbeiter, Frist und Freigabestufe. |
+| **Beschreibung** | Anwender legt in einem Projekt eine neue Aufgabe an, optional mit Bearbeiter, Frist, Aufwand, Freigabestufe und den Detailangaben des Ticket-Editors. |
 | **Auslöser** | Arbeitsbedarf erkannt (GP-02 A2). |
 | **Akteure** | Anwender (primär); SMTP-Mailserver, Google Calendar (unterstützend). |
-| **Vorbedingung** | Sitzung aktiv; Projekt existiert. |
-| **Nachbedingung** | `Task` mit Status nach AF-04 am Ende seiner Spalte; Audit `TASK_CREATED`; Bearbeiter benachrichtigt und Termin angelegt, sofern zutreffend. |
-| **Hauptszenario** | 1. Anwender wählt „Neue Aufgabe" im Kalender ([DLG-06](B1-dialogspezifikation.md#dlg-06--kalender)) oder im Board ([DLG-05](B1-dialogspezifikation.md#dlg-05--meine-aufgaben)).<br>2. Anwender gibt Titel und Projekt an; optional Beschreibung, Status, Priorität, Bearbeiter, Beginn, Frist, Ende, Aufwand, Abteilung, Farbstreifen, Freigabestufe.<br>3. System normalisiert die Eingaben ([AF-04](F3-anwendungsfunktionen.md#af-04--status-priorität-und-eingaben-normalisieren)), setzt die Position ans Ende der Spalte und speichert.<br>4. System benachrichtigt den Bearbeiter ([AF-09](F3-anwendungsfunktionen.md#af-09--benachrichtigung-per-e-mail)) und gleicht den Kalender ab ([AF-08](F3-anwendungsfunktionen.md#af-08--kalenderabgleich)). |
-| **Alternativszenarien** | *Anlegen im Board:* Die Aufgabe entsteht zunächst nur im Browser und wird erst mit dem Server abgeglichen, wenn sie zu einem Projekt des Servers gehört (R-01). |
-| **Ausnahmeszenarien** | *Titel leer:* Die Oberfläche lässt das Anlegen nicht zu.<br>*Projekt unbekannt:* Fehler beim Speichern, Meldung „Fehler beim Erstellen der Task". |
-| **Akzeptanzkriterien** | A1. Eine mit Status „review" angelegte Aufgabe hat den Status `QA`.<br>A2. Zwei nacheinander angelegte Aufgaben derselben Spalte haben aufsteigende Positionen.<br>A3. Bei Bearbeiter mit aktivierten Benachrichtigungen und konfiguriertem Versand geht genau eine Mail „Neues Ticket für dich" heraus. |
+| **Vorbedingung** | Berechtigung „Aufgaben bearbeiten"; Projekt im Sichtbereich. |
+| **Nachbedingung** | `Task` mit Status nach AF-04 am Ende seiner Spalte, mit Tags, Personen, Anhängen, Compliance und Audit-Spur, sofern übergeben; Audit `TASK_CREATED`; Bearbeiter benachrichtigt und Termin angelegt, sofern zutreffend. |
+| **Hauptszenario** | 1. Anwender wählt „Neue Aufgabe" im Board ([DLG-05](B1-dialogspezifikation.md#dlg-05--meine-aufgaben)) oder im Kalender ([DLG-06](B1-dialogspezifikation.md#dlg-06--kalender)).<br>2. Anwender gibt Titel und Projekt an; optional Beschreibung, Status, Priorität, Bearbeiter, Beginn, Frist, Ende, Aufwand, Freigabestufe und im Board die weiteren Reiter.<br>3. System prüft Berechtigung und Sichtbereich, normalisiert die Eingaben ([AF-04](F3-anwendungsfunktionen.md#af-04--status-priorität-und-eingaben-normalisieren)), setzt die Position ans Ende der Spalte, speichert Aufgabe und Detailentitäten.<br>4. System benachrichtigt den Bearbeiter ([AF-09](F3-anwendungsfunktionen.md#af-09--benachrichtigung-per-e-mail)) und gleicht den Kalender ab ([AF-08](F3-anwendungsfunktionen.md#af-08--kalenderabgleich)).<br>5. Die Maske zeigt die Aufgabe erst nach der Bestätigung des Servers. |
+| **Alternativszenarien** | *Anlegen im Kalender:* Das Projekt wird über den Projektnamen einer bereits geladenen Aufgabe bestimmt; gibt es im Sichtbereich noch keine Aufgabe dieses Projekts, wird nichts angelegt. |
+| **Ausnahmeszenarien** | *Titel leer:* Die Oberfläche lässt das Anlegen nicht zu.<br>*Keine Berechtigung:* „Keine Berechtigung zum Erstellen von Aufgaben".<br>*Projekt außerhalb des Sichtbereichs:* „Projekt wurde nicht gefunden".<br>*Server lehnt ab oder ist nicht erreichbar:* Board und Kalender zeigen keine Meldung; die Aufgabe entsteht nicht (R-01). |
+| **Akzeptanzkriterien** | A1. Eine mit Status „review" angelegte Aufgabe hat den Status `QA`; eine mit Priorität „hoch" den Wert `HIGH`.<br>A2. Zwei nacheinander angelegte Aufgaben derselben Spalte haben aufsteigende Positionen.<br>A3. Bei Bearbeiter mit aktivierten Benachrichtigungen und konfiguriertem Versand geht genau eine Mail „Neues Ticket für dich" heraus.<br>A4. Ein Mitarbeiter OR-ID kann keine Aufgabe in einem OR-IT-Projekt anlegen. |
 | **Qualitäten** | [NFR-12d-01](N1-nichtfunktional.md) Unabhängigkeit von Nachbarsystemen. |
 
 ### UC-12 — Aufgabe bearbeiten
@@ -244,32 +266,33 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 |-----------|--------|
 | **Kennung** | UC-12 |
 | **Name** | Aufgabe bearbeiten |
-| **Beschreibung** | Anwender ändert Felder einer Aufgabe im Ticket-Editor. Eine gesetzte Freigabestufe löst eine Freigabeanfrage aus. |
+| **Beschreibung** | Anwender ändert Felder und Detailangaben einer Aufgabe im Ticket-Editor oder markiert sie als Favorit. Eine gesetzte Freigabestufe löst eine Freigabeanfrage aus. |
 | **Auslöser** | Aufgabe muss angepasst werden (GP-02 A4). |
 | **Akteure** | Anwender (primär); SMTP-Mailserver, Google Calendar (unterstützend). |
-| **Vorbedingung** | Aufgabe existiert. |
-| **Nachbedingung** | Aufgabe gespeichert; Audit `TASK_UPDATED` mit Differenz; bei geändertem Bearbeiter Mail und Kalenderabgleich; bei neuer Freigabestufe eine Freigabeanfrage (UC-18). |
-| **Hauptszenario** | 1. Anwender öffnet die Aufgabe im Board ([DLG-05](B1-dialogspezifikation.md#dlg-05--meine-aufgaben)) oder im Backlog ([DLG-04](B1-dialogspezifikation.md#dlg-04--projekte-und-backlog)).<br>2. Anwender ändert Titel, Beschreibung, Status, Priorität, Frist, Aufwand, Bearbeiter, Farbstreifen oder Freigabestufe und speichert.<br>3. System normalisiert ([AF-04](F3-anwendungsfunktionen.md#af-04--status-priorität-und-eingaben-normalisieren)), speichert, schreibt den Audit-Eintrag ([AF-07](F3-anwendungsfunktionen.md#af-07--audit-eintrag-mit-differenz-schreiben)).<br>4. Hat sich der Bearbeiter geändert, sendet das System „Ticket neu zugewiesen" und gleicht den Kalender ab.<br>5. Ist die Freigabestufe neu gesetzt und existiert noch keine Anfrage, erzeugt die Oberfläche eine Freigabeanfrage (UC-18).<br><br>![UC-12 Aufgabe bearbeiten](diagrams-png/f2-uc12-aufgabe-bearbeiten.png) |
-| **Alternativszenarien** | *Aufgabe liegt nur im Browser:* Änderungen werden lokal gespeichert, kein Serveraufruf (R-01). |
-| **Ausnahmeszenarien** | *Titel leer:* Speichern nicht möglich.<br>*Server nicht erreichbar:* Änderung bleibt im Browser; keine Meldung. |
-| **Akzeptanzkriterien** | A1. Der Audit-Eintrag enthält für jedes geänderte Feld alten und neuen Wert und keine unveränderten Felder.<br>A2. Bleibt der Bearbeiter gleich, wird keine Mail gesendet.<br>A3. Wird der Bearbeiter entfernt, verschwindet der Termin aus seinem Kalender. |
-| **Qualitäten** | [NFR-15d-01](N1-nichtfunktional.md). Keine Berechtigungsprüfung auf Projektebene ([N2](N2-querschnittskonzepte.md)). |
+| **Vorbedingung** | Berechtigung „Aufgaben bearbeiten"; Aufgabe im Sichtbereich. |
+| **Nachbedingung** | Aufgabe und Detailentitäten gespeichert; Audit `TASK_UPDATED` mit Differenz; bei geändertem Bearbeiter Mail und Kalenderabgleich; bei neuer Freigabestufe eine Freigabeanfrage (UC-18). |
+| **Hauptszenario** | 1. Anwender öffnet die Aufgabe im Board ([DLG-05](B1-dialogspezifikation.md#dlg-05--meine-aufgaben)) oder im Backlog ([DLG-04](B1-dialogspezifikation.md#dlg-04--projekte-und-backlog)).<br>2. Anwender ändert Titel, Beschreibung, Status, Priorität, Frist, Aufwand, Bearbeiter, Farbstreifen, Freigabestufe, Projekt, übergeordnete Aufgabe oder die Reiter Dateien, Organisation, Banking Ready, Audit-Spur und speichert.<br>3. System prüft Berechtigung und Sichtbereich, bei Projektwechsel auch den des Zielprojekts, normalisiert ([AF-04](F3-anwendungsfunktionen.md#af-04--status-priorität-und-eingaben-normalisieren)), speichert die Aufgabe und ersetzt die übergebenen Listen (Tags, Personen, Anhänge, Audit-Spur) vollständig, schreibt den Audit-Eintrag ([AF-07](F3-anwendungsfunktionen.md#af-07--audit-eintrag-mit-differenz-schreiben)).<br>4. Hat sich der Bearbeiter geändert, sendet das System „Ticket neu zugewiesen" und gleicht den Kalender ab.<br>5. Ist die Freigabestufe neu gesetzt und existiert noch keine Anfrage, erzeugt die Oberfläche eine Freigabeanfrage (UC-18).<br>6. Die Maske übernimmt die Antwort des Servers in die Anzeige.<br><br>![UC-12 Aufgabe bearbeiten](diagrams-png/f2-uc12-aufgabe-bearbeiten.png) |
+| **Alternativszenarien** | *Favorit setzen oder aufheben (Backlog):* Der Stern schreibt `favoriteBy` und die Rücksprungposition; die Aufgabe wird für diesen Anwender oben einsortiert. |
+| **Ausnahmeszenarien** | *Titel leer:* Speichern nicht möglich.<br>*Keine Berechtigung:* „Keine Berechtigung zum Bearbeiten von Aufgaben".<br>*Zielprojekt außerhalb des Sichtbereichs:* „Keine Berechtigung für das Zielprojekt".<br>*Server nicht erreichbar:* Die Änderung wird verworfen; die Anzeige bleibt beim alten Stand. |
+| **Akzeptanzkriterien** | A1. Der Audit-Eintrag enthält für jedes geänderte Feld alten und neuen Wert und keine unveränderten Felder.<br>A2. Bleibt der Bearbeiter gleich, wird keine Mail gesendet.<br>A3. Wird der Bearbeiter entfernt, verschwindet der Termin aus seinem Kalender.<br>A4. Ein Favorit bleibt nach dem Neuladen erhalten und ist für andere Anwender kein Favorit. |
+| **Qualitäten** | [NFR-15d-01](N1-nichtfunktional.md). |
 
-### UC-13 — Aufgabe im Board verschieben
+### UC-13 — Aufgabe verschieben und sortieren
 
 | Abschnitt | Inhalt |
 |-----------|--------|
 | **Kennung** | UC-13 |
-| **Name** | Aufgabe im Board verschieben |
-| **Beschreibung** | Anwender zieht eine Aufgabe in eine andere Spalte oder an eine andere Position und ändert damit Status und Reihenfolge. |
-| **Auslöser** | Bearbeitungsstand ändert sich (GP-02 A4). |
+| **Name** | Aufgabe verschieben und sortieren |
+| **Beschreibung** | Anwender ändert die Reihenfolge der Aufgaben eines Projekts durch Ziehen im Backlog oder den Status einer Aufgabe durch Verschieben in eine andere Spalte. |
+| **Auslöser** | Priorisierung oder Bearbeitungsstand ändert sich (GP-02 A4). |
 | **Akteure** | Anwender (primär). |
-| **Vorbedingung** | Aufgabe existiert. |
-| **Nachbedingung** | Status und Position gespeichert; Audit `TASK_MOVED` (`WARNING` bei Ziel `BLOCKED`, sonst `INFO`). |
-| **Hauptszenario** | 1. Anwender zieht die Karte in die Zielspalte an die gewünschte Stelle.<br>2. System setzt Status (nach [D2.3](D2-datentypen.md#d23-taskstatusdt)) und Position. |
-| **Alternativszenarien** | *Board hält die Aufgabe nur im Browser:* Die Verschiebung wird lokal gespeichert; der Server wird nicht aufgerufen (R-01). Das Board erlaubt derzeit das Umsortieren der Spalten, nicht das Ziehen einzelner Karten; Statuswechsel erfolgen über den Editor (UC-12). |
-| **Akzeptanzkriterien** | A1. Jeder Statuswechsel ist als eigener Audit-Eintrag mit altem und neuem Status nachvollziehbar.<br>A2. Ein Wechsel nach `BLOCKED` ist im Audit-Log als Prüffall gekennzeichnet. |
-| **Qualitäten** | Keine Einschränkung der Übergänge ([D2.3](D2-datentypen.md#d23-taskstatusdt)). |
+| **Vorbedingung** | Berechtigung „Aufgaben bearbeiten"; Projekt bzw. Aufgabe im Sichtbereich. |
+| **Nachbedingung** | Positionen bzw. Status gespeichert; Audit `TASKS_REORDERED` (`INFO`) bzw. `TASK_MOVED` (`WARNING` bei Ziel `BLOCKED`, sonst `INFO`). |
+| **Hauptszenario (Backlog sortieren)** | 1. Anwender zieht im Backlog ([DLG-04](B1-dialogspezifikation.md#dlg-04--projekte-und-backlog)) eine Zeile an eine andere Stelle.<br>2. Die Maske sendet die vollständige neue Reihenfolge der Aufgabenkennungen.<br>3. System prüft, dass alle Aufgaben zum Projekt gehören und im Sichtbereich liegen, schreibt die Positionen in einer Transaktion und protokolliert die alte und neue Reihenfolge ([AF-12](F3-anwendungsfunktionen.md#af-12--backlog-reihenfolge-setzen)). |
+| **Alternativszenarien** | *Status durch Verschieben in eine Spalte:* Die Schnittstelle nimmt Zielstatus und Position an und setzt beide (nach [D2.3](D2-datentypen.md#d23-taskstatusdt)). Das Board erlaubt derzeit nur das Umsortieren der Spalten, nicht das Ziehen einzelner Karten; Statuswechsel laufen über den Editor (UC-12). |
+| **Ausnahmeszenarien** | *Suche oder Filter aktiv:* Sortieren ist im Backlog gesperrt („Sortieren ist pausiert …").<br>*Eine der Aufgaben liegt außerhalb des Sichtbereichs:* „Keine Berechtigung fuer alle Aufgaben in dieser Reihenfolge".<br>*Server nicht erreichbar:* Die Reihenfolge wird nicht gespeichert; die Anzeige bleibt beim alten Stand. |
+| **Akzeptanzkriterien** | A1. Nach dem Neuladen der Maske entspricht die Reihenfolge im Backlog der gezogenen Reihenfolge.<br>A2. Der Audit-Eintrag `TASKS_REORDERED` enthält die Kennungen in neuer Reihenfolge.<br>A3. Ein Wechsel nach `BLOCKED` ist im Audit-Log als Prüffall gekennzeichnet. |
+| **Qualitäten** | Keine Einschränkung der Übergänge ([D2.3](D2-datentypen.md#d23-taskstatusdt)). Die Anzeige im Backlog übernimmt die neue Reihenfolge erst nach dem Neuladen (B1.5). |
 
 ### UC-14 — Aufgabe terminieren
 
@@ -280,11 +303,10 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 | **Beschreibung** | Anwender verschiebt die Frist einer Aufgabe im Kalender durch Ziehen auf einen anderen Tag. |
 | **Auslöser** | Termin muss angepasst werden (GP-02 A4). |
 | **Akteure** | Anwender (primär); Google Calendar (unterstützend). |
-| **Vorbedingung** | Aufgabe existiert und ist im Kalender sichtbar (AF-02). |
+| **Vorbedingung** | Berechtigung „Aufgaben bearbeiten"; Aufgabe im Sichtbereich (AF-02). |
 | **Nachbedingung** | Beginn, Frist oder Ende gespeichert; Audit `TASK_SCHEDULED`; Kalendertermin des Bearbeiters aktualisiert. |
-| **Hauptszenario** | 1. Anwender zieht die Aufgabe im Kalender ([DLG-06](B1-dialogspezifikation.md#dlg-06--kalender)) auf einen anderen Tag.<br>2. System speichert die neuen Daten und gleicht den Kalender ab ([AF-08](F3-anwendungsfunktionen.md#af-08--kalenderabgleich)). |
-| **Alternativszenarien** | *Aufgabe stammt aus den Beispieldaten des Browsers:* Die Verschiebung wird nur im Browser gehalten. |
-| **Ausnahmeszenarien** | *Server nicht erreichbar:* Die Verschiebung wird im Browser gemerkt und beim nächsten erfolgreichen Speichern verworfen. |
+| **Hauptszenario** | 1. Anwender zieht die Aufgabe im Kalender ([DLG-06](B1-dialogspezifikation.md#dlg-06--kalender)) auf einen anderen Tag.<br>2. System speichert die neuen Daten und gleicht den Kalender ab ([AF-08](F3-anwendungsfunktionen.md#af-08--kalenderabgleich)).<br>3. Die Maske zeigt die Karte am neuen Tag, sobald der Server bestätigt hat. |
+| **Ausnahmeszenarien** | *Keine Berechtigung:* „Keine Berechtigung zum Planen von Aufgaben".<br>*Server lehnt ab oder ist nicht erreichbar:* Die Karte springt auf den alten Tag zurück. |
 | **Akzeptanzkriterien** | A1. Nach dem Verschieben zeigt der Kalender die Aufgabe am neuen Tag, auch nach Neuladen der Seite.<br>A2. Der Termin im Google-Kalender des Bearbeiters trägt das neue Datum. |
 | **Qualitäten** | [NFR-12d-01](N1-nichtfunktional.md). |
 
@@ -297,10 +319,10 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 | **Beschreibung** | Anwender schreibt einen Kommentar zu einer Aufgabe; erwähnte Personen werden benachrichtigt. |
 | **Auslöser** | Rückfrage, Hinweis oder Abstimmung zur Aufgabe (GP-02 A4). |
 | **Akteure** | Anwender (primär); SMTP-Mailserver (unterstützend). |
-| **Vorbedingung** | Aufgabe existiert. |
+| **Vorbedingung** | Aufgabe im Sichtbereich. |
 | **Nachbedingung** | `Comment` mit Autor und Zeitpunkt; Audit `COMMENT_CREATED`; Mail an erwähnte Anwender. |
-| **Hauptszenario** | 1. Anwender öffnet den Reiter Kommentare im Ticket-Editor und schreibt den Text, optional mit `@Name`.<br>2. System speichert den Kommentar und sendet an jeden erwähnten Anwender außer dem Verfasser eine Mail ([AF-09](F3-anwendungsfunktionen.md#af-09--benachrichtigung-per-e-mail)). |
-| **Alternativszenarien** | *Kommentar im Board oder Backlog:* Wird derzeit nur im Browser gehalten (R-01); die Serverfunktion ist über die Schnittstelle nutzbar. |
+| **Hauptszenario** | 1. Anwender öffnet den Reiter Kommentare im Ticket-Editor ([DLG-05](B1-dialogspezifikation.md#dlg-05--meine-aufgaben)) und schreibt den Text, optional mit `@Name`.<br>2. System speichert den Kommentar und sendet an jeden erwähnten Anwender außer dem Verfasser eine Mail ([AF-09](F3-anwendungsfunktionen.md#af-09--benachrichtigung-per-e-mail)).<br>3. Der Kommentar erscheint mit Autor und Zeitpunkt in der Liste. |
+| **Ausnahmeszenarien** | *Aufgabe außerhalb des Sichtbereichs:* „Aufgabe wurde nicht gefunden". |
 | **Akzeptanzkriterien** | A1. Kommentare werden in zeitlicher Reihenfolge angezeigt und können nicht geändert werden.<br>A2. „@Mara Stein" im Text führt zu genau einer Mail an Mara Stein, sofern sie Benachrichtigungen aktiviert hat; der Verfasser erhält keine. |
 | **Qualitäten** | [NFR-12d-01](N1-nichtfunktional.md). |
 
@@ -310,9 +332,9 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 |-----------|--------|
 | **Kennung / Name** | UC-16 Aufgabe löschen |
 | **Beschreibung** | Eine gegenstandslose Aufgabe wird mit Kommentaren und Kalenderverknüpfungen entfernt; Termine im Google-Kalender werden vorher gelöscht ([AF-08](F3-anwendungsfunktionen.md#af-08--kalenderabgleich)). Nur über die Schnittstelle ausführbar; die Oberfläche hat derzeit keine Schaltfläche (B1.5). |
-| **Vor- / Nachbedingung** | Aufgabe existiert → Aufgabe, Kommentare, Kalenderverknüpfungen gelöscht; Audit `TASK_DELETED` (`WARNING`) mit dem gelöschten Zustand. |
+| **Vor- / Nachbedingung** | Berechtigung „Aufgaben bearbeiten"; Aufgabe im Sichtbereich (AF-02) → Aufgabe, Kommentare, Kalenderverknüpfungen gelöscht; Audit `TASK_DELETED` (`WARNING`) mit dem gelöschten Zustand. |
 | **Akzeptanzkriterium** | Der Audit-Eintrag enthält Titel, Projekt und Bearbeiter der gelöschten Aufgabe; im Kalender des Bearbeiters existiert kein Termin mehr dazu. |
-| **Qualitäten** | [NFR-15d-01](N1-nichtfunktional.md). Keine Berechtigungsprüfung über die Anmeldung hinaus ([N2](N2-querschnittskonzepte.md)). |
+| **Qualitäten** | [NFR-15d-01](N1-nichtfunktional.md). Auch die Detailentitäten der Aufgabe (D1.3) werden mitgelöscht. |
 
 ### UC-17 — Aufgabenübersicht einsehen
 
@@ -320,15 +342,16 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 |-----------|--------|
 | **Kennung** | UC-17 |
 | **Name** | Aufgabenübersicht einsehen |
-| **Beschreibung** | Anwender verschafft sich einen Überblick über Aufgaben im Dashboard, im Board oder im Kalender, gefiltert nach Zeitraum, Projekt, Person, Status, Priorität oder Abteilung. |
+| **Beschreibung** | Anwender verschafft sich einen Überblick über Abteilungen, Projekte und Aufgaben seines Sichtbereichs im Dashboard, im Board, in der Projektmaske oder im Kalender, gefiltert nach Zeitraum, Projekt, Person, Status, Priorität oder Abteilung. |
 | **Auslöser** | Tagesbeginn, Planung, Suche nach einer Aufgabe. |
 | **Akteure** | Anwender (primär). |
 | **Vorbedingung** | Sitzung aktiv. |
 | **Nachbedingung** | Keine Zustandsänderung. |
-| **Hauptszenario** | 1. Anwender öffnet Dashboard ([DLG-03](B1-dialogspezifikation.md#dlg-03--dashboard)), Board ([DLG-05](B1-dialogspezifikation.md#dlg-05--meine-aufgaben)) oder Kalender ([DLG-06](B1-dialogspezifikation.md#dlg-06--kalender)).<br>2. System bestimmt die sichtbaren Aufgaben ([AF-02](F3-anwendungsfunktionen.md#af-02--sichtbare-aufgaben-bestimmen)) und zeigt sie an: als Kennzahlen und Listen, als Spalten je Status, als Monats- oder Wochenraster.<br>3. Anwender setzt Filter oder sucht; System zeigt die Teilmenge. |
+| **Hauptszenario** | 1. Anwender öffnet Dashboard ([DLG-03](B1-dialogspezifikation.md#dlg-03--dashboard)), Board ([DLG-05](B1-dialogspezifikation.md#dlg-05--meine-aufgaben)), Projekte ([DLG-04](B1-dialogspezifikation.md#dlg-04--projekte-und-backlog)) oder Kalender ([DLG-06](B1-dialogspezifikation.md#dlg-06--kalender)).<br>2. System bestimmt den Sichtbereich ([AF-02](F3-anwendungsfunktionen.md#af-02--sichtbereich-und-sichtbare-aufgaben-bestimmen)) und liefert Abteilungen, Projekte und Aufgaben daraus; die Maske zeigt sie als Kennzahlen und Listen, als Spalten je Status, als Karten je Abteilung oder als Monats- oder Wochenraster.<br>3. Anwender setzt Filter oder sucht; System zeigt die Teilmenge. |
 | **Alternativszenarien** | *Keine Aufgaben im Filter:* Leerhinweis, z. B. „Keine Aufgaben für diesen Tag geplant."<br>*Überfällige Aufgaben:* werden rot und mit „Überfällig" markiert.<br>*Farbstreifen:* Karten im Board tragen den Streifen nach [AF-10](F3-anwendungsfunktionen.md#af-10--farbstreifen-zuordnen). |
-| **Akzeptanzkriterien** | A1. Ein Mitarbeiter der Abteilung OR-ID sieht keine Aufgabe der Abteilung OR-IT, die ihm nicht zugewiesen ist und nicht zu einem eigenen Projekt gehört.<br>A2. Ein Anwender mit Rolle Admin sieht dieselbe Aufgabe.<br>A3. Der Filter „Nur überfällige" zeigt keine Aufgabe mit Status `DONE`. |
-| **Qualitäten** | [NFR-12a-01](N1-nichtfunktional.md) Antwortzeit. Dashboard und Board ergänzen die Serverdaten um Beispieldaten aus dem Browser (B1.5). |
+| **Ausnahmeszenarien** | *Server nicht erreichbar:* Dashboard, Board und Kalender bleiben leer; es werden keine Beispieldaten mehr angezeigt. |
+| **Akzeptanzkriterien** | A1. Ein Mitarbeiter der Abteilung OR-ID sieht keine Aufgabe, deren Projekt zur Abteilung OR-IT gehört, auch wenn sie ihm zugewiesen ist.<br>A2. Eine GBL-Rolle für OR sieht die Aufgaben aller drei OR-Abteilungen; ein Anwender mit Rolle Admin sieht alle.<br>A3. Der Filter „Nur überfällige" zeigt keine Aufgabe mit Status `DONE`. |
+| **Qualitäten** | [NFR-12a-01](N1-nichtfunktional.md) Antwortzeit. |
 
 ---
 
@@ -343,12 +366,12 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 | **Beschreibung** | Anwender stellt eine Freigabeanfrage zu einer Aufgabe, einem Projekt, einem Statusbericht, einem Dokument oder einem freien Anliegen. |
 | **Auslöser** | Freigabestufe an einer Aufgabe gesetzt (UC-12) oder Schaltfläche „Freigabe anfragen" (GP-03 A2). |
 | **Akteure** | Anfragender (primär). |
-| **Vorbedingung** | Sitzung aktiv; bei Aufgabe, Projekt oder Statusbericht existiert das Bezugsobjekt. |
+| **Vorbedingung** | Sitzung aktiv; bei Aufgabe, Projekt, Statusbericht oder Dokument existiert das Bezugsobjekt und liegt im Sichtbereich des Anfragenden (AF-02). |
 | **Nachbedingung** | `ApprovalRequest` mit Status `PENDING`, Anfragendem und Genehmiger nach AF-03; Audit `APPROVAL_REQUESTED`. |
-| **Hauptszenario** | 1. Anwender wählt Typ und Bezugsobjekt, gibt Titel, Beschreibung, Nachweis und optional einen Genehmiger an.<br>2. System prüft das Bezugsobjekt, bestimmt den Genehmiger ([AF-03](F3-anwendungsfunktionen.md#af-03--genehmiger-bestimmen)), setzt fehlende Titel und Bezeichnung aus dem Bezugsobjekt und speichert. |
-| **Alternativszenarien** | *Anfrage aus dem Ticket-Editor:* Typ `TASK`, Titel „Freigabe: <Aufgabe>"; die Oberfläche merkt die Anfrage zusätzlich im Browser vor und zeigt sie auch, wenn der Server nicht erreichbar ist.<br>*Dokument oder Sonstiges:* kein Bezugsobjekt im System; Bezeichnung als Freitext. |
-| **Ausnahmeszenarien** | *Bezugsobjekt fehlt oder unbekannt:* „Bezugsobjekt ist erforderlich" bzw. „Bezugsobjekt wurde nicht gefunden".<br>*Gewünschter Genehmiger unbekannt:* „Genehmiger wurde nicht gefunden". |
-| **Akzeptanzkriterien** | A1. Der Anfragende ist nie als Genehmiger eingetragen, auch wenn er sich selbst angibt.<br>A2. Für eine Aufgabe in einem fremden Projekt ist der Projekteigentümer der Genehmiger.<br>A3. Die Anfrage erscheint beim Genehmiger im Eingang des Freigaben-Cockpits. |
+| **Hauptszenario** | 1. Anwender wählt Typ und Bezugsobjekt, gibt Titel, Beschreibung, Nachweis und optional einen Genehmiger an.<br>2. System prüft Bezugsobjekt und Sichtbereich, bestimmt den Genehmiger ([AF-03](F3-anwendungsfunktionen.md#af-03--genehmiger-bestimmen)), setzt fehlende Titel und Bezeichnung aus dem Bezugsobjekt und speichert.<br>3. Die Maske meldet „Freigabe wurde im Cockpit angefragt." |
+| **Alternativszenarien** | *Anfrage aus dem Ticket-Editor:* Typ `TASK`, Titel „Freigabe: <Aufgabe>".<br>*Dokument oder Sonstiges:* Bezeichnung als Freitext; für Dokumente wird der Sichtbereich geprüft, für freie Anliegen nicht. |
+| **Ausnahmeszenarien** | *Bezugsobjekt fehlt oder unbekannt:* „Bezugsobjekt ist erforderlich" bzw. „Bezugsobjekt wurde nicht gefunden".<br>*Bezugsobjekt außerhalb des Sichtbereichs:* „Keine Berechtigung für dieses Bezugsobjekt".<br>*Gewünschter Genehmiger unbekannt:* „Genehmiger wurde nicht gefunden".<br>*Server nicht erreichbar:* Die Maske zeigt eine Fehlermeldung; keine Anfrage. |
+| **Akzeptanzkriterien** | A1. Der Anfragende ist nie als Genehmiger eingetragen, auch wenn er sich selbst angibt.<br>A2. Für eine Aufgabe in einem fremden Projekt des eigenen Sichtbereichs ist der Projekteigentümer der Genehmiger.<br>A3. Die Anfrage erscheint beim Genehmiger im Eingang des Freigaben-Cockpits. |
 | **Qualitäten** | [NFR-15d-01](N1-nichtfunktional.md). Der Dialog zum Anlegen im Freigaben-Cockpit selbst ist derzeit nicht erreichbar (B1, DLG-08). |
 
 ### UC-19 — Freigabe entscheiden
@@ -360,7 +383,7 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 | **Beschreibung** | Genehmiger genehmigt oder lehnt eine offene Anfrage ab, mit Vermerk. |
 | **Auslöser** | Offene Anfrage im Eingang (GP-03 A4, A5). |
 | **Akteure** | Genehmiger (primär): eingetragener Genehmiger, Projektleitung, GBL oder Administrator. |
-| **Vorbedingung** | Anfrage im Status `PENDING`; Anwender ist Genehmiger oder hat „Freigaben entscheiden" (AF-01). |
+| **Vorbedingung** | Anfrage im Status `PENDING`; Anwender ist Genehmiger oder hat „Freigaben entscheiden" (AF-01); Bezugsobjekt im Sichtbereich (AF-02). |
 | **Nachbedingung** | Status `APPROVED` oder `REJECTED`; Entscheider, Zeitpunkt, Vermerk gesetzt; Audit `APPROVAL_APPROVED` (`NOTICE`) oder `APPROVAL_REJECTED` (`WARNING`). |
 | **Hauptszenario** | 1. Genehmiger öffnet das Freigaben-Cockpit ([DLG-08](B1-dialogspezifikation.md#dlg-08--freigaben)) und liest Beschreibung und Nachweis.<br>2. Genehmiger trägt einen Vermerk ein und wählt „Genehmigen" oder „Ablehnen".<br>3. System prüft Status und Berechtigung, setzt Entscheidung, Entscheider und Zeitpunkt und schreibt den Audit-Eintrag.<br><br>![UC-19 Freigabe entscheiden](diagrams-png/f2-uc19-freigabe-entscheiden.png) |
 | **Ausnahmeszenarien** | *Anfrage bereits entschieden:* „Diese Freigabe ist bereits entschieden".<br>*Keine Berechtigung:* „Keine Berechtigung für diese Freigabe". |
@@ -409,11 +432,27 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 | **Akteure** | Administrator (primär). |
 | **Vorbedingung** | Berechtigung „Rollen verwalten". |
 | **Nachbedingung** | Konto angelegt oder Zuordnung gespeichert; grobe Rolle aus der Rollenart abgeleitet ([D2.4](D2-datentypen.md#d24-userroledt)); Audit `USER_CREATED` oder `USER_ROLE_ASSIGNED` (`WARNING`). |
-| **Hauptszenario (Zuordnen)** | 1. Administrator wählt im Reiter Zuweisungen einen Benutzer, eine Zugriffsrolle und eine Abteilung.<br>2. System prüft, dass die Rolle existiert, leitet die grobe Rolle ab und speichert. |
+| **Hauptszenario (Zuordnen)** | 1. Administrator wählt im Reiter Zuweisungen einen Benutzer, eine Zugriffsrolle und eine Abteilung; die Abteilungen kommen vom Server (UC-27).<br>2. System prüft, dass die Rolle existiert, leitet die grobe Rolle ab und speichert. Die Abteilung ist ein Anzeigetext am Konto; der Sichtbereich folgt allein aus der Zugriffsrolle (D1.6). |
 | **Hauptszenario (Anlegen)** | 1. Administrator gibt Name, E-Mail, Startpasswort, Abteilung und Zugriffsrolle ein.<br>2. System prüft Pflichtfelder und Eindeutigkeit der E-Mail, speichert das Passwort als Hash und legt das Konto an. |
 | **Ausnahmeszenarien** | *E-Mail vergeben:* „E-Mail existiert bereits".<br>*Rolle unbekannt:* „Rolle wurde nicht gefunden". |
-| **Akzeptanzkriterien** | A1. Nach Zuordnung einer Rolle der Art GBL hat der Benutzer die grobe Rolle `PROJECT_MANAGER` und sieht alle Aufgaben (AF-02).<br>A2. Der neue Benutzer kann sich sofort mit dem Startpasswort anmelden und es unter UC-05 ändern.<br>A3. Das Startpasswort steht nicht im Audit-Log. |
+| **Akzeptanzkriterien** | A1. Nach Zuordnung einer Rolle der Art GBL hat der Benutzer die grobe Rolle `PROJECT_MANAGER` und sieht die Aufgaben aller Abteilungen seiner Geschäftsbereiche (AF-02).<br>A2. Der neue Benutzer kann sich sofort mit dem Startpasswort anmelden und es unter UC-05 ändern.<br>A3. Das Startpasswort steht nicht im Audit-Log. |
 | **Qualitäten** | [NFR-15b-02](N1-nichtfunktional.md), [NFR-15b-03](N1-nichtfunktional.md). |
+
+### UC-27 — Abteilung anlegen
+
+| Abschnitt | Inhalt |
+|-----------|--------|
+| **Kennung** | UC-27 |
+| **Name** | Abteilung anlegen |
+| **Beschreibung** | Administrator legt eine neue Abteilung mit Leitung, Beschreibung und Teamgröße an; sie steht danach für Projekte, Rollen und Dokumente zur Verfügung. |
+| **Auslöser** | Neue Organisationseinheit im Geschäftsbereich. |
+| **Akteure** | Administrator (primär): Anwender mit „Rollen verwalten". |
+| **Vorbedingung** | Berechtigung „Rollen verwalten" (AF-01). |
+| **Nachbedingung** | `Department` mit der Leitung als erstem Mitglied; kein Audit-Eintrag. |
+| **Hauptszenario** | 1. Anwender wählt „Neue Abteilung" im Erstellen-Menü der Projektmaske ([DLG-04](B1-dialogspezifikation.md#dlg-04--projekte-und-backlog)) und gibt Name, Beschreibung, Bereichsleitung und Teamgröße an.<br>2. System prüft die Berechtigung, verlangt einen Namen, übernimmt Kürzel und Geschäftsbereich in Großschreibung, setzt den anlegenden Anwender als Leitung, wenn keine angegeben ist, und legt die Abteilung mit der Leitung als Mitglied an.<br>3. Die Maske zeigt die neue Abteilungskarte. |
+| **Ausnahmeszenarien** | *Name leer:* „Abteilungsname ist erforderlich".<br>*Keine Berechtigung:* „Keine Berechtigung zum Erstellen von Abteilungen".<br>*Server lehnt ab oder ist nicht erreichbar:* Die Maske zeigt keine Meldung (R-01). |
+| **Akzeptanzkriterien** | A1. Ein Mitarbeiter ohne „Rollen verwalten" erhält 403.<br>A2. Die neue Abteilung erscheint in der Abteilungsauswahl der Rollenverwaltung und des Projektdialogs. |
+| **Qualitäten** | Anders als alle anderen anlegenden Aktionen schreibt dieser Anwendungsfall keinen Audit-Eintrag; in [N2](N2-querschnittskonzepte.md) als Lücke vermerkt. |
 
 ### UC-23 — Audit-Log einsehen
 
@@ -466,7 +505,27 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 
 ---
 
-## F2.7 Querverweise
+## F2.7 Dokumente
+
+### UC-28 — Dokumente einsehen
+
+| Abschnitt | Inhalt |
+|-----------|--------|
+| **Kennung** | UC-28 |
+| **Name** | Dokumente einsehen |
+| **Beschreibung** | Anwender durchsucht die Dokumentenbibliothek seines Sichtbereichs nach Abteilung, Typ und Status und liest Metadaten, verknüpfte Aufgaben, Kontroll-IDs und Audit-Trail eines Dokuments. |
+| **Auslöser** | Suche nach einer Richtlinie, einem Nachweis oder einer Vorlage. |
+| **Akteure** | Anwender (primär). |
+| **Vorbedingung** | Sitzung aktiv. |
+| **Nachbedingung** | Keine Zustandsänderung. |
+| **Hauptszenario** | 1. Anwender öffnet die Dokumente ([DLG-10](B1-dialogspezifikation.md#dlg-10--dokumente)).<br>2. System liefert die Dokumente, deren Abteilung oder Projekt im Sichtbereich liegt ([AF-02](F3-anwendungsfunktionen.md#af-02--sichtbereich-und-sichtbare-aufgaben-bestimmen)), sowie alle Vorlagen.<br>3. Anwender filtert und öffnet ein Dokument; die Maske zeigt Beschreibung, Metadaten, Aufbewahrung, verknüpfte Aufgaben, Kontroll-IDs und Audit-Trail. |
+| **Alternativszenarien** | *Keine Dokumente im Sichtbereich:* leere Liste. |
+| **Akzeptanzkriterien** | A1. Ein Mitarbeiter OR-ID sieht kein Dokument, das nur der Abteilung OR-IT zugeordnet ist.<br>A2. Die Statusfilter enthalten genau die Werte, die in den sichtbaren Dokumenten vorkommen. |
+| **Qualitäten** | Nur lesend; Anlegen, Hochladen und Ändern sind nicht Teil des Systems (NG-01). Die Einträge des Erstellen-Menüs in DLG-10 haben keine Funktion (B1.5). |
+
+---
+
+## F2.8 Querverweise
 
 | Baustein | Bezug zu F2 |
 |----------|-------------|
@@ -475,4 +534,4 @@ Die Anwendungsfälle UC-07 bis UC-09 sind im Server umgesetzt. Die Maske „Proj
 | [D1](D1-datenmodell.md), [D2](D2-datentypen.md) | Entitäten und Zustände in Vor- und Nachbedingungen. |
 | [B1](B1-dialogspezifikation.md) | Maske je Anwendungsfall (DLG-xx in Schritt 1). |
 | [N1](N1-nichtfunktional.md) | Qualitäten je Anwendungsfall. |
-| [N2](N2-querschnittskonzepte.md) | Systemregel „angemeldete Sitzung"; Liste der Audit-Aktionen. |
+| [N2](N2-querschnittskonzepte.md) | Systemregel „angemeldete Sitzung"; Sichtbereich; Liste der Audit-Aktionen. |

@@ -57,7 +57,7 @@ NextTask entsteht als Studienprojekt im Modul WK_1106 (Wirtschaftsinformatik-Pro
 
 | ID | Nicht-Ziel | Begründung |
 |----|------------|------------|
-| NG-01 | Dokumentenverwaltung mit Ablage, Upload und Versionierung | Die Maske „Dokumente" zeigt Beispieldaten und dient als Vorschau. Anhänge an Aufgaben werden nicht gespeichert. Ein Dokumentenmanagement ist ein eigenes System. |
+| NG-01 | Dokumentenverwaltung mit Ablage, Upload und Versionierung | Die Dokumentenbibliothek zeigt Metadaten und Nachweisbezüge aus der Datenbank, aber keine Dateiinhalte; Anhänge an Aufgaben werden nur als Name, Typ und Quelle gespeichert. Ein Dokumentenmanagement ist ein eigenes System. |
 | NG-02 | Zeiterfassung von Ist-Stunden je Person | NextTask führt nur den geschätzten Aufwand je Aufgabe und Plan-/Ist-Aufwand in Personentagen auf Projektebene. |
 | NG-03 | Mehrsprachigkeit | Die Oberfläche ist einsprachig Deutsch (CON-06). |
 | NG-04 | Native App für Smartphones | Die Weboberfläche ist für den Arbeitsplatz-Browser gebaut. |
@@ -88,7 +88,7 @@ Gegliedert nach Abschnitt 3 der Volere-Schablone (Mandated Constraints). Die Rah
 
 | ID | Kriterium |
 |----|-----------|
-| SC-01 | Ein Anwender mit Rollenart `MEMBER` sieht im Kalender und Dashboard nur Aufgaben, die ihm zugewiesen sind, die zu einem eigenen Projekt gehören oder die seiner Abteilung zugeordnet sind. Administratoren und Geschäftsbereichsleitungen sehen alle Aufgaben. |
+| SC-01 | Ein Anwender sieht nur Abteilungen, Projekte, Aufgaben, Dokumente und Freigaben aus seinem Sichtbereich: bei Rollenart Mitarbeiter die zugeordneten Abteilungen, bei GBL alle Abteilungen der zugeordneten Geschäftsbereiche, bei Admin alles. Der Server setzt das bei jedem Lese- und Schreibzugriff durch (AF-02). |
 | SC-02 | Jede Freigabeanfrage durchläuft genau einen Weg von `PENDING` nach `APPROVED`, `REJECTED` oder `CANCELLED`. Der Anfragende wird nie als Genehmiger eingetragen. Zu jeder Entscheidung sind Entscheider, Zeitpunkt und Vermerk gespeichert. |
 | SC-03 | Jede in [N2](N2-querschnittskonzepte.md) aufgeführte Aktion erzeugt einen Audit-Eintrag mit Akteur, Zeitpunkt, IP-Adresse und, bei Änderungen, den geänderten Feldern mit altem und neuem Wert. Passwörter und Tokens erscheinen nie im Audit-Log. |
 | SC-04 | Bei aktiviertem zweiten Faktor gelingt die Anmeldung nur mit gültigem Einmalcode oder einem unverbrauchten Wiederherstellungscode. Ein Einmalcode kann nicht zweimal verwendet werden. |
@@ -114,9 +114,10 @@ Gegliedert nach Abschnitt 3 der Volere-Schablone (Mandated Constraints). Die Rah
 
 | ID | Risiko | Umgang |
 |----|--------|--------|
-| R-01 | **Oberfläche und Server sind unterschiedlich weit.** Die Masken „Projekte", „Meine Aufgaben" und „Reports" halten Projekte, Backlog und Board im Browser (Local Storage) und rufen die Projekt-API des Servers nicht auf. Daten sind damit an Browser und Gerät gebunden und für andere Anwender unsichtbar. | In [B1.5](B1-dialogspezifikation.md) je Maske benannt. Die Spezifikation beschreibt das Datenmodell und die Regeln des Servers als Zielbild; die Anbindung der Masken ist offene Entwicklungsarbeit. |
+| R-01 | **Anlegen ohne Rückmeldung bei Fehlern.** Beim Anlegen von Aufgaben, Projekten und Abteilungen in Board, Kalender und Projektmaske zeigt die Oberfläche keine Fehlermeldung, wenn der Server ablehnt oder nicht erreichbar ist; die Eingabe geht dann stillschweigend verloren. | In [B1.5](B1-dialogspezifikation.md#b15-stand-der-anbindung) je Maske benannt. Seit dem Stand vom 23. September laufen alle Fachdaten über den Server; die Meldung im Fehlerfall ist offene Entwicklungsarbeit. |
 | R-02 | **Sitzung nach Abmelden weiter gültig.** Das Zugriffstoken läuft nach sieben Tagen ab und wird beim Abmelden nur im Browser gelöscht, nicht serverseitig widerrufen. | Als Einschränkung in [N2](N2-querschnittskonzepte.md) dokumentiert. Bei Verdacht auf Missbrauch bleibt nur der Wechsel des Serverschlüssels, der alle Sitzungen beendet. |
 | R-03 | **Verlust des zweiten Faktors.** Es gibt keine Funktion, mit der ein Administrator den zweiten Faktor eines Benutzers zurücksetzt. | Bei der Einrichtung werden zehn Wiederherstellungscodes ausgegeben, die der Anwender sicher verwahren muss (UC-04). Ohne Codes ist ein Eingriff in der Datenbank nötig. |
 | R-04 | **Löschen einer Rolle hebt Benutzer auf Administrator.** Wird eine selbst angelegte Rolle gelöscht, erhalten ihre Benutzer die Systemrolle Admin als Ersatz. | Das Löschen ist nur mit der Berechtigung „Rollen verwalten" möglich und wird mit Kritikalität `CRITICAL` protokolliert. Fachlich richtiger wäre die Ersatzrolle Mitarbeiter; dies ist eine offene Änderung am Code. |
 | R-05 | **Ausfall von Nachbarsystemen.** Fällt Google Calendar oder der SMTP-Server aus, wird die auslösende Aktion trotzdem gespeichert; nur die Übertragung unterbleibt und wird im Serverprotokoll vermerkt. Ein Nachlauf findet nicht statt (kein Batch, siehe README). | Bewusste Entscheidung: Die Kernfunktion darf nicht von optionalen Anbindungen abhängen. Kalender kann manuell erneut synchronisiert werden (UC-25). |
+| R-07 | **Beispieldaten und Seed-Skript.** Die Abteilungen, Projekte, Aufgaben und Dokumente der Datenbank stammen aus dem Seed-Skript, das die früheren Beispieldaten der Oberfläche einliest. Enthält es Demo-Konten mit bekanntem Passwort (S3), dürfen diese in keiner Umgebung außerhalb der Entwicklung existieren. | Das Seed-Skript ist ein Werkzeug der Inbetriebnahme, kein Teil des Betriebs; in S3 als Entwicklungsschritt gekennzeichnet. |
 | R-06 | **Freie Statuswerte in der Berichtsbasis.** Meilensteinstatus, Risikoklasse und Ampelwerte werden als Text gespeichert; der Server prüft die Werte nicht gegen die in D2 definierten Listen. | Die gültigen Werte sind in [D2](D2-datentypen.md) festgelegt und werden von der Oberfläche als Auswahllisten vorgegeben. |

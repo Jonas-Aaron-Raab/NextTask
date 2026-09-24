@@ -38,10 +38,12 @@ Die Browser-Anwendung hat keine eigene Konfigurationsdatei. Die Adresse des Serv
 1. Repository klonen und Abhängigkeiten installieren: im Wurzelverzeichnis, in `server` und in `client` jeweils `npm install`.
 2. `server/.env` aus der Vorlage anlegen und mindestens `DATABASE_URL`, `JWT_SECRET` und `PORT=5001` setzen. Für `JWT_SECRET` und `TWO_FACTOR_SECRET_KEY` lange Zufallswerte verwenden.
 3. Datenbankschema anlegen: in `server` die Migrationen ausführen (`npx prisma migrate deploy`) und den Datenbankzugriff erzeugen (`npx prisma generate`). Die Migrationen legen alle Tabellen aus [D1](D1-datenmodell.md) an; Daten enthalten sie nicht.
-4. Server und Browser-Anwendung starten: im Wurzelverzeichnis `npm run dev` startet beide (Server mit automatischem Neustart bei Änderungen, Browser-Anwendung mit Entwicklungsserver). Der Server meldet „Server läuft auf http://localhost:5001", die Browser-Anwendung ist unter `http://localhost:5173` erreichbar.
-5. Erstes Konto anlegen: über die Registrierung ([UC-01](F2-anwendungsfaelle.md#uc-01--registrieren)). Beim ersten Zugriff auf Rollen oder bei der ersten Registrierung legt der Server die fünf Systemrollen an ([D2.6](D2-datentypen.md#d26-permissionsetdt)).
-6. Ersten Administrator bestimmen: Das System vergibt die Administratorrolle nicht automatisch. Ein Konto wird Administrator, indem es per SSO mit einer konfigurierten Administratorgruppe anmeldet ([AF-11](F3-anwendungsfunktionen.md#af-11--sso-konto-abgleichen)) oder indem in der Datenbank `User.accessRoleId` auf die Rolle mit Code `A` und `User.role` auf `ADMIN` gesetzt wird. Danach legt dieser Administrator weitere Benutzer und Zuordnungen in der Rollenverwaltung an ([UC-22](F2-anwendungsfaelle.md#uc-22--benutzer-anlegen-und-zuordnen)).
-7. Optional SSO, Kalender und E-Mail konfigurieren und den Server neu starten. Prüfen: SSO-Schaltfläche auf der Anmeldemaske, Statusanzeige „Server bereit" in den Einstellungen, Testmail.
+4. Nur für Entwicklung und Test, optional: Beispieldaten laden mit `npm run db:seed` in `server`. Das Skript legt die fünf Systemrollen, die drei Abteilungen des Anwendungsszenarios mit Mitgliedern, Projekte mit Berichtsbasis, Aufgaben mit Detailangaben, Dokumente und Vorlagen an, dazu 15 Konten mit dem Passwort `NextTaskDemo!2026`. Das Konto „Gast" (`gast@nexttask.local`) erhält die Rolle Admin, „Mara Stein" die Rolle GBL-OR, die übrigen Konten des Szenarios Mitarbeiterrollen ihrer Abteilung. Das Skript ist wiederholbar (vorhandene Datensätze werden aktualisiert). In einer Umgebung mit echten Daten darf es nicht laufen (R-07); die Demo-Konten sind sonst ein bekannter Zugang mit Administratorrechten.
+5. Server und Browser-Anwendung starten: im Wurzelverzeichnis `npm run dev` startet beide (Server mit automatischem Neustart bei Änderungen, Browser-Anwendung mit Entwicklungsserver). Der Server meldet „Server läuft auf http://localhost:5001", die Browser-Anwendung ist unter `http://localhost:5173` erreichbar.
+6. Erstes Konto anlegen, wenn kein Seed geladen wurde: über die Registrierung ([UC-01](F2-anwendungsfaelle.md#uc-01--registrieren)). Beim ersten Zugriff auf Rollen oder bei der ersten Registrierung legt der Server die fünf Systemrollen an ([D2.6](D2-datentypen.md#d26-permissionsetdt)). Ein registriertes Konto ohne Zugriffsrolle sieht keine Abteilungen, Projekte oder Aufgaben ([AF-02](F3-anwendungsfunktionen.md#af-02--sichtbereich-und-sichtbare-aufgaben-bestimmen)).
+7. Ersten Administrator bestimmen: Das System vergibt die Administratorrolle nicht automatisch. Ein Konto wird Administrator über das Seed-Skript (Schritt 4), indem es per SSO mit einer konfigurierten Administratorgruppe anmeldet ([AF-11](F3-anwendungsfunktionen.md#af-11--sso-konto-abgleichen)) oder indem in der Datenbank `User.accessRoleId` auf die Rolle mit Code `A` und `User.role` auf `ADMIN` gesetzt wird. Danach legt dieser Administrator Abteilungen ([UC-27](F2-anwendungsfaelle.md#uc-27--abteilung-anlegen)), weitere Benutzer und Zuordnungen in der Rollenverwaltung an ([UC-22](F2-anwendungsfaelle.md#uc-22--benutzer-anlegen-und-zuordnen)).
+8. Optional SSO, Kalender und E-Mail konfigurieren und den Server neu starten. Prüfen: SSO-Schaltfläche auf der Anmeldemaske, Statusanzeige „Server bereit" in den Einstellungen, Testmail.
+9. Optional Rauchtest: Bei laufender Anwendung mit geladenem Seed führt `npm run test:e2e` im Wurzelverzeichnis einen Playwright-Test aus, der sich als „Gast" anmeldet, alle zehn Einträge der Seitenleiste öffnet und bei Fehlern in der Browserkonsole fehlschlägt. Vorher einmalig `npx playwright install chromium`.
 
 ---
 
@@ -51,7 +53,7 @@ Die Browser-Anwendung hat keine eigene Konfigurationsdatei. Die Adresse des Serv
 |---------|-----|-----------|
 | Alle Entitäten aus D1 | PostgreSQL | Datenbanksicherung nach den Regeln des Betreibers. Es gibt keine Exportfunktion in NextTask. |
 | Konfiguration und Geheimnisse | `server/.env` | Getrennt und geschützt aufbewahren. Verlust von `JWT_SECRET` beendet alle Sitzungen; Verlust von `TWO_FACTOR_SECRET_KEY` macht alle TOTP-Geheimnisse und Kalender-Dauerzugriffe unlesbar (alle Anwender müssten den zweiten Faktor und den Kalender neu einrichten). |
-| Anzeigeeinstellungen, Farbstreifen-Kopie, lokale Projekte und Boards, vorgemerkte Freigaben | Browser des Anwenders (Local Storage) | Nicht gesichert; an Browser und Gerät gebunden (R-01, B1.5). |
+| Anzeigeeinstellungen, Kopie der Farbstreifen | Browser des Anwenders (Local Storage) | Nicht gesichert; Verlust folgenlos, der Server ist maßgeblich (QK-08). |
 
 ---
 
@@ -73,6 +75,7 @@ Nicht Teil des Projekts, aber für eine Übernahme durch die Sparkassen-IT relev
 - Der Server muss hinter einem HTTPS-Endpunkt laufen; die Rückleitungsadressen für SSO und Kalender müssen auf die öffentliche Adresse zeigen und beim jeweiligen Provider registriert sein.
 - Die offene CORS-Regel sollte auf die Adresse der Browser-Anwendung eingeschränkt werden.
 - Der Server läuft als ein Prozess ohne Prozessmanager; Neustart bei Absturz und Protokollrotation muss die Umgebung leisten.
+- Das Seed-Skript (S3.3, Schritt 4) darf nicht ausgeführt werden; wurde es in einer Testumgebung benutzt, müssen die Demo-Konten vor einer Übernahme der Datenbank gelöscht werden (R-07).
 
 ---
 

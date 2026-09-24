@@ -143,27 +143,30 @@ Jeder Anwendungsfall ist einem Geschäftsprozess, genau einer Maske oder Druckau
 | UC-04 | Zweiten Faktor verwalten | — | DLG-12 | AF-06, AF-07 | 15a-01, 15b-01 |
 | UC-05 | Profil pflegen | — | DLG-12 | AF-09, AF-07 | 15b-02, 15d-01 |
 | UC-06 | Abmelden | — | Rahmen | — | 15a-02 |
-| UC-07 | Projekt anlegen | GP-01 | DLG-04 | AF-05, AF-07 | 15d-01 |
-| UC-08 | Berichtsbasis pflegen | GP-01 | DLG-04 | AF-07 | 15d-01 |
-| UC-09 | Statusbericht erfassen | GP-01 | DLG-04 | AF-07 | 15d-01 |
-| UC-10 | Statusbericht als PDF ausgeben | GP-01 | DLG-07, DR-01 | — | — |
-| UC-11 | Aufgabe anlegen | GP-02 | DLG-06, DLG-05 | AF-04, AF-08, AF-09, AF-07 | 12d-01 |
-| UC-12 | Aufgabe bearbeiten | GP-02 | DLG-05, DLG-04 | AF-04, AF-08, AF-09, AF-07 | 15d-01 |
-| UC-13 | Aufgabe im Board verschieben | GP-02 | DLG-05 | AF-04, AF-07 | — |
-| UC-14 | Aufgabe terminieren | GP-02 | DLG-06 | AF-08, AF-07 | 12d-01 |
-| UC-15 | Aufgabe kommentieren | GP-02 | DLG-05, DLG-04 | AF-09, AF-07 | 12d-01 |
-| UC-16 | Aufgabe löschen | — | (Schnittstelle) | AF-08, AF-07 | 15d-01 |
-| UC-17 | Aufgabenübersicht einsehen | GP-02 | DLG-03, DLG-05, DLG-06 | AF-02, AF-10 | 12a-01 |
-| UC-18 | Freigabe anfragen | GP-03 | DLG-05, DLG-04 | AF-03, AF-07 | 15d-01 |
-| UC-19 | Freigabe entscheiden | GP-03 | DLG-08 | AF-01, AF-03, AF-07 | 15d-01 |
-| UC-20 | Freigabe abbrechen | GP-03 | (Schnittstelle) | AF-01, AF-03, AF-07 | 15d-01 |
+| UC-07 | Projekt anlegen | GP-01 | DLG-04, DLG-05 | AF-01, AF-02, AF-04, AF-05, AF-07 | 15d-01 |
+| UC-08 | Berichtsbasis pflegen | GP-01 | DLG-04 | AF-01, AF-02, AF-04, AF-07 | 15d-01 |
+| UC-09 | Statusbericht erfassen | GP-01 | (Schnittstelle; DLG-04 schreibt in die Berichtsbasis) | AF-01, AF-02, AF-07 | 15d-01 |
+| UC-10 | Statusbericht als PDF ausgeben | GP-01 | DLG-07, DR-01 | AF-02 | — |
+| UC-26 | Abteilungsbericht exportieren | GP-01 | DLG-07, DR-02 | AF-02 | — |
+| UC-11 | Aufgabe anlegen | GP-02 | DLG-05, DLG-06 | AF-01, AF-02, AF-04, AF-08, AF-09, AF-07 | 12d-01 |
+| UC-12 | Aufgabe bearbeiten | GP-02 | DLG-05, DLG-04 | AF-01, AF-02, AF-04, AF-08, AF-09, AF-07 | 15d-01 |
+| UC-13 | Aufgabe verschieben und sortieren | GP-02 | DLG-04 (Backlog), Schnittstelle (Board) | AF-01, AF-02, AF-04, AF-12, AF-07 | — |
+| UC-14 | Aufgabe terminieren | GP-02 | DLG-06 | AF-01, AF-02, AF-08, AF-07 | 12d-01 |
+| UC-15 | Aufgabe kommentieren | GP-02 | DLG-05 | AF-02, AF-09, AF-07 | 12d-01 |
+| UC-16 | Aufgabe löschen | — | (Schnittstelle) | AF-01, AF-02, AF-08, AF-07 | 15d-01 |
+| UC-17 | Aufgabenübersicht einsehen | GP-02 | DLG-03, DLG-04, DLG-05, DLG-06 | AF-02, AF-10 | 12a-01 |
+| UC-18 | Freigabe anfragen | GP-03 | DLG-05, DLG-04 | AF-02, AF-03, AF-07 | 15d-01 |
+| UC-19 | Freigabe entscheiden | GP-03 | DLG-08 | AF-01, AF-02, AF-03, AF-07 | 15d-01 |
+| UC-20 | Freigabe abbrechen | GP-03 | (Schnittstelle) | AF-01, AF-02, AF-03, AF-07 | 15d-01 |
 | UC-21 | Rollen pflegen | — | DLG-11 | AF-01, AF-07 | 15d-01, 15d-02 |
 | UC-22 | Benutzer anlegen und zuordnen | — | DLG-11 | AF-01, AF-07 | 15b-02, 15b-03 |
+| UC-27 | Abteilung anlegen | — | DLG-04 | AF-01, AF-04 | — |
 | UC-23 | Audit-Log einsehen | — | DLG-09 | AF-01 | 15d-01, 15d-02, 12e-01 |
 | UC-24 | Farbstreifen pflegen | — | DLG-12 | AF-10, AF-07 | — |
 | UC-25 | Kalender verbinden | — | DLG-12 | AF-08, AF-07 | 15b-01, 12d-01 |
+| UC-28 | Dokumente einsehen | — | DLG-10 | AF-02 | 12a-01 |
 
-Die Ziele aus P1 werden so abgedeckt: G-01 durch UC-11 bis UC-17, G-02 durch AF-01 und AF-02 mit UC-21 und UC-22, G-03 durch UC-18 bis UC-20, G-04 durch UC-07 bis UC-10, G-05 durch QK-03 und NFR-15d-01, G-06 durch UC-02 bis UC-04.
+Die Ziele aus P1 werden so abgedeckt: G-01 durch UC-11 bis UC-17, G-02 durch AF-01 und AF-02 mit UC-21, UC-22 und UC-27, G-03 durch UC-18 bis UC-20, G-04 durch UC-07 bis UC-10 und UC-26, G-05 durch QK-03 und NFR-15d-01, G-06 durch UC-02 bis UC-04.
 
 ---
 
@@ -183,8 +186,9 @@ Die Ziele aus P1 werden so abgedeckt: G-01 durch UC-11 bis UC-17, G-02 durch AF-
 | 10 | Zustände einer Aufgabe (TaskStatusDT) | D2.3 | [`diagrams/d2-taskstatus-zustaende.plantuml`](diagrams/d2-taskstatus-zustaende.plantuml) |
 | 11 | Lebenszyklus einer Freigabeanfrage (ApprovalStatusDT) | D2.7 | [`diagrams/d2-freigabestatus-zustaende.plantuml`](diagrams/d2-freigabestatus-zustaende.plantuml) |
 | 12 | Navigation zwischen den Masken | B1.1 | [`diagrams/b1-navigation.plantuml`](diagrams/b1-navigation.plantuml) |
+| 13 | Informationsmodell: Detailentitäten der Aufgabe und Dokumente | D1.3, D1.4 | [`diagrams/d1-detailentitaeten.plantuml`](diagrams/d1-detailentitaeten.plantuml) |
 
-Bildschirmfotos der Masken (DLG-01 bis DLG-12 mit Ausnahme von DLG-08) und der Vorschau des Statusberichts (DR-01) liegen unter [`screenshots/`](screenshots/) und sind in B1 und B3 eingebunden.
+Bildschirmfotos aller zwölf Masken (DLG-01 bis DLG-12) und der Vorschau des Statusberichts (DR-01) liegen unter [`screenshots/`](screenshots/) und sind in B1 und B3 eingebunden.
 
 ---
 
@@ -214,3 +218,4 @@ Für Code und Refactoring wurde Codex unterstützend eingesetzt, für die Ersten
 | 0.2 | 2026-09-11 | F1 mit zwei Aktivitätsdiagrammen, F2 mit 25 Anwendungsfällen und Use-Case-Diagramm, F3 mit elf Anwendungsfunktionen; Nachvollziehbarkeitsmatrix. |
 | 0.3 | 2026-09-11 | S1, S3, N1 mit 18 Anforderungen und Prüfkriterien, N2 mit acht Querschnittskonzepten, E2 Glossar. |
 | 0.4 | 2026-09-14 | B1 mit zwölf Masken, Navigationskarte und Bildschirmfotos; B3 Statusbericht. D1 und D2 zur Risikoklasse nach Abgleich mit der Oberfläche korrigiert. Alle anwendbaren Bausteine vollständig. |
+| 0.5 | 2026-09-24 | Abgleich mit dem Code vom 13. bis 24. September: Abteilungen, Projekte, Backlog, Board, Dokumente und Freigaben vollständig auf dem Server, keine Fachdaten mehr im Browser. D1 mit 29 Entitäten und zweitem Diagramm (Detailentitäten), D2.16, neue Anwendungsfälle UC-26 bis UC-28, UC-13 erweitert um die Backlog-Sortierung, AF-01 und AF-02 als serverseitige Berechtigung und Sichtbereich, AF-12; B1.5, B3 mit DR-02, S3 mit Seed-Skript und Rauchtest, N2 und E2 angepasst; Bildschirmfoto DLG-08; Abschnitt zu KI-Werkzeugen. |

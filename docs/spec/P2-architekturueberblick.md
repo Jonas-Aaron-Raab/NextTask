@@ -53,6 +53,8 @@ Die Schnittstelle des Servers ist in Bereiche gegliedert, die den Bausteinen die
 | `auth` | Registrierung, Anmeldung mit Passwort und zweitem Faktor, SSO, Profil, Passwort, Benachrichtigungseinstellungen | UC-01 bis UC-06 |
 | `projects` | Projekte, Berichtsbasis, Statusberichte | UC-07 bis UC-09 |
 | `tasks`, `calendar` | Aufgaben, Kommentare, Verschieben, Terminieren, gefilterte Aufgabenlisten | UC-11 bis UC-17 |
+| `organization` | Abteilungen mit Mitgliedern, Projekte und Aufgaben im Sichtbereich; Abteilung anlegen | UC-17, UC-27 |
+| `documents` | Dokumentenbibliothek und Vorlagen im Sichtbereich | UC-28 |
 | `approvals` | Freigabeanfragen und Entscheidungen | UC-18 bis UC-20 |
 | `roles` | Rollen, Benutzer, Zuordnungen | UC-21, UC-22 |
 | `audit-logs` | Audit-Log lesen | UC-23 |

@@ -13,13 +13,13 @@ Jede Maske realisiert einen oder mehrere Anwendungsfälle aus [F2](F2-anwendungs
 | [DLG-01](#dlg-01--anmeldung) | Anmeldung | `/login` | UC-02, UC-03 | ohne Sitzung |
 | [DLG-02](#dlg-02--registrierung) | Registrierung | `/register` | UC-01 | ohne Sitzung |
 | [DLG-03](#dlg-03--dashboard) | Dashboard | `/` | UC-17 | Sitzung |
-| [DLG-04](#dlg-04--projekte-und-backlog) | Projekte und Backlog | `/projects`, `/projects/:id` | UC-07, UC-08, UC-09 (lokal), UC-12, UC-18 | Sitzung |
-| [DLG-05](#dlg-05--meine-aufgaben) | Meine Aufgaben (Board) | `/my-tasks` | UC-11, UC-12, UC-13, UC-15, UC-17, UC-18 | Sitzung |
+| [DLG-04](#dlg-04--projekte-und-backlog) | Projekte und Backlog | `/projects`, `/projects/:id` | UC-07, UC-08, UC-12, UC-13, UC-17, UC-18, UC-27 | Sitzung |
+| [DLG-05](#dlg-05--meine-aufgaben) | Meine Aufgaben (Board) | `/my-tasks` | UC-11, UC-12, UC-15, UC-17, UC-18 | Sitzung |
 | [DLG-06](#dlg-06--kalender) | Kalender | `/calendar` | UC-11, UC-14, UC-17 | Sitzung |
-| [DLG-07](#dlg-07--reports) | Reports | `/reports` | UC-10 | Sitzung |
+| [DLG-07](#dlg-07--reports) | Reports | `/reports` | UC-10, UC-26 | Sitzung |
 | [DLG-08](#dlg-08--freigaben) | Freigaben | `/approvals` | UC-19 | Sitzung |
 | [DLG-09](#dlg-09--audit-log) | Audit-Log | `/audit-log` | UC-23 | Berechtigung „Rollen verwalten" |
-| [DLG-10](#dlg-10--dokumente) | Dokumente | `/documents` | — (Vorschau) | Sitzung |
+| [DLG-10](#dlg-10--dokumente) | Dokumente | `/documents` | UC-28 | Sitzung |
 | [DLG-11](#dlg-11--rollenverwaltung) | Rollenverwaltung | `/roles` | UC-21, UC-22 | Berechtigung „Rollen verwalten" |
 | [DLG-12](#dlg-12--einstellungen) | Einstellungen | `/settings` | UC-04, UC-05, UC-24, UC-25 | Sitzung |
 
@@ -38,7 +38,7 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 | **Zweck** | Was der Anwender auf der Maske erreicht. |
 | **Bereiche** | Logische Bereiche der Maske, unabhängig vom Pixel-Layout. |
 | **Zustände** | Leer, Laden, Fehler, Erfolg; was die Maske dann zeigt. |
-| **Datenquelle** | Ob die Maske Serverdaten, Daten aus dem Browser oder Beispieldaten zeigt (Details in B1.5). |
+| **Datenquelle** | Welche Daten die Maske vom Server bezieht und was nur im Browser liegt (Details in B1.5). |
 
 **GUI Statik** listet jedes Feld mit Art (`Anzeige`, `Eingabe (Pflicht)`, `Eingabe (optional)`), Zuordnung zu einem Attribut aus [D1](D1-datenmodell.md) oder `—`, und Vorgabe.
 
@@ -106,8 +106,8 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 |--|--|
 | **Zweck** | Persönlicher Einstieg: Auslastung, Statusverteilung, Aufgaben im Fokus, Abteilungen, Fristen (UC-17). |
 | **Bereiche** | Reiterleiste „Arbeitsbereiche" mit *Übersicht* (Auslastungsring mit Umschalter Stunden/Tage, Balken „Aufgabenstatus" und „Fristen"), *Heute im Fokus* (bis vier Aufgaben), *Aufmerksamkeit* (Aufgaben in Review oder blockiert, bis vier), *Abteilungen* (Karten mit Leitung, Projekten, offenen Aufgaben), *Fristen* (Aufgaben der nächsten sieben Tage, bis fünf). Zähler an den Reitern. |
-| **Zustände** | Leerhinweise je Reiter, z. B. „Keine Fokus-Aufgaben für den aktuellen Suchbegriff gefunden." Kein Ladezustand; Serverfehler werden still übergangen. |
-| **Datenquelle** | Aufgaben vom Server (AF-02). Abteilungs- und Projektkacheln aus Beispieldaten im Browser. Liefert der Server keine Aufgaben, zeigt das Dashboard für einen bestimmten Beispielnutzer Demo-Aufgaben, sonst ein leeres Board (B1.5). |
+| **Zustände** | Leerhinweise je Reiter, z. B. „Keine Fokus-Aufgaben für den aktuellen Suchbegriff gefunden." Kein Ladezustand; Serverfehler werden still übergangen (leere Anzeige). |
+| **Datenquelle** | Aufgaben, Abteilungen und Projekte des Sichtbereichs vom Server (AF-02, Organisationsübersicht). Keine Beispieldaten; liefert der Server nichts, bleiben Kacheln und Listen leer (B1.5). |
 
 ![DLG-03 Dashboard](screenshots/dlg-03-dashboard.png)
 
@@ -129,10 +129,10 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 
 | | |
 |--|--|
-| **Zweck** | Abteilungen und Projekte überblicken, Projekt mit Berichtsbasis anlegen und bearbeiten, Backlog eines Projekts pflegen, Ticketdetails bearbeiten, Freigabe anfragen (UC-07 bis UC-09 lokal, UC-12, UC-18). |
+| **Zweck** | Abteilungen und Projekte überblicken, Projekt mit Berichtsbasis anlegen und bearbeiten, Backlog eines Projekts pflegen, Ticketdetails bearbeiten, Freigabe anfragen (UC-07, UC-08, UC-12, UC-13, UC-18, UC-27). |
 | **Bereiche** | Zustand *Projekte*: Abteilungskarten (Projekte, Personen, Leitung, gebundene Zeit) und Projektkarten (Status, Fälligkeit, Eigentümer, Aufwand, optional GBL, PT, EUR). Zustand *Backlog*: Kopf „Backlog: <Projekt>", Panel „Berichtsbasis", Kacheln „Zeitbindung" je Person, Backlog-Tabelle (Schlüssel, Aufgabe, Erstellt, Status, Priorität, Aufwand, Verantwortlich) mit Favoritenstern und Ziehgriff. Dialoge: *Neue Abteilung*, *Neues Projekt / Projekt bearbeiten* (sechs Reiter), *Ticketdetails*, *Filter*. |
-| **Zustände** | Leer: „Noch keine Projekte in diesem Bereich", „Noch keine Aufgaben im Backlog". Hinweis „Sortieren ist pausiert, solange Suche oder Filter aktiv sind." Erfolg: „Freigabe wurde im Cockpit angefragt." bzw. „Freigabe wurde lokal vorgemerkt und wird synchronisiert." |
-| **Datenquelle** | Abteilungen, Projekte, Berichtsbasis und Backlog aus Beispieldaten, Änderungen im Browser gespeichert (R-01). Ticketdetails einer Serveraufgabe (über `?taskId` geladen) werden auf dem Server gespeichert; Freigaben gehen an den Server. |
+| **Zustände** | Leer: „Noch keine Projekte in diesem Bereich", „Noch keine Aufgaben im Backlog". Hinweis „Sortieren ist pausiert, solange Suche oder Filter aktiv sind." Erfolg: „Freigabe wurde im Cockpit angefragt." Fehler beim Anlegen und Speichern werden nicht angezeigt (B1.5). |
+| **Datenquelle** | Server: Organisationsübersicht (Abteilungen, Projekte mit Berichtsbasis, Aufgaben des Sichtbereichs), Backlog eines Projekts, Freigaben. Anlegen, Bearbeiten, Sortieren und Favoriten gehen an den Server; im Browser wird nichts gespeichert. |
 
 ![DLG-04 Projekte](screenshots/dlg-04-projekte.png)
 
@@ -142,12 +142,12 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 
 | Reiter | Felder | Art | Zuordnung |
 |--------|--------|-----|-----------|
-| Projektbasis | Projektname; Abteilung (Auswahl); Projektart {Persönlich, Abteilung}; Projektleitung; Stellvertretung; Verantwortlicher/GBL; Beginn Plan; Ende Plan; Beschreibung | Name und Abteilung Pflicht, Rest optional | `Project.name`, `businessArea`, `owner`, `deputyLead`, `projectSponsor`, `plannedStart`, `plannedEnd`, `description` |
-| Status | Projektziel; Fortschritt 0–100 %; Ampeln Gesamt, Ziel, Termine, Ressourcen, Budget {Gruen, Gelb, Rot}; Qualität der Zusammenarbeit; Erläuterungen/Maßnahmen; Nächste Schritte; Berichtsversion | optional | `Project.projectGoal`, `ProjectStatusReport.progress`, `goalStatus` …, `collaborationQuality`, `progressNote`, `nextSteps`, `versionLabel` |
+| Projektbasis | Projektname; Abteilung (Auswahl); Projektart {Persönlich, Abteilung}; Projektleitung; Stellvertretung; Verantwortlicher/GBL; Beginn Plan; Ende Plan; Beschreibung | Name und Abteilung Pflicht, Rest optional | `Project.name`, `department`, `projectType`, `owner`, `deputyLead`, `projectSponsor`, `plannedStart`, `plannedEnd`, `description` |
+| Status | Projektziel; Fortschritt 0–100 %; Ampeln Gesamt, Ziel, Termine, Ressourcen, Budget {Gruen, Gelb, Rot}; Qualität der Zusammenarbeit; Erläuterungen/Maßnahmen; Nächste Schritte; Berichtsversion | optional | Berichtsbasis: `Project.projectGoal`, `progress`, `goalStatus` …, `collaborationQuality`, `progressNote`, `nextSteps`, `versionLabel` (UC-08); kein eigener `ProjectStatusReport` (UC-09) |
 | Meilensteine | Zeilen: Titel; Plan-Termin; Neuer Termin; Status ([D2.12](D2-datentypen.md#d212-werte-der-berichtsbasis)); Fortschritt; Statusnotiz | Titel Pflicht je Zeile | `ProjectMilestone` |
 | Risiken | Zeilen: Kürzel; Bezeichnung; Tragweite; Wahrscheinlichkeit; Risikoklasse; Tendenz; Beschreibung; Maßnahme | Bezeichnung Pflicht je Zeile | `ProjectRisk` |
 | Budget & Ressourcen | Planaufwand PT; Ist-Aufwand PT; Differenz (berechnet); Planbudget EUR; Budgetzeilen Kategorie, Plan, Ist mit berechneter Differenz und Ist-% | optional | `Project.plannedEffortPt`, `plannedBudget`, `ProjectStatusReport.actualEffortPt`, `ProjectBudgetLine` |
-| Schnittstellen & Freigabe | Zeilen: Name; Status {Offen, In Klärung, Abgestimmt, Blockiert}; Kommentar. Projektverantwortlicher; GBL-Freigabe; Projektleiter-Freigabe; Freigabedatum | optional | `Project.keyInterfaces`; Unterschriftszeile in DR-01 |
+| Schnittstellen & Freigabe | Zeilen: Name; Status {Offen, In Klärung, Abgestimmt, Blockiert}; Kommentar. Projektverantwortlicher; GBL-Freigabe; Projektleiter-Freigabe; Freigabedatum | optional | `ProjectInterface` je Zeile; `ProjectApproval` (Unterschriftszeile in DR-01) |
 
 **GUI Statik — Dialog Ticketdetails**
 
@@ -161,31 +161,31 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 | Aufwand in Stunden / in Tagen (Schritt 0,25) | Eingabe (optional) | `Task.estimatedHours` |
 | Zuständige Person (Auswahl mit gebundener Zeit, „Ohne Verantwortlichen") | Eingabe (optional) | `Task.assignee` |
 | Farbstreifen (Auswahl oder „Automatisch nach Regel") | Eingabe (optional) | `Task.markerId` (AF-10) |
-| Beschreibung, Tags, verlinkte Mitarbeitende, Ersteller | Eingabe (optional) | `Task.description`; Rest nur im Browser |
-| Dateien (Typ, Quelle, Upload) | Eingabe (optional) | nur im Browser (NG-01) |
-| Kommentare mit @-Erwähnung | Eingabe (optional) | `Comment` (derzeit nur im Browser) |
-| Banking Ready: Datenklassifizierung {Intern, Vertraulich, Reguliert}; Risiko {Niedrig, Mittel, Hoch}; Kontroll-ID; Freigabeprozess; Evidenzhinweis; Audit-Spur | Eingabe / Anzeige | `Task.approvalLevel` (Freigabeprozess); Rest nur im Browser |
+| Beschreibung, Tags, verlinkte Mitarbeitende, Ersteller | Eingabe (optional) | `Task.description`, `TaskTag`, `TaskPersonLink`, `TaskAssignmentSource` |
+| Dateien (Typ, Quelle, Upload) | Eingabe (optional) | `TaskAttachment`: nur Name, Typ, Quelle und Adresse (NG-01) |
+| Kommentare mit @-Erwähnung | Eingabe (optional) | `Comment` (UC-15) |
+| Banking Ready: Datenklassifizierung {Intern, Vertraulich, Reguliert}; Risiko {Niedrig, Mittel, Hoch}; Kontroll-ID; Freigabeprozess; Evidenzhinweis; Audit-Spur | Eingabe | `TaskCompliance`; `Task.approvalLevel` (Freigabeprozess); `TaskAuditEntry` |
 
 **GUI Dynamik**
 
 - **Abteilungskarte, Projektkarte** — Wirkung: Filter auf die Abteilung bzw. Wechsel in Zustand *Backlog*.
 - **Zurück zu Abteilungen und Projekten** — Wirkung: Zustand *Projekte*.
-- **Neue Abteilung, Neues Projekt** (Erstellen-Menü) — Wirkung: Dialog; Speichern legt im Browser an (R-01).
-- **Projekt bearbeiten** — Wirkung: Dialog mit sechs Reitern; Speichern im Browser.
-- **Zeile ziehen** — Vorbedingung: keine Suche, kein Filter aktiv. Wirkung: Reihenfolge im Backlog (im Browser).
-- **Favoritenstern** — Wirkung: Aufgabe für den Anwender oben einsortiert (im Browser).
+- **Neue Abteilung, Neues Projekt** (Erstellen-Menü) — Wirkung: Dialog; Speichern legt auf dem Server an (UC-27, UC-07). Bei Ablehnung keine Meldung (B1.5).
+- **Projekt bearbeiten** — Wirkung: Dialog mit sechs Reitern; Speichern auf dem Server (UC-08).
+- **Zeile ziehen** — Vorbedingung: keine Suche, kein Filter aktiv. Wirkung: UC-13; die Reihenfolge wird auf dem Server gespeichert, die Anzeige übernimmt sie erst beim nächsten Laden (B1.5).
+- **Favoritenstern** — Wirkung: Aufgabe für den Anwender oben einsortiert; auf dem Server gespeichert (UC-12).
 - **Ticket öffnen, Änderungen speichern** — Vorbedingung: Titel gefüllt. Wirkung: UC-12; bei Serveraufgabe Speichern auf dem Server.
-- **Freigabe anfragen** (im Ticketdialog) — Wirkung: UC-18 mit Typ Aufgabe; zusätzlich Vormerkung im Browser.
+- **Freigabe anfragen** (im Ticketdialog) — Wirkung: UC-18 mit Typ Aufgabe.
 - **Filter** (Ohne Verantwortlichen, Personen, Ersteller, Status, Priorität) mit *Speichern*/*Verwerfen* — Wirkung: Anzeige gefiltert.
 
 ### DLG-05 — Meine Aufgaben
 
 | | |
 |--|--|
-| **Zweck** | Persönliches Kanban-Board mit Kennzahlen, Kontrollpunkten, Leistungsüberblick und vollständigem Ticket-Editor (UC-11, UC-12, UC-13, UC-15, UC-17, UC-18). |
+| **Zweck** | Persönliches Kanban-Board mit Kennzahlen, Kontrollpunkten, Leistungsüberblick und vollständigem Ticket-Editor (UC-11, UC-12, UC-15, UC-17, UC-18). |
 | **Bereiche** | Kennzahlenleiste (Meine offenen Aufgaben, Heute fällig, Warten auf Review, Blockiert; Freigaben und Kontrollen; Leistungsüberblick in %). Filterleiste (Aufgabenbereich, Status, Person, Zurücksetzen). Board mit fünf Spalten: **Heute, In Arbeit, Review, Blockiert, Erledigt** ([D2.3](D2-datentypen.md#d23-taskstatusdt)). Ticket-Editor mit acht Reitern: Info, Beschreibung, Dateien, Kommentare, Organisation, Verknüpfte Tickets, Banking Ready, Audit-Spur. |
-| **Zustände** | Leer: „Keine Aufgaben gefunden" mit Hinweis je Filter. Serverfehler werden still übergangen; die lokale Änderung bleibt. |
-| **Datenquelle** | Board aus Beispielaufgaben, im Browser gespeichert. Aufgaben vom Server werden über `?taskId` nachgeladen und beim Speichern an den Server geschickt. Kontrollpunkte, Teamprofile und Leistungswerte sind Beispieldaten (B1.5). |
+| **Zustände** | Leer: „Keine Aufgaben gefunden" mit Hinweis je Filter. Serverfehler beim Laden werden still übergangen (leeres Board); abgelehnte Änderungen werden verworfen. |
+| **Datenquelle** | Projekte und Aufgaben des Sichtbereichs vom Server (Organisationsübersicht, AF-02); Anlegen, Speichern, Kommentieren und Freigabe anfragen gehen an den Server. Kontrollpunkte und Teamprofile werden aus den geladenen Aufgaben abgeleitet; der Leistungsüberblick zeigt feste Vorgabewerte je Zeitraum (B1.5). |
 
 ![DLG-05 Board](screenshots/dlg-05-board.png)
 
@@ -198,14 +198,14 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 | Titel | Eingabe (Pflicht) | `Task.title` |
 | Projekt; Status (fünf Spalten); Priorität {Hoch, Mittel, Niedrig}; Fälligkeit; Aufwand Stunden/Tage; Zuständige Person; Farbstreifen; Beschreibung | Eingabe | wie DLG-04 |
 | Freigabe {Keine Freigabe erforderlich, Freigabe durch Abteilungsleiter, Freigabe durch GBL} | Eingabe (optional) | `Task.approvalLevel` ([D2.9](D2-datentypen.md#d29-approvalleveldt)) |
-| Anhänge (Typ {Excel, Word, PDF, Link}, Quelle {SharePoint, OneDrive, DMS, Audit-Ablage}); Tags; verlinkte Personen; übergeordnetes Ticket; Untertickets; Datenklassifizierung; Risiko; Evidenzhinweis | Eingabe (optional) | nur im Browser |
-| Audit-Spur | Anzeige | nur im Browser, Beispieldaten |
+| Anhänge (Typ {Excel, Word, PDF, Link}, Quelle {SharePoint, OneDrive, DMS, Audit-Ablage}); Tags; verlinkte Personen; übergeordnetes Ticket; Untertickets; Datenklassifizierung; Risiko; Evidenzhinweis | Eingabe (optional) | `TaskAttachment`, `TaskTag`, `TaskPersonLink`, `Task.parentTask`, `TaskCompliance` ([D1.3](D1-datenmodell.md#d13-aufgaben)) |
+| Audit-Spur | Eingabe (optional) | `TaskAuditEntry` (Freitext des Anwenders, nicht das Audit-Log) |
 
 **GUI Dynamik**
 
-- **Neue Aufgabe** (Erstellen-Menü) — Wirkung: UC-11 im Browser; Serveraufruf nur für Projekte des Servers.
-- **Karte öffnen, Details speichern** — Vorbedingung: Titel gefüllt. Wirkung: UC-12; Serveraufgabe wird gespeichert. Ist die Freigabe neu auf eine Stufe außer „Keine" gesetzt und existiert keine Anfrage, folgt UC-18.
-- **Spalte ziehen** — Wirkung: Reihenfolge der Spalten (im Browser). Karten selbst sind nicht ziehbar; ein Statuswechsel läuft über den Editor.
+- **Neue Aufgabe** (Erstellen-Menü) — Wirkung: UC-11 auf dem Server; ohne Projekt im Sichtbereich nicht möglich. Bei Ablehnung keine Meldung (B1.5).
+- **Karte öffnen, Details speichern** — Vorbedingung: Titel gefüllt. Wirkung: UC-12 auf dem Server. Ist die Freigabe neu auf eine Stufe außer „Keine" gesetzt und existiert keine Anfrage, folgt UC-18.
+- **Spalte ziehen** — Wirkung: Reihenfolge der Spalten, nur für die Sitzung. Karten selbst sind nicht ziehbar; ein Statuswechsel läuft über den Editor (UC-13).
 - **Scope, Status, Person, Filter zurücksetzen** — Wirkung: Anzeige gefiltert.
 - **Eltern-/Unterticket** — Wirkung: Editor wechselt zur verknüpften Aufgabe.
 
@@ -215,8 +215,8 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 |--|--|
 | **Zweck** | Fristen im Monats- oder Wochenraster sehen, Aufgaben durch Ziehen umterminieren, Aufgabe anlegen (UC-11, UC-14, UC-17). |
 | **Bereiche** | Werkzeugleiste (Heute, vor/zurück, Titel mit Zeitraum, Umschalter Monat/Woche, Filter ein/aus). Filterleiste. Raster. Seitenpanel mit Details der gewählten Aufgabe. Tagesagenda als Dialog. Dialog *Neue Aufgabe*. |
-| **Zustände** | Leer: „Keine Aufgaben für diesen Tag geplant." Überfällige Aufgaben rot mit Kennzeichen „Überfällig". Serverfehler: Rückfall auf Beispieldaten ohne Meldung. |
-| **Datenquelle** | Aufgaben des sichtbaren Zeitraums vom Server (AF-02), ergänzt um Beispielaufgaben. Verschiebungen an Serveraufgaben werden gespeichert (UC-14); nicht speicherbare Verschiebungen werden im Browser gemerkt. |
+| **Zustände** | Leer: „Keine Aufgaben für diesen Tag geplant." Überfällige Aufgaben rot mit Kennzeichen „Überfällig". Serverfehler: leerer Kalender ohne Meldung. |
+| **Datenquelle** | Aufgaben des sichtbaren Zeitraums vom Server (AF-02). Verschiebungen (UC-14) und neue Aufgaben (UC-11) gehen an den Server; eine abgelehnte Verschiebung springt zurück. |
 
 ![DLG-06 Kalender Monatsansicht](screenshots/dlg-06-kalender.png)
 
@@ -242,10 +242,10 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 
 | | |
 |--|--|
-| **Zweck** | Kennzahlen je Abteilung und Projekt, Statusbericht als Vorschau und PDF (UC-10). |
+| **Zweck** | Kennzahlen je Abteilung und Projekt, Abteilungsbericht als PDF oder CSV (UC-26), Statusbericht als Vorschau und PDF (UC-10). |
 | **Bereiche** | Reiter *Abteilungsbericht* (Filter, vier Kennzahlkacheln, Team-Auslastung), *Projektbericht* (Statusbericht-Panel, Projektzeitachse mit Meilensteinen, Kacheln Laufzeit/Nächster Meilenstein/Aktive Tickets/Im Review), *Aufgabenstatus* (Ringdiagramm), *Projektfortschritt* (Projektkarten mit Ampel und Detailpanel). Vorschau des Statusberichts als Dialog. |
 | **Zustände** | „Kein Projekt fuer einen Statusbericht verfuegbar.", „Bitte zuerst ein Projekt auswaehlen", „Keine Einträge gepflegt." Kein Lade- oder Fehlerzustand. |
-| **Datenquelle** | Ausschließlich Beispieldaten und die im Browser gespeicherten Projekte. Kein Serveraufruf. Team-Auslastung und Fortschritt sind Näherungswerte aus Gewichtungen je Status (B1.5). |
+| **Datenquelle** | Organisationsübersicht vom Server (Projekte mit Berichtsbasis und Aufgaben des Sichtbereichs). Kein Speichern. Team-Auslastung und Fortschritt sind Näherungswerte aus Gewichtungen je Status; die Kennzahlen „In Arbeit" und „Offen" des Abteilungsberichts zeigen wegen eines Fehlers immer 0 (B1.5). |
 
 ![DLG-07 Reports](screenshots/dlg-07-reports.png)
 
@@ -253,12 +253,13 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 
 | Feld | Art | Zuordnung | Vorgabe |
 |------|-----|-----------|---------|
-| Zeitraum {Diese Woche, Dieser Monat, Dieses Jahr}; Abteilung; Projekt; Exportformat {PDF, Excel} | Eingabe (optional) | Filter im Browser | Dieser Monat, Alle |
+| Zeitraum {Diese Woche, Dieser Monat, Dieses Jahr}; Abteilung; Projekt; Exportformat {PDF, Excel} | Eingabe (optional) | Filter in der Maske; Exportformat für UC-26 | Dieser Monat, Alle |
 | Projekt für Statusbericht; Projekt für Zeitachse | Eingabe | Auswahl aus Projekten | erstes Projekt |
 | Kennzahlen, Diagramme, Zeitachse | Anzeige | Berichtsbasis ([D1.2](D1-datenmodell.md#d12-projekte-und-berichtswesen)) | — |
 
 **GUI Dynamik**
 
+- **Als PDF/Excel exportieren** — Vorbedingung: mindestens ein Projekt im Filter. Wirkung: UC-26, Datei nach [DR-02](B3-druckausgaben.md#dr-02--abteilungsbericht).
 - **Statusbericht erstellen** — Vorbedingung: Projekt gewählt. Wirkung: Vorschau [DR-01](B3-druckausgaben.md#dr-01--projektstatusbericht).
 - **PDF herunterladen** (in der Vorschau) — Wirkung: UC-10 Schritt 4.
 - **Als PDF/Excel exportieren** (Abteilungsbericht) — ohne Wirkung; die Schaltfläche ist nicht angebunden (B1.5).
@@ -267,10 +268,12 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 
 | | |
 |--|--|
-| **Zweck** | Freigaben-Cockpit: Anfragen sichten, genehmigen, ablehnen (UC-19). |
+| **Zweck** | Freigaben-Cockpit: Anfragen sichten, genehmigen, ablehnen (UC-19); Dialog zum Anfragen (UC-18). |
 | **Bereiche** | Kopf „Genehmigungsworkflow", drei Kennzahlkacheln (Offen, Genehmigt, Abgelehnt), Karten je Anfrage mit Status- und Typkennzeichen, Anfragender, Genehmiger, Nachweis, Entscheidungsblock. Dialog *Freigabe anfragen* (vorhanden, aber nicht aufrufbar, B1.5). |
-| **Zustände** | Laden: „Freigaben werden geladen …". Leer: „Keine Freigaben gefunden – Passe Filter oder Suche an oder starte eine neue Anfrage." Fehler: Rückfall auf die im Browser vorgemerkten Anfragen. |
-| **Datenquelle** | Server (AF-03 bestimmt den Sichtbereich), zusammengeführt mit lokal vorgemerkten Anfragen. Entscheidungen zu Serveranfragen gehen an den Server; Entscheidungen zu lokalen Anfragen bleiben im Browser. |
+| **Zustände** | Laden: „Freigaben werden geladen …". Leer: „Keine Freigaben gefunden – Passe Filter oder Suche an oder starte eine neue Anfrage." Fehler: rote Meldung mit Servertext. |
+| **Datenquelle** | Server. Sichtbar sind Anfragen, deren Bezugsobjekt im Sichtbereich liegt ([AF-02](F3-anwendungsfunktionen.md#af-02--sichtbereich-und-sichtbare-aufgaben-bestimmen)), eingeschränkt nach [AF-03](F3-anwendungsfunktionen.md#af-03--genehmiger-bestimmen). Entscheidungen gehen an den Server; im Browser wird nichts gespeichert. |
+
+![DLG-08 Freigaben](screenshots/dlg-08-freigaben.png)
 
 **GUI Statik**
 
@@ -283,7 +286,7 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 
 **GUI Dynamik**
 
-- **Genehmigen, Ablehnen** — Vorbedingung: Anfrage offen; Anwender ist Genehmiger, hat „Freigaben entscheiden" oder die Anfrage ist lokal. Wirkung: UC-19 Schritt 3.
+- **Genehmigen, Ablehnen** — Vorbedingung: Anfrage offen; Anwender ist Genehmiger oder hat „Freigaben entscheiden". Wirkung: UC-19 Schritt 3.
 - **Suchen** — Wirkung: Liste wird vom Server neu geladen.
 
 ### DLG-09 — Audit-Log
@@ -316,14 +319,14 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 
 | | |
 |--|--|
-| **Zweck** | Vorschau einer Dokumentenbibliothek mit Wissensbereichen, Vorlagen und Kontrollnachweisen. Kein Anwendungsfall; die Maske zeigt, wie eine Dokumentenablage aussehen könnte (NG-01). |
+| **Zweck** | Dokumentenbibliothek mit Wissensbereichen, Vorlagen und Kontrollnachweisen lesen (UC-28). Nur Metadaten; keine Dateien (NG-01). |
 | **Bereiche** | Filterzeile, drei Sektionskacheln (Dokumentenbibliothek, Wissensbereiche, Vorlagen & Nachweise), Trefferliste mit Kennzeichen (Status, Klassifizierung, Typ), Detaildialog mit Metadaten, verknüpften Aufgaben, Audit-Trail, Kontroll-IDs. |
-| **Zustände** | Kein Lade-, Fehler- oder Leerzustand. |
-| **Datenquelle** | Sechs fest hinterlegte Beispieldokumente. Kein Serveraufruf, kein Upload, kein Download. |
+| **Zustände** | Kein Lade- oder Fehlerzustand; ohne Dokumente im Sichtbereich bleibt die Liste leer. |
+| **Datenquelle** | Dokumente und Vorlagen des Sichtbereichs sowie Abteilungen vom Server (AF-02). Kein Upload, kein Download. |
 
 ![DLG-10 Dokumente](screenshots/dlg-10-dokumente.png)
 
-**GUI Statik.** Abteilung (Auswahl), Dokumenttyp {Alle Typen, Richtlinie, Kontrollnachweis, Projektunterlage, Vorlage, Prozessdokument}, Status (nur „Alle Stati"). Anzeige: Titel, Status {Entwurf, In Prüfung, Freigegeben, Abgelaufen}, Klassifizierung {Intern, Vertraulich, Reguliert, Streng vertraulich}, Abteilung, Projekt, Version, Nächste Prüfung, Aufbewahrung, Kontroll-ID.
+**GUI Statik.** Abteilung (Auswahl), Dokumenttyp {Alle Typen, Richtlinie, Kontrollnachweis, Projektunterlage, Vorlage, Prozessdokument}, Status (Werte aus den geladenen Dokumenten). Anzeige: Titel, Status {Entwurf, In Prüfung, Freigegeben, Abgelaufen}, Klassifizierung {Intern, Vertraulich, Reguliert, Streng vertraulich}, Abteilung, Projekt, Version, Nächste Prüfung, Aufbewahrung, Kontroll-ID.
 
 **GUI Dynamik.** Dokument anklicken öffnet den Detaildialog. Die Einträge des Erstellen-Menüs (Neue Seite, Neues Dokument, Neue Vorlage, Upload Nachweis) sind ohne Wirkung.
 
@@ -334,7 +337,7 @@ Jede Maske hat eine Zusammenfassung, eine Feldtabelle (GUI Statik) und eine Akti
 | **Zweck** | Zugriffsrollen pflegen und Benutzer zuordnen oder anlegen (UC-21, UC-22). |
 | **Bereiche** | Reiter *Rollen bearbeiten & hinzufügen* (Rollenliste links, Editor rechts) und *Zuweisungen* (Tabelle Benutzer/Abteilung/Rolle, Formular *Echten Benutzer erstellen*). Ohne Berechtigung: Sperrseite „Rollenverwaltung ist gesperrt". |
 | **Zustände** | Erfolg: „Rolle wurde in der Datenbank gespeichert.", „Rolle wurde gelöscht.", „Rollenzuweisung wurde in der Datenbank gespeichert.", „Benutzer wurde in der Datenbank erstellt." Fehler: Servermeldung. Die Erfolgsmeldung wird derzeit gesetzt, aber nicht angezeigt (B1.5). |
-| **Datenquelle** | Server; Startzustand und Rückfall aus einer Standardkonfiguration im Browser. |
+| **Datenquelle** | Server (Rollen, Benutzer, Zuordnungen, Abteilungen). Anzeigetexte der Rollenarten und Berechtigungen sind in der Maske hinterlegt. |
 
 ![DLG-11 Rollenverwaltung](screenshots/dlg-11-rollen.png)
 
@@ -438,33 +441,34 @@ Aufgaben werden über `?taskId=…` in Board, Kalender und Backlog geöffnet; Da
 
 ## B1.5 Stand der Anbindung
 
-Diese Tabelle hält fest, welche Maske welche Daten woher bezieht. Sie ist die Grundlage für R-01 in [P1](P1-ziele-rahmenbedingungen.md) und für die Spalte „Stand" in [F2](F2-anwendungsfaelle.md).
+Diese Tabelle hält fest, welche Maske welche Daten woher bezieht. Sie ist die Grundlage für R-01 in [P1](P1-ziele-rahmenbedingungen.md) und für die Spalte „Stand" in [F2](F2-anwendungsfaelle.md). Seit dem Stand vom 23. September 2026 laden alle Masken ihre Fachdaten vom Server; die Oberfläche hält keine Projekte, Aufgaben oder Freigaben mehr im Browser. Die Beispieldaten, die vorher im Browser lagen, sind zu einem Seed-Skript für die Datenbank geworden ([S3.3](S3-inbetriebnahme.md#s33-erstinbetriebnahme)).
 
-| Maske | Serverdaten | Nur im Browser gespeichert | Beispieldaten |
-|-------|-------------|-----------------------------|---------------|
+| Maske | Serverdaten | Nur im Browser gespeichert | Feste Werte in der Maske |
+|-------|-------------|-----------------------------|--------------------------|
 | DLG-01, DLG-02 | Anmeldung, Registrierung, SSO | Token, Profil | — |
-| DLG-03 | Aufgaben (AF-02) | — | Abteilungs- und Projektkacheln; Demo-Aufgaben für einen Beispielnutzer |
-| DLG-04 | Ticketdetails einer Serveraufgabe, Freigaben | Abteilungen, Projekte, Berichtsbasis, Backlog, Favoriten, Anhänge, Kommentare | Startbestand an Abteilungen, Projekten, Backlog |
-| DLG-05 | Ticketdetails einer Serveraufgabe, Freigaben | Board, Spaltenreihenfolge, Anhänge, Kommentare, Verknüpfungen | Startbestand des Boards, Kontrollpunkte, Teamprofile, Leistungswerte, Audit-Spur mit festem Datum |
-| DLG-06 | Aufgaben, Terminieren, Anlegen | Nicht speicherbare Verschiebungen | Beispielaufgaben, Personen, Abteilungen als Ergänzung |
-| DLG-07 | — | Projekte (aus DLG-04) | alles übrige; Auslastung und Fortschritt sind Näherungen |
-| DLG-08 | Freigaben, Entscheidungen | Vorgemerkte Anfragen und deren Entscheidungen | — |
+| DLG-03 | Aufgaben (AF-02), Abteilungen und Projekte der Organisationsübersicht | — | — |
+| DLG-04 | Abteilungen, Projekte mit Berichtsbasis, Backlog, Favoriten, Ticketdetails, Freigaben, Anlegen von Abteilungen | — | — |
+| DLG-05 | Projekte und Aufgaben des Sichtbereichs, Ticketdetails, Kommentare, Freigaben | Spaltenreihenfolge (nur für die Sitzung) | Kontrollpunkte und Leistungsüberblick werden aus den geladenen Aufgaben abgeleitet |
+| DLG-06 | Aufgaben, Terminieren, Anlegen | — | — |
+| DLG-07 | Projekte mit Berichtsbasis und Aufgaben der Organisationsübersicht | — | Gewichtungen je Status für Auslastung und Fortschritt (Näherung) |
+| DLG-08 | Freigaben, Entscheidungen | — | — |
 | DLG-09 | alles | — | — |
-| DLG-10 | — | — | alles |
-| DLG-11 | Rollen, Benutzer, Zuordnungen | Rückfall-Konfiguration | Standardrollen und Demo-Nutzer als Startzustand |
+| DLG-10 | Dokumente, Vorlagen, Abteilungen | — | — |
+| DLG-11 | Rollen, Benutzer, Zuordnungen, Abteilungen | — | Anzeigetexte der Rollenarten und Berechtigungen |
 | DLG-12 | Profil, zweiter Faktor, Kalender, Farbstreifen | Darstellung, Kopie der Farbstreifen | — |
 
-**Bekannte Abweichungen** (Stand September 2026, zur Bearbeitung durch das Entwicklungsteam):
+**Bekannte Abweichungen** (Stand 24. September 2026, zur Bearbeitung durch das Entwicklungsteam):
 
-1. DLG-12: Das Laden der Farbstreifen bricht mit einem Programmfehler ab (nicht vorhandene Funktion zum Zurücksetzen der Fehlermeldung); die Anzeige bleibt bei „Aufgabenfarben werden geladen …", und die Serverwerte werden nicht übernommen.
-2. DLG-08: Der Dialog *Freigabe anfragen* ist umgesetzt, aber von keiner Schaltfläche erreichbar; Anfragen entstehen nur über die Ticket-Editoren.
-3. DLG-07: Die Schaltfläche *Als PDF/Excel exportieren* im Abteilungsbericht hat keine Funktion.
-4. DLG-10: Die Einträge des Erstellen-Menüs haben keine Funktion.
-5. DLG-11: Erfolgsmeldungen werden gesetzt, aber nicht angezeigt.
+1. DLG-04, DLG-05, DLG-06: Schlägt das Anlegen eines Projekts, einer Abteilung oder einer Aufgabe auf dem Server fehl (Berechtigung, Sichtbereich, Verbindung), zeigt die Maske keine Meldung; der Anwender sieht nur, dass nichts erscheint (R-01).
+2. DLG-04: Nach dem Ziehen einer Backlog-Zeile wird die neue Reihenfolge gespeichert, aber die Anzeige erst beim nächsten Laden entsprechend sortiert.
+3. DLG-07: Die Kennzahlen „In Arbeit" und „Offen" des Abteilungsberichts vergleichen den Status mit anderen Schreibweisen als die Maske liefert und zeigen deshalb immer 0; die Zählung „Aktive Tickets" im Projektbericht ist korrekt.
+4. DLG-08: Der Dialog *Freigabe anfragen* ist umgesetzt, aber von keiner Schaltfläche erreichbar; Anfragen entstehen nur über die Ticket-Editoren.
+5. DLG-10: Die Einträge des Erstellen-Menüs haben keine Funktion (NG-01).
 6. DLG-12: Die Einstellung *Startansicht* wird gespeichert, aber nirgends ausgewertet.
 7. Rahmen: Die Benachrichtigungen sind drei feste Beispielmeldungen.
 8. Die Abteilungssicht (`/departments`) ist im Code vorhanden, aber auf die Projekte umgeleitet.
 9. Aufgaben löschen (UC-16) und Freigaben abbrechen (UC-20) haben keine Schaltfläche.
+10. Server: Abteilung anlegen (UC-27) schreibt keinen Audit-Eintrag; die Berechtigung „Abteilungen sehen" wird vom Server nicht geprüft ([N2](N2-querschnittskonzepte.md), QK-02).
 
 ---
 
@@ -474,6 +478,6 @@ Diese Tabelle hält fest, welche Maske welche Daten woher bezieht. Sie ist die G
 |----------|-------------|
 | [F2](F2-anwendungsfaelle.md) | Maske je Anwendungsfall; Meldungstexte in den Ausnahmeszenarien. |
 | [D1](D1-datenmodell.md), [D2](D2-datentypen.md) | Zuordnung der Felder; Anzeigetexte der Aufzählungen. |
-| [B3](B3-druckausgaben.md) | Statusbericht aus DLG-07. |
+| [B3](B3-druckausgaben.md) | Statusbericht und Abteilungsbericht aus DLG-07. |
 | [N1](N1-nichtfunktional.md) | Bedienbarkeit, Sprache, Antwortzeit. |
-| [N2](N2-querschnittskonzepte.md) | Sitzung und Umleitung, Berechtigungen, lokale Daten im Browser. |
+| [N2](N2-querschnittskonzepte.md) | Sitzung und Umleitung, Berechtigungen und Sichtbereich, Daten im Browser. |
