@@ -99,7 +99,8 @@ function PersonPill({ person, fallback }) {
 
 function ApprovalCard({ approval, currentUserId, canApprove, note, onNoteChange, onApprove, onReject, isBusy }) {
   const isLocalApproval = approval.id?.startsWith('local-approval-');
-  const canDecide = approval.status === 'PENDING' && (isLocalApproval || canApprove || approval.approverId === currentUserId);
+  const isOwnRequest = approval.requesterId === currentUserId;
+  const canDecide = approval.status === 'PENDING' && !isOwnRequest && (isLocalApproval || canApprove || approval.approverId === currentUserId);
 
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
@@ -190,9 +191,9 @@ function ApprovalCard({ approval, currentUserId, canApprove, note, onNoteChange,
   );
 }
 
-function CreateApprovalModal({ form, context, onChange, onClose, onSubmit, isSaving }) {
+function CreateApprovalModal({ form, context, currentUserId, onChange, onClose, onSubmit, isSaving }) {
   const entityOptions = (context.entities || []).filter((entity) => entity.entityType === form.entityType);
-  const approverOptions = (context.users || []).filter((user) => user.id);
+  const approverOptions = (context.users || []).filter((user) => user.id && user.id !== currentUserId);
 
   const handleEntityChange = (entityId) => {
     const selected = entityOptions.find((entity) => entity.entityId === entityId);
@@ -522,6 +523,7 @@ export default function ApprovalsPage() {
         <CreateApprovalModal
           form={form}
           context={context}
+          currentUserId={user?.id}
           onChange={updateForm}
           onClose={() => setCreateOpen(false)}
           onSubmit={submitApproval}
