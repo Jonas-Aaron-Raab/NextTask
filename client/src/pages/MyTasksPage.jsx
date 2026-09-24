@@ -792,7 +792,7 @@ function ControlsPopup({ items, tasks, onClose, onOpenTask }) {
         {items.map((item) => {
           const linkedTask = tasks.find((task) => task.id === item.taskId);
           return (
-            <div key={item.title} className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div key={`${item.taskId}-${item.title}`} className="rounded-2xl border border-slate-200 bg-white p-4">
               <p className="text-sm font-bold text-slate-900">{item.title}</p>
               <p className="mt-1 text-xs font-semibold text-slate-400">{item.meta}</p>
               <p className="mt-2 text-sm font-medium leading-6 text-slate-600">{item.note}</p>
