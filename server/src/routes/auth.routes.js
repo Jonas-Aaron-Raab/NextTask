@@ -28,10 +28,16 @@ const {
 const { serializeCalendarConnection } = require('../utils/calendarIntegration');
 const router = express.Router();
 
+const MIN_PASSWORD_LENGTH = 8;
+const INVALID_LOGIN_MESSAGE = 'E-Mail oder Passwort falsch';
 const TWO_FACTOR_CHALLENGE_PURPOSE = 'two_factor_login';
 
 function isBlank(value) {
   return typeof value !== 'string' || value.trim().length === 0;
+}
+
+function isTooShortPassword(value) {
+  return typeof value !== 'string' || value.length < MIN_PASSWORD_LENGTH;
 }
 
 function createToken(user) {
@@ -127,6 +133,9 @@ router.post('/register', async (req, res) => {
     if (isBlank(name) || isBlank(email) || isBlank(password)) {
       return res.status(400).json({ message: 'Name, E-Mail und Passwort sind erforderlich' });
     }
+    if (isTooShortPassword(password)) {
+      return res.status(400).json({ message: 'Das Passwort muss mindestens 8 Zeichen lang sein' });
+    }
 
     const trimmedName = name.trim();
     const trimmedEmail = email.trim().toLowerCase();
@@ -197,7 +206,7 @@ router.post('/login', async (req, res) => {
         severity: 'WARNING',
         actor: { actorName: trimmedEmail, actorEmail: trimmedEmail },
       });
-      return res.status(400).json({ message: 'Benutzer nicht gefunden' });
+      return res.status(400).json({ message: INVALID_LOGIN_MESSAGE });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -211,7 +220,7 @@ router.post('/login', async (req, res) => {
         severity: 'WARNING',
         user,
       });
-      return res.status(400).json({ message: 'Falsches Passwort' });
+      return res.status(400).json({ message: INVALID_LOGIN_MESSAGE });
     }
 
     if (user.twoFactorEnabled && user.twoFactorSecret) {
@@ -733,7 +742,7 @@ router.put('/me/password', auth, async (req, res) => {
       return res.status(400).json({ message: 'Aktuelles und neues Passwort sind erforderlich' });
     }
 
-    if (newPassword.length < 8) {
+    if (isTooShortPassword(newPassword)) {
       return res.status(400).json({ message: 'Das neue Passwort muss mindestens 8 Zeichen lang sein' });
     }
 
