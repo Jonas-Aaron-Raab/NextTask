@@ -102,7 +102,7 @@ Die grobe Rolle wird bei Zuordnung abgeleitet (`role.routes.js`: `role.kind === 
 
 ## 8.4 Audit-Logging
 
-Kein Trigger, keine Middleware: Jeder ändernde Handler ruft `writeAuditLog(req, entry)` explizit auf, nach dem erfolgreichen Prisma-Aufruf und vor den Nebenwirkungen. 38 Aktionen an 39 Aufrufstellen ([QK-03](../spec/N2-querschnittskonzepte.md#qk-03-audit-logging) listet sie).
+Kein Trigger, keine Middleware: Jeder ändernde Handler ruft `writeAuditLog(req, entry)` explizit auf, nach dem erfolgreichen Prisma-Aufruf und vor den Nebenwirkungen. 39 Aktionen ([QK-03](../spec/N2-querschnittskonzepte.md#qk-03-audit-logging) listet sie): 37 stehen als feste Namen in den Handlern, `APPROVAL_APPROVED` und `APPROVAL_REJECTED` bildet `decideApproval` aus dem Zielstatus.
 
 `auditLog.js`:
 

@@ -34,7 +34,14 @@ NextTask ist eine webbasierte Projekt- und Aufgabenverwaltung fuer Studierende u
 - **URL:** <https://github.com/Jonas-Aaron-Raab/NextTask>
 - **Sichtbarkeit:** noch festzulegen / Betreuer als Member: `carstenlucke` / `clucke`
 
-## Eingesetzte KI-Werkzeuge (vorlaeufige Planung)
+## Eingesetzte KI-Werkzeuge
 
-- ChatGPT / Codex fuer Refactoring, Dokumentationsentwuerfe und Unterstuetzung bei der Codeanalyse
-- GitHub Copilot fuer Code-Vervollstaendigung, sofern im Projektteam verfuegbar
+Planung zu Projektbeginn: ChatGPT / Codex fuer Refactoring, Dokumentationsentwuerfe und Codeanalyse; GitHub Copilot fuer Code-Vervollstaendigung.
+
+Tatsaechlich eingesetzt:
+
+- Codex fuer Code und Refactoring
+- Claude Code fuer die Erstentwuerfe von Spezifikation und Architekturdokumentation auf Basis des Quellcodes
+- GitHub Copilot wurde nicht eingesetzt
+
+Alle Ergebnisse wurden von Teammitgliedern gegen Code und laufende Anwendung geprueft und ueber Pull Requests freigegeben. Details in `docs/spec/README.md`, Abschnitt "Eingesetzte KI-Werkzeuge".

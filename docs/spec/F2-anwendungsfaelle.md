@@ -45,10 +45,10 @@ Die Spalte *Stand* im Index unterscheidet, ob ein Anwendungsfall vollständig be
 
 Das Diagramm ordnet die Anwendungsfälle nach Paketen. Die drei Akteure Projektleitung, GBL und Administrator sind Spezialisierungen von Mitarbeiter: Sie können alles, was ein Mitarbeiter kann, und zusätzlich die an ihnen gezeichneten Fälle. Projektleitung ist keine Rolle im System, sondern ein Anwender mit der Berechtigung „Projekte bearbeiten", der ein Projekt angelegt hat und damit sein Eigentümer ist. Der Abteilungsbericht (UC-26) und das Lesen der Dokumente (UC-28) stehen jedem Mitarbeiter offen; das Anlegen von Abteilungen (UC-27) dem Administrator. Die Beziehungen zwischen Anwendungsfällen:
 
-- **UC-02 `<<extend>>` UC-04:** Bei der ersten Anmeldung eines Kontos ohne zweiten Faktor bleibt es beim Passwort; der zweite Faktor wird in den Einstellungen eingerichtet. Danach verlangt jede Anmeldung den Code.
-- **UC-11 `<<extend>>` UC-12:** Nach dem Anlegen wird eine Aufgabe im selben Editor weiterbearbeitet.
-- **UC-12 `<<include>>` UC-18:** Wird beim Bearbeiten eine Freigabestufe gesetzt, erzeugt die Oberfläche eine Freigabeanfrage.
-- **UC-09 `<<precedes>>` UC-10:** Der Statusbericht muss erfasst sein, bevor er ausgegeben wird.
+- **UC-18 `<<extend>>` UC-12** am Erweiterungspunkt „Freigabestufe gesetzt": Nur wenn beim Bearbeiten eine Freigabestufe neu gesetzt wird, erzeugt die Oberfläche zusätzlich eine Freigabeanfrage. Das Bearbeiten ist ohne diesen Schritt vollständig, deshalb `extend` und nicht `include`.
+- **UC-12 `<<extend>>` UC-11** am Erweiterungspunkt „Aufgabe angelegt": Nach dem Anlegen kann die Aufgabe im selben Editor weiterbearbeitet werden.
+
+Der zweite Faktor ist kein Erweiterungspunkt von UC-02: Ist er für ein Konto aktiv, gehört die Codeabfrage zum Hauptszenario der Anmeldung; eingerichtet wird er in UC-04. Die Reihenfolge „Berichtsbasis pflegen, dann Statusbericht ausgeben" ist keine Beziehung zwischen Anwendungsfällen, sondern ein Ablauf und steht in GP-01 ([F1](F1-geschaeftsprozesse.md)).
 
 Alle Anwendungsfälle außer UC-01, UC-02 und UC-03 setzen eine angemeldete Sitzung voraus. Das steht nicht in jeder Vorbedingung, sondern gilt als Systemregel ([N2](N2-querschnittskonzepte.md), Authentifizierung).
 
