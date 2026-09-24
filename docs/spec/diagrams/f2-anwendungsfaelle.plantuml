@@ -119,9 +119,8 @@ AUF -[hidden]down- DOK
 DOK -[hidden]down- FRE
 FRE -[hidden]down- PRJ
 
-' Beziehungen zwischen Anwendungsfaellen
-UC02 ..> UC04 : <<extend>>\n[erste Einrichtung]
-UC11 ..> UC12 : <<extend>>
-UC12 ..> UC18 : <<include>>\n[Freigabestufe gesetzt]
-UC09 ..> UC10 : <<precedes>>
+' Beziehungen zwischen Anwendungsfaellen: extend zeigt vom
+' erweiternden auf den erweiterten Anwendungsfall
+UC12 ..> UC11 : <<extend>>\n[Aufgabe angelegt]
+UC18 ..> UC12 : <<extend>>\n[Freigabestufe gesetzt]
 @enduml
