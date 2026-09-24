@@ -41,7 +41,7 @@ cloud "Identity Provider, Google, SMTP\n(nur wenn in .env konfiguriert)" as EXT
 ROOT ..> VITE : startet
 ROOT ..> NODE : startet
 VITE --> BROWSER : liefert index.html, JS, CSS\nhttp://localhost:5173
-SPA --> APP : HTTP http://localhost:5001/api\n(fest in api/axios.js)
+SPA --> APP : HTTP VITE_API_URL\n(Fallback: localhost:5001/api)
 APP ..> ENV : dotenv beim Start
 APP --> PC_CLIENT
 PC_CLIENT --> DB : TCP, SQL

@@ -26,7 +26,7 @@ Bemerkenswert:
 - **Zwei Tokens, ein Schlüssel.** Beide Tokens signiert `jsonwebtoken` mit `JWT_SECRET`; sie unterscheiden sich im Feld `purpose`. `middleware/auth.js` lehnt alles ab, was nicht `access` ist; `POST /login/2fa` nimmt nur `two_factor_login`. Ein abgefangenes Challenge-Token öffnet damit keine Maske.
 - **Der Zwischenzustand liegt beim Browser.** Der Server merkt sich zwischen Passwort und Code nichts; das Challenge-Token trägt `userId` und läuft nach fünf Minuten ab. Das ist die Konsequenz des zustandslosen Servers ([Kapitel 4](A04-loesungsstrategie.md)).
 - **Wiederholungsschutz nur beim Anmelden.** `verifySecondFactor(user, code, { enforceReplay: true })` vergleicht den Zeitschritt des Codes mit `twoFactorLastUsedStep` und speichert den neuen Schritt. Beim Abschalten des zweiten Faktors wird ohne diese Prüfung verifiziert, weil dort zusätzlich das Passwort verlangt wird.
-- **Fehlermeldungen unterscheiden.** „Benutzer nicht gefunden" und „Falsches Passwort" sind verschiedene Antworten; beide werden als `LOGIN_FAILED` protokolliert, aber mit unterschiedlicher Zusammenfassung. Bekannte Schwäche ([NFR-15a-01](../spec/N1-nichtfunktional.md), Stand).
+- **Einheitliche Login-Fehlermeldung.** Unbekannte E-Mail und falsches Passwort liefern nach außen „E-Mail oder Passwort falsch"; beide werden als `LOGIN_FAILED` protokolliert, intern aber mit unterschiedlicher Zusammenfassung.
 - **Kein Lockout.** Es gibt keinen Zähler und keine Sperre; die Schwäche ist in N1 vermerkt.
 
 ## 6.2 SSO-Rückleitung

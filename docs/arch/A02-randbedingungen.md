@@ -23,7 +23,7 @@ Versionsangaben dienen der Nachvollziehbarkeit; bindend ist die Technologie, nic
 | TECH-07 | **Eigene TOTP- und OpenID-Connect-Implementierung** | Kein Paket für TOTP oder OIDC; beides mit Node-Bordmitteln (`crypto`, `fetch`) in `server/src/utils/twoFactor.js` und `sso.js`. Nur `qrcode` für den QR-Code der Einrichtung. [ADR-004](A09-architekturentscheidungen.md#adr-004-zustandslose-anmeldung-mit-jwt-totp-und-openid-connect). |
 | TECH-08 | **Google Calendar über OAuth 2.0, Mail über SMTP** | Kalender mit Node-`fetch` gegen die Google-REST-API; Mail mit `nodemailer`. Beide nur bei vollständiger Konfiguration aktiv ([S3.2](../spec/S3-inbetriebnahme.md#s32-konfiguration)). |
 | TECH-09 | **PDF-Erzeugung im Browser** | `html2canvas` und `jspdf`; der Server hat keine PDF-Bibliothek. [ADR-005](A09-architekturentscheidungen.md#adr-005-statusbericht-als-pdf-im-browser-erzeugen). |
-| TECH-10 | **Feste Serveradresse in der Browser-Anwendung** | `client/src/api/axios.js` setzt `http://localhost:5001/api`. Ein anderer Betriebsort erfordert eine Codeänderung und einen Neubau ([S1.2](../spec/S1-nachbarsysteme.md#s12-nb-01--browser-des-anwenders)). |
+| TECH-10 | **Konfigurierbare Serveradresse in der Browser-Anwendung** | `client/src/api/axios.js` liest `VITE_API_URL` und nutzt `http://localhost:5001/api` als Entwicklungs-Fallback ([S1.2](../spec/S1-nachbarsysteme.md#s12-nb-01--browser-des-anwenders)). |
 | TECH-11 | **Arbeitsplatz-Browser als Zielplattform** | Aktuelle Desktop-Browser ab 1280 Pixel Breite ([NFR-13b-01](../spec/N1-nichtfunktional.md), CON-01). Keine native App, kein Offline-Betrieb. |
 
 ---

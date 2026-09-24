@@ -28,7 +28,7 @@ Schnittstellenverträge zwischen NextTask und den in [P2.2](P2-architekturueberb
 | Zeichensatz, Sprache | UTF-8; alle Meldungen Deutsch (CON-06). |
 | Herkunft | Anfragen von beliebigen Ursprüngen werden angenommen (offene CORS-Regel); vorgesehen ist der Betrieb von Browser-Anwendung und Server unter verschiedenen Ports derselben Maschine (S3). |
 
-Die Basisadresse ist in der Browser-Anwendung fest auf `http://localhost:5001/api` eingestellt. Für einen Betrieb außerhalb der Entwicklungsumgebung muss sie angepasst werden (S3).
+Die Basisadresse wird in der Browser-Anwendung über `VITE_API_URL` gesetzt. Ohne diese Variable nutzt der Client für die Entwicklung `http://localhost:5001/api`.
 
 ---
 
