@@ -98,7 +98,7 @@ Die grobe Rolle wird bei Zuordnung abgeleitet (`role.routes.js`: `role.kind === 
 
 **Browserseite.** `data/bankOrganization.js` exportiert `canManageRoles(user)` und `getEffectiveRoleForUser(user)` auf Basis einer festen Standardkonfiguration im Speicher (kein Local Storage mehr). Sie steuern Seitenleiste und Wächter `RequireAuditAccess`; sie sind eine Anzeigeentscheidung, keine Sicherheitsgrenze. Die Masken sehen ohnehin nur, was der Server liefert.
 
-**Abweichungen von QK-02.** (1) `viewDepartments` wird auf dem Server nirgends gelesen; der Sichtbereich gilt unabhängig davon. (2) `organization.routes.js` (Abteilung anlegen) und `document.routes.js` schreiben keine Audit-Einträge. (3) `role.routes.js` weist beim Löschen einer Rolle die Rolle mit Code `A` als Ersatz zu (R-04). (4) Das Seed-Skript legt ein Admin-Konto mit bekanntem Passwort an (R-07).
+**Abweichungen von QK-02.** (1) `viewDepartments` wird auf dem Server nirgends gelesen; der Sichtbereich gilt unabhängig davon. (2) `organization.routes.js` (Abteilung anlegen) und `document.routes.js` schreiben keine Audit-Einträge. (3) Behoben am 24. September: `role.routes.js` lehnt das Löschen einer Rolle mit zugeordneten Benutzern mit 400 ab, statt ihnen die Rolle `A` als Ersatz zuzuweisen (R-04). (4) Das Seed-Skript legt ein Admin-Konto mit bekanntem Passwort an (R-07).
 
 ## 8.4 Audit-Logging
 
@@ -136,7 +136,7 @@ Keine Validierungsbibliothek (kein zod, joi, express-validator). Jedes Routenmod
 
 | Modul | Funktionen | Regel |
 |-------|------------|-------|
-| `auth.routes.js`, `role.routes.js` | `isBlank(value)` | Pflichtfeld: Zeichenkette mit Inhalt nach `trim`. |
+| `auth.routes.js`, `role.routes.js` | `isBlank(value)`, `isTooShortPassword(value)` | Pflichtfeld: Zeichenkette mit Inhalt nach `trim`; Passwort mindestens acht Zeichen bei Registrierung, Anlegen und Ändern ([NFR-15b-02](../spec/N1-nichtfunktional.md)). Anmeldefehler antworten einheitlich mit „E-Mail oder Passwort falsch". |
 | `task.routes.js` | `normalizeStatus` (Tabelle `statusMap` nach [D2.3](../spec/D2-datentypen.md#d23-taskstatusdt)), `normalizePriority` (auch `hoch`/`mittel`/`niedrig`), `parseOptionalNumber` (Komma → Punkt), `parseTaskDate`, `toStringList`, `normalizeFavoriteReturnIndexBy`, `buildTaskDetailWrites` (Tags, Personen, Anhänge, Compliance, Ersteller, Audit-Spur) | [AF-04](../spec/F3-anwendungsfunktionen.md#af-04--status-priorität-und-eingaben-normalisieren) |
 | `project.routes.js` | `normalizeString`, `optionalString`, `optionalDate`, `optionalNumber`, `toStringArray` (Liste oder Text mit Komma/Zeilenumbruch), `buildMilestoneCreates`/`buildRiskCreates`/`buildInterfaceCreates`/`buildBudgetLineCreates` (Zeilen ohne Titel entfallen) |
 | `organization.routes.js` | Name Pflicht; Kürzel und Geschäftsbereich in Großschreibung; Leitung Vorgabe: anlegender Anwender | [UC-27](../spec/F2-anwendungsfaelle.md#uc-27--abteilung-anlegen) | [AF-04](../spec/F3-anwendungsfunktionen.md#af-04--status-priorität-und-eingaben-normalisieren), [UC-07](../spec/F2-anwendungsfaelle.md#uc-07--projekt-anlegen) |

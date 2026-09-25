@@ -28,7 +28,7 @@ Die Inbetriebnahme aus Sicht des Anwenders (Voraussetzungen, Konfiguration, Schr
 
 **Zuordnung der Bausteine.** Browser-Anwendung: Quelle im Vite-Prozess, Ausführung im Browser. API-Server mit allen Routen- und Hilfsmodulen: Node-Prozess. Persistenzschicht: Schema und Client im Node-Prozess, Daten in PostgreSQL. Local Storage des Browsers hält Sitzung, Einstellungen und die in [8.9](A08-querschnittliche-konzepte.md#89-zustand-im-browser) beschriebenen Fachdaten.
 
-**Was fehlt.** Keine Unit-Tests (nur der Playwright-Rauchtest `npm run test:e2e` gegen die laufende Entwicklungsumgebung mit geladenem Seed), keine CI (kein `.github/`-Verzeichnis), kein Docker, kein Prozessmanager, keine Protokollrotation. Der Server schreibt mit `console.log` und `console.error` auf die Konsole des Terminals. Für ein Studienprojekt mit sechs Personen und einer Entwicklungsumgebung ist das die kleinste lauffähige Verteilung; für einen Betrieb außerhalb der Entwicklung gilt 7.2.
+**Was fehlt.** Keine Unit-Tests (Playwright-Rauchtest `npm run test:e2e` und Schnittstellentests `npm run test:api` unter `tests/`, beide gegen die laufende Entwicklungsumgebung mit geladenem Seed), keine CI (kein `.github/`-Verzeichnis), kein Docker, kein Prozessmanager, keine Protokollrotation. Der Server schreibt mit `console.log` und `console.error` auf die Konsole des Terminals. Für ein Studienprojekt mit sechs Personen und einer Entwicklungsumgebung ist das die kleinste lauffähige Verteilung; für einen Betrieb außerhalb der Entwicklung gilt 7.2.
 
 ---
 
@@ -42,7 +42,7 @@ Die Inbetriebnahme aus Sicht des Anwenders (Voraussetzungen, Konfiguration, Schr
 
 | Element | Realisierung | Änderung gegenüber 7.1 |
 |---------|--------------|-------------------------|
-| **Browser-Anwendung** | `vite build` in `client/` erzeugt statische Dateien unter `client/dist`; ein Reverse Proxy (nginx oder der Standard der IT) liefert sie unter einer HTTPS-Adresse aus. | Serveradresse in `client/src/api/axios.js` muss vor dem Bauen auf die Proxy-Adresse zeigen (TECH-10); besser: aus einer Umgebungsvariable des Builds lesen. |
+| **Browser-Anwendung** | `vite build` in `client/` erzeugt statische Dateien unter `client/dist`; ein Reverse Proxy (nginx oder der Standard der IT) liefert sie unter einer HTTPS-Adresse aus. | `VITE_API_URL` muss beim Bauen auf die Proxy-Adresse zeigen (TECH-10). Vite übernimmt den Wert fest in das Bundle; ein anderer Server braucht einen Neubau, aber keine Codeänderung. |
 | **API-Server** | Ein Node-Prozess unter einem Prozessmanager (systemd oder pm2) hinter demselben Proxy unter `/api`. Damit haben Browser-Anwendung und Schnittstelle einen Ursprung. | CORS auf die eigene Adresse einschränken oder entfernen; `console`-Ausgaben in eine Protokolldatei leiten; `PORT` frei wählbar. |
 | **PostgreSQL** | Von der IT betriebene Instanz mit TLS, Sicherung und Zugriffsbeschränkung. | Keine; `DATABASE_URL` mit `sslmode=require` ist vorgesehen. |
 | **Geheimnisse** | `JWT_SECRET`, `TWO_FACTOR_SECRET_KEY`, Client-Secrets, SMTP-Passwort aus dem Secret-Store der IT als Umgebungsvariablen. | Keine; der Server liest ausschließlich Umgebungsvariablen (CONV-08). |
