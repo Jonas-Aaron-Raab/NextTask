@@ -82,7 +82,7 @@ Startet den Server in der Entwicklung neu, wenn sich Dateien ändern (`npm run d
 
 ### Playwright
 
-Test-Werkzeug, das einen Browser fernsteuert. Im Repository ein Rauchtest (`tests/smoke.spec.js`), der sich anmeldet und alle Masken öffnet; Start mit `npm run test:e2e`.
+Test-Werkzeug, das einen Browser fernsteuert oder HTTP-Aufrufe ohne Browser ausführt. Im Repository ein Rauchtest (`tests/smoke.spec.js`, `npm run test:e2e`) und Schnittstellentests unter `tests/api/` (`npm run test:api`); `npm test` führt beides aus.
 
 ### Prisma
 

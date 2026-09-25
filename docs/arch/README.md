@@ -82,3 +82,4 @@ Siehe den gleichnamigen Abschnitt in [`../spec/README.md`](../spec/README.md#ein
 |---------|-------|----------|
 | 0.1 | 2026-09-10 | Erste Fassung der Kapitel 1 bis 9 und 12 mit fünf ADRs. |
 | 0.2 | 2026-09-24 | Abgleich mit dem Code vom 13. bis 24. September: elf Routenmodule, zehn Hilfsmodule (`accessScope`, `contentSerializers`), 29 Modelle und 16 Migrationen, Seed-Skript und Playwright-Rauchtest; Berechtigung und Sichtbereich serverseitig (8.3, 6.3, 6.4); kein Fachzustand mehr im Browser (8.9, 4); Bausteindiagramm und Laufzeitdiagramme angepasst; Abschnitt zu KI-Werkzeugen. |
+| 0.2.1 | 2026-09-24 | Laufzeitsicht 6.4 mit Vier-Augen-Prüfung und Sichtbereichsprüfung über `userCanAccessEntity` nach dem Server-Fix; Schnittstellentests, Passwortregeln, Rollenlöschung und `VITE_API_URL` in A02, A04, A07, A08, A09, A12; Verteilungsdiagramm 7.1 neu gerendert. |

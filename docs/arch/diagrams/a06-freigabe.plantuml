@@ -25,14 +25,17 @@ UI -> MW : PATCH ... { decisionNote }
 MW -> R : req.user (aus JWT)
 R -> DB : user.findUnique({ id: req.user.id },\ninclude accessRole)   [currentUser]
 note right of R : Berechtigung und Sichtbereich werden aus\nder Datenbank gelesen, nicht aus dem Token
-R -> AS : buildApprovalScopeWhere(prisma, currentUser)
-AS -> DB : sichtbare Projekte, Aufgaben,\nStatusberichte, Dokumente (ids)
-AS --> R : { OR: [entityType/entityId in ..., OTHER mit requester/approver = user] }
-R -> DB : approvalRequest.findFirst({ id, ...scope },\ninclude requester, approver)   [before]
-alt before fehlt oder ausserhalb des Sichtbereichs
+R -> DB : approvalRequest.findUnique({ id },\ninclude requester, approver)   [before]
+R -> R : userCanAccessEntity(currentUser,\nbefore.entityType, before.entityId)
+R -> AS : buildProjectScopeWhere / buildTaskScopeWhere /\nbuildDocumentScopeWhere(currentUser)
+AS --> R : where-Fragment des Sichtbereichs
+R -> DB : <Bezugsobjekt>.findFirst({ id: entityId, ...scope })\n(OTHER ohne Bezugsobjekt: immer sichtbar)
+alt before fehlt oder Bezugsobjekt ausserhalb des Sichtbereichs
   R --> UI : 404 "Freigabe wurde nicht gefunden"
 else before.status != PENDING
   R --> UI : 400 "Diese Freigabe ist bereits entschieden"
+else before.requesterId == currentUser.id
+  R --> UI : 403 "Eigene Freigabeanfragen koennen\nnicht selbst entschieden werden"
 else
   R -> AR : userCanApproveRequests(currentUser)
   AR --> R : permissions.approveRequests\n|| kind ADMIN/GBL || role ADMIN/PROJECT_MANAGER
